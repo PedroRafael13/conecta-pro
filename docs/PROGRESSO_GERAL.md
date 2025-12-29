@@ -2,18 +2,18 @@
 
 ## Sprint Atual: Sprint 0 - Core
 
-### Progresso Geral: 0%
+### Progresso Geral: 5%
 
 ---
 
 ## Checklist de Sprints
 
-### Infraestrutura (0/5)
-- [ ] Estrutura de diretórios
-- [ ] Python venv configurado
+### Infraestrutura (3/5)
+- [x] Estrutura de diretórios
+- [x] Python venv configurado
 - [ ] PostgreSQL configurado
 - [ ] Redis configurado
-- [ ] Git inicializado
+- [x] Git inicializado
 
 ### Sprint 0: Core (0/5)
 - [ ] Autenticação (JWT)
@@ -36,14 +36,15 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Linhas de código | 0 |
-| Arquivos criados | 0 |
+| Linhas de código | ~100 |
+| Arquivos criados | 4 |
 | Testes escritos | 0 |
 | Coverage | 0% |
-| Commits | 0 |
+| Commits | 1 |
 
 ---
 
 ## Última Atualização
 **Data:** 2024-12-29
-**Por:** Claude Code - Sessão 001 (Inicial)
+**Por:** Claude Code - Sessão 001
+**Mudanças:** Setup inicial completo
