@@ -2,19 +2,13 @@
 Testes do módulo de autenticação.
 """
 
-import pytest
 from datetime import timedelta
 
-from core.auth import (
-    create_access_token,
-    create_refresh_token,
-    verify_access_token,
-    verify_refresh_token,
-    decode_token,
-    TokenError,
-    hash_password,
-    verify_password,
-)
+import pytest
+
+from core.auth import (TokenError, create_access_token, create_refresh_token,
+                       decode_token, hash_password, verify_access_token,
+                       verify_password, verify_refresh_token)
 
 
 class TestPasswordSecurity:

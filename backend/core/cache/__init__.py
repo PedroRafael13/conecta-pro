@@ -1,13 +1,7 @@
 """Módulo de cache Redis."""
 
-from .redis import (
-    cache_clear_pattern,
-    cache_delete,
-    cache_get,
-    cache_set,
-    close_redis,
-    get_redis,
-)
+from .redis import (cache_clear_pattern, cache_delete, cache_get, cache_set,
+                    close_redis, get_redis)
 
 __all__ = [
     "get_redis",

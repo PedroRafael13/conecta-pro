@@ -55,7 +55,9 @@ class UserResponse(UserBase):
 
     id: UUID = Field(..., description="ID do usuário")
     is_active: bool = Field(..., description="Se o usuário está ativo")
-    permissions: list[str] = Field(default_factory=list, description="Permissões extras")
+    permissions: list[str] = Field(
+        default_factory=list, description="Permissões extras"
+    )
     created_at: datetime = Field(..., description="Data de criação")
     updated_at: datetime = Field(..., description="Data de atualização")
     last_login: Optional[str] = Field(None, description="Último login")

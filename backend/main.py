@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
+from core.logging import configure_logging, logger
 
 
 @asynccontextmanager
@@ -17,25 +18,28 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     from core.cache import close_redis, get_redis
     from core.database import close_db
 
+    # Configurar logging
+    configure_logging()
+
     # Startup
-    print(f"Iniciando {settings.app_name} v{settings.app_version}")
-    print(f"   Ambiente: {settings.environment}")
-    print(f"   Debug: {settings.debug}")
+    logger.info(f"Iniciando {settings.app_name} v{settings.app_version}")
+    logger.info(f"Ambiente: {settings.environment}")
+    logger.debug(f"Debug: {settings.debug}")
 
     # Inicializar conexões
     try:
         await get_redis()
-        print("   Redis: conectado")
+        logger.info("Redis: conectado")
     except Exception as e:
-        print(f"   Redis: falha na conexao ({e})")
+        logger.warning(f"Redis: falha na conexao ({e})")
 
     yield
 
     # Shutdown
-    print("Encerrando aplicacao...")
+    logger.info("Encerrando aplicacao...")
     await close_redis()
     await close_db()
-    print("   Conexoes fechadas")
+    logger.info("Conexoes fechadas")
 
 
 app = FastAPI(

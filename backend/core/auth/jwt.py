@@ -13,8 +13,6 @@ from core.config import settings
 class TokenError(Exception):
     """Exceção para erros relacionados a tokens."""
 
-    pass
-
 
 def create_access_token(
     subject: str,

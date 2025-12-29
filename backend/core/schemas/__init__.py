@@ -1,6 +1,7 @@
 """Módulo de schemas Pydantic."""
 
-from .auth import LoginRequest, LoginResponse, TokenRefreshRequest, TokenResponse
+from .auth import (LoginRequest, LoginResponse, TokenRefreshRequest,
+                   TokenResponse)
 from .user import UserCreate, UserList, UserResponse, UserUpdate
 
 __all__ = [

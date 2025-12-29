@@ -2,7 +2,7 @@
 
 ## Sprint Atual: Sprint 0 - Core
 
-### Progresso Geral: 15%
+### Progresso Geral: 25%
 
 ---
 
@@ -11,16 +11,16 @@
 ### Infraestrutura (5/5) - 100%
 - [x] Estrutura de diretórios
 - [x] Python venv configurado
-- [x] PostgreSQL configurado (código pronto, falta criar DB)
+- [x] PostgreSQL configurado (código + Alembic)
 - [x] Redis configurado (código pronto)
 - [x] Git inicializado
 
-### Sprint 0: Core (4/5) - 80%
+### Sprint 0: Core (5/5) - 100%
 - [x] Autenticação (JWT)
 - [x] User model + RBAC
 - [x] Base models
-- [ ] Error handling (parcial)
-- [x] Logging (básico)
+- [x] Error handling (Circuit Breaker)
+- [x] Logging (estruturado + sanitização)
 
 ### Sprint 1: CRM (0/4) - 0%
 - [ ] Lead model
@@ -36,12 +36,22 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Linhas de código | ~1400 |
-| Arquivos criados | 27 |
+| Linhas de código | ~2000 |
+| Arquivos criados | 35+ |
 | Testes escritos | 31 |
 | Coverage | 85%+ |
-| Commits | 4 |
+| Commits | 5 |
 | Sessões | 2 |
+
+---
+
+## Proteções Implementadas
+
+- [x] Cache Redis com helpers
+- [x] Circuit Breaker (DB, Redis, APIs externas)
+- [x] Sanitização de logs (senhas, tokens, CPF/CNPJ)
+- [x] Logging estruturado (JSON + console)
+- [ ] Backups automáticos (próxima fase)
 
 ---
 
@@ -49,14 +59,20 @@
 
 - FastAPI 0.115.6
 - SQLAlchemy 2.0.36 (async)
+- Alembic 1.14.0 (configurado)
 - Pydantic 2.10.4
 - python-jose (JWT)
 - Redis 5.2.1
+- Loguru 0.7.3
 - pytest 8.3.4
 
 ---
 
 ## Última Atualização
 **Data:** 2024-12-29
-**Por:** Claude Code - Sessão 002
-**Mudanças:** Sprint 0 Core implementado
+**Por:** Claude Code - Sessão 002 (Conformidade)
+**Mudanças:**
+- Linters rodados (black, isort, mypy, pylint 9.24)
+- Alembic configurado
+- Circuit Breaker implementado
+- Logging estruturado com sanitização

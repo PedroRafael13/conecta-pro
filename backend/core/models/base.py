@@ -13,8 +13,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 class Base(DeclarativeBase):
     """Base declarativa para SQLAlchemy."""
 
-    pass
-
 
 class BaseModel(Base):
     """
