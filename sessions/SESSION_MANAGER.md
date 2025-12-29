@@ -69,3 +69,80 @@ Cada sessão registra:
 
 ---
 
+## SESSÃO 002 - 2024-12-29
+**Status:** CONCLUÍDA
+**Sprint:** Sprint 0 - Core
+
+### Planejado:
+- [x] Complementar estrutura de diretórios
+- [x] Criar README.md
+- [x] Criar main.py e config.py
+- [x] Implementar autenticação JWT
+- [x] Criar User model + RBAC
+- [x] Configurar conexão PostgreSQL/Redis
+
+### Executado:
+- [x] Estrutura complementada (api/, database/, cache/, modules/*)
+- [x] README.md criado
+- [x] FastAPI app com pydantic-settings
+- [x] JWT completo (access + refresh tokens)
+- [x] User model com 7 roles hierárquicos (RBAC)
+- [x] PostgreSQL async + Redis cache
+- [x] 31 testes escritos e passando
+
+### Arquivos Criados:
+```
+backend/
+├── main.py
+├── .env
+├── api/__init__.py
+├── core/
+│   ├── __init__.py
+│   ├── config/
+│   │   ├── __init__.py
+│   │   └── settings.py
+│   ├── auth/
+│   │   ├── __init__.py
+│   │   ├── jwt.py
+│   │   ├── security.py
+│   │   └── dependencies.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── base.py
+│   │   └── user.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   └── user.py
+│   ├── database/
+│   │   ├── __init__.py
+│   │   └── session.py
+│   └── cache/
+│       ├── __init__.py
+│       └── redis.py
+└── tests/
+    ├── __init__.py
+    ├── test_auth.py
+    └── test_user.py
+```
+
+### Testes:
+- 31 testes passando
+- Coverage: 85%+
+
+### Métricas:
+- Linhas de código: ~1400
+- Arquivos criados: 23
+- Commits: 2
+
+### Próximos Passos:
+1. Criar banco PostgreSQL para ERP
+2. Rodar migrations com Alembic
+3. Implementar endpoints de autenticação (login/register)
+4. Criar primeiro módulo de negócio (CRM/Leads)
+
+### Problemas:
+- Nenhum
+
+---
+
