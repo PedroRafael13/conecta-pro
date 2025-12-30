@@ -6,9 +6,16 @@ from datetime import timedelta
 
 import pytest
 
-from core.auth import (TokenError, create_access_token, create_refresh_token,
-                       decode_token, hash_password, verify_access_token,
-                       verify_password, verify_refresh_token)
+from core.auth import (
+    TokenError,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    hash_password,
+    verify_access_token,
+    verify_password,
+    verify_refresh_token,
+)
 
 
 class TestPasswordSecurity:

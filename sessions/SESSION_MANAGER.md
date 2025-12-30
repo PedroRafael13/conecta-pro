@@ -205,3 +205,69 @@ backend/
 
 ---
 
+## SESSÃO 003 - 2024-12-30
+**Status:** CONCLUÍDA
+**Sprint:** Sprint 0 - Core (Continuação)
+
+### Planejado:
+- [x] Criar banco PostgreSQL separado (erp_conecta_mais)
+- [x] Rodar primeira migration Alembic (User)
+- [x] Implementar endpoints REST de auth
+- [x] Validar com testes e linters
+
+### Executado:
+- [x] Banco `erp_conecta_mais` criado no PostgreSQL 16
+- [x] Migration `14f6c2c7eaa2_create_user_table` aplicada
+- [x] Endpoints implementados:
+  - POST /api/v1/auth/register
+  - POST /api/v1/auth/login (OAuth2)
+  - POST /api/v1/auth/refresh
+  - GET /api/v1/auth/me
+- [x] 31 testes passando
+- [x] Linters OK (black, isort, pylint 9.42)
+
+### Arquivos Criados/Modificados:
+```
+backend/
+├── api/
+│   └── v1/
+│       ├── __init__.py (novo)
+│       └── endpoints/
+│           ├── __init__.py (novo)
+│           └── auth.py (novo)
+├── alembic/
+│   └── versions/
+│       └── 14f6c2c7eaa2_create_user_table.py (novo)
+├── core/
+│   ├── auth/
+│   │   ├── __init__.py (atualizado)
+│   │   ├── dependencies.py (atualizado)
+│   │   └── security.py (atualizado)
+│   └── schemas/
+│       └── auth.py (atualizado)
+├── main.py (atualizado)
+└── .env (atualizado)
+```
+
+### Banco de Dados:
+- Nome: `erp_conecta_mais`
+- Tabelas: `users`, `alembic_version`
+- Conectado via: `conecta_user@localhost:5432`
+
+### Métricas:
+- Linhas de código: ~2500
+- Arquivos criados: 6
+- Commits: 3
+- Testes: 31 passando
+
+### Próximos Passos:
+1. Iniciar Sprint 1 - CRM (Lead model)
+2. Implementar Lead service com IA scoring
+3. Criar endpoints de leads
+4. Testes E2E para auth
+
+### Problemas:
+- Nenhum
+
+---
+

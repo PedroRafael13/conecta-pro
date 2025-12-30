@@ -82,9 +82,10 @@ async def root():
     }
 
 
-# TODO: Incluir routers
-# from api.v1 import router as api_v1_router
-# app.include_router(api_v1_router, prefix="/api/v1")
+# Incluir routers
+from api.v1 import router as api_v1_router
+
+app.include_router(api_v1_router)
 
 
 if __name__ == "__main__":

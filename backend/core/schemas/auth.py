@@ -32,3 +32,8 @@ class TokenRefreshRequest(BaseModel):
     """Schema de requisição de refresh de token."""
 
     refresh_token: str = Field(..., description="Token de refresh")
+
+
+# Aliases para compatibilidade
+Token = TokenResponse
+TokenRefresh = TokenRefreshRequest

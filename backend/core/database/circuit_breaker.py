@@ -74,7 +74,9 @@ class CircuitBreaker:
             if self._last_failure_time:
                 elapsed = time.time() - self._last_failure_time
                 if elapsed >= self.recovery_timeout:
-                    logger.info(f"Circuit {self.name}: OPEN -> HALF_OPEN (tentando recuperar)")
+                    logger.info(
+                        f"Circuit {self.name}: OPEN -> HALF_OPEN (tentando recuperar)"
+                    )
                     self._state = CircuitState.HALF_OPEN
 
     async def record_success(self) -> None:
@@ -92,7 +94,9 @@ class CircuitBreaker:
             self._last_failure_time = time.time()
 
             if self._state == CircuitState.HALF_OPEN:
-                logger.warning(f"Circuit {self.name}: HALF_OPEN -> OPEN (falha na recuperacao)")
+                logger.warning(
+                    f"Circuit {self.name}: HALF_OPEN -> OPEN (falha na recuperacao)"
+                )
                 self._state = CircuitState.OPEN
             elif self._failure_count >= self.failure_threshold:
                 logger.error(
@@ -176,4 +180,6 @@ def circuit_breaker(
 # Circuit breakers globais para serviços comuns
 db_circuit = CircuitBreaker("database", failure_threshold=3, recovery_timeout=10)
 redis_circuit = CircuitBreaker("redis", failure_threshold=5, recovery_timeout=15)
-external_api_circuit = CircuitBreaker("external_api", failure_threshold=5, recovery_timeout=30)
+external_api_circuit = CircuitBreaker(
+    "external_api", failure_threshold=5, recovery_timeout=30
+)

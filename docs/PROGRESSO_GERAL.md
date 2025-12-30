@@ -1,8 +1,8 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 0 - Core
+## Sprint Atual: Sprint 0 - Core (CONCLUÍDO)
 
-### Progresso Geral: 25%
+### Progresso Geral: 30%
 
 ---
 
@@ -15,12 +15,14 @@
 - [x] Redis configurado (código pronto)
 - [x] Git inicializado
 
-### Sprint 0: Core (5/5) - 100%
+### Sprint 0: Core (7/7) - 100%
 - [x] Autenticação (JWT)
 - [x] User model + RBAC
 - [x] Base models
 - [x] Error handling (Circuit Breaker)
 - [x] Logging (estruturado + sanitização)
+- [x] Banco de dados (PostgreSQL + Alembic migration)
+- [x] Endpoints REST de auth (register, login, refresh, me)
 
 ### Sprint 1: CRM (0/4) - 0%
 - [ ] Lead model
@@ -36,12 +38,12 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Linhas de código | ~2000 |
-| Arquivos criados | 35+ |
+| Linhas de código | ~2500 |
+| Arquivos criados | 40+ |
 | Testes escritos | 31 |
 | Coverage | 85%+ |
-| Commits | 5 |
-| Sessões | 2 |
+| Commits | 6 |
+| Sessões | 3 |
 
 ---
 
@@ -69,10 +71,10 @@
 ---
 
 ## Última Atualização
-**Data:** 2024-12-29
-**Por:** Claude Code - Sessão 002 (Conformidade)
+**Data:** 2024-12-30
+**Por:** Claude Code - Sessão 003
 **Mudanças:**
-- Linters rodados (black, isort, mypy, pylint 9.24)
-- Alembic configurado
-- Circuit Breaker implementado
-- Logging estruturado com sanitização
+- Banco PostgreSQL `erp_conecta_mais` criado
+- Migration User aplicada
+- Endpoints REST de auth implementados
+- Linters OK (pylint 9.42)
