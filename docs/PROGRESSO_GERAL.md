@@ -1,10 +1,10 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 10 - Equipamentos (PLANEJADO)
+## Sprint Atual: Sprint 11 - Ocorrências (PRÓXIMO)
 
-### Progresso Geral: 26% (10/38 módulos)
+### Progresso Geral: 29% (11/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos)
-### Operations: 3/8 sprints (Sprint 7-9)
+### Operations: 4/8 sprints (Sprint 7-10)
 
 ---
 
@@ -93,10 +93,17 @@
 - [x] GuardianSyncService (payloads, validações, retry lógica)
 - [x] OccurrenceAnalyzer IA (classificação, priorização, SLA, sugestões)
 
-### Sprints Restantes (28 módulos):
+### Sprint 10: Gestão de Equipamentos (6/6) - 100%
+- [x] Equipment model (23 tipos, 7 categorias, 6 status, patrimônio, depreciação)
+- [x] EquipmentInstallation model (7 status, fotos, aceite cliente, custos)
+- [x] EquipmentMaintenance model (4 tipos, peças, SLA, assinatura cliente)
+- [x] EquipmentComodato model (7 status, contrato, danos, penalidades)
+- [x] MaintenanceAIService (health score, previsão falhas, otimização rotas)
+- [x] 4 Controllers com 100+ endpoints REST
 
-**Operações (5 módulos restantes):**
-- [ ] Sprint 10: Equipamentos
+### Sprints Restantes (27 módulos):
+
+**Operações (4 módulos restantes):**
 - [ ] Sprint 11: Ocorrências
 - [ ] Sprint 12: Visitantes
 - [ ] Sprint 13: Moradores
@@ -132,13 +139,13 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **10/38 (26%)** |
-| Linhas de código | ~28500+ |
-| Arquivos criados | 170+ |
-| Testes escritos | 900+ |
+| **Módulos completos** | **11/38 (29%)** |
+| Linhas de código | ~32000+ |
+| Arquivos criados | 195+ |
+| Testes escritos | 975+ |
 | Coverage | 85%+ |
-| Commits | 13 |
-| Sessões | 11 |
+| Commits | 14 |
+| Sessões | 12 |
 | Auditor Score | 100/100 |
 
 ### Progresso por Categoria
@@ -147,11 +154,11 @@
 | Core | 1 | 1 | 100% |
 | CRM | 5 | 5 | 100% |
 | Contratos | 1 | 1 | 100% |
-| Operações | 3 | 8 | 37.5% |
+| Operações | 4 | 8 | 50% |
 | RH | 0 | 7 | 0% |
 | Financeiro | 0 | 9 | 0% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **10** | **38** | **26%** |
+| **TOTAL** | **11** | **38** | **29%** |
 
 ---
 
@@ -346,6 +353,25 @@ Gestão inteligente de banco de horas CLT:
 - Validação de compensações
 - Recomendações de gestão baseadas no saldo
 
+### Maintenance AI Service (Equipment Management)
+Manutenção preditiva de equipamentos de segurança eletrônica:
+- **Health Score**: Avaliação de saúde do equipamento (0-100)
+  - Fatores: idade, status online, uptime, garantia, manutenção em dia
+- **Failure Prediction**: Previsão de falhas com probabilidade e prazo
+  - Níveis de risco: low, medium, high, critical
+  - Recomendações preventivas
+- **Schedule Recommendation**: Agenda inteligente de manutenções
+  - Priorização automática por score
+  - Sugestão de datas e tipos de manutenção
+- **Route Optimization**: Otimização de rotas para técnicos
+  - Algoritmo Haversine para distância geográfica
+  - Ordenação por prioridade + proximidade
+- **Pattern Analysis**: Análise de padrões de falhas
+  - Taxa de falhas por categoria/marca/modelo
+  - Insights e recomendações
+- **Cost Estimation**: Estimativa de custos de manutenção
+  - Baseado em histórico de serviços similares
+
 ---
 
 ## Remote Gatehouse Module - Funcionalidades (Sprint 9)
@@ -408,15 +434,104 @@ Sincronização bidirecional com o sistema de portaria remota:
 
 ---
 
+## Equipment Management Module - Funcionalidades (Sprint 10)
+
+### Gestão de Equipamentos de Segurança Eletrônica
+Sistema completo para gerenciar equipamentos de CFTV, alarmes, controle de acesso e perímetro.
+
+### Models Implementados
+- **Equipment**: Equipamento de segurança eletrônica
+  - 23 Tipos: camera_ip, dvr, nvr, alarme_central, sensor_movimento, sensor_porta, sensor_fumaca, catraca, portao_automatico, leitor_biometrico, leitor_facial, leitor_cartao, controlador_acesso, sirene, cerca_eletrica, concertina, sensor_barreira, interfone, videoporteiro, switch, roteador, nobreak, outro
+  - 7 Categorias: cftv, alarme, controle_acesso, rede, perimetral, comunicacao, outro
+  - 6 Status: estoque, instalado, manutencao, comodato, defeito, baixa
+  - Campos: patrimônio, serial, garantia, depreciação, valor atual
+  - Geolocalização: latitude, longitude, altitude
+  - Monitoramento: is_online, uptime, last_online_at
+
+- **EquipmentInstallation**: Instalações de equipamentos
+  - 7 Status: scheduled, in_progress, completed, cancelled, rescheduled, pending_approval, partial
+  - Fotos: before, after, equipment
+  - Aceite: assinatura digital do cliente
+  - Custos: mão de obra, transporte, materiais
+
+- **EquipmentMaintenance**: Manutenções preventivas e corretivas
+  - 4 Tipos: preventiva, corretiva, emergencial, calibracao
+  - 8 Status: scheduled, in_progress, waiting_parts, completed, cancelled, rescheduled, failed, partial
+  - Peças substituídas: código, nome, quantidade, custo
+  - SLA: tempo de resposta, tempo de solução
+  - Assinatura cliente com pontuação de avaliação
+
+- **EquipmentComodato**: Empréstimo de equipamentos
+  - 7 Status: draft, pending_signature, active, suspended, terminated, returned, transferred
+  - Contrato: assinatura digital, termos, renovação automática
+  - Danos: descrição, custo, fotos
+  - Penalidades: % por dano, % por perda
+  - Histórico de movimentações
+
+### Services IA - MaintenanceAIService
+- **analyze_equipment_health()**: Health score (0-100) com fatores:
+  - Idade do equipamento
+  - Status online/offline
+  - Uptime percentual
+  - Garantia ativa
+  - Manutenção em dia
+  - Histórico de manutenções
+
+- **predict_failure()**: Previsão de falhas
+  - Probabilidade de falha (0-100%)
+  - Dias estimados até falha
+  - Nível de risco: low, medium, high, critical
+  - Fatores considerados e recomendações
+
+- **recommend_maintenance_schedule()**: Agenda de manutenção
+  - Lista priorizada de equipamentos
+  - Score de prioridade com razões
+  - Sugestão de data e tipo de manutenção
+
+- **optimize_technician_route()**: Otimização de rotas
+  - Ordenação inteligente por prioridade e localização
+  - Cálculo de distância (Haversine)
+  - Tempo estimado entre visitas
+
+- **analyze_maintenance_patterns()**: Análise de padrões
+  - Taxa de falhas por categoria
+  - Tempo médio de manutenção
+  - Marcas/modelos problemáticos
+  - Insights e recomendações
+
+- **estimate_maintenance_cost()**: Estimativa de custos
+  - Custo baseado em histórico
+  - Fatores: tipo de equipamento, categoria, tempo desde última manutenção
+
+### Endpoints REST (100+)
+- `/equipment/*`: CRUD, stats, estoque, manutenção pendente, offline, garantia
+- `/equipment/install`, `/equipment/uninstall`: Gestão de instalação
+- `/equipment/qr-code/{id}`: Geração de QR Code
+- `/installations/*`: CRUD, agenda, aceite, fotos, técnico
+- `/maintenance/*`: CRUD, agenda, peças, assinatura
+- `/maintenance/ai/*`: 6 endpoints de IA (health, predict, recommend, optimize, patterns, cost)
+- `/comodato/*`: CRUD, assinatura, entrega, devolução, danos, PDFs
+
+### Schemas Implementados
+- 35+ Schemas Pydantic para validação
+- Requests, Responses, Stats, Filters
+- Validação de dados com Field constraints
+
+### Testes
+- 73 testes unitários para os 4 models
+- Cobertura de métodos, properties e transições de status
+
+---
+
 ## Última Atualização
 **Data:** 2025-12-30
-**Por:** Claude Code - Sessão 011
+**Por:** Claude Code - Sessão 012
 **Mudanças:**
-- Sprint 9 (Portaria Remota / Guardian Integration) COMPLETO
-- 4 Models implementados: GuardianSync, AccessLog, GuardianOccurrence, EquipmentStatus
+- Sprint 10 (Gestão de Equipamentos) COMPLETO
+- 4 Models implementados: Equipment, EquipmentInstallation, EquipmentMaintenance, EquipmentComodato
 - 4 Repositories com CRUD + filtros avançados + stats
-- 2 Services com IA: GuardianSyncService, OccurrenceAnalyzer
-- 4 Controllers com 40+ endpoints REST
-- Testes unitários e de serviços
-- Auditor: 100/100 (pylint + bandit)
-- Progresso: 26% (10/38 módulos)
+- 5 Services: EquipmentService, InstallationService, MaintenanceService, ComodatoService, MaintenanceAIService
+- 4 Controllers com 100+ endpoints REST
+- IA de manutenção preditiva (6 funções)
+- 73 testes unitários
+- Progresso: 29% (11/38 módulos)
