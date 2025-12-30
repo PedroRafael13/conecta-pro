@@ -1,10 +1,10 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 11 - Ocorrências (PRÓXIMO)
+## Sprint Atual: Sprint 12 - Visitantes (PRÓXIMO)
 
-### Progresso Geral: 29% (11/38 módulos)
+### Progresso Geral: 32% (12/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos)
-### Operations: 4/8 sprints (Sprint 7-10)
+### Operations: 5/8 sprints (Sprint 7-11)
 
 ---
 
@@ -101,10 +101,17 @@
 - [x] MaintenanceAIService (health score, previsão falhas, otimização rotas)
 - [x] 4 Controllers com 100+ endpoints REST
 
-### Sprints Restantes (27 módulos):
+### Sprint 11: Ocorrências (6/6) - 100%
+- [x] Occurrence model (14 tipos, 9 status, 5 prioridades, workflow completo)
+- [x] OccurrenceCategory model (hierarquia, SLA padrão, auto-assign)
+- [x] OccurrenceComment model (visibilidade, replies, solução, likes)
+- [x] OccurrenceAttachment model (8 tipos de arquivo, upload, thumbnails)
+- [x] ClassificationAIService (classificação texto, prioridade, sentimento, tendências)
+- [x] 4 Controllers com 80+ endpoints REST
 
-**Operações (4 módulos restantes):**
-- [ ] Sprint 11: Ocorrências
+### Sprints Restantes (26 módulos):
+
+**Operações (3 módulos restantes):**
 - [ ] Sprint 12: Visitantes
 - [ ] Sprint 13: Moradores
 - [ ] Sprint 14: GED (Gestão Documental)
@@ -139,14 +146,14 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **11/38 (29%)** |
-| Linhas de código | ~32000+ |
-| Arquivos criados | 195+ |
-| Testes escritos | 975+ |
+| **Módulos completos** | **12/38 (32%)** |
+| Linhas de código | ~37000+ |
+| Arquivos criados | 215+ |
+| Testes escritos | 1050+ |
 | Coverage | 85%+ |
-| Commits | 14 |
-| Sessões | 12 |
-| Auditor Score | 100/100 |
+| Commits | 15 |
+| Sessões | 13 |
+| Auditor Score | 96/100 |
 
 ### Progresso por Categoria
 | Categoria | Completo | Total | % |
@@ -154,11 +161,11 @@
 | Core | 1 | 1 | 100% |
 | CRM | 5 | 5 | 100% |
 | Contratos | 1 | 1 | 100% |
-| Operações | 4 | 8 | 50% |
+| Operações | 5 | 8 | 63% |
 | RH | 0 | 7 | 0% |
 | Financeiro | 0 | 9 | 0% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **11** | **38** | **29%** |
+| **TOTAL** | **12** | **38** | **32%** |
 
 ---
 
@@ -523,15 +530,101 @@ Sistema completo para gerenciar equipamentos de CFTV, alarmes, controle de acess
 
 ---
 
+## Occurrences Module - Funcionalidades (Sprint 11)
+
+### Sistema Completo de Gestão de Ocorrências
+Módulo para registro, acompanhamento e resolução de ocorrências condominiais.
+
+### Models Implementados
+- **Occurrence**: Ocorrência principal
+  - 14 Tipos: reclamacao, sugestao, elogio, incidente, denuncia, solicitacao, manutencao, seguranca, barulho, animal, veiculo, area_comum, emergencia, outro
+  - 9 Status: aberta, em_analise, em_andamento, aguardando_resposta, aguardando_terceiro, resolvida, arquivada, cancelada, reaberta
+  - 5 Prioridades: baixa, media, alta, urgente, critica
+  - 8 Tipos de reportador: morador, funcionario, visitante, porteiro, sindico, administrador, conselho, outro
+  - SLA: tempo de resposta, tempo de resolução, deadlines
+  - Workflow completo: assign, resolve, escalate, reopen, cancel, archive, rate
+
+- **OccurrenceCategory**: Categorias hierárquicas
+  - Níveis ilimitados (parent/children)
+  - SLA padrão por categoria
+  - Auto-assign para responsável padrão
+  - Ícone, cor, ordem de exibição
+
+- **OccurrenceComment**: Sistema de comentários
+  - 3 Visibilidades: public, internal, private
+  - Respostas aninhadas (parent_id)
+  - Marcação como solução
+  - Fixar comentário importante
+  - Sistema de likes
+  - Soft delete
+
+- **OccurrenceAttachment**: Gestão de anexos
+  - 8 Tipos: image, video, audio, document, spreadsheet, presentation, archive, other
+  - Upload com validação de tipo/tamanho
+  - Thumbnails para imagens
+  - Visibilidade pública/privada
+
+### Services IA - ClassificationAIService
+- **classify_occurrence()**: Classificação automática de texto
+  - Tipo sugerido baseado em keywords
+  - Prioridade sugerida (0-100)
+  - Análise de sentimento (positivo/negativo/neutro)
+  - Extração de palavras-chave (top 10)
+  - Sugestão de categoria
+  - Score de confiança
+
+- **calculate_priority_score()**: Score de prioridade (0-100)
+  - 6 Fatores ponderados:
+    - Prioridade definida (30%)
+    - Tipo de ocorrência (20%)
+    - Tempo aberto (20%)
+    - Status do SLA (15%)
+    - Escalonamento (10%)
+    - Recorrência (5%)
+  - Recomendações por nível
+
+- **suggest_assignee()**: Sugestão de responsável
+  - Baseado na categoria (auto-assign)
+  - Baseado no tipo de ocorrência
+  - Score de confiança
+
+- **analyze_trends()**: Análise de tendências
+  - Período configurável (7-365 dias)
+  - Distribuição por dia
+  - Distribuição por tipo/prioridade
+  - Insights automáticos
+
+### Endpoints REST (80+)
+- `/occurrences/*`: CRUD, filtros, stats, workflow
+- `/occurrences/open`, `/overdue`, `/escalated`, `/high-priority`, `/unassigned`
+- `/occurrences/my`, `/assigned`: Ocorrências do usuário
+- `/occurrences/{id}/assign`, `/resolve`, `/escalate`, `/reopen`, `/cancel`, `/archive`, `/rate`
+- `/occurrences/classify`, `/ai/trends`: Endpoints de IA
+- `/occurrence-categories/*`: CRUD, tree, hierarchy, SLA
+- `/occurrence-comments/*`: CRUD, replies, solution, pin, like
+- `/occurrence-attachments/*`: CRUD, upload, images, documents, media, stats
+
+### Schemas Implementados
+- 30+ Schemas Pydantic para validação
+- Requests, Responses, Filters, Stats
+- Validação de dados com Field constraints
+
+### Testes
+- 75+ testes unitários e de API
+- Cobertura de models, services e endpoints
+
+---
+
 ## Última Atualização
 **Data:** 2025-12-30
-**Por:** Claude Code - Sessão 012
+**Por:** Claude Code - Sessão 013
 **Mudanças:**
-- Sprint 10 (Gestão de Equipamentos) COMPLETO
-- 4 Models implementados: Equipment, EquipmentInstallation, EquipmentMaintenance, EquipmentComodato
+- Sprint 11 (Ocorrências) COMPLETO
+- 4 Models implementados: Occurrence, OccurrenceCategory, OccurrenceComment, OccurrenceAttachment
 - 4 Repositories com CRUD + filtros avançados + stats
-- 5 Services: EquipmentService, InstallationService, MaintenanceService, ComodatoService, MaintenanceAIService
-- 4 Controllers com 100+ endpoints REST
-- IA de manutenção preditiva (6 funções)
-- 73 testes unitários
-- Progresso: 29% (11/38 módulos)
+- 5 Services: OccurrenceService, CategoryService, CommentService, AttachmentService, ClassificationAIService
+- 4 Controllers com 80+ endpoints REST
+- IA de classificação automática (4 funções)
+- 75+ testes
+- Auditor: pylint 9.62/10, bandit 0 high/medium
+- Progresso: 32% (12/38 módulos)
