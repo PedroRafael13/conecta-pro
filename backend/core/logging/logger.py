@@ -2,13 +2,18 @@
 Sistema de logging estruturado com sanitização de dados sensíveis.
 """
 
+from __future__ import annotations
+
 import re
 import sys
-from typing import Any
+from typing import TYPE_CHECKING, Any, Dict
 
 from loguru import logger
 
 from core.config import settings
+
+if TYPE_CHECKING:
+    from loguru import Record
 
 # Padrões de dados sensíveis para sanitização
 SENSITIVE_PATTERNS = [
@@ -44,7 +49,7 @@ def sanitize_message(message: str) -> str:
     return sanitized
 
 
-def sanitize_record(record: dict) -> dict:
+def sanitize_record(record: Dict[str, Any]) -> Dict[str, Any]:
     """
     Sanitiza um record de log completo.
 
@@ -66,13 +71,12 @@ def sanitize_record(record: dict) -> dict:
     return record
 
 
-class SanitizingFilter:
+def sanitizing_filter(record: Record) -> bool:
     """Filtro que sanitiza mensagens de log."""
-
-    def __call__(self, record: dict) -> bool:
-        """Sanitiza e permite o log."""
-        sanitize_record(record)
-        return True
+    # Sanitiza o record in-place
+    if "message" in record:
+        record["message"] = sanitize_message(str(record["message"]))
+    return True
 
 
 def configure_logging() -> None:
@@ -109,7 +113,7 @@ def configure_logging() -> None:
         sys.stdout,
         format=log_format,
         level=settings.log_level,
-        filter=SanitizingFilter(),
+        filter=sanitizing_filter,
         colorize=settings.log_format != "json",
     )
 
@@ -119,7 +123,7 @@ def configure_logging() -> None:
             "/opt/erp-conecta-mais/logs/app.log",
             format=log_format,
             level="INFO",
-            filter=SanitizingFilter(),
+            filter=sanitizing_filter,
             rotation="10 MB",
             retention="30 days",
             compression="gz",
@@ -130,7 +134,7 @@ def configure_logging() -> None:
             "/opt/erp-conecta-mais/logs/error.log",
             format=log_format,
             level="ERROR",
-            filter=SanitizingFilter(),
+            filter=sanitizing_filter,
             rotation="10 MB",
             retention="90 days",
             compression="gz",

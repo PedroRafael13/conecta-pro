@@ -2,7 +2,9 @@
 Dependências de autenticação para FastAPI.
 """
 
-from typing import Annotated
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -10,6 +12,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .jwt import TokenError, verify_access_token
+
+if TYPE_CHECKING:
+    from core.models import User
 
 security = HTTPBearer()
 
@@ -56,8 +61,8 @@ CurrentUserId = Annotated[str, Depends(get_current_user_id)]
 
 async def get_current_user(
     user_id: CurrentUserId,
-    db: AsyncSession = Depends(lambda: None),  # Sera sobrescrito
-) -> "User":
+    _db: AsyncSession = Depends(lambda: None),  # Placeholder, usa get_db interno
+) -> User:
     """
     Busca o usuario atual no banco de dados.
 
@@ -96,7 +101,7 @@ async def get_current_user(
 
 async def get_current_active_user(
     user_id: CurrentUserId,
-) -> "User":
+) -> User:
     """
     Busca o usuario atual e verifica se esta ativo.
 
@@ -138,6 +143,6 @@ async def get_current_active_user(
     )
 
 
-# Type aliases
+# Type aliases - usar string literal para evitar import circular
 CurrentUser = Annotated["User", Depends(get_current_user)]
 CurrentActiveUser = Annotated["User", Depends(get_current_active_user)]

@@ -12,8 +12,8 @@ import redis.asyncio as redis
 from core.config import settings
 from core.logging import logger
 
-# Cliente Redis
-redis_client: Optional[redis.Redis] = None
+# Namespace para evitar global statement
+_state: dict[str, Any] = {"client": None}
 
 
 async def get_redis() -> redis.Redis:
@@ -23,25 +23,21 @@ async def get_redis() -> redis.Redis:
     Returns:
         Cliente Redis conectado
     """
-    global redis_client
-
-    if redis_client is None:
-        redis_client = redis.from_url(
+    if _state["client"] is None:
+        _state["client"] = redis.from_url(
             settings.redis_url,
             encoding="utf-8",
             decode_responses=True,
         )
 
-    return redis_client
+    return _state["client"]
 
 
 async def close_redis() -> None:
     """Fecha conexão Redis."""
-    global redis_client
-
-    if redis_client:
-        await redis_client.close()
-        redis_client = None
+    if _state["client"]:
+        await _state["client"].close()
+        _state["client"] = None
 
 
 async def cache_get(key: str) -> Optional[Any]:
@@ -149,7 +145,10 @@ def cache_response(ttl: int = 300, prefix: str = "api"):
         async def wrapper(*args, **kwargs):
             # Gerar chave unica baseada em funcao + parametros
             params_str = json.dumps(kwargs, sort_keys=True, default=str)
-            cache_key = f"{prefix}:{func.__name__}:{hashlib.md5(params_str.encode()).hexdigest()}"
+            params_hash = hashlib.md5(
+                params_str.encode(), usedforsecurity=False
+            ).hexdigest()
+            cache_key = f"{prefix}:{func.__name__}:{params_hash}"
 
             try:
                 # Tentar buscar do cache

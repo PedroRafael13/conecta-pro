@@ -16,6 +16,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.config import settings
 from core.models import Base
 
+# Import all models for autogenerate
+from modules.crm.models import Lead  # noqa: F401
+
 # Alembic Config object
 config = context.config
 
