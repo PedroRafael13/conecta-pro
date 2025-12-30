@@ -26,6 +26,15 @@ from modules.crm.models import (  # noqa: F401
     ProposalApproval,
 )
 
+from modules.operations.models import (  # noqa: F401
+    Post,
+    Scale,
+    Shift,
+    Allocation,
+    Substitution,
+    TimeBank,
+)
+
 # Alembic Config object
 config = context.config
 

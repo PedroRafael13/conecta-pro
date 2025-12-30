@@ -292,9 +292,9 @@ async def accept_proposal(
 @router.post("/{proposal_id}/reject", response_model=ProposalResponse)
 async def reject_proposal(
     proposal_id: str,
-    reason: Optional[str] = None,
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
+    reason: Optional[str] = None,
 ) -> ProposalResponse:
     """
     Marca proposta como rejeitada pelo cliente.

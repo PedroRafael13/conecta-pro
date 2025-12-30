@@ -1,0 +1,35 @@
+[
+  {
+    "id": "TASK-002",
+    "name": "CRM - Gestao de Leads",
+    "module": "commercial",
+    "requirements": [
+      "RF-CRM-001: Captura de Leads",
+      "RF-CRM-002: Qualificacao automatica",
+      "RF-CRM-003: Distribuicao inteligente"
+    ],
+    "priority": "high"
+  },
+  {
+    "id": "TASK-003",
+    "name": "CRM - Gestao de Oportunidades",
+    "module": "commercial",
+    "requirements": [
+      "RF-CRM-005: Pipeline de vendas",
+      "RF-CRM-006: Previsao ML",
+      "RF-CRM-007: Historico"
+    ],
+    "priority": "high"
+  },
+  {
+    "id": "TASK-004",
+    "name": "CRM - Propostas Comerciais",
+    "module": "commercial",
+    "requirements": [
+      "RF-CRM-010: Geracao de propostas",
+      "RF-CRM-011: Templates personalizaveis",
+      "RF-CRM-012: Aprovacao workflow"
+    ],
+    "priority": "medium"
+  }
+]

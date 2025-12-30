@@ -5,11 +5,12 @@ ERP Conecta Mais V2.0 - Aplicação Principal
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
 from core.logging import configure_logging, logger
+from core.monitoring import MetricsMiddleware, get_metrics
 
 
 @asynccontextmanager
@@ -60,6 +61,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Metrics middleware
+app.add_middleware(MetricsMiddleware, app_name=settings.app_name)
+
 
 @app.get("/health", tags=["Health"])
 async def health_check():
@@ -70,6 +74,12 @@ async def health_check():
         "version": settings.app_version,
         "environment": settings.environment,
     }
+
+
+@app.get("/metrics", tags=["Monitoring"], include_in_schema=False)
+async def metrics_endpoint():
+    """Endpoint Prometheus para metricas."""
+    return Response(content=get_metrics(), media_type="text/plain")
 
 
 @app.get("/", tags=["Root"])

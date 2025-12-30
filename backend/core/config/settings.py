@@ -4,7 +4,7 @@ Usa pydantic-settings para validação e carregamento de variáveis de ambiente.
 """
 
 from functools import lru_cache
-from typing import List, Optional
+from typing import List
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     environment: str = Field(default="development")
 
     # Server
-    host: str = Field(default="0.0.0.0")
+    host: str = Field(default="127.0.0.1")  # Use HOST=0.0.0.0 em produção via env
     port: int = Field(default=8080)
 
     # Database

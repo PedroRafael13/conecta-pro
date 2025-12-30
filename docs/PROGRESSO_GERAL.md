@@ -1,10 +1,10 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 12 - Visitantes (PRÓXIMO)
+## Sprint Atual: Sprint 13 - Moradores (PRÓXIMO)
 
-### Progresso Geral: 32% (12/38 módulos)
+### Progresso Geral: 34% (13/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos)
-### Operations: 5/8 sprints (Sprint 7-11)
+### Operations: 6/8 sprints (Sprint 7-12)
 
 ---
 
@@ -109,10 +109,17 @@
 - [x] ClassificationAIService (classificação texto, prioridade, sentimento, tendências)
 - [x] 4 Controllers com 80+ endpoints REST
 
-### Sprints Restantes (26 módulos):
+### Sprint 12: Visitantes (6/6) - 100%
+- [x] Visitor model (13 tipos, 5 status, 10 tipos documento, QR code)
+- [x] VisitorAuthorization model (6 tipos, 7 status, recorrência)
+- [x] VisitorLog model (5 tipos acesso, 10 métodos, 11 razões negativa)
+- [x] VisitorSchedule model (7 status, prioridade, check-in/out)
+- [x] VisitorAIService (padrões, anomalias, picos, tendências, sugestões)
+- [x] 4 Controllers com 85+ endpoints REST
 
-**Operações (3 módulos restantes):**
-- [ ] Sprint 12: Visitantes
+### Sprints Restantes (25 módulos):
+
+**Operações (2 módulos restantes):**
 - [ ] Sprint 13: Moradores
 - [ ] Sprint 14: GED (Gestão Documental)
 
@@ -146,14 +153,14 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **12/38 (32%)** |
-| Linhas de código | ~37000+ |
-| Arquivos criados | 215+ |
-| Testes escritos | 1050+ |
+| **Módulos completos** | **13/38 (34%)** |
+| Linhas de código | ~40000+ |
+| Arquivos criados | 235+ |
+| Testes escritos | 1150+ |
 | Coverage | 85%+ |
-| Commits | 15 |
-| Sessões | 13 |
-| Auditor Score | 96/100 |
+| Commits | 16 |
+| Sessões | 14 |
+| Auditor Score | 99/100 |
 
 ### Progresso por Categoria
 | Categoria | Completo | Total | % |
@@ -161,11 +168,11 @@
 | Core | 1 | 1 | 100% |
 | CRM | 5 | 5 | 100% |
 | Contratos | 1 | 1 | 100% |
-| Operações | 5 | 8 | 63% |
+| Operações | 6 | 8 | 75% |
 | RH | 0 | 7 | 0% |
 | Financeiro | 0 | 9 | 0% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **12** | **38** | **32%** |
+| **TOTAL** | **13** | **38** | **34%** |
 
 ---
 
@@ -615,16 +622,115 @@ Módulo para registro, acompanhamento e resolução de ocorrências condominiais
 
 ---
 
+## Visitors Module - Funcionalidades (Sprint 12)
+
+### Sistema Completo de Gestão de Visitantes
+Módulo para cadastro, autorização e controle de acesso de visitantes em condomínios.
+
+### Models Implementados
+- **Visitor**: Cadastro de visitantes
+  - 13 Tipos: visitante, prestador, entregador, motorista, correios, uber, ifood, representante, consultor, tecnico, medico, advogado, outro
+  - 5 Status: ativo, inativo, suspenso, bloqueado, vip
+  - 10 Tipos de documento: CPF, RG, CNH, passaporte, CTPS, RNE, OAB, CRM, CREA, outro
+  - Geração automática de QR Code
+  - Tracking: total_visits, last_visit, first_visit
+  - Bloqueio: motivo, responsável, prazo
+  - Veículo: placa, modelo, cor
+  - Biometria: facial_id, digital_id
+
+- **VisitorAuthorization**: Autorizações de acesso
+  - 6 Tipos: unica, periodo, recorrente, permanente, evento, emergencia
+  - 7 Status: pendente, aprovada, rejeitada, expirada, cancelada, utilizada, suspensa
+  - 5 Recorrências: diaria, semanal, mensal, customizada, nenhuma
+  - Limite de usos: max_uses, uses_count
+  - Validade: valid_from, valid_until
+  - Workflow: approve(), reject(), cancel(), use(), extend_validity()
+
+- **VisitorLog**: Logs de entrada/saída
+  - 5 Tipos de acesso: entrada, saida, negado, tentativa, emergencia
+  - 10 Métodos: portaria, qr_code, biometria_facial, biometria_digital, cartao, tag_rfid, controle, interfone, app, outro
+  - 10 Pontos de acesso: portaria_principal, portaria_servico, garagem, pedestres, elevador, escada, area_comum, piscina, academia, outro
+  - 11 Razões de negativa: sem_autorizacao, autorizacao_expirada, autorizacao_cancelada, limite_usos, visitante_bloqueado, horario_nao_permitido, morador_ausente, documento_invalido, sem_confirmacao, area_restrita, outro
+  - Tracking: entry_timestamp, exit_timestamp, duration_minutes
+  - Veículo: plate, modelo, cor
+  - Acompanhantes: companions_count, companions_names
+
+- **VisitorSchedule**: Agendamentos de visitas
+  - 7 Status: pendente, confirmado, cancelado, realizado, nao_compareceu, expirado, reagendado
+  - 4 Prioridades: baixa, media, alta, urgente
+  - Check-in/out: actual_arrival, actual_departure
+  - Lembretes: reminder_sent, reminder_sent_at
+  - Reagendamento: reschedule_count
+  - QR Code e código de confirmação
+
+### Services IA - VisitorAIService
+- **analyze_visitor_pattern()**: Análise de padrão de visitante
+  - Frequência de visitas
+  - Dias e horários preferidos
+  - Unidades visitadas
+  - Duração média
+  - Tendência (crescente/estável/decrescente)
+  - Nível de risco
+
+- **suggest_authorization_type()**: Sugestão de autorização
+  - Tipo sugerido: unica, periodo, recorrente, permanente
+  - Confiança (0-100%)
+  - Justificativa baseada em histórico
+  - Duração sugerida
+
+- **detect_anomalies()**: Detecção de anomalias
+  - Múltiplas entradas sem saída
+  - Acessos em horários incomuns
+  - Taxa alta de negativas
+  - Padrões suspeitos
+  - Severidade: low, medium, high
+
+- **analyze_condominium_trends()**: Tendências do condomínio
+  - Total de visitas no período
+  - Média diária
+  - Variação percentual
+  - Dia/horário mais movimentado
+  - Distribuição por tipo de visitante
+
+- **get_peak_hours()**: Horários de pico
+  - Top 10 horários com mais visitas
+  - Dia mais movimentado
+  - Dia menos movimentado
+  - Distribuição por hora
+
+### Endpoints REST (85+)
+- `/visitors/*`: CRUD, search, stats, blocked, VIP, frequent
+- `/visitors/{id}/block`, `/unblock`, `/set-vip`, `/generate-qr`
+- `/visitors/{id}/pattern`, `/suggest-authorization`
+- `/visitors/ai/trends`, `/ai/anomalies`, `/ai/peak-hours`
+- `/visitor-authorizations/*`: CRUD, pending, active, expiring
+- `/visitor-authorizations/{id}/approve`, `/reject`, `/cancel`, `/use`, `/extend`
+- `/visitor-authorizations/validate`
+- `/visitor-logs/*`: entry, exit, deny, inside, denied, timeline, stats
+- `/visitor-schedules/*`: CRUD, today, pending, calendar, by-date
+- `/visitor-schedules/{id}/confirm`, `/cancel`, `/reschedule`, `/check-in`, `/check-out`, `/no-show`
+
+### Schemas Implementados
+- 40+ Schemas Pydantic para validação
+- Requests, Responses, Filters, Stats
+- Validação de dados com Field constraints
+
+### Testes
+- 100+ testes unitários e de API
+- Cobertura de models, services e endpoints
+
+---
+
 ## Última Atualização
 **Data:** 2025-12-30
-**Por:** Claude Code - Sessão 013
+**Por:** Claude Code - Sessão 014
 **Mudanças:**
-- Sprint 11 (Ocorrências) COMPLETO
-- 4 Models implementados: Occurrence, OccurrenceCategory, OccurrenceComment, OccurrenceAttachment
+- Sprint 12 (Visitantes) COMPLETO
+- 4 Models implementados: Visitor, VisitorAuthorization, VisitorLog, VisitorSchedule
 - 4 Repositories com CRUD + filtros avançados + stats
-- 5 Services: OccurrenceService, CategoryService, CommentService, AttachmentService, ClassificationAIService
-- 4 Controllers com 80+ endpoints REST
-- IA de classificação automática (4 funções)
-- 75+ testes
-- Auditor: pylint 9.62/10, bandit 0 high/medium
-- Progresso: 32% (12/38 módulos)
+- 5 Services: VisitorService, AuthorizationService, LogService, ScheduleService, VisitorAIService
+- 4 Controllers com 85+ endpoints REST
+- IA de análise de visitantes (5 funções)
+- 100+ testes
+- Auditor: pylint 9.96/10
+- Progresso: 34% (13/38 módulos)

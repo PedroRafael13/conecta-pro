@@ -71,9 +71,7 @@ def create_refresh_token(
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            days=settings.jwt_refresh_token_expire_days
-        )
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_token_expire_days)
 
     payload = {
         "sub": str(subject),

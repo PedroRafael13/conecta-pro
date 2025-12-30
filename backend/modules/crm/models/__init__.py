@@ -1,5 +1,28 @@
 """Modelos do módulo CRM."""
 
+from .commission import (
+    Commission,
+    CommissionPayment,
+    CommissionRule,
+    CommissionStatus,
+    CommissionSummary,
+    CommissionTrigger,
+    CommissionType,
+    PaymentMethod,
+    SellerCommissionRule,
+)
+from .contract import (
+    AddendumType,
+    AdjustmentIndex,
+    Contract,
+    ContractAddendum,
+    ContractItem,
+    ContractSLAReport,
+    ContractStatus,
+    ContractTemplate,
+    ContractType,
+    ServiceType,
+)
 from .lead import Lead, LeadSource, LeadStatus
 from .opportunity import (
     LossReason,
@@ -37,4 +60,25 @@ __all__ = [
     "ProposalType",
     "DiscountType",
     "ApprovalAction",
+    # Commission
+    "Commission",
+    "CommissionRule",
+    "CommissionPayment",
+    "CommissionSummary",
+    "SellerCommissionRule",
+    "CommissionType",
+    "CommissionTrigger",
+    "CommissionStatus",
+    "PaymentMethod",
+    # Contract
+    "Contract",
+    "ContractItem",
+    "ContractTemplate",
+    "ContractAddendum",
+    "ContractSLAReport",
+    "ContractType",
+    "ContractStatus",
+    "AdjustmentIndex",
+    "AddendumType",
+    "ServiceType",
 ]

@@ -6,7 +6,7 @@ Registra todas as operacoes criticas para conformidade LGPD.
 from datetime import datetime
 from enum import Enum
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -202,6 +202,18 @@ def audit_sensitive_access(
     return decorator
 
 
+def _matches_filters(log: AuditLog, filters: dict) -> bool:
+    """Verifica se um log corresponde aos filtros."""
+    checks = [
+        (filters.get("user_id"), lambda: log.user_id == filters["user_id"]),
+        (filters.get("action"), lambda: log.action == filters["action"]),
+        (filters.get("resource_type"), lambda: log.resource_type == filters["resource_type"]),
+        (filters.get("start_date"), lambda: log.timestamp >= filters["start_date"]),
+        (filters.get("end_date"), lambda: log.timestamp <= filters["end_date"]),
+    ]
+    return all(check() for value, check in checks if value is not None)
+
+
 async def get_audit_logs(
     user_id: Optional[str] = None,
     action: Optional[AuditAction] = None,
@@ -224,24 +236,15 @@ async def get_audit_logs(
     Returns:
         Lista de logs de auditoria
     """
-    results = _audit_logs.copy()
+    filters = {
+        "user_id": user_id,
+        "action": action,
+        "resource_type": resource_type,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
 
-    if user_id:
-        results = [r for r in results if r.user_id == user_id]
-
-    if action:
-        results = [r for r in results if r.action == action]
-
-    if resource_type:
-        results = [r for r in results if r.resource_type == resource_type]
-
-    if start_date:
-        results = [r for r in results if r.timestamp >= start_date]
-
-    if end_date:
-        results = [r for r in results if r.timestamp <= end_date]
-
-    # Ordenar por timestamp decrescente
+    results = [log for log in _audit_logs if _matches_filters(log, filters)]
     results.sort(key=lambda x: x.timestamp, reverse=True)
 
     return results[:limit]

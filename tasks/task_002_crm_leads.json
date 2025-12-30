@@ -1,0 +1,25 @@
+{
+  "id": "TASK-002",
+  "name": "CRM - Gestao de Leads",
+  "module": "commercial",
+  "requirements": [
+    "RF-CRM-001: Captura de Leads via formulario",
+    "RF-CRM-002: Qualificacao automatica com IA scoring",
+    "RF-CRM-003: Distribuicao inteligente para vendedores"
+  ],
+  "files_to_create": [
+    "modules/commercial/models/lead.py",
+    "modules/commercial/schemas/lead_schema.py",
+    "modules/commercial/services/lead_service.py",
+    "modules/commercial/repositories/lead_repository.py",
+    "modules/commercial/controllers/lead_controller.py"
+  ],
+  "tests_to_create": [
+    "tests/unit/commercial/test_lead_model.py",
+    "tests/unit/commercial/test_lead_service.py",
+    "tests/integration/commercial/test_lead_api.py"
+  ],
+  "priority": "high",
+  "estimated_hours": 16,
+  "dependencies": ["TASK-001"]
+}

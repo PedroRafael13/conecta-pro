@@ -21,9 +21,7 @@ from core.schemas.user import UserCreate, UserResponse
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.post(
-    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
@@ -91,12 +89,12 @@ async def login(
         subject=str(user.id),
         extra_data={"email": user.email, "role": user.role},
     )
-    refresh_token = create_refresh_token(subject=str(user.id))
+    user_refresh_token = create_refresh_token(subject=str(user.id))
 
     logger.info(f"Login bem-sucedido: {user.email}")
     return Token(
         access_token=access_token,
-        refresh_token=refresh_token,
+        refresh_token=user_refresh_token,
         token_type="bearer",
     )
 
@@ -132,12 +130,12 @@ async def refresh_token(
             subject=str(user.id),
             extra_data={"email": user.email, "role": user.role},
         )
-        refresh_token = create_refresh_token(subject=str(user.id))
+        new_refresh_token = create_refresh_token(subject=str(user.id))
 
         logger.info(f"Tokens renovados para: {user.email}")
         return Token(
             access_token=access_token,
-            refresh_token=refresh_token,
+            refresh_token=new_refresh_token,
             token_type="bearer",
         )
 
