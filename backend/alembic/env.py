@@ -17,7 +17,7 @@ from core.config import settings
 from core.models import Base
 
 # Import all models for autogenerate
-from modules.crm.models import Lead  # noqa: F401
+from modules.crm.models import Lead, Opportunity  # noqa: F401
 
 # Alembic Config object
 config = context.config

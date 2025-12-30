@@ -215,3 +215,119 @@ TEST_LEAD_DATA = {
     "expected_value": 15000.0,
     "notes": "Lead interessado no produto",
 }
+
+
+class OpportunityFactory:
+    """Factory para criar opportunities de teste."""
+
+    @staticmethod
+    def build(
+        title: Optional[str] = _UNSET,
+        contact_name: Optional[str] = _UNSET,
+        contact_email: Optional[str] = _UNSET,
+        contact_phone: Optional[str] = _UNSET,
+        company_name: Optional[str] = _UNSET,
+        description: Optional[str] = None,
+        lead_id: Optional[str] = None,
+        stage: str = "qualification",
+        priority: str = "medium",
+        value: float = 10000.0,
+        probability: int = 25,
+        expected_close_date=None,
+        actual_close_date=None,
+        owner_id: Optional[str] = None,
+        loss_reason: Optional[str] = None,
+        competitor: Optional[str] = None,
+        win_notes: Optional[str] = None,
+        loss_notes: Optional[str] = None,
+        notes: Optional[str] = None,
+        **kwargs,
+    ):
+        """
+        Cria dados de Opportunity para testes.
+
+        Returns:
+            Objeto Opportunity
+        """
+        from modules.crm.models.opportunity import Opportunity
+
+        return Opportunity(
+            id=kwargs.get("id", str(uuid.uuid4())),
+            title=f"Oportunidade {fake.company()}" if title is _UNSET else title,
+            description=description,
+            lead_id=lead_id,
+            contact_name=fake.name() if contact_name is _UNSET else contact_name,
+            contact_email=fake.email() if contact_email is _UNSET else contact_email,
+            contact_phone=fake.phone_number() if contact_phone is _UNSET else contact_phone,
+            company_name=fake.company() if company_name is _UNSET else company_name,
+            stage=stage,
+            priority=priority,
+            value=value,
+            probability=probability,
+            expected_close_date=expected_close_date,
+            actual_close_date=actual_close_date,
+            owner_id=owner_id,
+            loss_reason=loss_reason,
+            competitor=competitor,
+            win_notes=win_notes,
+            loss_notes=loss_notes,
+            notes=notes,
+            created_at=kwargs.get("created_at", datetime.utcnow()),
+            updated_at=kwargs.get("updated_at", datetime.utcnow()),
+            is_active=kwargs.get("is_active", True),
+        )
+
+    @staticmethod
+    def build_won(**kwargs):
+        """Cria opportunity ganha."""
+        from datetime import date
+        defaults = {
+            "stage": "closed_won",
+            "probability": 100,
+            "actual_close_date": date.today(),
+            "win_notes": "Fechamos o negocio!",
+        }
+        defaults.update(kwargs)
+        return OpportunityFactory.build(**defaults)
+
+    @staticmethod
+    def build_lost(**kwargs):
+        """Cria opportunity perdida."""
+        from datetime import date
+        defaults = {
+            "stage": "closed_lost",
+            "probability": 0,
+            "actual_close_date": date.today(),
+            "loss_reason": "price",
+            "loss_notes": "Perdemos por preco",
+        }
+        defaults.update(kwargs)
+        return OpportunityFactory.build(**defaults)
+
+    @staticmethod
+    def build_high_value(**kwargs):
+        """Cria opportunity de alto valor."""
+        return OpportunityFactory.build(
+            value=100000.0,
+            probability=50,
+            priority="high",
+            stage="proposal",
+            **kwargs,
+        )
+
+    @staticmethod
+    def build_batch(count: int, **kwargs) -> list:
+        """Cria multiplas opportunities."""
+        return [OpportunityFactory.build(**kwargs) for _ in range(count)]
+
+
+TEST_OPPORTUNITY_DATA = {
+    "title": "Oportunidade Teste",
+    "contact_name": "Contato Teste",
+    "contact_email": "contato@empresa.com",
+    "contact_phone": "(11) 99999-9999",
+    "company_name": "Empresa Teste",
+    "value": 25000.0,
+    "probability": 50,
+    "notes": "Oportunidade promissora",
+}
