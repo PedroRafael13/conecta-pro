@@ -1,0 +1,360 @@
+"""Controller para Folder."""
+
+import logging
+from typing import Optional, List
+
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.database import get_db
+from core.auth.dependencies import get_current_user
+from modules.ged.services.folder_service import FolderService
+from modules.ged.models.folder import FolderType, FolderPermission
+from modules.ged.schemas.folder import (
+    FolderCreate,
+    FolderUpdate,
+    FolderFilter,
+    FolderResponse,
+    FolderListResponse,
+    FolderTreeNode,
+    FolderStats,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/folders", tags=["GED - Pastas"])
+
+
+@router.post("/", response_model=FolderResponse, status_code=status.HTTP_201_CREATED)
+async def create_folder(
+    data: FolderCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> FolderResponse:
+    """Cria uma nova pasta."""
+    service = FolderService(db)
+    try:
+        data.created_by = current_user["id"]
+        return await service.create(data)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+    except Exception as e:
+        logger.error("Erro ao criar pasta: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno ao criar pasta",
+        ) from e
+
+
+@router.get("/{folder_id}", response_model=FolderResponse)
+async def get_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Busca pasta por ID."""
+    service = FolderService(db)
+    folder = await service.get_by_id(folder_id)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.get("/code/{code}", response_model=FolderResponse)
+async def get_folder_by_code(
+    code: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Busca pasta por código."""
+    service = FolderService(db)
+    folder = await service.get_by_code(code)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.put("/{folder_id}", response_model=FolderResponse)
+async def update_folder(
+    folder_id: str,
+    data: FolderUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Atualiza pasta."""
+    service = FolderService(db)
+    folder = await service.update(folder_id, data)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> None:
+    """Remove pasta."""
+    service = FolderService(db)
+    try:
+        if not await service.delete(folder_id):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+            )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+
+@router.get("/", response_model=FolderListResponse)
+async def list_folders(
+    condominium_id: Optional[str] = Query(None),
+    folder_type: Optional[FolderType] = Query(None),
+    parent_id: Optional[str] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    order_by: str = Query("created_at"),
+    order_desc: bool = Query(True),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderListResponse:
+    """Lista pastas com filtros."""
+    service = FolderService(db)
+    filters = FolderFilter(
+        condominium_id=condominium_id,
+        folder_type=folder_type,
+        parent_id=parent_id,
+        is_active=is_active,
+    )
+    return await service.list(filters, page, page_size, order_by, order_desc)
+
+
+@router.get("/root/list", response_model=List[FolderResponse])
+async def get_root_folders(
+    condominium_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> List[FolderResponse]:
+    """Retorna pastas raiz."""
+    service = FolderService(db)
+    return await service.get_root_folders(condominium_id)
+
+
+@router.get("/{folder_id}/children", response_model=List[FolderResponse])
+async def get_children(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> List[FolderResponse]:
+    """Retorna subpastas."""
+    service = FolderService(db)
+    return await service.get_children(folder_id)
+
+
+@router.get("/tree/view", response_model=List[FolderTreeNode])
+async def get_tree(
+    root_id: Optional[str] = Query(None),
+    condominium_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> List[FolderTreeNode]:
+    """Retorna árvore de pastas."""
+    service = FolderService(db)
+    return await service.get_tree(root_id, condominium_id)
+
+
+@router.get("/type/{folder_type}", response_model=List[FolderResponse])
+async def get_by_type(
+    folder_type: FolderType,
+    condominium_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> List[FolderResponse]:
+    """Retorna pastas por tipo."""
+    service = FolderService(db)
+    return await service.get_by_type(folder_type, condominium_id)
+
+
+@router.post("/{folder_id}/archive", response_model=FolderResponse)
+async def archive_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> FolderResponse:
+    """Arquiva pasta."""
+    service = FolderService(db)
+    folder = await service.archive(folder_id, current_user["id"])
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.post("/{folder_id}/unarchive", response_model=FolderResponse)
+async def unarchive_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Desarquiva pasta."""
+    service = FolderService(db)
+    folder = await service.unarchive(folder_id)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.post("/{folder_id}/block", response_model=FolderResponse)
+async def block_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Bloqueia pasta."""
+    service = FolderService(db)
+    folder = await service.block(folder_id)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.post("/{folder_id}/unblock", response_model=FolderResponse)
+async def unblock_folder(
+    folder_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Desbloqueia pasta."""
+    service = FolderService(db)
+    folder = await service.unblock(folder_id)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.post("/{folder_id}/move", response_model=FolderResponse)
+async def move_folder(
+    folder_id: str,
+    new_parent_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Move pasta."""
+    service = FolderService(db)
+    try:
+        folder = await service.move(folder_id, new_parent_id)
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+            )
+        return folder
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+
+
+@router.post("/{folder_id}/permissions/grant", response_model=FolderResponse)
+async def grant_permission(
+    folder_id: str,
+    user_id: str = Query(...),
+    permission: FolderPermission = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Concede permissão."""
+    service = FolderService(db)
+    folder = await service.grant_permission(folder_id, user_id, permission)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.post("/{folder_id}/permissions/revoke", response_model=FolderResponse)
+async def revoke_permission(
+    folder_id: str,
+    user_id: str = Query(...),
+    permission: FolderPermission = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderResponse:
+    """Revoga permissão."""
+    service = FolderService(db)
+    folder = await service.revoke_permission(folder_id, user_id, permission)
+    if not folder:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+        )
+    return folder
+
+
+@router.get("/{folder_id}/permissions/check")
+async def check_permission(
+    folder_id: str,
+    user_id: str = Query(...),
+    permission: FolderPermission = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> dict:
+    """Verifica permissão."""
+    service = FolderService(db)
+    has_permission = await service.check_permission(folder_id, user_id, permission)
+    return {"has_permission": has_permission}
+
+
+@router.get("/search/query", response_model=List[FolderResponse])
+async def search_folders(
+    query: str = Query(..., min_length=2),
+    condominium_id: Optional[str] = Query(None),
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> List[FolderResponse]:
+    """Busca pastas."""
+    service = FolderService(db)
+    return await service.search(query, condominium_id, limit)
+
+
+@router.get("/stats/summary", response_model=FolderStats)
+async def get_stats(
+    condominium_id: Optional[str] = Query(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FolderStats:
+    """Retorna estatísticas."""
+    service = FolderService(db)
+    return await service.get_stats(condominium_id)
+
+
+@router.post("/default-structure/create", response_model=List[FolderResponse])
+async def create_default_structure(
+    condominium_id: str = Query(...),
+    owner_id: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> List[FolderResponse]:
+    """Cria estrutura padrão de pastas."""
+    service = FolderService(db)
+    return await service.create_default_structure(
+        condominium_id, owner_id, current_user["id"]
+    )

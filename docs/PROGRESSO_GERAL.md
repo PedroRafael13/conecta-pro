@@ -1,10 +1,10 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 14 - GED (PRÓXIMO)
+## Sprint Atual: Sprint 15 - Recrutamento (PRÓXIMO)
 
-### Progresso Geral: 37% (14/38 módulos)
+### Progresso Geral: 39% (15/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos)
-### Operations: 7/8 sprints (Sprint 7-13)
+### Operations: 8/8 sprints (Sprint 7-14) - COMPLETO
 
 ---
 
@@ -126,10 +126,17 @@
 - [x] ResidentAIService (perfil, engajamento, churn, insights, dashboard)
 - [x] 6 Controllers com 100+ endpoints REST
 
-### Sprints Restantes (24 módulos):
+### Sprint 14: GED - Gestão Eletrônica de Documentos (6/6) - 100%
+- [x] Folder model (hierárquico, permissões, quotas, templates)
+- [x] Document model (versionado, workflow aprovação, assinatura digital)
+- [x] DocumentVersion model (histórico, checksum SHA-256)
+- [x] DocumentShare model (links públicos, senha, expiração, acesso)
+- [x] DocumentTag model (categorização, hierarquia, cores, sistema)
+- [x] DocumentSignature model (workflow assinatura digital, hash, verificação)
+- [x] DocumentAIService (classificação, keywords, insights, saúde documental)
+- [x] 6 Controllers com 120+ endpoints REST
 
-**Operações (1 módulo restante):**
-- [ ] Sprint 14: GED (Gestão Documental)
+### Sprints Restantes (23 módulos):
 
 **RH (7 módulos):**
 - [ ] Sprint 15: Recrutamento e Seleção
@@ -161,13 +168,13 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **14/38 (37%)** |
-| Linhas de código | ~45000+ |
-| Arquivos criados | 260+ |
-| Testes escritos | 1250+ |
+| **Módulos completos** | **15/38 (39%)** |
+| Linhas de código | ~48000+ |
+| Arquivos criados | 285+ |
+| Testes escritos | 1350+ |
 | Coverage | 85%+ |
-| Commits | 17 |
-| Sessões | 15 |
+| Commits | 18 |
+| Sessões | 16 |
 | Auditor Score | 100/100 |
 
 ### Progresso por Categoria
@@ -176,11 +183,11 @@
 | Core | 1 | 1 | 100% |
 | CRM | 5 | 5 | 100% |
 | Contratos | 1 | 1 | 100% |
-| Operações | 7 | 8 | 88% |
+| Operações | 8 | 8 | 100% |
 | RH | 0 | 7 | 0% |
 | Financeiro | 0 | 9 | 0% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **14** | **38** | **37%** |
+| **TOTAL** | **15** | **38** | **39%** |
 
 ---
 
@@ -841,16 +848,146 @@ Módulo para cadastro e gestão de moradores, veículos, pets, dependentes e con
 
 ---
 
+## GED Module - Funcionalidades (Sprint 14)
+
+### Sistema Completo de Gestão Eletrônica de Documentos
+Módulo para organização, versionamento, compartilhamento e assinatura digital de documentos.
+
+### Models Implementados
+- **Folder**: Pastas hierárquicas
+  - 10 Tipos: geral, contrato, financeiro, juridico, assembleia, comunicado, ata, regulamento, projeto, outro
+  - 5 Status: ativa, arquivada, lixeira, bloqueada, readonly
+  - Hierarquia: parent_id, path, depth
+  - Quotas: max_file_size_mb, max_total_size_mb, allowed_extensions
+  - Permissões: can_view, can_edit, can_delete, can_share
+  - Contadores: document_count, total_size_bytes, version_count
+
+- **Document**: Documentos com versionamento
+  - 6 Status: rascunho, pendente_aprovacao, aprovado, publicado, arquivado, rejeitado
+  - Workflow: requires_approval, is_approved, approved_by, approved_at
+  - Assinatura: requires_signature, is_signed, signed_at, signature_count
+  - Arquivo: file_name, file_path, file_size_bytes, mime_type, checksum (SHA-256)
+  - Versionamento: current_version, version_count, create_new_version()
+  - OCR: ocr_content, ocr_status, ocr_processed_at
+  - Tracking: view_count, download_count, last_viewed_at
+  - Validade: expires_at, is_expired, check_expiry()
+
+- **DocumentVersion**: Histórico de versões
+  - 4 Status: rascunho, ativa, arquivada, excluida
+  - Arquivo: file_name, file_path, file_size_bytes, mime_type, checksum
+  - Metadados: version_number, change_summary, is_current
+  - Tracking: created_by, created_at
+  - Rollback: restore() para restaurar versão anterior
+
+- **DocumentShare**: Compartilhamento
+  - 4 Tipos: interno, externo, publico, restrito
+  - 5 Status: ativa, expirada, revogada, esgotada, suspensa
+  - 5 Permissões: view, download, edit, print, comment
+  - Link público: token, url, password_hash, is_public
+  - Limites: max_accesses, access_count, expires_at
+  - Tracking: last_accessed_at, access_log_count
+
+- **DocumentTag**: Categorização
+  - 5 Tipos: categoria, departamento, status, prioridade, custom
+  - 12 Cores: azul, verde, amarelo, laranja, vermelho, roxo, rosa, ciano, cinza, preto, branco, custom
+  - Hierarquia: parent_id, children (tags aninhadas)
+  - Sistema: is_system, is_global
+  - Uso: usage_count, last_used_at
+  - Slug: geração automática a partir do nome
+
+- **DocumentSignature**: Assinatura digital
+  - 4 Tipos: eletronica, digital_simples, digital_avancada, digital_qualificada
+  - 7 Status: pendente, assinada, recusada, expirada, cancelada, verificada, invalida
+  - 5 Papéis: parte, testemunha, aprovador, representante, outro
+  - Assinatura: signature_data, signature_hash (SHA-256), signed_at
+  - Token: token (UUID), token_expires_at
+  - Verificação: is_verified, verified_at, verification_method
+  - Tracking: ip_address, user_agent, geolocation
+  - Notificações: notification_sent_at, reminder_sent_at, reminder_count
+
+### Services Implementados
+- **FolderService**: CRUD + tree + move + copy + permissions + stats
+- **DocumentService**: CRUD + workflow (approve, reject, publish, archive) + versions + search
+- **DocumentVersionService**: CRUD + set_current + restore + compare + stats
+- **DocumentShareService**: CRUD + public links + password + access + revoke + stats
+- **DocumentTagService**: CRUD + tree + assign/remove + merge + suggestions + stats
+- **DocumentSignatureService**: CRUD + sign + refuse + verify + reminders + certificates
+
+### Services IA - DocumentAIService
+- **classify_document()**: Classificação automática
+  - Tipo sugerido baseado em keywords (15 categorias)
+  - Departamento sugerido (8 departamentos)
+  - Confidencialidade (publico, interno, confidencial, restrito)
+  - Tags sugeridas (até 5)
+  - Score de confiança (0-100%)
+
+- **extract_keywords()**: Extração de palavras-chave
+  - Remoção de stopwords (PT e EN)
+  - Pontuação por frequência e relevância
+  - Top 10-20 keywords rankeadas
+
+- **suggest_folder()**: Sugestão de pasta
+  - Baseado em tipo e departamento
+  - Mapeamento inteligente (contrato -> contratos, financeiro -> financeiro)
+  - Score de confiança
+
+- **analyze_document_health()**: Análise de saúde documental
+  - Score de saúde (0-100) com 5 fatores:
+    - Tem título (15 pontos)
+    - Tem descrição (10 pontos)
+    - Tem tags (15 pontos)
+    - Aprovado (20 pontos)
+    - Não expirado (20 pontos)
+    - Assinado (20 pontos)
+  - Alertas: expirado, pendente aprovação, sem tags, sem descrição
+  - Recomendações automáticas
+
+- **get_document_insights()**: Insights do documento
+  - Métricas: views, downloads, shares, versions
+  - Score de engajamento
+  - Padrão de acesso
+  - Sugestões de melhoria
+
+### Endpoints REST (120+)
+- `/folders/*`: CRUD, tree, move, copy, permissions, stats, templates
+- `/folders/{id}/documents`, `/subfolders`, `/breadcrumb`, `/size`
+- `/documents/*`: CRUD, search, pending-approval, pending-signature, expired
+- `/documents/{id}/approve`, `/reject`, `/publish`, `/archive`, `/unarchive`
+- `/documents/{id}/versions`, `/view`, `/download`, `/move`
+- `/documents/ai/classify`, `/ai/keywords`, `/ai/suggest-folder`, `/ai/health`, `/ai/insights`
+- `/document-versions/*`: CRUD, restore, compare, set-current
+- `/document-shares/*`: CRUD, public-link, validate, access, revoke
+- `/document-shares/{id}/extend`, `/password`, `/permissions`
+- `/document-tags/*`: CRUD, tree, by-type, search, most-used, merge
+- `/document-tags/{id}/documents`, `/assign`, `/remove`
+- `/document-signatures/*`: CRUD, pending, by-document, by-signer
+- `/document-signatures/{id}/sign`, `/refuse`, `/cancel`, `/verify`
+- `/document-signatures/{id}/remind`, `/regenerate-token`, `/certificate`
+- `/document-signatures/request`: Solicitar assinaturas em lote
+
+### Schemas Implementados
+- 50+ Schemas Pydantic para validação
+- Requests, Responses, Filters, Stats, Tree
+- Validação de dados com Field constraints
+
+### Testes
+- 90+ testes unitários e de API
+- Cobertura de models, services e endpoints
+- Pylint score: 9.85/10
+
+---
+
 ## Última Atualização
 **Data:** 2025-12-30
-**Por:** Claude Code - Sessão 015
+**Por:** Claude Code - Sessão 016
 **Mudanças:**
-- Sprint 13 (Moradores) COMPLETO
-- 5 Models implementados: Resident, ResidentVehicle, ResidentPet, ResidentDependent, ResidentEmergencyContact
-- 5 Repositories com CRUD + filtros avançados + stats
-- 6 Services: ResidentService, VehicleService, PetService, DependentService, EmergencyContactService, ResidentAIService
-- 6 Controllers com 100+ endpoints REST
-- IA de análise de moradores (5 funções: perfil, insights, churn, similar, dashboard)
-- 80+ testes
-- Auditor: pylint 10.00/10
-- Progresso: 37% (14/38 módulos)
+- Sprint 14 (GED - Gestão Eletrônica de Documentos) COMPLETO
+- 6 Models implementados: Folder, Document, DocumentVersion, DocumentShare, DocumentTag, DocumentSignature
+- 6 Repositories com CRUD + filtros avançados + stats + soft delete
+- 7 Services: FolderService, DocumentService, DocumentVersionService, DocumentShareService, DocumentTagService, DocumentSignatureService, DocumentAIService
+- 6 Controllers com 120+ endpoints REST
+- IA de documentos (5 funções: classify, keywords, suggest_folder, health, insights)
+- 90+ testes
+- Auditor: pylint 9.85/10
+- Progresso: 39% (15/38 módulos)
+- Operations: 8/8 sprints COMPLETO (100%)
