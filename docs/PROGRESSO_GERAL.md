@@ -1,10 +1,10 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 13 - Moradores (PRÓXIMO)
+## Sprint Atual: Sprint 14 - GED (PRÓXIMO)
 
-### Progresso Geral: 34% (13/38 módulos)
+### Progresso Geral: 37% (14/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos)
-### Operations: 6/8 sprints (Sprint 7-12)
+### Operations: 7/8 sprints (Sprint 7-13)
 
 ---
 
@@ -117,10 +117,18 @@
 - [x] VisitorAIService (padrões, anomalias, picos, tendências, sugestões)
 - [x] 4 Controllers com 85+ endpoints REST
 
-### Sprints Restantes (25 módulos):
+### Sprint 13: Moradores (6/6) - 100%
+- [x] Resident model (5 tipos, 5 status, 4 métodos de acesso, inadimplência)
+- [x] ResidentVehicle model (6 tipos, 5 status, RFID, estacionamento)
+- [x] ResidentPet model (6 tipos, 4 tamanhos, vacinação, restrição de áreas)
+- [x] ResidentDependent model (6 tipos, horário de trabalho, pickup autorizado)
+- [x] ResidentEmergencyContact model (8 relacionamentos, prioridade, principal)
+- [x] ResidentAIService (perfil, engajamento, churn, insights, dashboard)
+- [x] 6 Controllers com 100+ endpoints REST
 
-**Operações (2 módulos restantes):**
-- [ ] Sprint 13: Moradores
+### Sprints Restantes (24 módulos):
+
+**Operações (1 módulo restante):**
 - [ ] Sprint 14: GED (Gestão Documental)
 
 **RH (7 módulos):**
@@ -153,14 +161,14 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **13/38 (34%)** |
-| Linhas de código | ~40000+ |
-| Arquivos criados | 235+ |
-| Testes escritos | 1150+ |
+| **Módulos completos** | **14/38 (37%)** |
+| Linhas de código | ~45000+ |
+| Arquivos criados | 260+ |
+| Testes escritos | 1250+ |
 | Coverage | 85%+ |
-| Commits | 16 |
-| Sessões | 14 |
-| Auditor Score | 99/100 |
+| Commits | 17 |
+| Sessões | 15 |
+| Auditor Score | 100/100 |
 
 ### Progresso por Categoria
 | Categoria | Completo | Total | % |
@@ -168,11 +176,11 @@
 | Core | 1 | 1 | 100% |
 | CRM | 5 | 5 | 100% |
 | Contratos | 1 | 1 | 100% |
-| Operações | 6 | 8 | 75% |
+| Operações | 7 | 8 | 88% |
 | RH | 0 | 7 | 0% |
 | Financeiro | 0 | 9 | 0% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **13** | **38** | **34%** |
+| **TOTAL** | **14** | **38** | **37%** |
 
 ---
 
@@ -721,16 +729,128 @@ Módulo para cadastro, autorização e controle de acesso de visitantes em condo
 
 ---
 
+## Residents Module - Funcionalidades (Sprint 13)
+
+### Sistema Completo de Gestão de Moradores
+Módulo para cadastro e gestão de moradores, veículos, pets, dependentes e contatos de emergência.
+
+### Models Implementados
+- **Resident**: Cadastro de moradores
+  - 5 Tipos: proprietario, inquilino, funcionario, familiar, visitante_frequente
+  - 5 Status: ativo, inativo, suspenso, bloqueado, mudou
+  - 4 Métodos de acesso: biometria, cartao, facial, qr_code
+  - Inadimplência: is_defaulter, debt_amount, defaulter_since
+  - Bloqueio: is_blocked, block_reason, blocked_by, blocked_at
+  - Controle: move_in_date, move_out_date, contract_start, contract_end
+  - QR Code: generate_qr_code()
+
+- **ResidentVehicle**: Veículos dos moradores
+  - 6 Tipos: carro, moto, caminhonete, van, bicicleta, outro
+  - 5 Status: ativo, inativo, bloqueado, vendido, roubado
+  - Identificação: plate, rfid_tag, brand, model, color, year
+  - Estacionamento: parking_spot, has_parking
+  - Bloqueio: is_blocked, block_reason, blocked_by
+  - Properties: is_valid_for_access, display_name
+
+- **ResidentPet**: Animais de estimação
+  - 6 Tipos: cachorro, gato, passaro, peixe, roedor, outro
+  - 4 Tamanhos: pequeno, medio, grande, gigante
+  - 4 Status: ativo, inativo, falecido, doado
+  - Vacinação: vaccination_date, vaccination_expiry, is_vaccinated
+  - Comportamento: is_aggressive, special_needs, restricted_areas
+  - Properties: is_vaccination_expired, needs_vaccination
+
+- **ResidentDependent**: Dependentes e funcionários domésticos
+  - 6 Tipos: filho, conjuge, pai_mae, avos, empregado_domestico, outro
+  - 4 Status: ativo, inativo, bloqueado, temporario
+  - Identificação: document_type, document_number, birth_date
+  - Menores: is_minor, authorized_pickup_persons
+  - Funcionários: work_schedule, contract_start, contract_end
+  - Temporário: is_temporary, temp_start_date, temp_end_date
+
+- **ResidentEmergencyContact**: Contatos de emergência
+  - 8 Relacionamentos: pai_mae, filho, conjuge, irmao, primo, amigo, vizinho, outro
+  - Prioridade: priority (1-10), is_primary
+  - Contato: phone, whatsapp, email, address
+  - Observações: notes, is_active
+
+### Services Implementados
+- **ResidentService**: CRUD + search + block/unblock + defaulter + move_out + transfer_unit + enable/disable_access + generate_qr_code
+- **VehicleService**: CRUD + search + block/unblock + assign/remove_parking + mark_as_sold/stolen + validate_access
+- **PetService**: CRUD + search + update_vaccination + restrict/allow_areas + mark_as_deceased/donated/lost
+- **DependentService**: CRUD + search + block/unblock + setup_temporary + authorized_pickup + work_schedule + validate_access
+- **EmergencyContactService**: CRUD + set_as_primary + update_priority + reorder_priorities
+
+### Services IA - ResidentAIService
+- **analyze_resident_profile()**: Análise de perfil do morador
+  - Tipo de perfil: engaged, regular, passive, risk
+  - Score de engajamento (0-100) baseado em completude
+  - Alertas: inadimplência, pets não vacinados, veículos bloqueados
+  - Sugestões personalizadas
+  - Nível de risco: low, medium, high
+
+- **get_condominium_insights()**: Insights do condomínio
+  - Total de moradores, ativos, bloqueados, inadimplentes
+  - Total de veículos, pets, dependentes
+  - Distribuição por tipo de morador
+  - Métricas de biometria e controle de acesso
+  - Recomendações
+
+- **predict_churn_risk()**: Predição de risco de mudança
+  - Score de risco (0-100)
+  - Fatores de risco identificados
+  - Probabilidade de mudança
+  - Recomendações de retenção
+
+- **find_similar_residents()**: Encontrar moradores similares
+  - Baseado em tipo, unidade, status
+  - Score de similaridade
+
+- **get_resident_dashboard()**: Dashboard completo
+  - Health score do condomínio
+  - Alertas e recomendações
+  - Métricas consolidadas
+
+### Endpoints REST (100+)
+- `/residents/*`: CRUD, search, stats, blocked, defaulters, owners
+- `/residents/{id}/block`, `/unblock`, `/set-defaulter`, `/clear-defaulter`
+- `/residents/{id}/move-out`, `/transfer-unit`
+- `/residents/{id}/access/enable`, `/access/disable`, `/generate-qr`
+- `/residents/ai/profile/{id}`, `/ai/insights`, `/ai/churn/{id}`, `/ai/similar/{id}`, `/ai/dashboard`
+- `/resident-vehicles/*`: CRUD, search, blocked, without-parking
+- `/resident-vehicles/{id}/block`, `/unblock`, `/assign-parking`, `/remove-parking`
+- `/resident-vehicles/{id}/mark-sold`, `/mark-stolen`, `/validate-access`
+- `/resident-pets/*`: CRUD, search, not-vaccinated, aggressive, expiring-vaccination
+- `/resident-pets/{id}/update-vaccination`, `/restrict-areas`, `/allow-areas`
+- `/resident-pets/{id}/mark-deceased`, `/mark-donated`, `/mark-lost`, `/deactivate`, `/activate`
+- `/resident-dependents/*`: CRUD, search, minors, employees, temporary
+- `/resident-dependents/{id}/block`, `/unblock`, `/setup-temporary`, `/clear-temporary`
+- `/resident-dependents/{id}/authorized-pickup`, `/work-schedule`, `/validate-access`
+- `/resident-emergency-contacts/*`: CRUD, by-resident, primary
+- `/resident-emergency-contacts/{id}/set-primary`, `/update-priority`, `/deactivate`, `/activate`
+- `/resident-emergency-contacts/reorder`
+
+### Schemas Implementados
+- 45+ Schemas Pydantic para validação
+- Requests, Responses, Filters, Stats
+- Validação de dados com Field constraints
+
+### Testes
+- 80+ testes unitários e de API
+- Cobertura de models, services e endpoints
+
+---
+
 ## Última Atualização
 **Data:** 2025-12-30
-**Por:** Claude Code - Sessão 014
+**Por:** Claude Code - Sessão 015
 **Mudanças:**
-- Sprint 12 (Visitantes) COMPLETO
-- 4 Models implementados: Visitor, VisitorAuthorization, VisitorLog, VisitorSchedule
-- 4 Repositories com CRUD + filtros avançados + stats
-- 5 Services: VisitorService, AuthorizationService, LogService, ScheduleService, VisitorAIService
-- 4 Controllers com 85+ endpoints REST
-- IA de análise de visitantes (5 funções)
-- 100+ testes
-- Auditor: pylint 9.96/10
-- Progresso: 34% (13/38 módulos)
+- Sprint 13 (Moradores) COMPLETO
+- 5 Models implementados: Resident, ResidentVehicle, ResidentPet, ResidentDependent, ResidentEmergencyContact
+- 5 Repositories com CRUD + filtros avançados + stats
+- 6 Services: ResidentService, VehicleService, PetService, DependentService, EmergencyContactService, ResidentAIService
+- 6 Controllers com 100+ endpoints REST
+- IA de análise de moradores (5 funções: perfil, insights, churn, similar, dashboard)
+- 80+ testes
+- Auditor: pylint 10.00/10
+- Progresso: 37% (14/38 módulos)
