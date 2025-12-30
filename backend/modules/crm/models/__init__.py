@@ -7,13 +7,34 @@ from .opportunity import (
     OpportunityPriority,
     OpportunityStage,
 )
+from .proposal import (
+    ApprovalAction,
+    DiscountType,
+    Proposal,
+    ProposalApproval,
+    ProposalItem,
+    ProposalStatus,
+    ProposalTemplate,
+    ProposalType,
+)
 
 __all__ = [
+    # Lead
     "Lead",
     "LeadStatus",
     "LeadSource",
+    # Opportunity
     "Opportunity",
     "OpportunityStage",
     "OpportunityPriority",
     "LossReason",
+    # Proposal
+    "Proposal",
+    "ProposalItem",
+    "ProposalTemplate",
+    "ProposalApproval",
+    "ProposalStatus",
+    "ProposalType",
+    "DiscountType",
+    "ApprovalAction",
 ]

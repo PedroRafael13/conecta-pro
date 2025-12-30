@@ -1,8 +1,8 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 1 - CRM (CONCLUÍDO)
+## Sprint Atual: Sprint 3 - Propostas Comerciais (CONCLUIDO)
 
-### Progresso Geral: 35%
+### Progresso Geral: 60%
 
 ---
 
@@ -24,19 +24,26 @@
 - [x] Banco de dados (PostgreSQL + Alembic migration)
 - [x] Endpoints REST de auth (register, login, refresh, me)
 
-### Sprint 1: CRM (4/4) - 100%
+### Sprint 1: CRM Lead (4/4) - 100%
 - [x] Lead model (20+ campos, status/source enums)
 - [x] Lead service (IA scoring com 6 fatores ponderados)
 - [x] Lead APIs (9 endpoints REST)
-- [x] Testes (82 testes específicos, 244 total)
+- [x] Testes (82 testes específicos)
 
-### Sprint 2: Opportunity (0/4) - 0%
-- [ ] Opportunity model (funil de vendas)
-- [ ] Conversão Lead -> Opportunity
-- [ ] Pipeline management
-- [ ] Dashboard CRM
+### Sprint 2: CRM Opportunity (4/4) - 100%
+- [x] Opportunity model (6 estágios do funil)
+- [x] Conversão Lead -> Opportunity
+- [x] Pipeline Service (métricas, forecast, health score)
+- [x] Testes (81 testes, 325 total)
 
-### Sprint 3-38: [A FAZER]
+### Sprint 3: Propostas Comerciais (5/5) - 100%
+- [x] Proposal model (versões, itens, valores)
+- [x] ProposalItem model (produtos/serviços)
+- [x] Template system (personalização)
+- [x] Workflow de aprovação (10 status, approval history)
+- [x] Testes (84 novos, 196 CRM total)
+
+### Sprint 4+: [A FAZER]
 
 ---
 
@@ -44,13 +51,36 @@
 
 | Métrica | Valor |
 |---------|-------|
-| Linhas de código | ~4000+ |
-| Arquivos criados | 55+ |
-| Testes escritos | 244 |
+| Linhas de código | ~6000+ |
+| Arquivos criados | 65+ |
+| Testes escritos | 340+ |
 | Coverage | 85%+ |
-| Commits | 7 |
-| Sessões | 4 |
+| Commits | 8 |
+| Sessões | 5 |
 | Auditor Score | 99/100 |
+
+---
+
+## CRM Module - Funcionalidades
+
+### Proposals (Sprint 3)
+- 4 Enums: ProposalStatus (10), ProposalType (5), DiscountType (2), ApprovalAction (3)
+- 4 Models: Proposal, ProposalItem, ProposalTemplate, ProposalApproval
+- 19 Schemas Pydantic para validação
+- 18 Endpoints REST: proposals, items, templates
+- Versionamento de propostas (mesmo número, incrementa versão)
+- Workflow: draft -> pending_approval -> approved -> sent -> accepted/rejected
+
+### Opportunities (Sprint 2)
+- Pipeline com 6 estágios
+- Conversão automática de Lead
+- Forecast de vendas
+- Health Score do pipeline
+
+### Leads (Sprint 1)
+- IA Scoring Engine
+- 9 endpoints REST
+- Conversão para Opportunity
 
 ---
 
@@ -98,10 +128,11 @@ Funcionalidades:
 
 ## Última Atualização
 **Data:** 2024-12-30
-**Por:** Claude Code - Sessão 004
+**Por:** Claude Code - Sessão 005
 **Mudanças:**
-- Módulo CRM implementado (Lead model, service, repository, controller)
-- LeadScoringEngine com IA para pontuação de leads
-- 9 endpoints REST para gestão de leads
-- 82 novos testes (244 total)
-- Auditor Score: 99/100 (APROVADO)
+- Sprint 3 CONCLUIDO: Propostas Comerciais
+- Proposal model com versões, itens e workflow de aprovação
+- ProposalItem para produtos/serviços
+- ProposalTemplate para personalização
+- 18 endpoints REST para gestão de propostas
+- 84 novos testes (196 CRM total, 340+ geral)

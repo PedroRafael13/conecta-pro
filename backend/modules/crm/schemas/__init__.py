@@ -22,6 +22,27 @@ from .opportunity import (
     PipelineForecast,
     PipelineStats,
 )
+from .proposal import (
+    ProposalApprovalRequest,
+    ProposalApprovalResponse,
+    ProposalClientResponse,
+    ProposalCreate,
+    ProposalCreateFromOpportunity,
+    ProposalDetailResponse,
+    ProposalFilter,
+    ProposalItemCreate,
+    ProposalItemResponse,
+    ProposalItemUpdate,
+    ProposalListResponse,
+    ProposalResponse,
+    ProposalSend,
+    ProposalStats,
+    ProposalStatusUpdate,
+    ProposalTemplateCreate,
+    ProposalTemplateResponse,
+    ProposalTemplateUpdate,
+    ProposalUpdate,
+)
 
 __all__ = [
     # Lead
@@ -44,4 +65,27 @@ __all__ = [
     "OpportunityFilter",
     "PipelineStats",
     "PipelineForecast",
+    # Proposal
+    "ProposalCreate",
+    "ProposalCreateFromOpportunity",
+    "ProposalUpdate",
+    "ProposalStatusUpdate",
+    "ProposalSend",
+    "ProposalApprovalRequest",
+    "ProposalClientResponse",
+    "ProposalResponse",
+    "ProposalDetailResponse",
+    "ProposalListResponse",
+    "ProposalFilter",
+    "ProposalStats",
+    # ProposalItem
+    "ProposalItemCreate",
+    "ProposalItemUpdate",
+    "ProposalItemResponse",
+    # ProposalTemplate
+    "ProposalTemplateCreate",
+    "ProposalTemplateUpdate",
+    "ProposalTemplateResponse",
+    # ProposalApproval
+    "ProposalApprovalResponse",
 ]

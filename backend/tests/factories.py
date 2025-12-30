@@ -331,3 +331,287 @@ TEST_OPPORTUNITY_DATA = {
     "probability": 50,
     "notes": "Oportunidade promissora",
 }
+
+
+class ProposalFactory:
+    """Factory para criar proposals de teste."""
+
+    _counter = 0
+
+    @staticmethod
+    def _next_number() -> str:
+        """Gera numero de proposta unico."""
+        ProposalFactory._counter += 1
+        return f"PROP-{datetime.utcnow().strftime('%Y%m%d')}-{ProposalFactory._counter:06d}"
+
+    @staticmethod
+    def build(
+        title: Optional[str] = _UNSET,
+        description: Optional[str] = None,
+        client_name: Optional[str] = _UNSET,
+        client_email: Optional[str] = _UNSET,
+        client_phone: Optional[str] = _UNSET,
+        client_company: Optional[str] = _UNSET,
+        client_document: Optional[str] = None,
+        client_address: Optional[str] = None,
+        proposal_type: str = "service",
+        status: str = "draft",
+        subtotal: float = 10000.0,
+        discount_type: Optional[str] = None,
+        discount_value: float = 0.0,
+        taxes: float = 0.0,
+        total: float = 10000.0,
+        terms_conditions: Optional[str] = None,
+        payment_terms: Optional[str] = None,
+        payment_conditions: Optional[str] = None,
+        installments: int = 1,
+        valid_until=_UNSET,
+        opportunity_id: Optional[str] = None,
+        template_id: Optional[str] = None,
+        created_by_id: Optional[str] = None,
+        **kwargs,
+    ):
+        """
+        Cria dados de Proposal para testes.
+
+        Returns:
+            Objeto Proposal
+        """
+        from datetime import date
+        from modules.crm.models.proposal import Proposal
+
+        return Proposal(
+            id=kwargs.get("id", str(uuid.uuid4())),
+            number=kwargs.get("number", ProposalFactory._next_number()),
+            version=kwargs.get("version", 1),
+            parent_id=kwargs.get("parent_id"),
+            opportunity_id=opportunity_id,
+            template_id=template_id,
+            title=f"Proposta {fake.company()}" if title is _UNSET else title,
+            description=description,
+            proposal_type=proposal_type,
+            client_name=fake.name() if client_name is _UNSET else client_name,
+            client_email=fake.email() if client_email is _UNSET else client_email,
+            client_phone=fake.phone_number() if client_phone is _UNSET else client_phone,
+            client_company=fake.company() if client_company is _UNSET else client_company,
+            client_document=client_document,
+            client_address=client_address,
+            subtotal=subtotal,
+            discount_type=discount_type,
+            discount_value=discount_value,
+            taxes=taxes,
+            total=total,
+            terms_conditions=terms_conditions,
+            payment_terms=payment_terms,
+            payment_conditions=payment_conditions,
+            installments=installments,
+            issue_date=kwargs.get("issue_date", date.today()),
+            valid_until=date.today() + timedelta(days=30) if valid_until is _UNSET else valid_until,
+            sent_at=kwargs.get("sent_at"),
+            viewed_at=kwargs.get("viewed_at"),
+            responded_at=kwargs.get("responded_at"),
+            status=status,
+            rejection_reason=kwargs.get("rejection_reason"),
+            notes=kwargs.get("notes"),
+            created_by_id=created_by_id,
+            approved_by_id=kwargs.get("approved_by_id"),
+            approved_at=kwargs.get("approved_at"),
+            created_at=kwargs.get("created_at", datetime.utcnow()),
+            updated_at=kwargs.get("updated_at", datetime.utcnow()),
+            is_active=kwargs.get("is_active", True),
+        )
+
+    @staticmethod
+    def build_approved(**kwargs):
+        """Cria proposal aprovada."""
+        defaults = {
+            "status": "approved",
+            "approved_at": datetime.utcnow(),
+            "approved_by_id": str(uuid.uuid4()),
+        }
+        defaults.update(kwargs)
+        return ProposalFactory.build(**defaults)
+
+    @staticmethod
+    def build_sent(**kwargs):
+        """Cria proposal enviada."""
+        defaults = {
+            "status": "sent",
+            "sent_at": datetime.utcnow(),
+        }
+        defaults.update(kwargs)
+        return ProposalFactory.build_approved(**defaults)
+
+    @staticmethod
+    def build_accepted(**kwargs):
+        """Cria proposal aceita."""
+        defaults = {
+            "status": "accepted",
+            "responded_at": datetime.utcnow(),
+        }
+        defaults.update(kwargs)
+        return ProposalFactory.build_sent(**defaults)
+
+    @staticmethod
+    def build_rejected(**kwargs):
+        """Cria proposal rejeitada."""
+        defaults = {
+            "status": "rejected",
+            "responded_at": datetime.utcnow(),
+            "rejection_reason": "Preco muito alto",
+        }
+        defaults.update(kwargs)
+        return ProposalFactory.build_sent(**defaults)
+
+    @staticmethod
+    def build_expired(**kwargs):
+        """Cria proposal expirada."""
+        from datetime import date
+        defaults = {
+            "status": "expired",
+            "valid_until": date.today() - timedelta(days=5),
+        }
+        defaults.update(kwargs)
+        return ProposalFactory.build(**defaults)
+
+    @staticmethod
+    def build_high_value(**kwargs):
+        """Cria proposal de alto valor."""
+        return ProposalFactory.build(
+            subtotal=100000.0,
+            total=100000.0,
+            proposal_type="project",
+            **kwargs,
+        )
+
+    @staticmethod
+    def build_batch(count: int, **kwargs) -> list:
+        """Cria multiplas proposals."""
+        return [ProposalFactory.build(**kwargs) for _ in range(count)]
+
+
+class ProposalItemFactory:
+    """Factory para criar proposal items de teste."""
+
+    @staticmethod
+    def build(
+        proposal_id: Optional[str] = None,
+        code: Optional[str] = None,
+        name: Optional[str] = _UNSET,
+        description: Optional[str] = None,
+        unit: str = "un",
+        quantity: float = 1.0,
+        unit_price: float = 1000.0,
+        discount_percent: float = 0.0,
+        sort_order: int = 0,
+        is_optional: bool = False,
+        **kwargs,
+    ):
+        """Cria dados de ProposalItem para testes."""
+        from modules.crm.models.proposal import ProposalItem
+
+        # subtotal e discount_amount são properties, não colunas
+        subtotal = quantity * unit_price
+        discount_amount = subtotal * (discount_percent / 100)
+        total = subtotal - discount_amount
+
+        return ProposalItem(
+            id=kwargs.get("id", str(uuid.uuid4())),
+            proposal_id=proposal_id or str(uuid.uuid4()),
+            code=code or f"PROD-{uuid.uuid4().hex[:6].upper()}",
+            name=fake.word().capitalize() if name is _UNSET else name,
+            description=description,
+            unit=unit,
+            quantity=quantity,
+            unit_price=unit_price,
+            discount_percent=discount_percent,
+            total=total,  # calculado
+            sort_order=sort_order,
+            is_optional=is_optional,
+            created_at=kwargs.get("created_at", datetime.utcnow()),
+            updated_at=kwargs.get("updated_at", datetime.utcnow()),
+            is_active=kwargs.get("is_active", True),
+        )
+
+    @staticmethod
+    def build_batch(count: int, proposal_id: Optional[str] = None, **kwargs) -> list:
+        """Cria multiplos items."""
+        return [
+            ProposalItemFactory.build(proposal_id=proposal_id, sort_order=i, **kwargs)
+            for i in range(count)
+        ]
+
+
+class ProposalTemplateFactory:
+    """Factory para criar proposal templates de teste."""
+
+    @staticmethod
+    def build(
+        name: Optional[str] = _UNSET,
+        description: Optional[str] = None,
+        default_title: Optional[str] = None,
+        default_description: Optional[str] = None,
+        terms_conditions: Optional[str] = None,
+        payment_terms: Optional[str] = None,
+        validity_days: int = 30,
+        proposal_type: str = "service",
+        header_html: Optional[str] = None,
+        footer_html: Optional[str] = None,
+        css_styles: Optional[str] = None,
+        is_default: bool = False,
+        **kwargs,
+    ):
+        """Cria dados de ProposalTemplate para testes."""
+        from modules.crm.models.proposal import ProposalTemplate
+
+        return ProposalTemplate(
+            id=kwargs.get("id", str(uuid.uuid4())),
+            name=f"Template {fake.word().capitalize()}" if name is _UNSET else name,
+            description=description,
+            default_title=default_title,
+            default_description=default_description,
+            terms_conditions=terms_conditions or "Termos e condicoes padrao",
+            payment_terms=payment_terms or "Pagamento em 30 dias",
+            validity_days=validity_days,
+            proposal_type=proposal_type,
+            header_html=header_html,
+            footer_html=footer_html,
+            css_styles=css_styles,
+            is_default=is_default,
+            created_at=kwargs.get("created_at", datetime.utcnow()),
+            updated_at=kwargs.get("updated_at", datetime.utcnow()),
+            is_active=kwargs.get("is_active", True),
+        )
+
+    @staticmethod
+    def build_default(**kwargs):
+        """Cria template padrao."""
+        return ProposalTemplateFactory.build(is_default=True, **kwargs)
+
+    @staticmethod
+    def build_batch(count: int, **kwargs) -> list:
+        """Cria multiplos templates."""
+        return [ProposalTemplateFactory.build(**kwargs) for _ in range(count)]
+
+
+TEST_PROPOSAL_DATA = {
+    "title": "Proposta Comercial Teste",
+    "client_name": "Cliente Teste",
+    "client_email": "cliente@empresa.com",
+    "client_phone": "(11) 99999-9999",
+    "client_company": "Empresa Teste",
+    "proposal_type": "service",
+    "terms_conditions": "Termos e condicoes de teste",
+    "payment_terms": "30 dias",
+    "installments": 1,
+}
+
+TEST_PROPOSAL_ITEM_DATA = {
+    "code": "SERV-001",
+    "name": "Servico de Teste",
+    "description": "Descricao do servico",
+    "unit": "un",
+    "quantity": 1.0,
+    "unit_price": 5000.0,
+    "discount_percent": 0.0,
+}
