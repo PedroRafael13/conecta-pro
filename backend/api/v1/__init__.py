@@ -27,6 +27,8 @@ from modules.guardian.controllers import (
     security_audit_router,
     ssh_gateway_router,
     campo_service_router,
+    # Sistema de Monitoramento
+    monitoring_router,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -57,3 +59,6 @@ router.include_router(ssh_gateway_router, prefix="")
 
 # CAMPO Service
 router.include_router(campo_service_router, prefix="")
+
+# Sistema de Monitoramento
+router.include_router(monitoring_router, prefix="")

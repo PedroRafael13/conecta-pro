@@ -1,0 +1,106 @@
+"""Schemas do Portal do Funcionário."""
+
+from modules.hr.employee_portal.schemas.payslip import (
+    PaySlipCreate,
+    PaySlipUpdate,
+    PaySlipResponse,
+    PaySlipSummary,
+    PaySlipListResponse,
+    PaySlipContestRequest,
+    PaySlipEarningItem,
+    PaySlipDeductionItem,
+)
+from modules.hr.employee_portal.schemas.vacation import (
+    VacationPeriodCreate,
+    VacationPeriodResponse,
+    VacationPeriodSummary,
+    VacationRequestCreate,
+    VacationRequestUpdate,
+    VacationRequestResponse,
+    VacationRequestSummary,
+    VacationRequestListResponse,
+    VacationApprovalRequest,
+    VacationBalanceResponse,
+    VacationCalculationRequest,
+    VacationCalculationResponse,
+)
+from modules.hr.employee_portal.schemas.document import (
+    DocumentCreate,
+    DocumentUpdate,
+    DocumentResponse,
+    DocumentSummary,
+    DocumentListResponse,
+    DocumentAcknowledgeRequest,
+    DocumentSignRequest,
+    DocumentFilterRequest,
+)
+from modules.hr.employee_portal.schemas.notification import (
+    NotificationCreate,
+    NotificationResponse,
+    NotificationSummary,
+    NotificationListResponse,
+    NotificationMarkReadRequest,
+    NotificationPreferencesUpdate,
+    UnreadCountResponse,
+)
+from modules.hr.employee_portal.schemas.preferences import (
+    PreferencesCreate,
+    PreferencesUpdate,
+    PreferencesResponse,
+    ThemeConfigSchema,
+    NotificationConfigSchema,
+    DashboardConfigSchema,
+    PrivacyConfigSchema,
+    SecurityConfigSchema,
+)
+
+__all__ = [
+    # PaySlip
+    "PaySlipCreate",
+    "PaySlipUpdate",
+    "PaySlipResponse",
+    "PaySlipSummary",
+    "PaySlipListResponse",
+    "PaySlipContestRequest",
+    "PaySlipEarningItem",
+    "PaySlipDeductionItem",
+    # Vacation
+    "VacationPeriodCreate",
+    "VacationPeriodResponse",
+    "VacationPeriodSummary",
+    "VacationRequestCreate",
+    "VacationRequestUpdate",
+    "VacationRequestResponse",
+    "VacationRequestSummary",
+    "VacationRequestListResponse",
+    "VacationApprovalRequest",
+    "VacationBalanceResponse",
+    "VacationCalculationRequest",
+    "VacationCalculationResponse",
+    # Document
+    "DocumentCreate",
+    "DocumentUpdate",
+    "DocumentResponse",
+    "DocumentSummary",
+    "DocumentListResponse",
+    "DocumentAcknowledgeRequest",
+    "DocumentSignRequest",
+    "DocumentFilterRequest",
+    # Notification
+    "NotificationCreate",
+    "NotificationResponse",
+    "NotificationSummary",
+    "NotificationListResponse",
+    "NotificationMarkReadRequest",
+    "NotificationPreferencesUpdate",
+    "UnreadCountResponse",
+    # Preferences
+    "PreferencesCreate",
+    "PreferencesUpdate",
+    "PreferencesResponse",
+    "ThemeConfigSchema",
+    "NotificationConfigSchema",
+    "DashboardConfigSchema",
+    "PrivacyConfigSchema",
+    "SecurityConfigSchema",
+]
