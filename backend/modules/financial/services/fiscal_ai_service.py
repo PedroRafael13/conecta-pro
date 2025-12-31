@@ -1,17 +1,16 @@
 """Servico de IA para modulo Fiscal - Analise, Otimizacao e Previsoes."""
+# pylint: disable=too-many-locals,too-many-branches,too-many-statements
+# pylint: disable=logging-fstring-interpolation,unused-argument
 
 import logging
-from datetime import date, datetime, timedelta
+from datetime import date
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.financial.models.fiscal_obligation import (
-    SIMPLES_ANEXO_III_FAIXAS,
-    calcular_das_anexo_iii,
-)
+from modules.financial.models.fiscal_obligation import calcular_das_anexo_iii
 from modules.financial.repositories.fiscal_repository import FiscalRepository
 
 logger = logging.getLogger(__name__)
@@ -99,7 +98,10 @@ class FiscalAIService:
                 {
                     "tipo": "obrigacao_atrasada",
                     "severidade": "alta",
-                    "mensagem": f"{obr.tipo} competencia {obr.competencia_mes}/{obr.competencia_ano} atrasada",
+                    "mensagem": (
+                        f"{obr.tipo} competencia "
+                        f"{obr.competencia_mes}/{obr.competencia_ano} atrasada"
+                    ),
                     "dias_atraso": (date.today() - obr.data_vencimento).days,
                     "valor": float(obr.valor_devido or 0),
                 }
@@ -125,7 +127,10 @@ class FiscalAIService:
                 oportunidades.append(
                     {
                         "tipo": "liminar_inss",
-                        "mensagem": f"Economia com liminar INSS no periodo: R$ {float(economia_liminar):,.2f}",
+                        "mensagem": (
+                            f"Economia com liminar INSS no periodo: "
+                            f"R$ {float(economia_liminar):,.2f}"
+                        ),
                         "economia": float(economia_liminar),
                         "observacao": (
                             "A liminar reconhece que retencao de 11% de INSS "
@@ -150,7 +155,10 @@ class FiscalAIService:
                 oportunidades.append(
                     {
                         "tipo": "suframa",
-                        "mensagem": f"Economia com beneficios SUFRAMA: R$ {float(economia_zfm['total']):,.2f}",
+                        "mensagem": (
+                            f"Economia com beneficios SUFRAMA: "
+                            f"R$ {float(economia_zfm['total']):,.2f}"
+                        ),
                         "detalhes": {
                             "ipi": float(economia_zfm["ipi"]),
                             "icms": float(economia_zfm["icms"]),
@@ -170,8 +178,11 @@ class FiscalAIService:
                     {
                         "tipo": "divergencia_das_nfse",
                         "severidade": "media",
-                        "mensagem": f"Receita do DAS ({float(das.receita_bruta_mes)}) "
-                        f"diverge das NFS-e ({float(receita_nfse)}) em {mes:02d}/{data_inicio.year}",
+                        "mensagem": (
+                            f"Receita do DAS ({float(das.receita_bruta_mes)}) "
+                            f"diverge das NFS-e ({float(receita_nfse)}) "
+                            f"em {mes:02d}/{data_inicio.year}"
+                        ),
                     }
                 )
 

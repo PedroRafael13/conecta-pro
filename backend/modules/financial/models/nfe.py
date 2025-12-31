@@ -1,12 +1,12 @@
 """Modelo de NF-e - Nota Fiscal Eletronica."""
 
-from datetime import date, datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any, List, Optional
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING, Any, Optional
+from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
@@ -14,7 +14,7 @@ from sqlalchemy.orm import relationship
 from core.models.base import Base
 
 if TYPE_CHECKING:
-    pass
+    from modules.financial.models.fiscal_obligation import SUFRAMAConfig
 
 
 class NFeTipo(str, Enum):
@@ -258,8 +258,6 @@ class NFe(Base):
         if not self.data_autorizacao:
             return False
         # Prazo de 24 horas para cancelamento
-        from datetime import timedelta
-
         return datetime.utcnow() <= self.data_autorizacao + timedelta(hours=24)
 
     @property
@@ -283,7 +281,10 @@ class NFe(Base):
         codigo_numerico: str,
     ) -> str:
         """Gera chave de acesso da NF-e (sem digito verificador)."""
-        chave = f"{codigo_uf}{ano_mes}{cnpj}{modelo}{serie.zfill(3)}{numero.zfill(9)}{tipo_emissao}{codigo_numerico}"
+        chave = (
+            f"{codigo_uf}{ano_mes}{cnpj}{modelo}"
+            f"{serie.zfill(3)}{numero.zfill(9)}{tipo_emissao}{codigo_numerico}"
+        )
         # Calcula digito verificador
         peso = 2
         soma = 0
@@ -431,7 +432,7 @@ class NFeItem(Base):
         """Representacao string."""
         return f"<NFeItem {self.numero_item}: {self.descricao}>"
 
-    def calcular_impostos(self, config: Optional[Any] = None) -> None:
+    def calcular_impostos(self, _config: Optional[Any] = None) -> None:
         """Calcula impostos do item."""
         # Valor base para calculo
         base = self.valor_total - self.valor_desconto + self.valor_frete + self.valor_seguro

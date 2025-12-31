@@ -3,18 +3,13 @@
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
-
-if TYPE_CHECKING:
-    pass
 
 
 class NFSeStatus(str, Enum):
@@ -292,8 +287,7 @@ class NFSe(Base):
             self.valor_servicos - self.valor_deducoes - self.valor_desconto_incondicionado
         )
 
-        if self.valor_base_calculo < Decimal("0"):
-            self.valor_base_calculo = Decimal("0")
+        self.valor_base_calculo = max(self.valor_base_calculo, Decimal("0"))
 
         # ISS
         self.valor_iss = self.valor_base_calculo * self.aliquota_iss / 100

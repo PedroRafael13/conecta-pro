@@ -3,18 +3,12 @@
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any, List, Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Boolean, Column, Date, DateTime, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
-
-if TYPE_CHECKING:
-    pass
 
 
 class CFOPTipo(str, Enum):

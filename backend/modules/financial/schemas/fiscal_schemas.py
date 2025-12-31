@@ -1,4 +1,5 @@
 """Schemas Pydantic para modulo Fiscal - NF-e, NFS-e, SPED, Retencoes."""
+# pylint: disable=too-few-public-methods,no-self-argument,missing-class-docstring
 
 from datetime import date, datetime
 from decimal import Decimal
@@ -139,8 +140,6 @@ class CFOPBase(BaseModel):
 class CFOPCreate(CFOPBase):
     """Schema para criar CFOP."""
 
-    pass
-
 
 class CFOPUpdate(BaseModel):
     """Schema para atualizar CFOP."""
@@ -261,18 +260,21 @@ class NCMCreate(NCMBase):
 
     @validator("capitulo", always=True)
     def extract_capitulo(cls, v, values):
+        """Extrai capitulo do codigo NCM."""
         if not v and "codigo" in values:
             return values["codigo"][:2]
         return v
 
     @validator("posicao", always=True)
     def extract_posicao(cls, v, values):
+        """Extrai posicao do codigo NCM."""
         if not v and "codigo" in values:
             return values["codigo"][:4]
         return v
 
     @validator("subposicao", always=True)
     def extract_subposicao(cls, v, values):
+        """Extrai subposicao do codigo NCM."""
         if not v and "codigo" in values:
             return values["codigo"][:6]
         return v
@@ -542,6 +544,7 @@ class NFeItemBase(BaseModel):
 
     @validator("valor_total", always=True)
     def calculate_total(cls, v, values):
+        """Calcula valor total do item se nao informado."""
         if v is None:
             qtd = values.get("quantidade", Decimal("0"))
             unit = values.get("valor_unitario", Decimal("0"))
@@ -552,8 +555,6 @@ class NFeItemBase(BaseModel):
 
 class NFeItemCreate(NFeItemBase):
     """Schema para criar item de NF-e."""
-
-    pass
 
 
 class NFeItemResponse(NFeItemBase):

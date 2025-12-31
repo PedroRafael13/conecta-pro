@@ -3,18 +3,13 @@
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any, List, Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
-
-if TYPE_CHECKING:
-    pass
 
 
 class ObrigacaoTipo(str, Enum):
@@ -259,7 +254,7 @@ class SUFRAMAConfig(Base):
             return False
         return self.active
 
-    def get_beneficios_aplicaveis(self, cfop: str, ncm: str) -> dict:
+    def get_beneficios_aplicaveis(self, cfop: str, _ncm: str) -> dict:
         """Retorna beneficios aplicaveis baseado em CFOP e NCM."""
         beneficios = {
             "ipi_isento": False,

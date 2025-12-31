@@ -1,14 +1,16 @@
 """Repository para modulo Fiscal - CRUD e operacoes de NF-e, NFS-e, SPED, Retencoes."""
+# pylint: disable=too-many-lines,too-many-public-methods,too-many-arguments
+# pylint: disable=too-many-positional-arguments,too-many-locals,not-callable
 
 import logging
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy import and_, desc, extract, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.orm import selectinload
 
 from modules.financial.models.cfop_ncm import CFOP, NCM, RetencaoFederal
 from modules.financial.models.fiscal_obligation import (
@@ -18,8 +20,8 @@ from modules.financial.models.fiscal_obligation import (
     SUFRAMAOperacao,
 )
 from modules.financial.models.nfe import NFe, NFeItem
-from modules.financial.models.nfse import CodigoServico, NFSe, NFSeLote
-from modules.financial.models.sped_file import SPEDFile, SPEDRegistro
+from modules.financial.models.nfse import CodigoServico, NFSe
+from modules.financial.models.sped_file import SPEDFile
 
 logger = logging.getLogger(__name__)
 
@@ -234,8 +236,8 @@ class FiscalRepository:
             .where(
                 and_(
                     RetencaoFederal.condominio_id == condominio_id,
-                    RetencaoFederal.servico_vigilancia == True,
-                    RetencaoFederal.active == True,
+                    RetencaoFederal.servico_vigilancia .is_(True),
+                    RetencaoFederal.active .is_(True),
                 )
             )
             .order_by(RetencaoFederal.created_at.desc())
@@ -311,7 +313,7 @@ class FiscalRepository:
         query = select(NFe).where(
             and_(
                 NFe.condominio_id == condominio_id,
-                NFe.active == True,
+                NFe.active .is_(True),
             )
         )
 
@@ -388,7 +390,7 @@ class FiscalRepository:
                 NFe.condominio_id == condominio_id,
                 func.date(NFe.data_emissao) >= data_inicial,
                 func.date(NFe.data_emissao) <= data_final,
-                NFe.active == True,
+                NFe.active .is_(True),
             )
         )
         if status:
@@ -447,7 +449,7 @@ class FiscalRepository:
         query = select(NFSe).where(
             and_(
                 NFSe.condominio_id == condominio_id,
-                NFSe.active == True,
+                NFSe.active .is_(True),
             )
         )
 
@@ -521,7 +523,7 @@ class FiscalRepository:
                 NFSe.condominio_id == condominio_id,
                 extract("month", NFSe.data_competencia) == mes,
                 extract("year", NFSe.data_competencia) == ano,
-                NFSe.active == True,
+                NFSe.active .is_(True),
             )
         )
         if status:
@@ -588,7 +590,7 @@ class FiscalRepository:
 
     async def list_codigos_servico(self, search: Optional[str] = None) -> List[CodigoServico]:
         """Lista codigos de servico."""
-        query = select(CodigoServico).where(CodigoServico.active == True)
+        query = select(CodigoServico).where(CodigoServico.active .is_(True))
 
         if search:
             query = query.where(
@@ -633,7 +635,7 @@ class FiscalRepository:
         query = select(SPEDFile).where(
             and_(
                 SPEDFile.condominio_id == condominio_id,
-                SPEDFile.active == True,
+                SPEDFile.active .is_(True),
             )
         )
 
@@ -702,7 +704,7 @@ class FiscalRepository:
         query = select(FiscalObligation).where(
             and_(
                 FiscalObligation.condominio_id == condominio_id,
-                FiscalObligation.active == True,
+                FiscalObligation.active .is_(True),
             )
         )
 
@@ -736,7 +738,7 @@ class FiscalRepository:
                 and_(
                     FiscalObligation.condominio_id == condominio_id,
                     FiscalObligation.status.in_(["pendente", "em_andamento"]),
-                    FiscalObligation.active == True,
+                    FiscalObligation.active .is_(True),
                 )
             )
             .order_by(FiscalObligation.data_vencimento)
@@ -751,7 +753,7 @@ class FiscalRepository:
                 and_(
                     FiscalObligation.condominio_id == condominio_id,
                     FiscalObligation.status == "atrasada",
-                    FiscalObligation.active == True,
+                    FiscalObligation.active .is_(True),
                 )
             )
             .order_by(FiscalObligation.data_vencimento)
@@ -801,7 +803,7 @@ class FiscalRepository:
                     SimplesNacionalDAS.condominio_id == condominio_id,
                     SimplesNacionalDAS.competencia_mes == mes,
                     SimplesNacionalDAS.competencia_ano == ano,
-                    SimplesNacionalDAS.active == True,
+                    SimplesNacionalDAS.active .is_(True),
                 )
             )
         )
@@ -814,7 +816,7 @@ class FiscalRepository:
         query = select(SimplesNacionalDAS).where(
             and_(
                 SimplesNacionalDAS.condominio_id == condominio_id,
-                SimplesNacionalDAS.active == True,
+                SimplesNacionalDAS.active .is_(True),
             )
         )
         if ano:
@@ -879,7 +881,7 @@ class FiscalRepository:
             .where(
                 and_(
                     SUFRAMAConfig.condominio_id == condominio_id,
-                    SUFRAMAConfig.active == True,
+                    SUFRAMAConfig.active .is_(True),
                 )
             )
             .order_by(SUFRAMAConfig.created_at.desc())
@@ -908,7 +910,7 @@ class FiscalRepository:
         query = select(SUFRAMAOperacao).where(
             and_(
                 SUFRAMAOperacao.condominio_id == condominio_id,
-                SUFRAMAOperacao.active == True,
+                SUFRAMAOperacao.active .is_(True),
             )
         )
 

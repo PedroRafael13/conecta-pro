@@ -1,8 +1,10 @@
 """Controller para modulo Fiscal - Endpoints de NF-e, NFS-e, SPED, Retencoes."""
+# pylint: disable=too-many-lines,too-many-arguments,too-many-positional-arguments
+# pylint: disable=unused-argument,fixme,logging-fstring-interpolation
+# pylint: disable=raise-missing-from,redefined-outer-name,no-else-return
 
 import logging
 from datetime import date, datetime
-from decimal import Decimal
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
@@ -17,11 +19,10 @@ from modules.financial.models.fiscal_obligation import (
     calcular_das_anexo_iii,
 )
 from modules.financial.repositories.fiscal_repository import FiscalRepository
-from modules.financial.schemas.fiscal_schemas import (  # CFOP; NCM; Retencao; NF-e; NFS-e; SPED; Obrigacao; DAS; SUFRAMA; Stats
+from modules.financial.schemas.fiscal_schemas import (
     CalculoRetencaoRequest,
     CalculoRetencaoResponse,
     CFOPCreate,
-    CFOPFilter,
     CFOPListResponse,
     CFOPResponse,
     CFOPUpdate,
@@ -30,7 +31,6 @@ from modules.financial.schemas.fiscal_schemas import (  # CFOP; NCM; Retencao; N
     FiscalDashboard,
     FiscalStats,
     NCMCreate,
-    NCMFilter,
     NCMListResponse,
     NCMResponse,
     NCMUpdate,
@@ -38,7 +38,6 @@ from modules.financial.schemas.fiscal_schemas import (  # CFOP; NCM; Retencao; N
     NFeCreate,
     NFeEmitirRequest,
     NFeEmitirResponse,
-    NFeFilter,
     NFeInutilizarRequest,
     NFeListResponse,
     NFeResponse,
@@ -47,11 +46,9 @@ from modules.financial.schemas.fiscal_schemas import (  # CFOP; NCM; Retencao; N
     NFSeCreate,
     NFSeEmitirRequest,
     NFSeEmitirResponse,
-    NFSeFilter,
     NFSeListResponse,
     NFSeResponse,
     NFSeUpdate,
-    ObrigacaoFilter,
     ObrigacaoFiscalCreate,
     ObrigacaoFiscalListResponse,
     ObrigacaoFiscalResponse,
@@ -65,10 +62,8 @@ from modules.financial.schemas.fiscal_schemas import (  # CFOP; NCM; Retencao; N
     SPEDFileCreate,
     SPEDFileListResponse,
     SPEDFileResponse,
-    SPEDFilter,
     SPEDGerarRequest,
     SPEDTransmitirRequest,
-    SPEDValidarRequest,
     SUFRAMAConfigCreate,
     SUFRAMAConfigResponse,
     SUFRAMAOperacaoCreate,
@@ -565,7 +560,10 @@ async def emitir_nfe(
         data.nfe_id,
         {
             "status": "enviada",
-            "chave_acesso": f"13{datetime.now().strftime('%y%m')}13123456000199550010000000{nfe.numero:09d}1",
+            "chave_acesso": (
+                f"13{datetime.now().strftime('%y%m')}"
+                f"13123456000199550010000000{nfe.numero:09d}1"
+            ),
         },
     )
 

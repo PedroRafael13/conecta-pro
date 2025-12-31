@@ -1,15 +1,14 @@
 """Modelo de Arquivos SPED - Sistema Publico de Escrituracao Digital."""
 
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any, List, Optional
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
 
