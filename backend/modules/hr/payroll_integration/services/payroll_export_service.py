@@ -6,26 +6,22 @@ import io
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.hr.payroll_integration.models import (
-    PayrollExport,
-    ExportFormat,
-    ExportStatus,
-)
+from modules.hr.payroll_integration.models import ExportFormat, ExportStatus, PayrollExport
 from modules.hr.payroll_integration.repositories import (
-    PayrollPeriodRepository,
     PayrollEventRepository,
     PayrollExportRepository,
     PayrollIntegrationRepository,
+    PayrollPeriodRepository,
 )
 from modules.hr.payroll_integration.schemas import (
-    PayrollExportCreate,
-    ExportProgressResponse,
     ExportDownloadResponse,
+    ExportProgressResponse,
+    PayrollExportCreate,
 )
 
 logger = logging.getLogger(__name__)
@@ -190,16 +186,18 @@ class PayrollExportService:
 
         # Data
         for event in events:
-            writer.writerow([
-                str(event.employee_id),
-                event.event_code,
-                event.event_name,
-                event.event_type,
-                event.event_category,
-                float(event.reference) if event.reference else "",
-                float(event.value),
-                event.esocial_code or "",
-            ])
+            writer.writerow(
+                [
+                    str(event.employee_id),
+                    event.event_code,
+                    event.event_name,
+                    event.event_type,
+                    event.event_category,
+                    float(event.reference) if event.reference else "",
+                    float(event.value),
+                    event.esocial_code or "",
+                ]
+            )
 
         content = output.getvalue()
         encoding = file_config.get("encoding", "utf-8")
@@ -375,9 +373,7 @@ class PayrollExportService:
             ExportFormat.CSV.value: "text/csv",
             ExportFormat.JSON.value: "application/json",
             ExportFormat.TXT.value: "text/plain",
-            ExportFormat.XLSX.value: (
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            ),
+            ExportFormat.XLSX.value: ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
             ExportFormat.XML.value: "application/xml",
             ExportFormat.CNAB240.value: "text/plain",
             ExportFormat.CNAB400.value: "text/plain",
@@ -449,10 +445,12 @@ class PayrollExportService:
                 results["success"] += 1
             except Exception as e:
                 results["failed"] += 1
-                results["details"].append({
-                    "export_id": str(export.id),
-                    "error": str(e),
-                })
+                results["details"].append(
+                    {
+                        "export_id": str(export.id),
+                        "error": str(e),
+                    }
+                )
             results["processed"] += 1
 
         return results

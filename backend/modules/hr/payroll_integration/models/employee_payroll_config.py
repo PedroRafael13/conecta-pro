@@ -1,26 +1,26 @@
 """Model para configuração de folha por funcionário."""
 
-from datetime import datetime, date, time
+import uuid
+from datetime import datetime, time
 from decimal import Decimal
 from enum import Enum
-import uuid
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    Column,
     Date,
-    Time,
+    DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
-    Index,
+    String,
+    Time,
     UniqueConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 
-from core.database import Base
+from core.models import Base
 
 
 class OvertimeRule(str, Enum):
@@ -87,6 +87,83 @@ IRRF_TABLE_2024 = [
 ]
 
 IRRF_DEPENDENT_DEDUCTION_2024 = 189.59
+
+
+def calculate_inss(gross_salary: Decimal, ceiling: float = INSS_CEILING_2024) -> Decimal:
+    """
+    Calcula INSS progressivo conforme tabela 2024.
+
+    Args:
+        gross_salary: Salário bruto
+        ceiling: Teto do INSS (padrão: 2024)
+
+    Returns:
+        Valor do INSS a descontar
+    """
+    salary = min(float(gross_salary), ceiling)
+    total_inss = Decimal("0")
+    previous_max = 0
+
+    for bracket in INSS_TABLE_2024:
+        if salary <= bracket["min"]:
+            break
+        taxable = min(salary, bracket["max"]) - previous_max
+        if taxable > 0:
+            total_inss += Decimal(str(taxable)) * Decimal(str(bracket["rate"])) / 100
+        previous_max = bracket["max"]
+
+    return min(total_inss.quantize(Decimal("0.01")), Decimal(str(INSS_MAX_DISCOUNT_2024)))
+
+
+def calculate_irrf(
+    gross_salary: Decimal,
+    dependents_or_inss: int | Decimal = 0,
+    dependents: int | None = None,
+) -> Decimal:
+    """
+    Calcula IRRF conforme tabela 2024.
+
+    Suporta duas assinaturas:
+    - calculate_irrf(gross_salary, dependents) - INSS assumido como 0
+    - calculate_irrf(gross_salary, inss, dependents) - com INSS explícito
+
+    Args:
+        gross_salary: Salário bruto
+        dependents_or_inss: Número de dependentes (int) ou valor do INSS (Decimal)
+        dependents: Número de dependentes (quando segundo arg é INSS)
+
+    Returns:
+        Valor do IRRF a descontar
+    """
+    # Detectar assinatura usada
+    if dependents is None:
+        # Chamada: calculate_irrf(salary, dependents)
+        inss_value = Decimal("0")
+        num_dependents = int(dependents_or_inss) if isinstance(dependents_or_inss, int) else 0
+    else:
+        # Chamada: calculate_irrf(salary, inss, dependents)
+        inss_value = (
+            Decimal(str(dependents_or_inss)) if not isinstance(dependents_or_inss, Decimal) else dependents_or_inss
+        )
+        num_dependents = dependents
+
+    # Base de cálculo
+    base = float(gross_salary) - float(inss_value)
+    base -= num_dependents * IRRF_DEPENDENT_DEDUCTION_2024
+
+    if base <= 0:
+        return Decimal("0")
+
+    # Encontrar faixa
+    for bracket in IRRF_TABLE_2024:
+        if base <= bracket["max"]:
+            irrf = (base * bracket["rate"] / 100) - bracket["deduction"]
+            return max(Decimal("0"), Decimal(str(round(irrf, 2))))
+
+    # Última faixa
+    last = IRRF_TABLE_2024[-1]
+    irrf = (base * last["rate"] / 100) - last["deduction"]
+    return max(Decimal("0"), Decimal(str(round(irrf, 2))))
 
 
 class EmployeePayrollConfig(Base):
@@ -349,8 +426,6 @@ class EmployeePayrollConfig(Base):
             "weekly_hours": float(self.weekly_hours) if self.weekly_hours else None,
             "overtime_rule": self.overtime_rule,
             "bank_hours_enabled": self.bank_hours_enabled,
-            "bank_hours_balance": (
-                float(self.bank_hours_balance) if self.bank_hours_balance else 0
-            ),
+            "bank_hours_balance": (float(self.bank_hours_balance) if self.bank_hours_balance else 0),
             "dependents_count": self.dependents_count,
         }

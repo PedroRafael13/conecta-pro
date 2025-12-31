@@ -1,27 +1,26 @@
 """Model para eventos de folha de pagamento."""
 
-from datetime import datetime, date
+import uuid
+from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
-import uuid
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    Column,
     Date,
+    DateTime,
     ForeignKey,
-    Integer,
-    Numeric,
-    Text,
     Index,
+    Numeric,
+    String,
+    Text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from core.database import Base
+from core.models import Base
 
 if TYPE_CHECKING:
     from modules.hr.payroll_integration.models.payroll_period import PayrollPeriod

@@ -1,24 +1,15 @@
 """Model para exportação de folha de pagamento."""
 
+import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-import uuid
 
-from sqlalchemy import (
-    Column,
-    String,
-    Boolean,
-    DateTime,
-    ForeignKey,
-    Integer,
-    Text,
-    Index,
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from core.database import Base
+from core.models import Base
 
 
 class ExportFormat(str, Enum):
@@ -276,14 +267,16 @@ class PayrollExport(Base):
         """Adiciona erro."""
         if not self.errors:
             self.errors = []
-        self.errors.append({
-            "record": record,
-            "field": field,
-            "code": code,
-            "message": message,
-            "employee_id": employee_id,
-            "timestamp": datetime.utcnow().isoformat(),
-        })
+        self.errors.append(
+            {
+                "record": record,
+                "field": field,
+                "code": code,
+                "message": message,
+                "employee_id": employee_id,
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
         self.error_records += 1
 
     def add_warning(
@@ -296,12 +289,14 @@ class PayrollExport(Base):
         """Adiciona aviso."""
         if not self.warnings:
             self.warnings = []
-        self.warnings.append({
-            "record": record,
-            "field": field,
-            "code": code,
-            "message": message,
-        })
+        self.warnings.append(
+            {
+                "record": record,
+                "field": field,
+                "code": code,
+                "message": message,
+            }
+        )
         self.warning_records += 1
 
     def record_transmission(
@@ -334,7 +329,5 @@ class PayrollExport(Base):
             "progress_percentage": round(self.progress_percentage, 2),
             "success_rate": round(self.success_rate, 2),
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "completed_at": (
-                self.completed_at.isoformat() if self.completed_at else None
-            ),
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
         }

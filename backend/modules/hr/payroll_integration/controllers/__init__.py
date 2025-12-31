@@ -2,17 +2,15 @@
 
 from fastapi import APIRouter
 
-from modules.hr.payroll_integration.controllers.payroll_period_controller import (
-    router as period_router,
-)
+from modules.hr.payroll_integration.controllers.esocial_controller import router as esocial_router
 from modules.hr.payroll_integration.controllers.payroll_event_controller import (
     router as event_router,
 )
 from modules.hr.payroll_integration.controllers.payroll_export_controller import (
     router as export_router,
 )
-from modules.hr.payroll_integration.controllers.esocial_controller import (
-    router as esocial_router,
+from modules.hr.payroll_integration.controllers.payroll_period_controller import (
+    router as period_router,
 )
 
 # Router principal do módulo

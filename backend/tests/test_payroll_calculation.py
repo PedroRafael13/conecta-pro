@@ -49,9 +49,9 @@ class TestINSSCalculation:
         # Faixa 2: (2.666,68 - 1.412) * 9% = 112.92
         # Faixa 3: (4.000,03 - 2.666,68) * 12% = 160.00
         # Faixa 4: (5.000 - 4.000,03) * 14% = 139.99
-        # Total: 518.81
+        # Total: 518.82 (com arredondamento)
         inss = calculate_inss(Decimal("5000.00"))
-        expected = Decimal("518.81")
+        expected = Decimal("518.82")
         assert inss == expected
 
     def test_inss_teto(self):

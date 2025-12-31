@@ -1,24 +1,15 @@
 """Model para integração com sistemas de folha externos."""
 
+import uuid
 from datetime import datetime
 from enum import Enum
 from typing import Optional
-import uuid
 
-from sqlalchemy import (
-    Column,
-    String,
-    Boolean,
-    DateTime,
-    ForeignKey,
-    Integer,
-    Text,
-    Index,
-)
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from core.database import Base
+from core.models import Base
 
 
 class IntegrationType(str, Enum):
@@ -180,9 +171,13 @@ class PayrollIntegration(Base):
     @property
     def needs_certificate(self) -> bool:
         """Verifica se precisa de certificado digital."""
-        return self.integration_type in [
-            IntegrationType.ESOCIAL.value,
-        ] or self.auth_type == "certificate"
+        return (
+            self.integration_type
+            in [
+                IntegrationType.ESOCIAL.value,
+            ]
+            or self.auth_type == "certificate"
+        )
 
     def record_sync(
         self,
@@ -203,11 +198,13 @@ class PayrollIntegration(Base):
             # Adicionar ao log de erros
             if not self.error_log:
                 self.error_log = []
-            self.error_log.append({
-                "timestamp": datetime.utcnow().isoformat(),
-                "message": message,
-                "records": records,
-            })
+            self.error_log.append(
+                {
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "message": message,
+                    "records": records,
+                }
+            )
             # Manter apenas últimos 50 erros
             self.error_log = self.error_log[-50:]
 
@@ -227,9 +224,7 @@ class PayrollIntegration(Base):
             "description": self.description,
             "integration_type": self.integration_type,
             "status": self.status,
-            "last_sync_at": (
-                self.last_sync_at.isoformat() if self.last_sync_at else None
-            ),
+            "last_sync_at": (self.last_sync_at.isoformat() if self.last_sync_at else None),
             "last_sync_status": self.last_sync_status,
             "success_rate": round(self.success_rate, 2),
             "total_syncs": self.total_syncs,

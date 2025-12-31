@@ -1,16 +1,16 @@
 """Schemas para configuração de folha por funcionário."""
 
-from datetime import datetime, date, time
+from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
 from modules.hr.payroll_integration.models import (
-    OvertimeRule,
     BankHoursPolicy,
     ContractType,
+    OvertimeRule,
     WorkScheduleType,
 )
 

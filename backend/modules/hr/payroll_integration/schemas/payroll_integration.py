@@ -1,12 +1,12 @@
 """Schemas para integração com sistemas externos."""
 
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.hr.payroll_integration.models import IntegrationType, IntegrationStatus
+from modules.hr.payroll_integration.models import IntegrationStatus, IntegrationType
 
 
 class ESocialConfigSchema(BaseModel):

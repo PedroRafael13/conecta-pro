@@ -24,15 +24,15 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.DRAFT.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
         )
 
         assert period.code == "2024-12"
-        assert period.year == 2024
-        assert period.month == 12
+        assert period.reference_year == 2024
+        assert period.reference_month == 12
         assert period.period_type == PeriodType.MONTHLY.value
         assert period.status == PeriodStatus.DRAFT.value
 
@@ -45,8 +45,8 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.OPEN.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
         )
@@ -65,8 +65,8 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.DRAFT.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
         )
@@ -99,8 +99,8 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.OPEN.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
         )
@@ -125,8 +125,8 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.CALCULATED.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
         )
@@ -151,8 +151,8 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.APPROVED.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
         )
@@ -173,8 +173,8 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.CLOSED.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
         )
@@ -199,22 +199,22 @@ class TestPayrollPeriodModel:
             name="Dezembro 2024",
             period_type=PeriodType.MONTHLY.value,
             status=PeriodStatus.CALCULATED.value,
-            year=2024,
-            month=12,
+            reference_year=2024,
+            reference_month=12,
             start_date=date(2024, 12, 1),
             end_date=date(2024, 12, 31),
             total_employees=10,
             total_earnings=Decimal("50000.00"),
             total_deductions=Decimal("10000.00"),
             total_net=Decimal("40000.00"),
-            total_employer_costs=Decimal("15000.00"),
+            total_employer_cost=Decimal("15000.00"),
         )
 
         assert period.total_employees == 10
         assert period.total_earnings == Decimal("50000.00")
         assert period.total_deductions == Decimal("10000.00")
         assert period.total_net == Decimal("40000.00")
-        assert period.total_employer_costs == Decimal("15000.00")
+        assert period.total_employer_cost == Decimal("15000.00")
 
 
 class TestPeriodType:

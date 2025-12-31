@@ -1,27 +1,27 @@
 """Model para período de folha de pagamento."""
 
-from datetime import datetime, date
-from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
 import uuid
+from datetime import date, datetime
+from enum import Enum
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import (
-    Column,
-    String,
     Boolean,
-    DateTime,
+    CheckConstraint,
+    Column,
     Date,
+    DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
+    String,
     Text,
-    Index,
-    CheckConstraint,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from core.database import Base
+from core.models import Base
 
 if TYPE_CHECKING:
     from modules.hr.payroll_integration.models.payroll_event import PayrollEvent
@@ -195,12 +195,8 @@ class PayrollPeriod(Base):
 
     def calculate_totals(self, events: List["PayrollEvent"]) -> None:
         """Calcula totalizadores baseado nos eventos."""
-        self.total_earnings = sum(
-            e.value for e in events if e.event_type == "earning" and e.ativo
-        )
-        self.total_deductions = sum(
-            e.value for e in events if e.event_type == "deduction" and e.ativo
-        )
+        self.total_earnings = sum(e.value for e in events if e.event_type == "earning" and e.ativo)
+        self.total_deductions = sum(e.value for e in events if e.event_type == "deduction" and e.ativo)
         self.total_net = self.total_earnings - self.total_deductions
         self.total_employees = len(set(e.employee_id for e in events if e.ativo))
 
@@ -215,9 +211,7 @@ class PayrollPeriod(Base):
             "reference_year": self.reference_year,
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "end_date": self.end_date.isoformat() if self.end_date else None,
-            "payment_date": (
-                self.payment_date.isoformat() if self.payment_date else None
-            ),
+            "payment_date": (self.payment_date.isoformat() if self.payment_date else None),
             "status": self.status,
             "total_employees": self.total_employees,
             "total_earnings": float(self.total_earnings or 0),

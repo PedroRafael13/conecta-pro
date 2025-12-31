@@ -7,8 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_permissions
+from core.database import get_db
 from modules.hr.payroll_integration.schemas import (
     ESocialExportRequest,
     ESocialTransmissionResponse,
@@ -227,16 +227,20 @@ async def generate_batch(
                     condominio_id=current_user["condominio_id"],
                     user_id=current_user["id"],
                 )
-                results["generated"].append({
-                    "event_type": event_type,
-                    "export_id": str(export.id),
-                    "export_code": export.export_code,
-                })
+                results["generated"].append(
+                    {
+                        "event_type": event_type,
+                        "export_id": str(export.id),
+                        "export_code": export.export_code,
+                    }
+                )
             except Exception as e:
-                results["failed"].append({
-                    "event_type": event_type,
-                    "error": str(e),
-                })
+                results["failed"].append(
+                    {
+                        "event_type": event_type,
+                        "error": str(e),
+                    }
+                )
 
         results["total"] = len(results["generated"]) + len(results["failed"])
 
@@ -280,17 +284,21 @@ async def transmit_batch(
                     export_id=UUID(export_id),
                     condominio_id=current_user["condominio_id"],
                 )
-                results["transmitted"].append({
-                    "export_id": export_id,
-                    "protocol": result.protocol,
-                    "receipt": result.receipt,
-                    "status": result.status,
-                })
+                results["transmitted"].append(
+                    {
+                        "export_id": export_id,
+                        "protocol": result.protocol,
+                        "receipt": result.receipt,
+                        "status": result.status,
+                    }
+                )
             except Exception as e:
-                results["failed"].append({
-                    "export_id": export_id,
-                    "error": str(e),
-                })
+                results["failed"].append(
+                    {
+                        "export_id": export_id,
+                        "error": str(e),
+                    }
+                )
 
         results["total"] = len(results["transmitted"]) + len(results["failed"])
 

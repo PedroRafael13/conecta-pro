@@ -1,30 +1,33 @@
 """Models do módulo de integração com folha de pagamento."""
 
-from modules.hr.payroll_integration.models.payroll_period import (
-    PayrollPeriod,
-    PeriodType,
-    PeriodStatus,
-)
-from modules.hr.payroll_integration.models.payroll_event import (
-    PayrollEvent,
-    EventType,
-    EventCategory,
-    EventStatus,
-)
-from modules.hr.payroll_integration.models.payroll_integration import (
-    PayrollIntegration,
-    IntegrationType,
-    IntegrationStatus,
-)
-from modules.hr.payroll_integration.models.payroll_export import (
-    PayrollExport,
-    ExportFormat,
-    ExportStatus,
-)
 from modules.hr.payroll_integration.models.employee_payroll_config import (
+    BankHoursPolicy,
+    ContractType,
     EmployeePayrollConfig,
     OvertimeRule,
-    BankHoursPolicy,
+    WorkScheduleType,
+)
+from modules.hr.payroll_integration.models.payroll_event import (
+    DEFAULT_RUBRICAS,
+    EventCategory,
+    EventStatus,
+    EventType,
+    PayrollEvent,
+)
+from modules.hr.payroll_integration.models.payroll_export import (
+    ExportFormat,
+    ExportStatus,
+    PayrollExport,
+)
+from modules.hr.payroll_integration.models.payroll_integration import (
+    IntegrationStatus,
+    IntegrationType,
+    PayrollIntegration,
+)
+from modules.hr.payroll_integration.models.payroll_period import (
+    PayrollPeriod,
+    PeriodStatus,
+    PeriodType,
 )
 
 __all__ = [
@@ -37,6 +40,7 @@ __all__ = [
     "EventType",
     "EventCategory",
     "EventStatus",
+    "DEFAULT_RUBRICAS",
     # PayrollIntegration
     "PayrollIntegration",
     "IntegrationType",
@@ -49,4 +53,6 @@ __all__ = [
     "EmployeePayrollConfig",
     "OvertimeRule",
     "BankHoursPolicy",
+    "ContractType",
+    "WorkScheduleType",
 ]

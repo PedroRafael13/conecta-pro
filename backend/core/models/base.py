@@ -13,6 +13,9 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 class Base(DeclarativeBase):
     """Base declarativa para SQLAlchemy."""
 
+    # Permite herança com sintaxe Column() legada (SQLAlchemy 1.x style)
+    __allow_unmapped__ = True
+
 
 class BaseModel(Base):
     """

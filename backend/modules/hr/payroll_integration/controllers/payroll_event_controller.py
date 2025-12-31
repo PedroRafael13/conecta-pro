@@ -7,17 +7,17 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user, require_permissions
-from modules.hr.payroll_integration.models import EventType, EventCategory
+from core.database import get_db
+from modules.hr.payroll_integration.models import EventCategory, EventType
 from modules.hr.payroll_integration.schemas import (
-    PayrollEventCreate,
-    PayrollEventUpdate,
-    PayrollEventResponse,
-    PayrollEventListResponse,
-    PayrollEventBulkCreate,
-    EventAdjustmentRequest,
     EmployeePayrollSummary,
+    EventAdjustmentRequest,
+    PayrollEventBulkCreate,
+    PayrollEventCreate,
+    PayrollEventListResponse,
+    PayrollEventResponse,
+    PayrollEventUpdate,
 )
 from modules.hr.payroll_integration.services import PayrollEventService
 
@@ -239,8 +239,7 @@ async def get_events_by_category(
         service = PayrollEventService(db)
         grouped = await service.get_events_by_category(period_id)
         return {
-            category: [PayrollEventResponse.model_validate(e) for e in events]
-            for category, events in grouped.items()
+            category: [PayrollEventResponse.model_validate(e) for e in events] for category, events in grouped.items()
         }
     except Exception as e:
         logger.error("Erro ao agrupar eventos por categoria: %s", e)

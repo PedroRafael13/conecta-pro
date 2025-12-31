@@ -1,13 +1,13 @@
 """Schemas para eventos de folha de pagamento."""
 
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional, List
+from typing import List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.hr.payroll_integration.models import EventType, EventCategory, EventStatus
+from modules.hr.payroll_integration.models import EventCategory, EventStatus, EventType
 
 
 class PayrollEventBase(BaseModel):

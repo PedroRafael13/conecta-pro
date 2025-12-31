@@ -2,23 +2,23 @@
 
 import logging
 from datetime import datetime
-from decimal import Decimal, ROUND_HALF_UP
-from typing import List, Dict, Any
+from decimal import ROUND_HALF_UP, Decimal
+from typing import Any, Dict, List
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.payroll_integration.models import (
-    PayrollPeriod,
     EmployeePayrollConfig,
-    EventType,
     EventCategory,
+    EventType,
+    PayrollPeriod,
     PeriodStatus,
 )
 from modules.hr.payroll_integration.repositories import (
-    PayrollPeriodRepository,
-    PayrollEventRepository,
     EmployeePayrollConfigRepository,
+    PayrollEventRepository,
+    PayrollPeriodRepository,
 )
 from modules.hr.payroll_integration.schemas import (
     PeriodCalculationRequest,
@@ -89,9 +89,7 @@ class PayrollCalculationService:
             try:
                 # Limpar eventos existentes se recalculando
                 if request.recalculate_all:
-                    await self.event_repo.delete_by_period(
-                        period_id, employee_id=employee.employee_id
-                    )
+                    await self.event_repo.delete_by_period(period_id, employee_id=employee.employee_id)
 
                 # Calcular eventos
                 events = await self._calculate_employee_payroll(
@@ -118,10 +116,12 @@ class PayrollCalculationService:
                     employee.employee_id,
                     e,
                 )
-                results["errors"].append({
-                    "employee_id": str(employee.employee_id),
-                    "error": str(e),
-                })
+                results["errors"].append(
+                    {
+                        "employee_id": str(employee.employee_id),
+                        "error": str(e),
+                    }
+                )
 
         # Calcular totais do período
         totals = await self.event_repo.get_period_totals(period_id)
@@ -187,31 +187,20 @@ class PayrollCalculationService:
 
         # 3. Horas extras
         if time_data["overtime_50"] > 0:
-            events.append(self._create_overtime_event(
-                employee, period, time_data["overtime_50"], 50
-            ))
+            events.append(self._create_overtime_event(employee, period, time_data["overtime_50"], 50))
         if time_data["overtime_100"] > 0:
-            events.append(self._create_overtime_event(
-                employee, period, time_data["overtime_100"], 100
-            ))
+            events.append(self._create_overtime_event(employee, period, time_data["overtime_100"], 100))
 
         # 4. Adicional noturno
         if time_data["night_hours"] > 0:
-            events.append(self._create_night_shift_event(
-                employee, period, time_data["night_hours"]
-            ))
+            events.append(self._create_night_shift_event(employee, period, time_data["night_hours"]))
 
         # 5. Faltas
         if time_data["absence_hours"] > 0:
-            events.append(self._create_absence_event(
-                employee, period, time_data["absence_hours"]
-            ))
+            events.append(self._create_absence_event(employee, period, time_data["absence_hours"]))
 
         # 6. Calcular totais para impostos
-        total_earnings = sum(
-            Decimal(str(e["value"])) for e in events
-            if e["event_type"] == EventType.EARNING
-        )
+        total_earnings = sum(Decimal(str(e["value"])) for e in events if e["event_type"] == EventType.EARNING)
 
         # 7. INSS
         inss_value = employee.calculate_inss(total_earnings)
@@ -220,9 +209,7 @@ class PayrollCalculationService:
         # 8. IRRF
         irrf_value = employee.calculate_irrf(total_earnings, inss_value)
         if irrf_value > 0:
-            events.append(self._create_irrf_event(
-                employee, period, irrf_value, total_earnings - inss_value
-            ))
+            events.append(self._create_irrf_event(employee, period, irrf_value, total_earnings - inss_value))
 
         # 9. Benefícios
         benefit_events = self._create_benefit_events(employee, period)
@@ -424,17 +411,19 @@ class PayrollCalculationService:
 
             # Provento (se aplicável)
             if config[0] and value > 0:
-                events.append(PayrollEventCreate(
-                    employee_id=employee.employee_id,
-                    period_id=period.id,
-                    event_code=config[0],
-                    event_name=config[1],
-                    event_type=EventType.EARNING,
-                    event_category=EventCategory.MEAL_ALLOWANCE,
-                    value=value,
-                    source="benefits",
-                    esocial_incidences={"inss": False, "irrf": False, "fgts": False},
-                ))
+                events.append(
+                    PayrollEventCreate(
+                        employee_id=employee.employee_id,
+                        period_id=period.id,
+                        event_code=config[0],
+                        event_name=config[1],
+                        event_type=EventType.EARNING,
+                        event_category=EventCategory.MEAL_ALLOWANCE,
+                        value=value,
+                        source="benefits",
+                        esocial_incidences={"inss": False, "irrf": False, "fgts": False},
+                    )
+                )
 
             # Desconto
             if config[2]:
@@ -444,19 +433,21 @@ class PayrollCalculationService:
                     discount_value = value
 
                 if discount_value > 0:
-                    events.append(PayrollEventCreate(
-                        employee_id=employee.employee_id,
-                        period_id=period.id,
-                        event_code=config[2],
-                        event_name=config[3],
-                        event_type=EventType.DEDUCTION,
-                        event_category=EventCategory.MEAL_DISCOUNT,
-                        base_value=value,
-                        rate=discount_rate,
-                        value=discount_value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
-                        source="benefits",
-                        esocial_incidences={"inss": False, "irrf": False, "fgts": False},
-                    ))
+                    events.append(
+                        PayrollEventCreate(
+                            employee_id=employee.employee_id,
+                            period_id=period.id,
+                            event_code=config[2],
+                            event_name=config[3],
+                            event_type=EventType.DEDUCTION,
+                            event_category=EventCategory.MEAL_DISCOUNT,
+                            base_value=value,
+                            rate=discount_rate,
+                            value=discount_value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+                            source="benefits",
+                            esocial_incidences={"inss": False, "irrf": False, "fgts": False},
+                        )
+                    )
 
         return events
 
@@ -480,20 +471,22 @@ class PayrollCalculationService:
 
             value = Decimal(str(loan.get("installment_value", 0)))
             if value > 0:
-                events.append(PayrollEventCreate(
-                    employee_id=employee.employee_id,
-                    period_id=period.id,
-                    event_code=f"9400{i+1}",
-                    event_name=f"Empréstimo {loan.get('bank', '')}",
-                    event_type=EventType.DEDUCTION,
-                    event_category=EventCategory.LOAN,
-                    reference=Decimal(str(paid + 1)),
-                    reference_unit="installment",
-                    value=value,
-                    source="loans",
-                    notes=f"Parcela {paid + 1}/{total}",
-                    esocial_incidences={"inss": False, "irrf": False, "fgts": False},
-                ))
+                events.append(
+                    PayrollEventCreate(
+                        employee_id=employee.employee_id,
+                        period_id=period.id,
+                        event_code=f"9400{i+1}",
+                        event_name=f"Empréstimo {loan.get('bank', '')}",
+                        event_type=EventType.DEDUCTION,
+                        event_category=EventCategory.LOAN,
+                        reference=Decimal(str(paid + 1)),
+                        reference_unit="installment",
+                        value=value,
+                        source="loans",
+                        notes=f"Parcela {paid + 1}/{total}",
+                        esocial_incidences={"inss": False, "irrf": False, "fgts": False},
+                    )
+                )
 
         return events
 
@@ -526,22 +519,12 @@ class PayrollCalculationService:
         gross = request.gross_salary
 
         # Horas extras
-        overtime_50_value = (
-            request.overtime_hours_50
-            * employee_config.calculated_hourly_rate
-            * Decimal("1.5")
-        )
-        overtime_100_value = (
-            request.overtime_hours_100
-            * employee_config.calculated_hourly_rate
-            * Decimal("2.0")
-        )
+        overtime_50_value = request.overtime_hours_50 * employee_config.calculated_hourly_rate * Decimal("1.5")
+        overtime_100_value = request.overtime_hours_100 * employee_config.calculated_hourly_rate * Decimal("2.0")
 
         # Adicional noturno
         night_value = (
-            request.night_hours
-            * employee_config.calculated_hourly_rate
-            * (employee_config.night_shift_rate / 100)
+            request.night_hours * employee_config.calculated_hourly_rate * (employee_config.night_shift_rate / 100)
         )
 
         # Faltas

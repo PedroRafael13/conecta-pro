@@ -2,16 +2,16 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.payroll_integration.models import (
-    PayrollIntegration,
-    IntegrationType,
     IntegrationStatus,
+    IntegrationType,
+    PayrollIntegration,
 )
 from modules.hr.payroll_integration.schemas import (
     PayrollIntegrationCreate,
@@ -44,9 +44,7 @@ class PayrollIntegrationRepository:
             api_version=data.api_version,
             auth_type=data.auth_type,
             credentials=data.credentials.model_dump() if data.credentials else {},
-            esocial_config=(
-                data.esocial_config.model_dump() if data.esocial_config else {}
-            ),
+            esocial_config=(data.esocial_config.model_dump() if data.esocial_config else {}),
             field_mapping=data.field_mapping or {},
             rubrica_mapping=data.rubrica_mapping or {},
             sync_config=data.sync_config.model_dump() if data.sync_config else {},
@@ -111,16 +109,12 @@ class PayrollIntegrationRepository:
         ]
 
         if integration_type:
-            conditions.append(
-                PayrollIntegration.integration_type == integration_type.value
-            )
+            conditions.append(PayrollIntegration.integration_type == integration_type.value)
         if status:
             conditions.append(PayrollIntegration.status == status.value)
 
         # Count
-        count_query = select(func.count(PayrollIntegration.id)).where(
-            and_(*conditions)
-        )
+        count_query = select(func.count(PayrollIntegration.id)).where(and_(*conditions))
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
 

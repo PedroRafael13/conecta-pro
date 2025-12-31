@@ -2,26 +2,19 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.hr.payroll_integration.models import (
-    PayrollIntegration,
-    PayrollExport,
-    ExportFormat,
-)
+from modules.hr.payroll_integration.models import ExportFormat, PayrollExport, PayrollIntegration
 from modules.hr.payroll_integration.repositories import (
-    PayrollPeriodRepository,
     PayrollEventRepository,
     PayrollExportRepository,
     PayrollIntegrationRepository,
+    PayrollPeriodRepository,
 )
-from modules.hr.payroll_integration.schemas import (
-    ESocialExportRequest,
-    ESocialTransmissionResponse,
-)
+from modules.hr.payroll_integration.schemas import ESocialExportRequest, ESocialTransmissionResponse
 
 logger = logging.getLogger(__name__)
 
@@ -139,8 +132,7 @@ class ESocialService:
         rubrica_mapping = integration.rubrica_mapping or {}
         if len(rubrica_mapping) < 5:
             result["warnings"].append(
-                f"Apenas {len(rubrica_mapping)} rubricas mapeadas. "
-                "Recomenda-se mapear todas as rubricas utilizadas."
+                f"Apenas {len(rubrica_mapping)} rubricas mapeadas. " "Recomenda-se mapear todas as rubricas utilizadas."
             )
 
         return result
@@ -253,16 +245,16 @@ class ESocialService:
         xml_lines = [
             '<?xml version="1.0" encoding="UTF-8"?>',
             f'<eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1">',
-            f'  <envioLoteEventos>',
-            f'    <ideEmpregador>',
-            f'      <tpInsc>1</tpInsc>',
-            f'      <nrInsc>{nr_inscricao[:8]}</nrInsc>',
-            f'    </ideEmpregador>',
-            f'    <ideTransmissor>',
-            f'      <tpInsc>1</tpInsc>',
-            f'      <nrInsc>{nr_inscricao}</nrInsc>',
-            f'    </ideTransmissor>',
-            f'    <eventos>',
+            f"  <envioLoteEventos>",
+            f"    <ideEmpregador>",
+            f"      <tpInsc>1</tpInsc>",
+            f"      <nrInsc>{nr_inscricao[:8]}</nrInsc>",
+            f"    </ideEmpregador>",
+            f"    <ideTransmissor>",
+            f"      <tpInsc>1</tpInsc>",
+            f"      <nrInsc>{nr_inscricao}</nrInsc>",
+            f"    </ideTransmissor>",
+            f"    <eventos>",
         ]
 
         # Gerar eventos baseado no tipo
@@ -273,11 +265,13 @@ class ESocialService:
         elif event_type == "S-1299":
             xml_lines.extend(self._generate_s1299_event(events, config, ambiente))
 
-        xml_lines.extend([
-            f'    </eventos>',
-            f'  </envioLoteEventos>',
-            f'</eSocial>',
-        ])
+        xml_lines.extend(
+            [
+                f"    </eventos>",
+                f"  </envioLoteEventos>",
+                f"</eSocial>",
+            ]
+        )
 
         return "\n".join(xml_lines).encode("utf-8")
 
@@ -300,33 +294,33 @@ class ESocialService:
 
         for emp_id, emp_events in by_employee.items():
             lines.append(f'      <evento Id="ID{emp_id[:30]}">')
-            lines.append(f'        <evtRemun>')
-            lines.append(f'          <ideEvento>')
-            lines.append(f'            <indRetif>1</indRetif>')
-            lines.append(f'            <tpAmb>{ambiente}</tpAmb>')
-            lines.append(f'            <procEmi>1</procEmi>')
-            lines.append(f'            <verProc>1.0</verProc>')
-            lines.append(f'          </ideEvento>')
-            lines.append(f'          <dmDev>')
+            lines.append(f"        <evtRemun>")
+            lines.append(f"          <ideEvento>")
+            lines.append(f"            <indRetif>1</indRetif>")
+            lines.append(f"            <tpAmb>{ambiente}</tpAmb>")
+            lines.append(f"            <procEmi>1</procEmi>")
+            lines.append(f"            <verProc>1.0</verProc>")
+            lines.append(f"          </ideEvento>")
+            lines.append(f"          <dmDev>")
 
             for event in emp_events:
                 esocial_code = event.esocial_code or event.event_code
                 valor = int(float(event.value) * 100)  # Em centavos
 
-                lines.append(f'            <ideEstabLot>')
-                lines.append(f'              <tpInsc>1</tpInsc>')
+                lines.append(f"            <ideEstabLot>")
+                lines.append(f"              <tpInsc>1</tpInsc>")
                 lines.append(f'              <nrInsc>{config.get("nr_inscricao", "")}</nrInsc>')
-                lines.append(f'              <remunPerApur>')
-                lines.append(f'                <itensRemun>')
-                lines.append(f'                  <codRubr>{esocial_code}</codRubr>')
-                lines.append(f'                  <vrRubr>{valor}</vrRubr>')
-                lines.append(f'                </itensRemun>')
-                lines.append(f'              </remunPerApur>')
-                lines.append(f'            </ideEstabLot>')
+                lines.append(f"              <remunPerApur>")
+                lines.append(f"                <itensRemun>")
+                lines.append(f"                  <codRubr>{esocial_code}</codRubr>")
+                lines.append(f"                  <vrRubr>{valor}</vrRubr>")
+                lines.append(f"                </itensRemun>")
+                lines.append(f"              </remunPerApur>")
+                lines.append(f"            </ideEstabLot>")
 
-            lines.append(f'          </dmDev>')
-            lines.append(f'        </evtRemun>')
-            lines.append(f'      </evento>')
+            lines.append(f"          </dmDev>")
+            lines.append(f"        </evtRemun>")
+            lines.append(f"      </evento>")
 
         return lines
 
@@ -340,15 +334,15 @@ class ESocialService:
         lines = []
         # Implementação simplificada
         lines.append(f'      <evento Id="ID_S1210">')
-        lines.append(f'        <evtPgtos>')
-        lines.append(f'          <ideEvento>')
-        lines.append(f'            <indRetif>1</indRetif>')
-        lines.append(f'            <tpAmb>{ambiente}</tpAmb>')
-        lines.append(f'            <procEmi>1</procEmi>')
-        lines.append(f'            <verProc>1.0</verProc>')
-        lines.append(f'          </ideEvento>')
-        lines.append(f'        </evtPgtos>')
-        lines.append(f'      </evento>')
+        lines.append(f"        <evtPgtos>")
+        lines.append(f"          <ideEvento>")
+        lines.append(f"            <indRetif>1</indRetif>")
+        lines.append(f"            <tpAmb>{ambiente}</tpAmb>")
+        lines.append(f"            <procEmi>1</procEmi>")
+        lines.append(f"            <verProc>1.0</verProc>")
+        lines.append(f"          </ideEvento>")
+        lines.append(f"        </evtPgtos>")
+        lines.append(f"      </evento>")
         return lines
 
     def _generate_s1299_event(
@@ -360,29 +354,29 @@ class ESocialService:
         """Gera evento S-1299 (fechamento)."""
         lines = []
         lines.append(f'      <evento Id="ID_S1299">')
-        lines.append(f'        <evtFechaEvPer>')
-        lines.append(f'          <ideEvento>')
-        lines.append(f'            <indRetif>1</indRetif>')
-        lines.append(f'            <tpAmb>{ambiente}</tpAmb>')
-        lines.append(f'            <procEmi>1</procEmi>')
-        lines.append(f'            <verProc>1.0</verProc>')
-        lines.append(f'          </ideEvento>')
-        lines.append(f'          <ideRespInf>')
-        lines.append(f'            <nmResp>Responsavel</nmResp>')
-        lines.append('            <cpfResp>00000000000</cpfResp>')
-        lines.append('            <telefone>0000000000</telefone>')
-        lines.append('            <email>resp@email.com</email>')
-        lines.append('          </ideRespInf>')
-        lines.append('          <infoFech>')
-        lines.append('            <evtRemun>S</evtRemun>')
-        lines.append('            <evtPgtos>S</evtPgtos>')
-        lines.append('            <evtAqProd>N</evtAqProd>')
-        lines.append('            <evtComProd>N</evtComProd>')
-        lines.append('            <evtContratAvNP>N</evtContratAvNP>')
-        lines.append('            <evtInfoComplPer>N</evtInfoComplPer>')
-        lines.append('          </infoFech>')
-        lines.append('        </evtFechaEvPer>')
-        lines.append('      </evento>')
+        lines.append(f"        <evtFechaEvPer>")
+        lines.append(f"          <ideEvento>")
+        lines.append(f"            <indRetif>1</indRetif>")
+        lines.append(f"            <tpAmb>{ambiente}</tpAmb>")
+        lines.append(f"            <procEmi>1</procEmi>")
+        lines.append(f"            <verProc>1.0</verProc>")
+        lines.append(f"          </ideEvento>")
+        lines.append(f"          <ideRespInf>")
+        lines.append(f"            <nmResp>Responsavel</nmResp>")
+        lines.append("            <cpfResp>00000000000</cpfResp>")
+        lines.append("            <telefone>0000000000</telefone>")
+        lines.append("            <email>resp@email.com</email>")
+        lines.append("          </ideRespInf>")
+        lines.append("          <infoFech>")
+        lines.append("            <evtRemun>S</evtRemun>")
+        lines.append("            <evtPgtos>S</evtPgtos>")
+        lines.append("            <evtAqProd>N</evtAqProd>")
+        lines.append("            <evtComProd>N</evtComProd>")
+        lines.append("            <evtContratAvNP>N</evtContratAvNP>")
+        lines.append("            <evtInfoComplPer>N</evtInfoComplPer>")
+        lines.append("          </infoFech>")
+        lines.append("        </evtFechaEvPer>")
+        lines.append("      </evento>")
         return lines
 
     async def transmit(

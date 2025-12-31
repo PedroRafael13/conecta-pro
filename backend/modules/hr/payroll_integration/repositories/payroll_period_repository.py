@@ -2,22 +2,15 @@
 
 import logging
 from datetime import datetime
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from modules.hr.payroll_integration.models import (
-    PayrollPeriod,
-    PeriodStatus,
-    PeriodType,
-)
-from modules.hr.payroll_integration.schemas import (
-    PayrollPeriodCreate,
-    PayrollPeriodUpdate,
-)
+from modules.hr.payroll_integration.models import PayrollPeriod, PeriodStatus, PeriodType
+from modules.hr.payroll_integration.schemas import PayrollPeriodCreate, PayrollPeriodUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -254,10 +247,12 @@ class PayrollPeriodRepository:
             and_(
                 PayrollPeriod.condominio_id == condominio_id,
                 PayrollPeriod.ativo.is_(True),
-                PayrollPeriod.status.in_([
-                    PeriodStatus.DRAFT.value,
-                    PeriodStatus.OPEN.value,
-                ]),
+                PayrollPeriod.status.in_(
+                    [
+                        PeriodStatus.DRAFT.value,
+                        PeriodStatus.OPEN.value,
+                    ]
+                ),
             )
         )
 

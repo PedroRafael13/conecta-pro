@@ -146,3 +146,183 @@ async def get_current_active_user(
 # Type aliases - usar string literal para evitar import circular
 CurrentUser = Annotated["User", Depends(get_current_user)]
 CurrentActiveUser = Annotated["User", Depends(get_current_active_user)]
+
+
+def require_permissions(*permissions: str):
+    """
+    Cria uma dependência que verifica se o usuário tem as permissões requeridas.
+
+    Args:
+        *permissions: Lista de permissões requeridas (qualquer uma delas)
+
+    Returns:
+        Dependência do FastAPI para verificação de permissões
+
+    Example:
+        @router.get("/admin", dependencies=[Depends(require_permissions("admin", "manager"))])
+        async def admin_endpoint():
+            ...
+    """
+
+    async def permission_checker(
+        credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    ) -> None:
+        """Verifica se o usuário tem as permissões necessárias."""
+        # Import local para evitar circular import
+        from core.database import get_db
+        from core.models import User
+        from core.models.user import UserRole
+
+        try:
+            payload = verify_access_token(credentials.credentials)
+            user_id = payload.get("sub")
+
+            if not user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token inválido: subject não encontrado",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+            # Obter usuário do banco
+            async for session in get_db():
+                result = await session.execute(select(User).where(User.id == user_id))
+                user = result.scalar_one_or_none()
+
+                if not user:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Usuário não encontrado",
+                    )
+
+                if not user.is_active:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Usuário inativo",
+                    )
+
+                # Super admin tem todas as permissões
+                if user.role == UserRole.SUPER_ADMIN.value:
+                    return
+
+                # Verificar permissões por role
+                role_permissions = {
+                    UserRole.ADMIN.value: ["admin", "manager", "supervisor", "operator", "viewer"],
+                    UserRole.MANAGER.value: ["manager", "supervisor", "operator", "viewer"],
+                    UserRole.SUPERVISOR.value: ["supervisor", "operator", "viewer"],
+                    UserRole.OPERATOR.value: ["operator", "viewer"],
+                    UserRole.CLIENT.value: ["client", "viewer"],
+                    UserRole.VIEWER.value: ["viewer"],
+                }
+
+                user_role_permissions = role_permissions.get(user.role, [])
+                user_explicit_permissions = user.permissions or []
+
+                # Verificar se tem alguma das permissões requeridas
+                all_user_permissions = set(user_role_permissions) | set(user_explicit_permissions)
+
+                if not any(perm in all_user_permissions for perm in permissions):
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"Permissão negada. Requer: {', '.join(permissions)}",
+                    )
+
+                return
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao obter sessão do banco",
+            )
+
+        except TokenError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=str(e),
+                headers={"WWW-Authenticate": "Bearer"},
+            ) from e
+
+    return permission_checker
+
+
+def require_roles(*roles: str):
+    """
+    Cria uma dependência que verifica se o usuário tem um dos roles requeridos.
+
+    Args:
+        *roles: Lista de roles aceitos
+
+    Returns:
+        Dependência do FastAPI para verificação de roles
+
+    Example:
+        @router.delete("/user/{id}", dependencies=[Depends(require_roles("admin", "super_admin"))])
+        async def delete_user(id: str):
+            ...
+    """
+
+    async def role_checker(
+        credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    ) -> None:
+        """Verifica se o usuário tem um dos roles necessários."""
+        # Import local para evitar circular import
+        from core.database import get_db
+        from core.models import User
+        from core.models.user import ROLE_HIERARCHY, UserRole
+
+        try:
+            payload = verify_access_token(credentials.credentials)
+            user_id = payload.get("sub")
+
+            if not user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token inválido: subject não encontrado",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+            # Obter usuário do banco
+            async for session in get_db():
+                result = await session.execute(select(User).where(User.id == user_id))
+                user = result.scalar_one_or_none()
+
+                if not user:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Usuário não encontrado",
+                    )
+
+                if not user.is_active:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Usuário inativo",
+                    )
+
+                # Verificar role hierárquico
+                user_level = ROLE_HIERARCHY.get(UserRole(user.role), 0)
+
+                # Encontrar o menor nível requerido entre os roles aceitos
+                min_required_level = min(
+                    ROLE_HIERARCHY.get(UserRole(r), 100) for r in roles if r in [e.value for e in UserRole]
+                )
+
+                if user_level < min_required_level:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail=f"Role insuficiente. Requer: {', '.join(roles)}",
+                    )
+
+                return
+
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao obter sessão do banco",
+            )
+
+        except TokenError as e:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=str(e),
+                headers={"WWW-Authenticate": "Bearer"},
+            ) from e
+
+    return role_checker

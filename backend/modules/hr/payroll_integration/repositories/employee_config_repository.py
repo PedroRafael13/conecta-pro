@@ -3,17 +3,13 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.hr.payroll_integration.models import (
-    EmployeePayrollConfig,
-    ContractType,
-    OvertimeRule,
-)
+from modules.hr.payroll_integration.models import ContractType, EmployeePayrollConfig, OvertimeRule
 from modules.hr.payroll_integration.schemas import (
     EmployeePayrollConfigCreate,
     EmployeePayrollConfigUpdate,
@@ -65,9 +61,7 @@ class EmployeePayrollConfigRepository:
             night_shift_end=data.night_shift_end,
             night_hour_reduction=data.night_hour_reduction,
             bank_hours_enabled=data.bank_hours_enabled,
-            bank_hours_policy=(
-                data.bank_hours_policy.value if data.bank_hours_policy else None
-            ),
+            bank_hours_policy=(data.bank_hours_policy.value if data.bank_hours_policy else None),
             bank_hours_balance=data.bank_hours_balance,
             bank_hours_limit=data.bank_hours_limit,
             bank_hours_hybrid_threshold=data.bank_hours_hybrid_threshold,
@@ -83,14 +77,8 @@ class EmployeePayrollConfigRepository:
             union_contribution_enabled=data.union_contribution_enabled,
             union_contribution_type=data.union_contribution_type,
             union_contribution_value=data.union_contribution_value,
-            calculation_config=(
-                data.calculation_config.model_dump()
-                if data.calculation_config
-                else {}
-            ),
-            external_codes=(
-                data.external_codes.model_dump() if data.external_codes else {}
-            ),
+            calculation_config=(data.calculation_config.model_dump() if data.calculation_config else {}),
+            external_codes=(data.external_codes.model_dump() if data.external_codes else {}),
             created_by=created_by,
         )
 
@@ -155,16 +143,12 @@ class EmployeePayrollConfigRepository:
         ]
 
         if contract_type:
-            conditions.append(
-                EmployeePayrollConfig.contract_type == contract_type.value
-            )
+            conditions.append(EmployeePayrollConfig.contract_type == contract_type.value)
         if active_only:
             conditions.append(EmployeePayrollConfig.termination_date.is_(None))
 
         # Count
-        count_query = select(func.count(EmployeePayrollConfig.id)).where(
-            and_(*conditions)
-        )
+        count_query = select(func.count(EmployeePayrollConfig.id)).where(and_(*conditions))
         total_result = await self.db.execute(count_query)
         total = total_result.scalar() or 0
 
@@ -202,21 +186,15 @@ class EmployeePayrollConfigRepository:
         if "alimony" in update_data and update_data["alimony"]:
             update_data["alimony"] = [a.model_dump() for a in update_data["alimony"]]
         if "dependents" in update_data and update_data["dependents"]:
-            update_data["dependents"] = [
-                d.model_dump() for d in update_data["dependents"]
-            ]
+            update_data["dependents"] = [d.model_dump() for d in update_data["dependents"]]
         if "calculation_config" in update_data and update_data["calculation_config"]:
-            update_data["calculation_config"] = update_data[
-                "calculation_config"
-            ].model_dump()
+            update_data["calculation_config"] = update_data["calculation_config"].model_dump()
         if "external_codes" in update_data and update_data["external_codes"]:
             update_data["external_codes"] = update_data["external_codes"].model_dump()
 
         # Handle enums
         if "work_schedule_type" in update_data and update_data["work_schedule_type"]:
-            update_data["work_schedule_type"] = update_data[
-                "work_schedule_type"
-            ].value
+            update_data["work_schedule_type"] = update_data["work_schedule_type"].value
         if "overtime_rule" in update_data and update_data["overtime_rule"]:
             update_data["overtime_rule"] = update_data["overtime_rule"].value
         if "bank_hours_policy" in update_data and update_data["bank_hours_policy"]:

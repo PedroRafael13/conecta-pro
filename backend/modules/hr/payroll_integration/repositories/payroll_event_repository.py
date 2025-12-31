@@ -3,22 +3,19 @@
 import logging
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional, List, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.payroll_integration.models import (
-    PayrollEvent,
-    EventType,
     EventCategory,
     EventStatus,
+    EventType,
+    PayrollEvent,
 )
-from modules.hr.payroll_integration.schemas import (
-    PayrollEventCreate,
-    PayrollEventUpdate,
-)
+from modules.hr.payroll_integration.schemas import PayrollEventCreate, PayrollEventUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -297,9 +294,7 @@ class PayrollEventRepository:
         total_deductions = deductions_result.scalar() or Decimal("0")
 
         # Contagem de funcionários
-        employees_query = select(
-            func.count(func.distinct(PayrollEvent.employee_id))
-        ).where(
+        employees_query = select(func.count(func.distinct(PayrollEvent.employee_id))).where(
             and_(
                 PayrollEvent.period_id == period_id,
                 PayrollEvent.ativo.is_(True),
@@ -323,12 +318,8 @@ class PayrollEventRepository:
         """Calcula totais de um funcionário no período."""
         events = await self.list_by_employee(employee_id, period_id)
 
-        total_earnings = sum(
-            e.value for e in events if e.event_type == EventType.EARNING.value
-        )
-        total_deductions = sum(
-            e.value for e in events if e.event_type == EventType.DEDUCTION.value
-        )
+        total_earnings = sum(e.value for e in events if e.event_type == EventType.EARNING.value)
+        total_deductions = sum(e.value for e in events if e.event_type == EventType.DEDUCTION.value)
 
         return {
             "total_earnings": total_earnings,

@@ -2,26 +2,22 @@
 
 import logging
 from decimal import Decimal
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.hr.payroll_integration.models import (
-    PayrollEvent,
-    EventType,
-    EventCategory,
-)
+from modules.hr.payroll_integration.models import EventCategory, EventType, PayrollEvent
 from modules.hr.payroll_integration.repositories import (
-    PayrollPeriodRepository,
     PayrollEventRepository,
+    PayrollPeriodRepository,
 )
 from modules.hr.payroll_integration.schemas import (
+    EmployeePayrollSummary,
+    EventAdjustmentRequest,
+    PayrollEventBulkCreate,
     PayrollEventCreate,
     PayrollEventUpdate,
-    PayrollEventBulkCreate,
-    EventAdjustmentRequest,
-    EmployeePayrollSummary,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,9 +53,7 @@ class PayrollEventService:
             data.event_code,
         )
         if exists:
-            raise ValueError(
-                f"Evento {data.event_code} já existe para este funcionário no período"
-            )
+            raise ValueError(f"Evento {data.event_code} já existe para este funcionário no período")
 
         event = await self.event_repo.create(data, condominio_id, created_by=user_id)
         logger.info("Evento criado: %s para funcionário %s", data.event_code, data.employee_id)
@@ -96,11 +90,13 @@ class PayrollEventService:
                 results["created"] += 1
             except Exception as e:
                 results["failed"] += 1
-                results["errors"].append({
-                    "event_code": event_data.event_code,
-                    "employee_id": str(event_data.employee_id),
-                    "error": str(e),
-                })
+                results["errors"].append(
+                    {
+                        "event_code": event_data.event_code,
+                        "employee_id": str(event_data.employee_id),
+                        "error": str(e),
+                    }
+                )
 
         logger.info(
             "Bulk create: %d criados, %d falhas",
@@ -165,9 +161,7 @@ class PayrollEventService:
         )
 
         # Calcular FGTS (informativo)
-        fgts_base = sum(
-            e.value for e in earnings if e.esocial_incidences.get("fgts", False)
-        )
+        fgts_base = sum(e.value for e in earnings if e.esocial_incidences.get("fgts", False))
         fgts = fgts_base * Decimal("0.08")
 
         return EmployeePayrollSummary(
@@ -277,11 +271,9 @@ class PayrollEventService:
     ) -> Dict[str, Any]:
         """Recalcula folha de um funcionário."""
         # Importar aqui para evitar circular import
+        from modules.hr.payroll_integration.repositories import EmployeePayrollConfigRepository
         from modules.hr.payroll_integration.services.payroll_calculation_service import (
             PayrollCalculationService,
-        )
-        from modules.hr.payroll_integration.repositories import (
-            EmployeePayrollConfigRepository,
         )
 
         # Buscar configuração do funcionário

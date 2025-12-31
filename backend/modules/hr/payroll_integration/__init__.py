@@ -11,30 +11,30 @@ Este módulo fornece funcionalidades completas para:
 
 from modules.hr.payroll_integration.controllers import router
 from modules.hr.payroll_integration.models import (
-    PayrollPeriod,
-    PeriodType,
-    PeriodStatus,
-    PayrollEvent,
-    EventType,
-    EventCategory,
-    EventStatus,
-    PayrollIntegration,
-    IntegrationType,
-    IntegrationStatus,
-    PayrollExport,
-    ExportFormat,
-    ExportStatus,
-    EmployeePayrollConfig,
-    OvertimeRule,
     BankHoursPolicy,
     ContractType,
+    EmployeePayrollConfig,
+    EventCategory,
+    EventStatus,
+    EventType,
+    ExportFormat,
+    ExportStatus,
+    IntegrationStatus,
+    IntegrationType,
+    OvertimeRule,
+    PayrollEvent,
+    PayrollExport,
+    PayrollIntegration,
+    PayrollPeriod,
+    PeriodStatus,
+    PeriodType,
     WorkScheduleType,
 )
 from modules.hr.payroll_integration.services import (
+    ESocialService,
     PayrollCalculationService,
     PayrollEventService,
     PayrollExportService,
-    ESocialService,
 )
 
 __all__ = [
