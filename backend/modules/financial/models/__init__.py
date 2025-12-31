@@ -1,4 +1,4 @@
-"""Models do modulo financeiro - Contas a Pagar, Contas a Receber e Fluxo de Caixa."""
+"""Models do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa e Compras."""
 
 # Contas a Pagar
 from modules.financial.models.payable_account import (
@@ -94,6 +94,53 @@ from modules.financial.models.cashflow_forecast import (
     ForecastStatus,
 )
 
+# Compras
+from modules.financial.models.goods_receipt import (
+    GoodsReceipt,
+    GoodsReceiptItem,
+    InspectionResult,
+    ReceiptStatus,
+    ReceiptType,
+)
+from modules.financial.models.product import (
+    Product,
+    ProductStatus,
+    ProductType,
+    UnitOfMeasure,
+)
+from modules.financial.models.product_category import (
+    ProductCategory,
+    ProductCategoryStatus,
+    ProductCategoryType,
+)
+from modules.financial.models.purchase_approval import (
+    ApprovalAction,
+    ApprovalLevel,
+    ApprovalStatus,
+    ApprovalType,
+    PurchaseApproval,
+)
+from modules.financial.models.purchase_order import (
+    OrderPriority,
+    OrderStatus,
+    PurchaseOrder,
+    PurchaseOrderItem,
+)
+from modules.financial.models.purchase_quotation import (
+    DeliveryType,
+    PaymentCondition,
+    PurchaseQuotation,
+    PurchaseQuotationItem,
+    QuotationStatus,
+)
+from modules.financial.models.purchase_requisition import (
+    PurchaseRequisition,
+    PurchaseRequisitionItem,
+    RequisitionPriority,
+    RequisitionStatus,
+    RequisitionType,
+)
+
 __all__ = [
     # === Contas a Pagar ===
     # Supplier
@@ -178,4 +225,43 @@ __all__ = [
     "ForecastPeriodType",
     "ForecastStatus",
     "ForecastConfidence",
+    # === Compras ===
+    # ProductCategory
+    "ProductCategory",
+    "ProductCategoryType",
+    "ProductCategoryStatus",
+    # Product
+    "Product",
+    "ProductType",
+    "ProductStatus",
+    "UnitOfMeasure",
+    # PurchaseRequisition
+    "PurchaseRequisition",
+    "PurchaseRequisitionItem",
+    "RequisitionStatus",
+    "RequisitionPriority",
+    "RequisitionType",
+    # PurchaseQuotation
+    "PurchaseQuotation",
+    "PurchaseQuotationItem",
+    "QuotationStatus",
+    "PaymentCondition",
+    "DeliveryType",
+    # PurchaseOrder
+    "PurchaseOrder",
+    "PurchaseOrderItem",
+    "OrderStatus",
+    "OrderPriority",
+    # GoodsReceipt
+    "GoodsReceipt",
+    "GoodsReceiptItem",
+    "ReceiptStatus",
+    "ReceiptType",
+    "InspectionResult",
+    # PurchaseApproval
+    "PurchaseApproval",
+    "ApprovalType",
+    "ApprovalStatus",
+    "ApprovalLevel",
+    "ApprovalAction",
 ]

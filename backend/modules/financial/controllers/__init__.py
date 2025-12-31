@@ -1,4 +1,4 @@
-"""Controllers do módulo financeiro - Contas a Pagar, Contas a Receber e Fluxo de Caixa."""
+"""Controllers do módulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa e Compras."""
 
 # Contas a Pagar
 from modules.financial.controllers.payable_controller import router as payable_router
@@ -22,6 +22,9 @@ from modules.financial.controllers.bank_transaction_controller import (
 )
 from modules.financial.controllers.cashflow_controller import router as cashflow_router
 
+# Compras
+from modules.financial.controllers.purchase_controller import router as purchase_router
+
 __all__ = [
     # Contas a Pagar
     "supplier_router",
@@ -36,4 +39,6 @@ __all__ = [
     "bank_transaction_router",
     "bank_reconciliation_router",
     "cashflow_router",
+    # Compras
+    "purchase_router",
 ]
