@@ -1,12 +1,12 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 27 - Contabilidade (PRÓXIMO)
+## Sprint Atual: Sprint 28 - Fiscal (PRÓXIMO)
 
-### Progresso Geral: 71% (27/38 módulos)
+### Progresso Geral: 74% (28/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos) - 100%
 ### Operations: 8/8 sprints (Sprint 7-14) - 100%
 ### RH: 7/7 sprints (Sprint 15-21) - 100% ✅
-### Financeiro: 5/9 sprints (Sprint 22-26) - 56%
+### Financeiro: 6/9 sprints (Sprint 22-27) - 67%
 
 ---
 
@@ -164,7 +164,7 @@
 - [x] Sprint 24: Fluxo de Caixa ✅
 - [x] Sprint 25: Compras ✅
 - [x] Sprint 26: Estoque ✅
-- [ ] Sprint 27: Contabilidade
+- [x] Sprint 27: Contabilidade ✅
 - [ ] Sprint 28: Fiscal
 - [ ] Sprint 29: Custos
 - [ ] Sprint 30: BI e Dashboards
@@ -179,13 +179,13 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **27/38 (71%)** |
-| Linhas de código | ~118000+ |
-| Arquivos criados | 510+ |
-| Testes escritos | 2400+ |
+| **Módulos completos** | **28/38 (74%)** |
+| Linhas de código | ~125000+ |
+| Arquivos criados | 540+ |
+| Testes escritos | 2500+ |
 | Coverage | 85%+ |
-| Commits | 30 |
-| Sessões | 27 |
+| Commits | 31 |
+| Sessões | 28 |
 | Auditor Score | 98.0/100 |
 
 ### Progresso por Categoria
@@ -196,9 +196,9 @@
 | Contratos | 1 | 1 | 100% |
 | Operações | 8 | 8 | 100% |
 | RH | 7 | 7 | 100% |
-| Financeiro | 5 | 9 | 56% |
+| Financeiro | 6 | 9 | 67% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **27** | **38** | **71%** |
+| **TOTAL** | **28** | **38** | **74%** |
 
 ---
 
@@ -1329,18 +1329,17 @@ Módulo para controle de contas bancárias, transações, conciliação e proje�
 
 ## Última Atualização
 **Data:** 2025-12-31
-**Por:** Claude Code - Sessão 025
+**Por:** Claude Code - Sessão 028
 **Mudanças:**
-- Sprint 22 (Contas a Pagar) COMPLETO ✅
-- Sprint 23 (Contas a Receber) COMPLETO ✅
-- Sprint 24 (Fluxo de Caixa) COMPLETO ✅
-- 5 Models de Fluxo de Caixa: BankAccount, BankTransaction, BankReconciliation, CashFlowEntry, CashFlowForecast
-- 15+ Enums para categorização financeira
-- CashFlowAIService: forecast, anomalies, suggestions, risks, opportunities
-- 4 Controllers: bank_account, bank_transaction, bank_reconciliation, cashflow
-- Parser OFX para importação de extratos bancários
-- 80+ endpoints REST para gestão de fluxo de caixa
-- Auditor: pylint 97.3% média
-- Commit: 37e51bc
-- Progresso: 66% (25/38 módulos)
-- Financeiro: 3/9 sprints COMPLETO (33%)
+- Sprint 27 (Contabilidade) COMPLETO ✅
+- 7 Models: ChartOfAccounts, AccountingAccount, CostCenter, AccountingPeriod, JournalEntry, JournalEntryLine, TrialBalance
+- 10+ Enums para categorização contábil (AccountType, AccountNature, CostCenterType, PeriodStatus, EntryType)
+- AccountingAIService: anomaly detection, classification suggestions, balance forecasting, cost center optimization
+- 1 Controller consolidado com 90+ endpoints REST
+- Schemas Pydantic: 824 linhas de validação
+- Repositories: 1597 linhas (7 repositories)
+- Migração Alembic: 1100 linhas
+- Testes: 1600+ linhas (models + API)
+- Auditor: pylint 97%+ média
+- Progresso: 74% (28/38 módulos)
+- Financeiro: 6/9 sprints COMPLETO (67%)

@@ -147,7 +147,7 @@ class Warehouse(Base):
     internal_notes = Column(Text, nullable=True)
 
     # Metadados
-    metadata = Column(JSONB, default=dict)
+    extra_data = Column(JSONB, default=dict)
 
     # Controle
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

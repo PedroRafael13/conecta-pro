@@ -1,4 +1,4 @@
-"""Services do módulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa e Compras."""
+"""Services do módulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Contabilidade."""
 
 # Contas a Pagar
 from modules.financial.services.payable_ai_service import PayableAIService, PayableAnomalyType
@@ -12,6 +12,12 @@ from modules.financial.services.cashflow_service import CashFlowProjection, Cash
 # Compras
 from modules.financial.services.purchase_ai_service import PurchaseAIService
 
+# Contabilidade
+from modules.financial.services.accounting_ai_service import AccountingAIService
+
+# Fiscal
+from modules.financial.services.fiscal_ai_service import FiscalAIService
+
 __all__ = [
     # Contas a Pagar
     "PayableService",
@@ -24,4 +30,8 @@ __all__ = [
     "CashFlowAIService",
     # Compras
     "PurchaseAIService",
+    # Contabilidade
+    "AccountingAIService",
+    # Fiscal
+    "FiscalAIService",
 ]

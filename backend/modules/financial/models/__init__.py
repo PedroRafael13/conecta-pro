@@ -199,6 +199,66 @@ from modules.financial.models.trial_balance import (
     TrialBalanceItem,
 )
 
+# Fiscal
+from modules.financial.models.tax_configuration import (
+    ICMSModalidadeBC,
+    ICMSOrigin,
+    ICMSCST,
+    ICMSCSOSN,
+    SimplesNacionalConfig,
+    TaxConfiguration,
+    TaxRegime,
+    TaxTable,
+    TaxType,
+)
+from modules.financial.models.nfe import (
+    NFe,
+    NFeItem,
+    NFeFinalidade,
+    NFeFormaPagamento,
+    NFeModalidadeFrete,
+    NFeStatus,
+    NFeTipo,
+)
+from modules.financial.models.nfse import (
+    CodigoServico,
+    NFSe,
+    NFSeLote,
+    NFSeLayoutPadrao,
+    NFSeNaturezaOperacao,
+    NFSeRegimeEspecial,
+    NFSeStatus,
+)
+from modules.financial.models.sped_file import (
+    ECDResumo,
+    ECDTipoECD,
+    EFDContribuicoesResumo,
+    EFDICMSIPIResumo,
+    SPEDFile,
+    SPEDFinalidade,
+    SPEDPerfil,
+    SPEDRegistro,
+    SPEDStatus,
+    SPEDTipo,
+)
+from modules.financial.models.fiscal_obligation import (
+    FiscalObligation,
+    ObrigacaoFrequencia,
+    ObrigacaoStatus,
+    ObrigacaoTipo,
+    SimplesNacionalDAS,
+    SUFRAMAConfig,
+    SUFRAMAOperacao,
+)
+from modules.financial.models.cfop_ncm import (
+    CFOP,
+    CFOPGrupo,
+    CFOPNatureza,
+    CFOPTipo,
+    NCM,
+    RetencaoFederal,
+)
+
 __all__ = [
     # === Contas a Pagar ===
     # Supplier
@@ -383,4 +443,57 @@ __all__ = [
     "BalanceType",
     "BalanceStatus",
     "BalancePeriod",
+    # === Fiscal ===
+    # TaxConfiguration
+    "TaxConfiguration",
+    "TaxRegime",
+    "TaxType",
+    "TaxTable",
+    "SimplesNacionalConfig",
+    "ICMSOrigin",
+    "ICMSModalidadeBC",
+    "ICMSCST",
+    "ICMSCSOSN",
+    # NFe
+    "NFe",
+    "NFeItem",
+    "NFeTipo",
+    "NFeStatus",
+    "NFeFinalidade",
+    "NFeModalidadeFrete",
+    "NFeFormaPagamento",
+    # NFSe
+    "NFSe",
+    "NFSeLote",
+    "CodigoServico",
+    "NFSeStatus",
+    "NFSeNaturezaOperacao",
+    "NFSeRegimeEspecial",
+    "NFSeLayoutPadrao",
+    # SPED
+    "SPEDFile",
+    "SPEDRegistro",
+    "SPEDTipo",
+    "SPEDStatus",
+    "SPEDFinalidade",
+    "SPEDPerfil",
+    "ECDTipoECD",
+    "EFDICMSIPIResumo",
+    "EFDContribuicoesResumo",
+    "ECDResumo",
+    # FiscalObligation
+    "FiscalObligation",
+    "ObrigacaoTipo",
+    "ObrigacaoStatus",
+    "ObrigacaoFrequencia",
+    "SimplesNacionalDAS",
+    "SUFRAMAConfig",
+    "SUFRAMAOperacao",
+    # CFOP/NCM
+    "CFOP",
+    "CFOPTipo",
+    "CFOPGrupo",
+    "CFOPNatureza",
+    "NCM",
+    "RetencaoFederal",
 ]

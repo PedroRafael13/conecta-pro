@@ -794,7 +794,7 @@ class AccountingPeriodRepository:
         self,
         period: AccountingPeriod,
         closed_by: uuid.UUID,
-        closing_type: ClosingType = ClosingType.MONTHLY,
+        closing_type: ClosingType = ClosingType.PROVISIONAL,
         notes: Optional[str] = None,
     ) -> AccountingPeriod:
         """Fecha um periodo contabil."""

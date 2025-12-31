@@ -300,6 +300,85 @@ from modules.financial.schemas.accounting_schemas import (
     TrialBalanceResponse,
 )
 
+# Fiscal
+from modules.financial.schemas.fiscal_schemas import (
+    # CFOP
+    CFOPCreate,
+    CFOPFilter,
+    CFOPListResponse,
+    CFOPResponse,
+    CFOPUpdate,
+    # NCM
+    NCMCreate,
+    NCMFilter,
+    NCMListResponse,
+    NCMResponse,
+    NCMUpdate,
+    # Retencao Federal
+    CalculoRetencaoRequest,
+    CalculoRetencaoResponse,
+    RetencaoFederalCreate,
+    RetencaoFederalListResponse,
+    RetencaoFederalResponse,
+    RetencaoFederalUpdate,
+    # NF-e
+    NFeCancelarRequest,
+    NFeCreate,
+    NFeEmitirRequest,
+    NFeEmitirResponse,
+    NFeFilter,
+    NFeInutilizarRequest,
+    NFeItemCreate,
+    NFeItemResponse,
+    NFeListResponse,
+    NFeResponse,
+    NFeUpdate,
+    # NFS-e
+    NFSeCancelarRequest,
+    NFSeCreate,
+    NFSeEmitirRequest,
+    NFSeEmitirResponse,
+    NFSeFilter,
+    NFSeListResponse,
+    NFSeResponse,
+    NFSeUpdate,
+    # SPED
+    SPEDFileCreate,
+    SPEDFileListResponse,
+    SPEDFileResponse,
+    SPEDFilter,
+    SPEDGerarRequest,
+    SPEDTransmitirRequest,
+    SPEDValidarRequest,
+    # Obrigacao Fiscal
+    ObrigacaoFilter,
+    ObrigacaoFiscalCreate,
+    ObrigacaoFiscalListResponse,
+    ObrigacaoFiscalResponse,
+    ObrigacaoFiscalUpdate,
+    # Simples Nacional / DAS
+    DASCalcularRequest,
+    DASCalcularResponse,
+    SimplesNacionalDASCreate,
+    SimplesNacionalDASResponse,
+    # SUFRAMA
+    SUFRAMAConfigCreate,
+    SUFRAMAConfigResponse,
+    SUFRAMAOperacaoCreate,
+    SUFRAMAOperacaoListResponse,
+    SUFRAMAOperacaoResponse,
+    # AI Fiscal
+    FiscalAIAnalyseRequest,
+    FiscalAIAnalyseResponse,
+    FiscalAIOptimizeRequest,
+    FiscalAIOptimizeResponse,
+    FiscalAIPredictRequest,
+    FiscalAIPredictResponse,
+    # Stats
+    FiscalDashboard,
+    FiscalStats,
+)
+
 __all__ = [
     # === Contas a Pagar ===
     # Supplier
@@ -606,4 +685,80 @@ __all__ = [
     "TrialBalanceItemResponse",
     "BalanceStats",
     "BalanceFilter",
+    # === Fiscal ===
+    # CFOP
+    "CFOPCreate",
+    "CFOPUpdate",
+    "CFOPResponse",
+    "CFOPListResponse",
+    "CFOPFilter",
+    # NCM
+    "NCMCreate",
+    "NCMUpdate",
+    "NCMResponse",
+    "NCMListResponse",
+    "NCMFilter",
+    # Retencao Federal
+    "RetencaoFederalCreate",
+    "RetencaoFederalUpdate",
+    "RetencaoFederalResponse",
+    "RetencaoFederalListResponse",
+    "CalculoRetencaoRequest",
+    "CalculoRetencaoResponse",
+    # NF-e
+    "NFeCreate",
+    "NFeUpdate",
+    "NFeResponse",
+    "NFeListResponse",
+    "NFeFilter",
+    "NFeItemCreate",
+    "NFeItemResponse",
+    "NFeEmitirRequest",
+    "NFeEmitirResponse",
+    "NFeCancelarRequest",
+    "NFeInutilizarRequest",
+    # NFS-e
+    "NFSeCreate",
+    "NFSeUpdate",
+    "NFSeResponse",
+    "NFSeListResponse",
+    "NFSeFilter",
+    "NFSeEmitirRequest",
+    "NFSeEmitirResponse",
+    "NFSeCancelarRequest",
+    # SPED
+    "SPEDFileCreate",
+    "SPEDFileResponse",
+    "SPEDFileListResponse",
+    "SPEDFilter",
+    "SPEDGerarRequest",
+    "SPEDValidarRequest",
+    "SPEDTransmitirRequest",
+    # Obrigacao Fiscal
+    "ObrigacaoFiscalCreate",
+    "ObrigacaoFiscalUpdate",
+    "ObrigacaoFiscalResponse",
+    "ObrigacaoFiscalListResponse",
+    "ObrigacaoFilter",
+    # Simples Nacional / DAS
+    "SimplesNacionalDASCreate",
+    "SimplesNacionalDASResponse",
+    "DASCalcularRequest",
+    "DASCalcularResponse",
+    # SUFRAMA
+    "SUFRAMAConfigCreate",
+    "SUFRAMAConfigResponse",
+    "SUFRAMAOperacaoCreate",
+    "SUFRAMAOperacaoResponse",
+    "SUFRAMAOperacaoListResponse",
+    # AI Fiscal
+    "FiscalAIAnalyseRequest",
+    "FiscalAIAnalyseResponse",
+    "FiscalAIOptimizeRequest",
+    "FiscalAIOptimizeResponse",
+    "FiscalAIPredictRequest",
+    "FiscalAIPredictResponse",
+    # Stats
+    "FiscalStats",
+    "FiscalDashboard",
 ]

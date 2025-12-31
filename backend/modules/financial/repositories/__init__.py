@@ -59,6 +59,9 @@ from modules.financial.repositories.receivable_repository import (
 )
 from modules.financial.repositories.supplier_repository import SupplierRepository
 
+# Fiscal
+from modules.financial.repositories.fiscal_repository import FiscalRepository
+
 __all__ = [
     # Contas a Pagar
     "SupplierRepository",
@@ -102,4 +105,6 @@ __all__ = [
     "JournalEntryLineRepository",
     "TrialBalanceRepository",
     "TrialBalanceItemRepository",
+    # Fiscal
+    "FiscalRepository",
 ]
