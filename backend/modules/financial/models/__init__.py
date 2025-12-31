@@ -1,4 +1,4 @@
-"""Models do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Estoque."""
+"""Models do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade."""
 
 # Contas a Pagar
 # Fluxo de Caixa
@@ -157,6 +157,48 @@ from modules.financial.models.warehouse import (
     WarehouseType,
 )
 
+# Contabilidade
+from modules.financial.models.chart_of_accounts import (
+    ChartOfAccounts,
+    ChartStandard,
+    ChartStatus,
+    ChartType,
+)
+from modules.financial.models.accounting_account import (
+    AccountClassification,
+    AccountingAccount,
+    AccountNature,
+    AccountStatus,
+    AccountType,
+    SpedAccountNature,
+)
+from modules.financial.models.cost_center import (
+    AllocationMethod,
+    CostCenter,
+    CostCenterStatus,
+    CostCenterType,
+)
+from modules.financial.models.accounting_period import (
+    AccountingPeriod,
+    ClosingType,
+    PeriodStatus,
+    PeriodType,
+)
+from modules.financial.models.journal_entry import (
+    EntryOrigin,
+    EntryStatus,
+    EntryType,
+    JournalEntry,
+    JournalEntryLine,
+)
+from modules.financial.models.trial_balance import (
+    BalancePeriod,
+    BalanceStatus,
+    BalanceType,
+    TrialBalance,
+    TrialBalanceItem,
+)
+
 __all__ = [
     # === Contas a Pagar ===
     # Supplier
@@ -306,4 +348,39 @@ __all__ = [
     "ReservationType",
     "ReservationStatus",
     "ReservationPriority",
+    # === Contabilidade ===
+    # ChartOfAccounts
+    "ChartOfAccounts",
+    "ChartType",
+    "ChartStatus",
+    "ChartStandard",
+    # AccountingAccount
+    "AccountingAccount",
+    "AccountType",
+    "AccountNature",
+    "AccountClassification",
+    "AccountStatus",
+    "SpedAccountNature",
+    # CostCenter
+    "CostCenter",
+    "CostCenterType",
+    "CostCenterStatus",
+    "AllocationMethod",
+    # AccountingPeriod
+    "AccountingPeriod",
+    "PeriodType",
+    "PeriodStatus",
+    "ClosingType",
+    # JournalEntry
+    "JournalEntry",
+    "JournalEntryLine",
+    "EntryType",
+    "EntryStatus",
+    "EntryOrigin",
+    # TrialBalance
+    "TrialBalance",
+    "TrialBalanceItem",
+    "BalanceType",
+    "BalanceStatus",
+    "BalancePeriod",
 ]

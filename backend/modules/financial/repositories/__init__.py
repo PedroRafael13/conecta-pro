@@ -1,4 +1,16 @@
-"""Repositories do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Estoque."""
+"""Repositories do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade."""
+
+# Contabilidade
+from modules.financial.repositories.accounting_repository import (
+    AccountingAccountRepository,
+    AccountingPeriodRepository,
+    ChartOfAccountsRepository,
+    CostCenterRepository,
+    JournalEntryLineRepository,
+    JournalEntryRepository,
+    TrialBalanceItemRepository,
+    TrialBalanceRepository,
+)
 
 # Contas a Pagar
 # Fluxo de Caixa
@@ -81,4 +93,13 @@ __all__ = [
     "StockInventoryRepository",
     "StockInventoryItemRepository",
     "StockReservationRepository",
+    # Contabilidade
+    "ChartOfAccountsRepository",
+    "AccountingAccountRepository",
+    "CostCenterRepository",
+    "AccountingPeriodRepository",
+    "JournalEntryRepository",
+    "JournalEntryLineRepository",
+    "TrialBalanceRepository",
+    "TrialBalanceItemRepository",
 ]
