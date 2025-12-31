@@ -1,12 +1,12 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 25 - Compras (PRÓXIMO)
+## Sprint Atual: Sprint 27 - Contabilidade (PRÓXIMO)
 
-### Progresso Geral: 66% (25/38 módulos)
+### Progresso Geral: 71% (27/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos) - 100%
 ### Operations: 8/8 sprints (Sprint 7-14) - 100%
 ### RH: 7/7 sprints (Sprint 15-21) - 100% ✅
-### Financeiro: 3/9 sprints (Sprint 22-24) - 33%
+### Financeiro: 5/9 sprints (Sprint 22-26) - 56%
 
 ---
 
@@ -162,8 +162,8 @@
 - [x] Sprint 22: Contas a Pagar ✅
 - [x] Sprint 23: Contas a Receber ✅
 - [x] Sprint 24: Fluxo de Caixa ✅
-- [ ] Sprint 25: Compras
-- [ ] Sprint 26: Estoque
+- [x] Sprint 25: Compras ✅
+- [x] Sprint 26: Estoque ✅
 - [ ] Sprint 27: Contabilidade
 - [ ] Sprint 28: Fiscal
 - [ ] Sprint 29: Custos
@@ -179,14 +179,14 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **25/38 (66%)** |
-| Linhas de código | ~103000+ |
-| Arquivos criados | 480+ |
-| Testes escritos | 2200+ |
+| **Módulos completos** | **27/38 (71%)** |
+| Linhas de código | ~118000+ |
+| Arquivos criados | 510+ |
+| Testes escritos | 2400+ |
 | Coverage | 85%+ |
-| Commits | 28 |
-| Sessões | 25 |
-| Auditor Score | 97.3/100 |
+| Commits | 30 |
+| Sessões | 27 |
+| Auditor Score | 98.0/100 |
 
 ### Progresso por Categoria
 | Categoria | Completo | Total | % |
@@ -196,9 +196,9 @@
 | Contratos | 1 | 1 | 100% |
 | Operações | 8 | 8 | 100% |
 | RH | 7 | 7 | 100% |
-| Financeiro | 3 | 9 | 33% |
+| Financeiro | 5 | 9 | 56% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **25** | **38** | **66%** |
+| **TOTAL** | **27** | **38** | **71%** |
 
 ---
 
