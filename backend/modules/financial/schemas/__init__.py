@@ -1,5 +1,6 @@
-"""Schemas do módulo financeiro - Contas a Pagar."""
+"""Schemas do modulo financeiro - Contas a Pagar e Contas a Receber."""
 
+# Contas a Pagar
 from modules.financial.schemas.category import (
     PayableCategoryCreate,
     PayableCategoryFilter,
@@ -45,7 +46,46 @@ from modules.financial.schemas.supplier import (
     SupplierUpdate,
 )
 
+# Contas a Receber
+from modules.financial.schemas.receivable import (
+    BillingRuleCreate,
+    BillingRuleFilter,
+    BillingRuleResponse,
+    BillingRuleUpdate,
+    CustomerCreate,
+    CustomerFilter,
+    CustomerResponse,
+    CustomerUpdate,
+    ReceivableAccountCreate,
+    ReceivableAccountFilter,
+    ReceivableAccountListResponse,
+    ReceivableAccountResponse,
+    ReceivableAccountStats,
+    ReceivableAccountUpdate,
+    ReceivableAgreementRequest,
+    ReceivableBulkBoletoRequest,
+    ReceivableBulkNotifyRequest,
+    ReceivableBulkPaymentRequest,
+    ReceivableCategoryCreate,
+    ReceivableCategoryResponse,
+    ReceivableCategoryUpdate,
+    ReceivableInstallmentBoletoRequest,
+    ReceivableInstallmentCreate,
+    ReceivableInstallmentPixRequest,
+    ReceivableInstallmentRenegotiateRequest,
+    ReceivableInstallmentResponse,
+    ReceivableInstallmentUpdate,
+    ReceivablePaymentCreate,
+    ReceivablePaymentReconcileRequest,
+    ReceivablePaymentResponse,
+    ReceivablePaymentReverseRequest,
+    ReceivablePaymentUpdate,
+    ReceivableProtestRequest,
+    ReceivableWriteOffRequest,
+)
+
 __all__ = [
+    # === Contas a Pagar ===
     # Supplier
     "SupplierCreate",
     "SupplierUpdate",
@@ -85,8 +125,51 @@ __all__ = [
     "PayablePaymentResponse",
     "PayablePaymentReverseRequest",
     "PayablePaymentReconcileRequest",
-    # Bulk Operations
+    # Bulk Operations (Payable)
     "PayableBulkPaymentRequest",
     "PayableBulkApproveRequest",
     "PayableScheduleRequest",
+    # === Contas a Receber ===
+    # Customer
+    "CustomerCreate",
+    "CustomerUpdate",
+    "CustomerResponse",
+    "CustomerFilter",
+    # ReceivableCategory
+    "ReceivableCategoryCreate",
+    "ReceivableCategoryUpdate",
+    "ReceivableCategoryResponse",
+    # ReceivableAccount
+    "ReceivableAccountCreate",
+    "ReceivableAccountUpdate",
+    "ReceivableAccountResponse",
+    "ReceivableAccountListResponse",
+    "ReceivableAccountFilter",
+    "ReceivableAccountStats",
+    # ReceivableInstallment
+    "ReceivableInstallmentCreate",
+    "ReceivableInstallmentUpdate",
+    "ReceivableInstallmentResponse",
+    "ReceivableInstallmentRenegotiateRequest",
+    "ReceivableInstallmentBoletoRequest",
+    "ReceivableInstallmentPixRequest",
+    # ReceivablePayment
+    "ReceivablePaymentCreate",
+    "ReceivablePaymentUpdate",
+    "ReceivablePaymentResponse",
+    "ReceivablePaymentReverseRequest",
+    "ReceivablePaymentReconcileRequest",
+    # BillingRule
+    "BillingRuleCreate",
+    "BillingRuleUpdate",
+    "BillingRuleResponse",
+    "BillingRuleFilter",
+    # Bulk Operations (Receivable)
+    "ReceivableBulkPaymentRequest",
+    "ReceivableBulkBoletoRequest",
+    "ReceivableBulkNotifyRequest",
+    # Special Operations
+    "ReceivableWriteOffRequest",
+    "ReceivableProtestRequest",
+    "ReceivableAgreementRequest",
 ]

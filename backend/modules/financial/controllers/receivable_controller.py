@@ -1,0 +1,829 @@
+"""Controller para contas a receber."""
+
+import logging
+from datetime import date
+from typing import List, Optional
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.auth.dependencies import get_current_user
+from core.database import get_session
+from modules.financial.models.receivable_account import ReceivableStatus
+from modules.financial.schemas.receivable import (
+    ReceivableAccountCreate,
+    ReceivableAccountFilter,
+    ReceivableAccountListResponse,
+    ReceivableAccountResponse,
+    ReceivableAccountStats,
+    ReceivableAccountUpdate,
+    ReceivableAgreementRequest,
+    ReceivableBulkBoletoRequest,
+    ReceivableBulkNotifyRequest,
+    ReceivableBulkPaymentRequest,
+    ReceivableInstallmentBoletoRequest,
+    ReceivableInstallmentPixRequest,
+    ReceivableInstallmentRenegotiateRequest,
+    ReceivableInstallmentResponse,
+    ReceivableInstallmentUpdate,
+    ReceivablePaymentCreate,
+    ReceivablePaymentReconcileRequest,
+    ReceivablePaymentResponse,
+    ReceivablePaymentReverseRequest,
+    ReceivableProtestRequest,
+    ReceivableWriteOffRequest,
+)
+from modules.financial.services.receivable_ai_service import ReceivableAIService
+from modules.financial.services.receivable_service import ReceivableService
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/receivables", tags=["Contas a Receber"])
+
+
+def get_service(session: AsyncSession = Depends(get_session)) -> ReceivableService:
+    """Retorna instancia do service."""
+    return ReceivableService(session)
+
+
+def get_ai_service(session: AsyncSession = Depends(get_session)) -> ReceivableAIService:
+    """Retorna instancia do AI service."""
+    return ReceivableAIService(session)
+
+
+# ==================== CONTAS ====================
+
+
+@router.post(
+    "/",
+    response_model=ReceivableAccountResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Criar conta a receber",
+)
+async def create_account(
+    data: ReceivableAccountCreate,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Cria uma nova conta a receber."""
+    try:
+        account = await service.create_account(data, UUID(current_user["id"]))
+        return ReceivableAccountResponse.model_validate(account)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erro ao criar conta: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno ao criar conta a receber",
+        )
+
+
+@router.get(
+    "/",
+    response_model=List[ReceivableAccountListResponse],
+    summary="Listar contas a receber",
+)
+async def list_accounts(
+    condominio_id: UUID,
+    search: Optional[str] = Query(None, description="Busca na descricao"),
+    customer_id: Optional[UUID] = Query(None, description="Filtrar por cliente"),
+    unidade_id: Optional[UUID] = Query(None, description="Filtrar por unidade"),
+    category_id: Optional[UUID] = Query(None, description="Filtrar por categoria"),
+    status_filter: Optional[str] = Query(None, alias="status", description="Status"),
+    due_date_start: Optional[date] = Query(None, description="Vencimento inicial"),
+    due_date_end: Optional[date] = Query(None, description="Vencimento final"),
+    is_recurring: Optional[bool] = Query(None, description="Apenas recorrentes"),
+    is_overdue: Optional[bool] = Query(None, description="Apenas vencidas"),
+    min_value: Optional[float] = Query(None, description="Valor minimo"),
+    max_value: Optional[float] = Query(None, description="Valor maximo"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Lista contas a receber com filtros."""
+    filters = ReceivableAccountFilter(
+        search=search,
+        customer_id=customer_id,
+        unidade_id=unidade_id,
+        category_id=category_id,
+        status=ReceivableStatus(status_filter) if status_filter else None,
+        due_date_start=due_date_start,
+        due_date_end=due_date_end,
+        is_recurring=is_recurring,
+        is_overdue=is_overdue,
+        min_value=str(min_value) if min_value else None,
+        max_value=str(max_value) if max_value else None,
+    )
+
+    accounts, total = await service.list_accounts(condominio_id, filters, skip, limit)
+    return [ReceivableAccountListResponse.model_validate(a) for a in accounts]
+
+
+@router.get(
+    "/stats",
+    response_model=ReceivableAccountStats,
+    summary="Estatisticas de contas a receber",
+)
+async def get_stats(
+    condominio_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountStats:
+    """Retorna estatisticas de contas a receber."""
+    return await service.get_stats(condominio_id)
+
+
+@router.get(
+    "/overdue",
+    response_model=List[ReceivableAccountListResponse],
+    summary="Contas vencidas",
+)
+async def get_overdue(
+    condominio_id: UUID,
+    limit: int = Query(100, ge=1, le=500),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna contas vencidas."""
+    accounts = await service.get_overdue_accounts(condominio_id, limit)
+    return [ReceivableAccountListResponse.model_validate(a) for a in accounts]
+
+
+@router.get(
+    "/due-soon",
+    response_model=List[ReceivableAccountListResponse],
+    summary="Contas a vencer",
+)
+async def get_due_soon(
+    condominio_id: UUID,
+    days: int = Query(7, ge=1, le=90, description="Dias para vencimento"),
+    limit: int = Query(100, ge=1, le=500),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna contas a vencer nos proximos dias."""
+    accounts = await service.get_due_soon_accounts(condominio_id, days, limit)
+    return [ReceivableAccountListResponse.model_validate(a) for a in accounts]
+
+
+@router.get(
+    "/{account_id}",
+    response_model=ReceivableAccountResponse,
+    summary="Buscar conta a receber",
+)
+async def get_account(
+    account_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Busca conta por ID."""
+    account = await service.get_account(account_id)
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conta nao encontrada",
+        )
+    return ReceivableAccountResponse.model_validate(account)
+
+
+@router.put(
+    "/{account_id}",
+    response_model=ReceivableAccountResponse,
+    summary="Atualizar conta a receber",
+)
+async def update_account(
+    account_id: UUID,
+    data: ReceivableAccountUpdate,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Atualiza uma conta a receber."""
+    try:
+        account = await service.update_account(account_id, data, UUID(current_user["id"]))
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conta nao encontrada",
+            )
+        return ReceivableAccountResponse.model_validate(account)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.delete(
+    "/{account_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Excluir conta a receber",
+)
+async def delete_account(
+    account_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Exclui uma conta a receber (soft delete)."""
+    try:
+        deleted = await service.delete_account(account_id, UUID(current_user["id"]))
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conta nao encontrada",
+            )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ==================== CANCELAMENTO/SUSPENSAO ====================
+
+
+@router.post(
+    "/{account_id}/cancel",
+    response_model=ReceivableAccountResponse,
+    summary="Cancelar conta",
+)
+async def cancel_account(
+    account_id: UUID,
+    reason: str = Query(..., min_length=5, description="Motivo do cancelamento"),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Cancela uma conta a receber."""
+    try:
+        account = await service.cancel_account(
+            account_id, UUID(current_user["id"]), reason
+        )
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conta nao encontrada",
+            )
+        return ReceivableAccountResponse.model_validate(account)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/{account_id}/suspend",
+    response_model=ReceivableAccountResponse,
+    summary="Suspender conta",
+)
+async def suspend_account(
+    account_id: UUID,
+    reason: str = Query(..., min_length=5, description="Motivo da suspensao"),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Suspende uma conta a receber."""
+    try:
+        account = await service.suspend_account(
+            account_id, UUID(current_user["id"]), reason
+        )
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conta nao encontrada",
+            )
+        return ReceivableAccountResponse.model_validate(account)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ==================== PROTESTO/BAIXA ====================
+
+
+@router.post(
+    "/{account_id}/protest",
+    response_model=ReceivableAccountResponse,
+    summary="Enviar para protesto",
+)
+async def protest_account(
+    account_id: UUID,
+    data: ReceivableProtestRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Envia conta para protesto."""
+    try:
+        account = await service.protest_account(
+            account_id, UUID(current_user["id"]), data.protest_number
+        )
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conta nao encontrada",
+            )
+        return ReceivableAccountResponse.model_validate(account)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/{account_id}/write-off",
+    response_model=ReceivableAccountResponse,
+    summary="Baixar conta (perda)",
+)
+async def write_off_account(
+    account_id: UUID,
+    data: ReceivableWriteOffRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Baixa conta como perda."""
+    try:
+        account = await service.write_off_account(
+            account_id, UUID(current_user["id"]), data.reason
+        )
+        if not account:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Conta nao encontrada",
+            )
+        return ReceivableAccountResponse.model_validate(account)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ==================== PARCELAS ====================
+
+
+@router.get(
+    "/{account_id}/installments",
+    response_model=List[ReceivableInstallmentResponse],
+    summary="Listar parcelas",
+)
+async def list_installments(
+    account_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Lista parcelas de uma conta."""
+    installments = await service.list_installments(account_id)
+    return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
+
+
+@router.get(
+    "/installments/pending",
+    response_model=List[ReceivableInstallmentResponse],
+    summary="Parcelas pendentes",
+)
+async def get_pending_installments(
+    condominio_id: UUID,
+    due_date_start: Optional[date] = Query(None),
+    due_date_end: Optional[date] = Query(None),
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna parcelas pendentes."""
+    installments = await service.get_pending_installments(
+        condominio_id, due_date_start, due_date_end
+    )
+    return [ReceivableInstallmentResponse.model_validate(i) for i in installments]
+
+
+@router.get(
+    "/installments/{installment_id}",
+    response_model=ReceivableInstallmentResponse,
+    summary="Buscar parcela",
+)
+async def get_installment(
+    installment_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableInstallmentResponse:
+    """Busca parcela por ID."""
+    installment = await service.get_installment(installment_id)
+    if not installment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Parcela nao encontrada",
+        )
+    return ReceivableInstallmentResponse.model_validate(installment)
+
+
+@router.put(
+    "/installments/{installment_id}",
+    response_model=ReceivableInstallmentResponse,
+    summary="Atualizar parcela",
+)
+async def update_installment(
+    installment_id: UUID,
+    data: ReceivableInstallmentUpdate,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableInstallmentResponse:
+    """Atualiza uma parcela."""
+    try:
+        installment = await service.update_installment(installment_id, data)
+        if not installment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Parcela nao encontrada",
+            )
+        return ReceivableInstallmentResponse.model_validate(installment)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/installments/{installment_id}/renegotiate",
+    response_model=ReceivableInstallmentResponse,
+    summary="Renegociar parcela",
+)
+async def renegotiate_installment(
+    installment_id: UUID,
+    data: ReceivableInstallmentRenegotiateRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableInstallmentResponse:
+    """Renegocia uma parcela."""
+    try:
+        installment = await service.renegotiate_installment(
+            installment_id, data, UUID(current_user["id"])
+        )
+        if not installment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Parcela nao encontrada",
+            )
+        return ReceivableInstallmentResponse.model_validate(installment)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ==================== BOLETO/PIX ====================
+
+
+@router.post(
+    "/installments/{installment_id}/generate-boleto",
+    response_model=ReceivableInstallmentResponse,
+    summary="Gerar boleto",
+)
+async def generate_boleto(
+    installment_id: UUID,
+    data: ReceivableInstallmentBoletoRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableInstallmentResponse:
+    """Gera boleto para uma parcela."""
+    installment = await service.get_installment(installment_id)
+    if not installment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Parcela nao encontrada",
+        )
+    # TODO: Integrar com servico de boletos
+    return ReceivableInstallmentResponse.model_validate(installment)
+
+
+@router.post(
+    "/installments/{installment_id}/generate-pix",
+    response_model=ReceivableInstallmentResponse,
+    summary="Gerar PIX",
+)
+async def generate_pix(
+    installment_id: UUID,
+    data: ReceivableInstallmentPixRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableInstallmentResponse:
+    """Gera codigo PIX para uma parcela."""
+    installment = await service.get_installment(installment_id)
+    if not installment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Parcela nao encontrada",
+        )
+    # TODO: Integrar com servico de PIX
+    return ReceivableInstallmentResponse.model_validate(installment)
+
+
+@router.post(
+    "/bulk-generate-boletos",
+    summary="Gerar boletos em lote",
+)
+async def bulk_generate_boletos(
+    data: ReceivableBulkBoletoRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Gera boletos para multiplas parcelas."""
+    # TODO: Implementar geracao em lote
+    return {
+        "success_count": 0,
+        "error_count": len(data.installment_ids),
+        "total": len(data.installment_ids),
+        "message": "Integracao com gateway de boletos pendente",
+    }
+
+
+# ==================== RECEBIMENTOS ====================
+
+
+@router.post(
+    "/installments/{installment_id}/pay",
+    response_model=ReceivablePaymentResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar recebimento",
+)
+async def register_payment(
+    installment_id: UUID,
+    data: ReceivablePaymentCreate,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivablePaymentResponse:
+    """Registra recebimento de uma parcela."""
+    try:
+        payment = await service.register_payment(
+            installment_id, data, UUID(current_user["id"])
+        )
+        return ReceivablePaymentResponse.model_validate(payment)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/bulk-payment",
+    summary="Recebimento em lote",
+)
+async def bulk_payment(
+    data: ReceivableBulkPaymentRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Processa recebimento em lote."""
+    success, errors, payment_ids = await service.bulk_payment(
+        data, UUID(current_user["id"])
+    )
+    return {
+        "success_count": success,
+        "error_count": errors,
+        "total": len(data.installment_ids),
+        "payment_ids": [str(p) for p in payment_ids],
+    }
+
+
+@router.post(
+    "/payments/{payment_id}/reverse",
+    response_model=ReceivablePaymentResponse,
+    summary="Estornar recebimento",
+)
+async def reverse_payment(
+    payment_id: UUID,
+    data: ReceivablePaymentReverseRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivablePaymentResponse:
+    """Estorna um recebimento."""
+    try:
+        payment = await service.reverse_payment(
+            payment_id, data, UUID(current_user["id"])
+        )
+        if not payment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recebimento nao encontrado",
+            )
+        return ReceivablePaymentResponse.model_validate(payment)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/payments/{payment_id}/reconcile",
+    response_model=ReceivablePaymentResponse,
+    summary="Reconciliar recebimento",
+)
+async def reconcile_payment(
+    payment_id: UUID,
+    data: ReceivablePaymentReconcileRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivablePaymentResponse:
+    """Reconcilia recebimento com extrato bancario."""
+    try:
+        payment = await service.reconcile_payment(
+            payment_id, data, UUID(current_user["id"])
+        )
+        if not payment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Recebimento nao encontrado",
+            )
+        return ReceivablePaymentResponse.model_validate(payment)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get(
+    "/payments/pending-reconciliation",
+    response_model=List[ReceivablePaymentResponse],
+    summary="Recebimentos pendentes de reconciliacao",
+)
+async def get_pending_reconciliation(
+    condominio_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna recebimentos pendentes de reconciliacao."""
+    payments = await service.get_pending_reconciliation(condominio_id)
+    return [ReceivablePaymentResponse.model_validate(p) for p in payments]
+
+
+# ==================== NOTIFICACOES ====================
+
+
+@router.post(
+    "/bulk-notify",
+    summary="Notificar devedores em lote",
+)
+async def bulk_notify(
+    data: ReceivableBulkNotifyRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Envia notificacoes para devedores em lote."""
+    # TODO: Implementar notificacoes
+    return {
+        "success_count": 0,
+        "error_count": len(data.account_ids),
+        "total": len(data.account_ids),
+        "message": "Integracao com servico de notificacoes pendente",
+    }
+
+
+# ==================== ACORDO ====================
+
+
+@router.post(
+    "/{account_id}/agreement",
+    response_model=ReceivableAccountResponse,
+    summary="Criar acordo de pagamento",
+)
+async def create_agreement(
+    account_id: UUID,
+    data: ReceivableAgreementRequest,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+) -> ReceivableAccountResponse:
+    """Cria acordo de pagamento para conta vencida."""
+    account = await service.get_account(account_id)
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conta nao encontrada",
+        )
+    # TODO: Implementar logica de acordo
+    return ReceivableAccountResponse.model_validate(account)
+
+
+# ==================== DIVIDAS ====================
+
+
+@router.get(
+    "/debt/customer/{customer_id}",
+    summary="Divida do cliente",
+)
+async def get_customer_debt(
+    customer_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna divida total e vencida do cliente."""
+    total, overdue = await service.get_customer_debt(customer_id)
+    return {
+        "customer_id": str(customer_id),
+        "total_debt": float(total),
+        "overdue_debt": float(overdue),
+    }
+
+
+@router.get(
+    "/debt/unit/{unidade_id}",
+    summary="Divida da unidade",
+)
+async def get_unit_debt(
+    unidade_id: UUID,
+    service: ReceivableService = Depends(get_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna divida total e vencida da unidade."""
+    total, overdue = await service.get_unit_debt(unidade_id)
+    return {
+        "unidade_id": str(unidade_id),
+        "total_debt": float(total),
+        "overdue_debt": float(overdue),
+    }
+
+
+# ==================== IA ====================
+
+
+@router.get(
+    "/ai/customer-risk/{customer_id}",
+    summary="Analise de risco do cliente (IA)",
+)
+async def get_customer_risk(
+    customer_id: UUID,
+    ai_service: ReceivableAIService = Depends(get_ai_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna analise de risco do cliente usando IA."""
+    risk = await ai_service.calculate_customer_risk(customer_id)
+    return {
+        "customer_id": str(risk.customer_id),
+        "risk_score": risk.risk_score,
+        "risk_level": risk.risk_level,
+        "total_debt": float(risk.total_debt),
+        "overdue_debt": float(risk.overdue_debt),
+        "payment_history_score": risk.payment_history_score,
+        "average_delay_days": risk.average_delay_days,
+        "on_time_payment_rate": risk.on_time_payment_rate,
+        "factors": risk.factors,
+        "recommendations": risk.recommendations,
+    }
+
+
+@router.get(
+    "/ai/collection-priorities",
+    summary="Prioridades de cobranca (IA)",
+)
+async def get_collection_priorities(
+    condominio_id: UUID,
+    limit: int = Query(20, ge=1, le=100),
+    ai_service: ReceivableAIService = Depends(get_ai_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna lista priorizada de cobrancas usando IA."""
+    priorities = await ai_service.get_collection_priorities(condominio_id, limit)
+    return [
+        {
+            "account_id": str(p.account_id),
+            "customer_id": str(p.customer_id),
+            "priority_score": p.priority_score,
+            "priority_level": p.priority_level,
+            "total_due": float(p.total_due),
+            "days_overdue": p.days_overdue,
+            "risk_score": p.risk_score,
+            "recommended_action": p.recommended_action,
+            "reason": p.reason,
+        }
+        for p in priorities
+    ]
+
+
+@router.get(
+    "/ai/cash-flow-forecast",
+    summary="Previsao de fluxo de caixa (IA)",
+)
+async def get_cash_flow_forecast(
+    condominio_id: UUID,
+    months: int = Query(6, ge=1, le=12, description="Meses de previsao"),
+    ai_service: ReceivableAIService = Depends(get_ai_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna previsao de fluxo de caixa usando IA."""
+    forecast = await ai_service.forecast_cash_flow(condominio_id, months)
+    return {
+        "condominio_id": str(forecast.condominio_id),
+        "period_start": forecast.period_start.isoformat(),
+        "period_end": forecast.period_end.isoformat(),
+        "expected_income": float(forecast.expected_income),
+        "probable_income": float(forecast.probable_income),
+        "at_risk_income": float(forecast.at_risk_income),
+        "monthly_breakdown": [
+            {
+                "month": m["month"],
+                "expected": float(m["expected"]),
+                "probable": float(m["probable"]),
+            }
+            for m in forecast.monthly_breakdown
+        ],
+        "confidence_level": forecast.confidence_level,
+    }
+
+
+@router.get(
+    "/ai/delinquency-analysis",
+    summary="Analise de inadimplencia (IA)",
+)
+async def get_delinquency_analysis(
+    condominio_id: UUID,
+    ai_service: ReceivableAIService = Depends(get_ai_service),
+    current_user: dict = Depends(get_current_user),
+):
+    """Retorna analise de inadimplencia usando IA."""
+    analysis = await ai_service.analyze_delinquency(condominio_id)
+    return {
+        "condominio_id": str(analysis.condominio_id),
+        "total_customers": analysis.total_customers,
+        "delinquent_customers": analysis.delinquent_customers,
+        "delinquency_rate": analysis.delinquency_rate,
+        "total_overdue": float(analysis.total_overdue),
+        "average_days_overdue": analysis.average_days_overdue,
+        "aging_breakdown": analysis.aging_breakdown,
+        "trend": analysis.trend,
+        "risk_distribution": analysis.risk_distribution,
+        "recommendations": analysis.recommendations,
+    }
