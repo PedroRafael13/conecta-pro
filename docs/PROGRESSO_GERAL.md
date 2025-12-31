@@ -1,10 +1,11 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 15 - Recrutamento (PRÓXIMO)
+## Sprint Atual: Sprint 16 - Ponto Eletrônico (PRÓXIMO)
 
-### Progresso Geral: 39% (15/38 módulos)
-### CRM Completo: 6/6 sprints (0-5 + Contratos)
-### Operations: 8/8 sprints (Sprint 7-14) - COMPLETO
+### Progresso Geral: 42% (16/38 módulos)
+### CRM Completo: 6/6 sprints (0-5 + Contratos) - 100%
+### Operations: 8/8 sprints (Sprint 7-14) - 100%
+### RH: 1/7 sprints (Sprint 15 - Recrutamento) - 14%
 
 ---
 
@@ -136,10 +137,19 @@
 - [x] DocumentAIService (classificação, keywords, insights, saúde documental)
 - [x] 6 Controllers com 120+ endpoints REST
 
-### Sprints Restantes (23 módulos):
+### Sprint 15: Recrutamento e Seleção (7/7) - 100%
+- [x] JobPosition model (5 status, 4 níveis, 3 tipos contrato, 3 work_models, 10 departamentos)
+- [x] Candidate model (5 status, 8 fontes, skills/tags/experience)
+- [x] Application model (14 status de workflow, stages, scores)
+- [x] Interview model (8 tipos, 7 status, 4 resultados, scheduling)
+- [x] CandidateSkill, CandidateExperience, CandidateEducation models
+- [x] RecruitmentAIService (matching score, ranking, resume parsing, suggestions)
+- [x] 4 Controllers com 90+ endpoints REST
 
-**RH (7 módulos):**
-- [ ] Sprint 15: Recrutamento e Seleção
+### Sprints Restantes (22 módulos):
+
+**RH (6 módulos):**
+- [x] Sprint 15: Recrutamento e Seleção ✅
 - [ ] Sprint 16: Ponto Eletrônico
 - [ ] Sprint 17: Folha de Pagamento
 - [ ] Sprint 18: Admissão Digital
@@ -168,13 +178,13 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **15/38 (39%)** |
-| Linhas de código | ~48000+ |
-| Arquivos criados | 285+ |
-| Testes escritos | 1350+ |
+| **Módulos completos** | **16/38 (42%)** |
+| Linhas de código | ~52000+ |
+| Arquivos criados | 320+ |
+| Testes escritos | 1500+ |
 | Coverage | 85%+ |
-| Commits | 18 |
-| Sessões | 16 |
+| Commits | 19 |
+| Sessões | 17 |
 | Auditor Score | 100/100 |
 
 ### Progresso por Categoria
@@ -184,10 +194,10 @@
 | CRM | 5 | 5 | 100% |
 | Contratos | 1 | 1 | 100% |
 | Operações | 8 | 8 | 100% |
-| RH | 0 | 7 | 0% |
+| RH | 1 | 7 | 14% |
 | Financeiro | 0 | 9 | 0% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **15** | **38** | **39%** |
+| **TOTAL** | **16** | **38** | **42%** |
 
 ---
 
@@ -977,17 +987,133 @@ Módulo para organização, versionamento, compartilhamento e assinatura digital
 
 ---
 
+## Recruitment Module - Funcionalidades (Sprint 15)
+
+### Sistema Completo de Recrutamento e Seleção
+Módulo para gestão de vagas, candidatos, candidaturas, entrevistas e matching com IA.
+
+### Models Implementados
+- **JobPosition**: Vagas de emprego
+  - 5 Status: rascunho, aberta, pausada, preenchida, cancelada
+  - 4 Níveis: estagio, junior, pleno, senior
+  - 3 Tipos de contrato: CLT, PJ, temporario
+  - 3 Modelos de trabalho: presencial, remoto, hibrido
+  - 10 Departamentos: TI, RH, financeiro, comercial, operacoes, juridico, marketing, administrativo, diretoria, outro
+  - Código automático: VAG-YYYY-NNNN
+  - Contadores: views_count, applications_count
+  - Skills: required_skills, desired_skills
+
+- **Candidate**: Candidatos
+  - 5 Status: ativo, inativo, arquivado, bloqueado, contratado
+  - 8 Fontes: site_carreiras, linkedin, indeed, glassdoor, indicacao, headhunter, universidade, outro
+  - Perfil: headline, resume_text, resume_url, portfolio_url
+  - Skills: tags (keywords), years_experience, salary_expectation
+  - Bloqueio: is_blocked, blocked_reason, blocked_by, blocked_at
+  - Score: profile_score (0-100)
+
+- **Application**: Candidaturas
+  - 14 Status de workflow: inscrito -> triagem -> entrevista_rh -> entrevista_tecnica -> entrevista_gestor -> teste_tecnico -> teste_psicologico -> analise_documentos -> proposta_enviada -> proposta_aceita -> contratado (ou reprovado/desistencia)
+  - 12 Razões de rejeição: perfil_nao_adequado, experiencia_insuficiente, salario_incompativel, etc.
+  - Stages: current_stage, stage_history
+  - Scores: matching_score, interview_score, test_score, final_score
+  - Flags: is_favorite, is_shortlisted
+
+- **Interview**: Entrevistas
+  - 8 Tipos: triagem, entrevista_rh, entrevista_tecnica, entrevista_gestor, dinamica_grupo, case_tecnico, fit_cultural, entrevista_final
+  - 7 Status: agendada, confirmada, em_andamento, realizada, cancelada, reagendada, no_show
+  - 4 Resultados: aprovado, reprovado, inconclusivo, aguardando_feedback
+  - Scheduling: scheduled_date, scheduled_time, duration_minutes
+  - Location: location, meeting_url, meeting_id
+  - Confirmação: candidate_confirmed, interviewer_confirmed
+
+- **CandidateSkill**: Habilidades
+  - 4 Categorias: tecnica, comportamental, idioma, ferramenta
+  - 5 Níveis: basico, intermediario, avancado, especialista, nativo
+  - Certificações: array de certificações
+
+- **CandidateExperience**: Experiência profissional
+  - 5 Tipos: CLT, PJ, estagio, freelancer, voluntario
+  - Período: start_date, end_date, is_current
+  - Empresa: company_name, position, industry
+  - Responsabilidades e conquistas
+
+- **CandidateEducation**: Formação acadêmica
+  - 7 Níveis: ensino_medio, tecnico, graduacao, pos_graduacao, mba, mestrado, doutorado
+  - 4 Status: em_andamento, concluido, trancado, incompleto
+  - Instituição: institution, course, field_of_study
+
+### Services IA - RecruitmentAIService
+- **calculate_matching_score()**: Score de compatibilidade candidato-vaga (0-100)
+  - 6 Fatores ponderados:
+    - Skills match (35%)
+    - Experience match (25%)
+    - Education match (15%)
+    - Salary match (10%)
+    - Location match (10%)
+    - Availability match (5%)
+  - Recomendação: excelente (≥85%), bom (≥70%), moderado (≥55%), baixo (≥40%), incompatível (<40%)
+
+- **rank_candidates()**: Ranking de candidatos para uma vaga
+  - Score normalizado
+  - Ordenação por score descendente
+  - Posição (rank) calculada
+
+- **parse_resume()**: Parsing de currículo
+  - Extração de skills (50+ keywords técnicas)
+  - Extração de experiência (anos)
+  - Extração de formação
+  - Extração de idiomas
+  - Extração de contato (email, telefone)
+
+- **suggest_positions()**: Sugestão de vagas para candidato
+  - Baseado em skills e experiência
+  - Score de compatibilidade
+
+- **generate_interview_questions()**: Geração de perguntas
+  - 3 Categorias: técnica, comportamental, motivação
+  - Perguntas sobre skills da vaga
+  - Perguntas contextualizadas
+
+### Endpoints REST (90+)
+- `/job-positions/*`: CRUD, search, stats, open, expiring
+- `/job-positions/{id}/publish`, `/pause`, `/reopen`, `/close`, `/duplicate`
+- `/candidates/*`: CRUD, search, active, blocked, recently-active
+- `/candidates/{id}/block`, `/unblock`, `/archive`, `/activate`, `/merge`
+- `/candidates/{id}/import-resume`
+- `/applications/*`: CRUD, by-position, by-candidate, stats
+- `/applications/{id}/advance`, `/reject`, `/send-proposal`, `/hire`
+- `/applications/{id}/toggle-favorite`, `/toggle-shortlist`
+- `/applications/matching/{candidate_id}/{position_id}`
+- `/applications/bulk-action`
+- `/interviews/*`: CRUD, today, upcoming, pending-confirmation
+- `/interviews/{id}/confirm-candidate`, `/confirm-interviewer`
+- `/interviews/{id}/start`, `/complete`, `/cancel`, `/reschedule`, `/no-show`
+- `/interviews/available-slots`, `/calendar`
+- `/interviews/{id}/questions`
+
+### Schemas Implementados
+- 35+ Schemas Pydantic para validação
+- Requests, Responses, Filters, Stats
+- Validação de dados com Field constraints
+
+### Testes
+- 150+ testes unitários e de API
+- Cobertura de models, AI service e endpoints
+- Pylint score: 9.5+/10
+
+---
+
 ## Última Atualização
 **Data:** 2025-12-30
-**Por:** Claude Code - Sessão 016
+**Por:** Claude Code - Sessão 017
 **Mudanças:**
-- Sprint 14 (GED - Gestão Eletrônica de Documentos) COMPLETO
-- 6 Models implementados: Folder, Document, DocumentVersion, DocumentShare, DocumentTag, DocumentSignature
-- 6 Repositories com CRUD + filtros avançados + stats + soft delete
-- 7 Services: FolderService, DocumentService, DocumentVersionService, DocumentShareService, DocumentTagService, DocumentSignatureService, DocumentAIService
-- 6 Controllers com 120+ endpoints REST
-- IA de documentos (5 funções: classify, keywords, suggest_folder, health, insights)
-- 90+ testes
-- Auditor: pylint 9.85/10
-- Progresso: 39% (15/38 módulos)
-- Operations: 8/8 sprints COMPLETO (100%)
+- Sprint 15 (Recrutamento e Seleção) COMPLETO
+- 7 Models implementados: JobPosition, Candidate, Application, Interview, CandidateSkill, CandidateExperience, CandidateEducation
+- 4 Repositories com CRUD + filtros avançados + stats + soft delete
+- 5 Services: JobPositionService, CandidateService, ApplicationService, InterviewService, RecruitmentAIService
+- 4 Controllers com 90+ endpoints REST
+- IA de recrutamento (5 funções: matching_score, rank_candidates, parse_resume, suggest_positions, interview_questions)
+- 150+ testes
+- Auditor: pylint 9.5+/10
+- Progresso: 42% (16/38 módulos)
+- RH: 1/7 sprints INICIADO (14%)
