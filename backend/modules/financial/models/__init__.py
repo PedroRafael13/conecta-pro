@@ -1,6 +1,62 @@
-"""Models do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa e Compras."""
+"""Models do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Estoque."""
 
 # Contas a Pagar
+# Fluxo de Caixa
+from modules.financial.models.bank_account import (
+    BankAccount,
+    BankAccountStatus,
+    BankAccountType,
+    PixKeyType,
+)
+from modules.financial.models.bank_reconciliation import (
+    BankReconciliation,
+    ReconciliationPeriodType,
+)
+from modules.financial.models.bank_reconciliation import (
+    ReconciliationStatus as BankReconciliationStatus,
+)
+from modules.financial.models.bank_transaction import BankTransaction
+from modules.financial.models.bank_transaction import (
+    ReconciliationStatus as TransactionReconciliationStatus,
+)
+from modules.financial.models.bank_transaction import (
+    TransactionCategory,
+    TransactionOrigin,
+    TransactionStatus,
+    TransactionType,
+)
+
+# Contas a Receber
+from modules.financial.models.billing_rule import (
+    BillingFrequency,
+    BillingRule,
+    BillingRuleStatus,
+    BillingType,
+    NotificationType,
+)
+from modules.financial.models.cashflow_entry import (
+    CashFlowEntry,
+    CashFlowEntryStatus,
+    CashFlowEntryType,
+    CashFlowSourceType,
+    RecurrenceFrequency,
+)
+from modules.financial.models.cashflow_forecast import (
+    CashFlowForecast,
+    ForecastConfidence,
+    ForecastPeriodType,
+    ForecastStatus,
+)
+from modules.financial.models.customer import Customer, CustomerStatus, CustomerType
+
+# Compras
+from modules.financial.models.goods_receipt import (
+    GoodsReceipt,
+    GoodsReceiptItem,
+    InspectionResult,
+    ReceiptStatus,
+    ReceiptType,
+)
 from modules.financial.models.payable_account import (
     PayableAccount,
     PayablePriority,
@@ -16,98 +72,7 @@ from modules.financial.models.payment_method import (
     PaymentMethodStatus,
     PaymentMethodType,
 )
-from modules.financial.models.supplier import (
-    PaymentTerms,
-    Supplier,
-    SupplierCategory,
-    SupplierStatus,
-    SupplierType,
-)
-
-# Contas a Receber
-from modules.financial.models.billing_rule import (
-    BillingFrequency,
-    BillingRule,
-    BillingRuleStatus,
-    BillingType,
-    NotificationType,
-)
-from modules.financial.models.customer import (
-    Customer,
-    CustomerStatus,
-    CustomerType,
-)
-from modules.financial.models.receivable_account import (
-    ReceivableAccount,
-    ReceivablePriority,
-    ReceivableStatus,
-    ReceivableType,
-)
-from modules.financial.models.receivable_account import (
-    RecurrenceType as ReceivableRecurrenceType,
-)
-from modules.financial.models.receivable_category import (
-    CategoryType as ReceivableCategoryType,
-    ReceivableCategory,
-)
-from modules.financial.models.receivable_installment import (
-    InstallmentStatus as ReceivableInstallmentStatus,
-    ReceivableInstallment,
-)
-from modules.financial.models.receivable_payment import (
-    PaymentOrigin as ReceivablePaymentOrigin,
-    PaymentStatus as ReceivablePaymentStatus,
-    ReceivablePayment,
-)
-
-# Fluxo de Caixa
-from modules.financial.models.bank_account import (
-    BankAccount,
-    BankAccountStatus,
-    BankAccountType,
-    PixKeyType,
-)
-from modules.financial.models.bank_reconciliation import (
-    BankReconciliation,
-    ReconciliationPeriodType,
-    ReconciliationStatus as BankReconciliationStatus,
-)
-from modules.financial.models.bank_transaction import (
-    BankTransaction,
-    ReconciliationStatus as TransactionReconciliationStatus,
-    TransactionCategory,
-    TransactionOrigin,
-    TransactionStatus,
-    TransactionType,
-)
-from modules.financial.models.cashflow_entry import (
-    CashFlowEntry,
-    CashFlowEntryStatus,
-    CashFlowEntryType,
-    CashFlowSourceType,
-    RecurrenceFrequency,
-)
-from modules.financial.models.cashflow_forecast import (
-    CashFlowForecast,
-    ForecastConfidence,
-    ForecastPeriodType,
-    ForecastStatus,
-)
-
-# Compras
-from modules.financial.models.goods_receipt import (
-    GoodsReceipt,
-    GoodsReceiptItem,
-    InspectionResult,
-    ReceiptStatus,
-    ReceiptType,
-)
-from modules.financial.models.product import (
-    Product,
-    ProductStatus,
-    ProductType,
-    UnitOfMeasure,
-)
+from modules.financial.models.product import Product, ProductStatus, ProductType, UnitOfMeasure
 from modules.financial.models.product_category import (
     ProductCategory,
     ProductCategoryStatus,
@@ -139,6 +104,57 @@ from modules.financial.models.purchase_requisition import (
     RequisitionPriority,
     RequisitionStatus,
     RequisitionType,
+)
+from modules.financial.models.receivable_account import (
+    ReceivableAccount,
+    ReceivablePriority,
+    ReceivableStatus,
+    ReceivableType,
+)
+from modules.financial.models.receivable_account import RecurrenceType as ReceivableRecurrenceType
+from modules.financial.models.receivable_category import CategoryType as ReceivableCategoryType
+from modules.financial.models.receivable_category import ReceivableCategory
+from modules.financial.models.receivable_installment import (
+    InstallmentStatus as ReceivableInstallmentStatus,
+)
+from modules.financial.models.receivable_installment import ReceivableInstallment
+from modules.financial.models.receivable_payment import PaymentOrigin as ReceivablePaymentOrigin
+from modules.financial.models.receivable_payment import PaymentStatus as ReceivablePaymentStatus
+from modules.financial.models.receivable_payment import ReceivablePayment
+
+# Estoque
+from modules.financial.models.stock_inventory import (
+    InventoryItemStatus,
+    InventoryStatus,
+    InventoryType,
+    StockInventory,
+    StockInventoryItem,
+)
+from modules.financial.models.stock_item import CostingMethod, StockItem, StockItemStatus
+from modules.financial.models.stock_movement import (
+    MovementReason,
+    MovementStatus,
+    MovementType,
+    StockMovement,
+)
+from modules.financial.models.stock_reservation import (
+    ReservationPriority,
+    ReservationStatus,
+    ReservationType,
+    StockReservation,
+)
+from modules.financial.models.supplier import (
+    PaymentTerms,
+    Supplier,
+    SupplierCategory,
+    SupplierStatus,
+    SupplierType,
+)
+from modules.financial.models.warehouse import (
+    StorageType,
+    Warehouse,
+    WarehouseStatus,
+    WarehouseType,
 )
 
 __all__ = [
@@ -264,4 +280,30 @@ __all__ = [
     "ApprovalStatus",
     "ApprovalLevel",
     "ApprovalAction",
+    # === Estoque ===
+    # Warehouse
+    "Warehouse",
+    "WarehouseType",
+    "WarehouseStatus",
+    "StorageType",
+    # StockItem
+    "StockItem",
+    "StockItemStatus",
+    "CostingMethod",
+    # StockMovement
+    "StockMovement",
+    "MovementType",
+    "MovementReason",
+    "MovementStatus",
+    # StockInventory
+    "StockInventory",
+    "StockInventoryItem",
+    "InventoryType",
+    "InventoryStatus",
+    "InventoryItemStatus",
+    # StockReservation
+    "StockReservation",
+    "ReservationType",
+    "ReservationStatus",
+    "ReservationPriority",
 ]

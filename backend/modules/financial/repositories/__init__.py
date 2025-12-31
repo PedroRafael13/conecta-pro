@@ -1,23 +1,6 @@
-"""Repositories do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa e Compras."""
+"""Repositories do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Estoque."""
 
 # Contas a Pagar
-from modules.financial.repositories.payable_repository import (
-    PayableAccountRepository,
-    PayableInstallmentRepository,
-    PayablePaymentRepository,
-)
-from modules.financial.repositories.supplier_repository import SupplierRepository
-
-# Contas a Receber
-from modules.financial.repositories.receivable_repository import (
-    BillingRuleRepository,
-    CustomerRepository,
-    ReceivableAccountRepository,
-    ReceivableCategoryRepository,
-    ReceivableInstallmentRepository,
-    ReceivablePaymentRepository,
-)
-
 # Fluxo de Caixa
 from modules.financial.repositories.cashflow_repository import (
     BankAccountRepository,
@@ -25,6 +8,21 @@ from modules.financial.repositories.cashflow_repository import (
     BankTransactionRepository,
     CashFlowEntryRepository,
     CashFlowForecastRepository,
+)
+
+# Estoque
+from modules.financial.repositories.inventory_repository import (
+    StockInventoryItemRepository,
+    StockInventoryRepository,
+    StockItemRepository,
+    StockMovementRepository,
+    StockReservationRepository,
+    WarehouseRepository,
+)
+from modules.financial.repositories.payable_repository import (
+    PayableAccountRepository,
+    PayableInstallmentRepository,
+    PayablePaymentRepository,
 )
 
 # Compras
@@ -37,6 +35,17 @@ from modules.financial.repositories.purchase_repository import (
     PurchaseQuotationRepository,
     PurchaseRequisitionRepository,
 )
+
+# Contas a Receber
+from modules.financial.repositories.receivable_repository import (
+    BillingRuleRepository,
+    CustomerRepository,
+    ReceivableAccountRepository,
+    ReceivableCategoryRepository,
+    ReceivableInstallmentRepository,
+    ReceivablePaymentRepository,
+)
+from modules.financial.repositories.supplier_repository import SupplierRepository
 
 __all__ = [
     # Contas a Pagar
@@ -65,4 +74,11 @@ __all__ = [
     "PurchaseOrderRepository",
     "GoodsReceiptRepository",
     "PurchaseApprovalRepository",
+    # Estoque
+    "WarehouseRepository",
+    "StockItemRepository",
+    "StockMovementRepository",
+    "StockInventoryRepository",
+    "StockInventoryItemRepository",
+    "StockReservationRepository",
 ]

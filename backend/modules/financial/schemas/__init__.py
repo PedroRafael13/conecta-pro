@@ -1,89 +1,6 @@
-"""Schemas do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa e Compras."""
+"""Schemas do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Estoque."""
 
 # Contas a Pagar
-from modules.financial.schemas.category import (
-    PayableCategoryCreate,
-    PayableCategoryFilter,
-    PayableCategoryListResponse,
-    PayableCategoryResponse,
-    PayableCategoryTreeResponse,
-    PayableCategoryUpdate,
-)
-from modules.financial.schemas.payable import (
-    PayableAccountCreate,
-    PayableAccountFilter,
-    PayableAccountListResponse,
-    PayableAccountResponse,
-    PayableAccountStats,
-    PayableAccountUpdate,
-    PayableBulkApproveRequest,
-    PayableBulkPaymentRequest,
-    PayableInstallmentCreate,
-    PayableInstallmentRenegotiateRequest,
-    PayableInstallmentResponse,
-    PayableInstallmentUpdate,
-    PayablePaymentCreate,
-    PayablePaymentReconcileRequest,
-    PayablePaymentResponse,
-    PayablePaymentReverseRequest,
-    PayablePaymentUpdate,
-    PayableScheduleRequest,
-)
-from modules.financial.schemas.payment_method import (
-    PaymentMethodCreate,
-    PaymentMethodListResponse,
-    PaymentMethodResponse,
-    PaymentMethodUpdate,
-)
-from modules.financial.schemas.supplier import (
-    SupplierBlockRequest,
-    SupplierCreate,
-    SupplierFilter,
-    SupplierListResponse,
-    SupplierQualifyRequest,
-    SupplierResponse,
-    SupplierStats,
-    SupplierUpdate,
-)
-
-# Contas a Receber
-from modules.financial.schemas.receivable import (
-    BillingRuleCreate,
-    BillingRuleFilter,
-    BillingRuleResponse,
-    BillingRuleUpdate,
-    CustomerCreate,
-    CustomerFilter,
-    CustomerResponse,
-    CustomerUpdate,
-    ReceivableAccountCreate,
-    ReceivableAccountFilter,
-    ReceivableAccountListResponse,
-    ReceivableAccountResponse,
-    ReceivableAccountStats,
-    ReceivableAccountUpdate,
-    ReceivableAgreementRequest,
-    ReceivableBulkBoletoRequest,
-    ReceivableBulkNotifyRequest,
-    ReceivableBulkPaymentRequest,
-    ReceivableCategoryCreate,
-    ReceivableCategoryResponse,
-    ReceivableCategoryUpdate,
-    ReceivableInstallmentBoletoRequest,
-    ReceivableInstallmentCreate,
-    ReceivableInstallmentPixRequest,
-    ReceivableInstallmentRenegotiateRequest,
-    ReceivableInstallmentResponse,
-    ReceivableInstallmentUpdate,
-    ReceivablePaymentCreate,
-    ReceivablePaymentReconcileRequest,
-    ReceivablePaymentResponse,
-    ReceivablePaymentReverseRequest,
-    ReceivablePaymentUpdate,
-    ReceivableProtestRequest,
-    ReceivableWriteOffRequest,
-)
-
 # Fluxo de Caixa
 from modules.financial.schemas.cashflow import (
     AIForecastRequest,
@@ -125,6 +42,14 @@ from modules.financial.schemas.cashflow import (
     StatementImport,
     TransferRequest,
 )
+from modules.financial.schemas.category import (
+    PayableCategoryCreate,
+    PayableCategoryFilter,
+    PayableCategoryListResponse,
+    PayableCategoryResponse,
+    PayableCategoryTreeResponse,
+    PayableCategoryUpdate,
+)
 
 # Compras
 from modules.financial.schemas.goods_receipt import (
@@ -142,6 +67,67 @@ from modules.financial.schemas.goods_receipt import (
     ReceiptRejectRequest,
     ReceiptSignRequest,
     ReceiptStats,
+)
+
+# Estoque
+from modules.financial.schemas.inventory_schemas import (
+    InventoryStats,
+    MovementFilter,
+    MovementStats,
+    ReservationStats,
+    StockFilter,
+    StockInventoryCreate,
+    StockInventoryItemCount,
+    StockInventoryItemCreate,
+    StockInventoryItemResponse,
+    StockInventoryListResponse,
+    StockInventoryResponse,
+    StockInventoryUpdate,
+    StockItemCreate,
+    StockItemListResponse,
+    StockItemResponse,
+    StockItemUpdate,
+    StockMovementCreate,
+    StockMovementListResponse,
+    StockMovementResponse,
+    StockMovementUpdate,
+    StockReservationCreate,
+    StockReservationListResponse,
+    StockReservationRelease,
+    StockReservationResponse,
+    StockReservationUpdate,
+    StockStats,
+    WarehouseCreate,
+    WarehouseListResponse,
+    WarehouseResponse,
+    WarehouseStats,
+    WarehouseUpdate,
+)
+from modules.financial.schemas.payable import (
+    PayableAccountCreate,
+    PayableAccountFilter,
+    PayableAccountListResponse,
+    PayableAccountResponse,
+    PayableAccountStats,
+    PayableAccountUpdate,
+    PayableBulkApproveRequest,
+    PayableBulkPaymentRequest,
+    PayableInstallmentCreate,
+    PayableInstallmentRenegotiateRequest,
+    PayableInstallmentResponse,
+    PayableInstallmentUpdate,
+    PayablePaymentCreate,
+    PayablePaymentReconcileRequest,
+    PayablePaymentResponse,
+    PayablePaymentReverseRequest,
+    PayablePaymentUpdate,
+    PayableScheduleRequest,
+)
+from modules.financial.schemas.payment_method import (
+    PaymentMethodCreate,
+    PaymentMethodListResponse,
+    PaymentMethodResponse,
+    PaymentMethodUpdate,
 )
 from modules.financial.schemas.product import (
     ProductBlockRequest,
@@ -219,6 +205,54 @@ from modules.financial.schemas.purchase_requisition import (
     RequisitionItemUpdate,
     RequisitionRejectRequest,
     RequisitionStats,
+)
+
+# Contas a Receber
+from modules.financial.schemas.receivable import (
+    BillingRuleCreate,
+    BillingRuleFilter,
+    BillingRuleResponse,
+    BillingRuleUpdate,
+    CustomerCreate,
+    CustomerFilter,
+    CustomerResponse,
+    CustomerUpdate,
+    ReceivableAccountCreate,
+    ReceivableAccountFilter,
+    ReceivableAccountListResponse,
+    ReceivableAccountResponse,
+    ReceivableAccountStats,
+    ReceivableAccountUpdate,
+    ReceivableAgreementRequest,
+    ReceivableBulkBoletoRequest,
+    ReceivableBulkNotifyRequest,
+    ReceivableBulkPaymentRequest,
+    ReceivableCategoryCreate,
+    ReceivableCategoryResponse,
+    ReceivableCategoryUpdate,
+    ReceivableInstallmentBoletoRequest,
+    ReceivableInstallmentCreate,
+    ReceivableInstallmentPixRequest,
+    ReceivableInstallmentRenegotiateRequest,
+    ReceivableInstallmentResponse,
+    ReceivableInstallmentUpdate,
+    ReceivablePaymentCreate,
+    ReceivablePaymentReconcileRequest,
+    ReceivablePaymentResponse,
+    ReceivablePaymentReverseRequest,
+    ReceivablePaymentUpdate,
+    ReceivableProtestRequest,
+    ReceivableWriteOffRequest,
+)
+from modules.financial.schemas.supplier import (
+    SupplierBlockRequest,
+    SupplierCreate,
+    SupplierFilter,
+    SupplierListResponse,
+    SupplierQualifyRequest,
+    SupplierResponse,
+    SupplierStats,
+    SupplierUpdate,
 )
 
 __all__ = [
@@ -442,4 +476,41 @@ __all__ = [
     "ApprovalInfoProvideRequest",
     "ApprovalWorkflowConfig",
     "MyApprovalsResponse",
+    # === Estoque ===
+    # Warehouse
+    "WarehouseCreate",
+    "WarehouseUpdate",
+    "WarehouseResponse",
+    "WarehouseListResponse",
+    "WarehouseStats",
+    # StockItem
+    "StockItemCreate",
+    "StockItemUpdate",
+    "StockItemResponse",
+    "StockItemListResponse",
+    "StockStats",
+    "StockFilter",
+    # StockMovement
+    "StockMovementCreate",
+    "StockMovementUpdate",
+    "StockMovementResponse",
+    "StockMovementListResponse",
+    "MovementStats",
+    "MovementFilter",
+    # StockInventory
+    "StockInventoryCreate",
+    "StockInventoryUpdate",
+    "StockInventoryResponse",
+    "StockInventoryListResponse",
+    "StockInventoryItemCreate",
+    "StockInventoryItemCount",
+    "StockInventoryItemResponse",
+    "InventoryStats",
+    # StockReservation
+    "StockReservationCreate",
+    "StockReservationUpdate",
+    "StockReservationResponse",
+    "StockReservationListResponse",
+    "StockReservationRelease",
+    "ReservationStats",
 ]
