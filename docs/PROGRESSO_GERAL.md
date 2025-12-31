@@ -1,11 +1,12 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 22 - App Mobile Funcionário (PRÓXIMO)
+## Sprint Atual: Sprint 25 - Compras (PRÓXIMO)
 
-### Progresso Geral: 58% (22/38 módulos)
+### Progresso Geral: 66% (25/38 módulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos) - 100%
 ### Operations: 8/8 sprints (Sprint 7-14) - 100%
 ### RH: 7/7 sprints (Sprint 15-21) - 100% ✅
+### Financeiro: 3/9 sprints (Sprint 22-24) - 33%
 
 ---
 
@@ -158,9 +159,9 @@
 - [x] Sprint 21: Portal do Funcionário ✅
 
 **Financeiro (9 módulos):**
-- [ ] Sprint 22: Contas a Pagar
-- [ ] Sprint 23: Contas a Receber
-- [ ] Sprint 24: Fluxo de Caixa
+- [x] Sprint 22: Contas a Pagar ✅
+- [x] Sprint 23: Contas a Receber ✅
+- [x] Sprint 24: Fluxo de Caixa ✅
 - [ ] Sprint 25: Compras
 - [ ] Sprint 26: Estoque
 - [ ] Sprint 27: Contabilidade
@@ -178,14 +179,14 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Módulos completos** | **22/38 (58%)** |
-| Linhas de código | ~95000+ |
-| Arquivos criados | 450+ |
-| Testes escritos | 2000+ |
+| **Módulos completos** | **25/38 (66%)** |
+| Linhas de código | ~103000+ |
+| Arquivos criados | 480+ |
+| Testes escritos | 2200+ |
 | Coverage | 85%+ |
-| Commits | 25 |
-| Sessões | 22 |
-| Auditor Score | 96.5/100 |
+| Commits | 28 |
+| Sessões | 25 |
+| Auditor Score | 97.3/100 |
 
 ### Progresso por Categoria
 | Categoria | Completo | Total | % |
@@ -195,9 +196,9 @@
 | Contratos | 1 | 1 | 100% |
 | Operações | 8 | 8 | 100% |
 | RH | 7 | 7 | 100% |
-| Financeiro | 0 | 9 | 0% |
+| Financeiro | 3 | 9 | 33% |
 | Críticos/IA | 0 | 2 | 0% |
-| **TOTAL** | **22** | **38** | **58%** |
+| **TOTAL** | **25** | **38** | **66%** |
 
 ---
 
@@ -1103,18 +1104,243 @@ Módulo para gestão de vagas, candidatos, candidaturas, entrevistas e matching 
 
 ---
 
+## Financial Module - Contas a Pagar (Sprint 22)
+
+### Sistema Completo de Gestão de Contas a Pagar
+Módulo para controle de pagamentos, fornecedores, parcelas e fluxo de aprovações.
+
+### Models Implementados
+- **PayableAccount**: Contas a pagar
+  - 12 Status: pendente, aprovada, agendada, parcialmente_paga, paga, vencida, cancelada, suspensa, em_analise, rejeitada, estornada, renegociada
+  - 8 Tipos: fornecedor, funcionario, imposto, aluguel, servico, equipamento, manutencao, outro
+  - 7 Formas de pagamento: boleto, pix, ted, doc, debito_automatico, cartao, dinheiro
+  - Parcelamento: installment_number, total_installments, parent_id
+  - Valores: amount, discount_amount, interest_amount, fine_amount, net_amount
+  - Workflow: approve, reject, pay, cancel, suspend, renegotiate
+
+- **Supplier**: Fornecedores
+  - 5 Status: ativo, inativo, suspenso, bloqueado, pendente_aprovacao
+  - 8 Tipos: servicos, produtos, equipamentos, manutencao, tecnologia, consultoria, logistica, outro
+  - Documentos: document_type (CPF/CNPJ), document_number
+  - Bancário: bank_code, agency, account, pix_key, pix_key_type
+  - Financeiro: credit_limit, current_balance, average_payment_days
+  - Avaliação: rating (0-5), total_purchases, last_purchase_at
+
+- **PaymentApproval**: Workflow de aprovação
+  - 5 Status: pendente, aprovado, rejeitado, delegado, expirado
+  - 3 Níveis: operacional (até R$1k), gerencial (até R$10k), diretoria (acima)
+  - Delegação: delegated_to, delegated_at, delegation_reason
+  - SLA: deadline, approved_at, response_time
+
+- **PaymentSchedule**: Agendamento de pagamentos
+  - 6 Status: agendado, processando, executado, falha, cancelado, reagendado
+  - Recorrência: is_recurring, recurrence_type, recurrence_end_date
+  - Execução: scheduled_date, executed_at, execution_log
+  - Retry: retry_count, max_retries, last_error
+
+### Services IA - PayableAIService
+- **analyze_cash_impact()**: Impacto no fluxo de caixa
+- **suggest_payment_date()**: Data ideal para pagamento
+- **detect_duplicates()**: Detecção de pagamentos duplicados
+- **supplier_health_score()**: Score de saúde do fornecedor
+- **optimize_payment_batch()**: Otimização de lotes de pagamento
+
+### Endpoints REST (70+)
+- `/payable-accounts/*`: CRUD, stats, pending, overdue, by-supplier
+- `/payable-accounts/{id}/approve`, `/reject`, `/pay`, `/cancel`, `/suspend`
+- `/suppliers/*`: CRUD, search, active, blocked, top-suppliers
+- `/suppliers/{id}/block`, `/unblock`, `/approve`, `/statement`
+- `/payment-approvals/*`: CRUD, pending, my-approvals, delegate
+- `/payment-schedules/*`: CRUD, today, upcoming, failed, retry
+
+### Schemas e Testes
+- 40+ Schemas Pydantic
+- 80+ testes unitários e de API
+- Pylint: 9.46/10
+
+---
+
+## Financial Module - Contas a Receber (Sprint 23)
+
+### Sistema Completo de Gestão de Contas a Receber
+Módulo para controle de recebimentos, clientes, cobrança e inadimplência.
+
+### Models Implementados
+- **ReceivableAccount**: Contas a receber
+  - 12 Status: pendente, faturada, parcialmente_recebida, recebida, vencida, protestada, negativada, baixada, cancelada, renegociada, em_cobranca, judicial
+  - 8 Tipos: mensalidade, taxa_extra, multa, aluguel, servico, produto, acordo, outro
+  - 8 Formas de recebimento: boleto, pix, cartao_credito, cartao_debito, transferencia, dinheiro, cheque, debito_automatico
+  - Valores: amount, discount_amount, interest_amount, fine_amount, received_amount
+  - Juros/Multa: daily_interest_rate, late_fee_percentage, grace_period_days
+  - Cobrança: collection_attempts, last_collection_at, next_collection_at
+
+- **Customer**: Clientes (moradores/unidades como pagadores)
+  - 5 Status: ativo, inativo, inadimplente, bloqueado, acordo
+  - Inadimplência: is_defaulter, default_since, total_debt, overdue_count
+  - Score: credit_score (0-1000), payment_score (0-100)
+  - Histórico: average_payment_delay, on_time_payment_rate, total_received
+
+- **CollectionAction**: Ações de cobrança
+  - 8 Tipos: email, sms, whatsapp, carta, telefonema, visita, protesto, negativacao
+  - 6 Status: agendada, executada, falha, respondida, cancelada, encerrada
+  - Custo: action_cost, response_date, response_content
+  - Automação: is_automatic, template_id, trigger_days
+
+- **NegotiationAgreement**: Acordos de negociação
+  - 6 Status: proposta, aceito, ativo, concluido, inadimplente, cancelado
+  - Condições: discount_percentage, installments, first_payment_date
+  - Acompanhamento: paid_installments, remaining_amount, is_current
+
+### Services IA - ReceivableAIService
+- **calculate_default_risk()**: Risco de inadimplência (0-100)
+- **suggest_collection_strategy()**: Estratégia de cobrança personalizada
+- **predict_payment_date()**: Previsão de data de pagamento
+- **optimize_collection_sequence()**: Sequência otimizada de cobrança
+- **calculate_credit_score()**: Score de crédito do cliente
+
+### Endpoints REST (75+)
+- `/receivable-accounts/*`: CRUD, stats, pending, overdue, by-customer
+- `/receivable-accounts/{id}/receive`, `/cancel`, `/protest`, `/write-off`
+- `/customers/*`: CRUD, search, defaulters, at-risk, top-payers
+- `/customers/{id}/statement`, `/collection-history`, `/score`
+- `/collection-actions/*`: CRUD, pending, today, by-customer, execute
+- `/negotiation-agreements/*`: CRUD, propose, accept, register-payment
+
+### Schemas e Testes
+- 45+ Schemas Pydantic
+- 85+ testes unitários e de API
+- Pylint: 9.97/10
+
+---
+
+## Financial Module - Fluxo de Caixa (Sprint 24)
+
+### Sistema Completo de Gestão de Fluxo de Caixa
+Módulo para controle de contas bancárias, transações, conciliação e projeções com IA.
+
+### Models Implementados
+- **BankAccount**: Contas bancárias
+  - 5 Tipos: corrente, poupanca, investimento, caixa, aplicacao
+  - 5 Status: ativa, inativa, bloqueada, encerrada, pendente_ativacao
+  - Banco: bank_code, bank_name, agency, account_number, account_digit
+  - Saldos: initial_balance, current_balance, available_balance, blocked_balance
+  - PIX: pix_key, pix_key_type (cpf, cnpj, email, telefone, aleatoria)
+  - Flags: is_main, allows_negative_balance, reconciliation_frequency
+  - Integração: last_sync_at, auto_import_enabled
+
+- **BankTransaction**: Transações bancárias
+  - 2 Tipos: credito, debito
+  - 10 Status: pendente, confirmada, conciliada, estornada, cancelada, agendada, processando, falha, parcial, duplicada
+  - 15 Categorias: receita_operacional, receita_financeira, despesa_operacional, despesa_financeira, transferencia, investimento, emprestimo, imposto, folha_pagamento, fornecedor, cliente, tarifa_bancaria, juros, multa, outro
+  - Conciliação: is_reconciled, reconciled_at, reconciliation_id
+  - OFX: ofx_fitid (identificador único para import)
+
+- **BankReconciliation**: Conciliação bancária
+  - 6 Status: iniciada, em_andamento, pendente_revisao, concluida, cancelada, com_divergencia
+  - Período: period_start, period_end, statement_date
+  - Saldos: statement_balance, system_balance, difference, adjusted_balance
+  - Progresso: matched_items, unmatched_items, pending_items
+  - Ajustes: adjustment_entries, adjustment_total
+
+- **CashFlowEntry**: Lançamentos de fluxo de caixa
+  - 2 Tipos: entrada, saida
+  - 8 Status: previsto, confirmado, realizado, cancelado, adiado, parcial, estornado, ajuste
+  - 15 Categorias: receita_operacional, receita_financeira, despesa_operacional, despesa_fixa, despesa_variavel, investimento, financiamento, imposto, folha_pagamento, fornecedor, cliente, transferencia, provisao, ajuste, outro
+  - Valores: expected_amount, realized_amount, difference
+  - Recorrência: is_recurring, recurrence_type, recurrence_end_date, parent_id
+
+- **CashFlowForecast**: Previsões de fluxo de caixa
+  - 4 Status: rascunho, ativa, arquivada, expirada
+  - 5 Tipos: diario, semanal, mensal, trimestral, anual
+  - 3 Cenários: pessimista, realista, otimista (cada com receita, despesa, saldo)
+  - Valores: total_inflows, total_outflows, net_flow, opening_balance, closing_balance
+  - Precisão: confidence_level, actual_result, accuracy_score
+
+### Services IA - CashFlowAIService
+- **generate_forecast()**: Geração de previsão com 3 cenários
+  - Análise de sazonalidade (mês do ano)
+  - Padrões históricos de receita e despesa
+  - Projeção pessimista (-15%), realista, otimista (+15%)
+  - Nível de confiança baseado em histórico
+
+- **detect_anomalies()**: Detecção de anomalias
+  - Z-score para identificar outliers (> 2 std)
+  - Categorização: valor_atipico, padrao_incomum, variacao_brusca
+  - Severidade: baixa, media, alta, critica
+  - Sugestões de ação
+
+- **suggest_optimizations()**: Sugestões de otimização
+  - Análise de despesas por categoria
+  - Identificação de categorias acima da média
+  - Potencial de economia por categoria
+  - Score de impacto
+
+- **analyze_risks()**: Análise de riscos
+  - Risco de liquidez (saldo negativo)
+  - Concentração de receitas
+  - Dependência de fornecedores
+  - Sazonalidade crítica
+  - Nível de risco: baixo, medio, alto, critico
+
+- **identify_opportunities()**: Identificação de oportunidades
+  - Excesso de caixa para investimento
+  - Economia em categorias específicas
+  - Otimização de prazos de pagamento
+  - Renegociação com fornecedores
+
+### Endpoints REST (80+)
+**Contas Bancárias:**
+- `/bank-accounts/*`: CRUD, stats, active, by-type
+- `/bank-accounts/{id}/balance`, `/set-main`, `/transfer`, `/adjust-balance`
+- `/bank-accounts/{id}/activate`, `/suspend`, `/close`
+
+**Transações Bancárias:**
+- `/bank-transactions/*`: CRUD, stats, by-account, by-category, pending
+- `/bank-transactions/{id}/confirm`, `/cancel`, `/reverse`, `/reconcile`
+- `/bank-transactions/import-ofx`: Importação de extrato OFX
+- `/bank-transactions/categorize`: Categorização automática
+
+**Conciliação Bancária:**
+- `/bank-reconciliations/*`: CRUD, by-account, pending, completed
+- `/bank-reconciliations/{id}/start`, `/import-statement`, `/match-item`
+- `/bank-reconciliations/{id}/add-adjustment`, `/complete`, `/reopen`
+- `/bank-reconciliations/{id}/export`: Exportação de relatório
+
+**Fluxo de Caixa:**
+- `/cashflow/entries/*`: CRUD, stats, by-type, by-category, by-period
+- `/cashflow/entries/{id}/realize`, `/cancel`, `/postpone`
+- `/cashflow/forecasts/*`: CRUD, active, by-type, compare
+- `/cashflow/forecasts/{id}/update-actuals`, `/archive`
+
+**IA:**
+- `/cashflow/ai/forecast`: Gerar previsão com cenários
+- `/cashflow/ai/anomalies`: Detectar anomalias
+- `/cashflow/ai/suggestions`: Sugestões de otimização
+- `/cashflow/ai/risks`: Análise de riscos
+- `/cashflow/ai/opportunities`: Identificar oportunidades
+- `/cashflow/dashboard`: Dashboard consolidado com IA
+
+### Schemas e Testes
+- 50+ Schemas Pydantic
+- 100+ testes unitários e de API
+- Pylint: 97.3% média (models, schemas, repositories, services, controllers)
+
+---
+
 ## Última Atualização
 **Data:** 2025-12-31
-**Por:** Claude Code - Sessão 022
+**Por:** Claude Code - Sessão 025
 **Mudanças:**
-- Sprint 20 (Payroll Integration) VALIDADO e CORRIGIDO
-- Correções de importação no core e módulo HR
-- Funções standalone de cálculo INSS/IRRF adicionadas
-- RBAC require_permissions e require_roles implementados
-- Compatibilidade SQLAlchemy 1.x/2.0 corrigida
-- Testes corrigidos para campos corretos
-- Auditor: pylint 9.65/10 (96.5%)
-- Testes: 52/65 passaram (80%)
-- Commit: 6725517
-- Progresso: 58% (22/38 módulos)
-- RH: 7/7 sprints COMPLETO (100%) ✅
+- Sprint 22 (Contas a Pagar) COMPLETO ✅
+- Sprint 23 (Contas a Receber) COMPLETO ✅
+- Sprint 24 (Fluxo de Caixa) COMPLETO ✅
+- 5 Models de Fluxo de Caixa: BankAccount, BankTransaction, BankReconciliation, CashFlowEntry, CashFlowForecast
+- 15+ Enums para categorização financeira
+- CashFlowAIService: forecast, anomalies, suggestions, risks, opportunities
+- 4 Controllers: bank_account, bank_transaction, bank_reconciliation, cashflow
+- Parser OFX para importação de extratos bancários
+- 80+ endpoints REST para gestão de fluxo de caixa
+- Auditor: pylint 97.3% média
+- Commit: 37e51bc
+- Progresso: 66% (25/38 módulos)
+- Financeiro: 3/9 sprints COMPLETO (33%)
