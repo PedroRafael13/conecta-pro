@@ -745,3 +745,121 @@ Implementar módulo de integração com dispositivos REP (Control iD, Intelbras,
 - Nenhum
 
 ---
+
+## Sessão 18: Sprint 18 - Mobile Time Clock (App Ponto)
+**Data:** 2025-12-31
+**Duração:** ~4 horas
+**Status:** ✅ COMPLETO
+
+### Objetivo:
+Implementar módulo completo para registro de ponto via aplicativo mobile com geofencing, biometria, validação offline e push notifications.
+
+### Entregas:
+
+#### 1. Models (5 arquivos)
+- `mobile_device.py` - Gerenciamento de dispositivos móveis (trust score, push tokens)
+- `mobile_checkin.py` - Registros de ponto mobile com múltiplas validações
+- `geofence_zone.py` - Zonas de geofencing (círculo, polígono) com Haversine
+- `offline_queue.py` - Fila de sincronização offline com exponential backoff
+- `__init__.py` - Exports do módulo
+
+#### 2. Schemas (5 arquivos)
+- `mobile_device.py` - Schemas de registro/aprovação de dispositivos
+- `mobile_checkin.py` - Schemas de check-in com localização, biometria, foto
+- `geofence_zone.py` - Schemas de zonas e verificação de ponto
+- `offline_queue.py` - Schemas de fila e resultados de sincronização
+- `__init__.py` - Exports do módulo
+
+#### 3. Repositories (4 arquivos)
+- `mobile_device_repository.py` - CRUD + trust score + device stats
+- `mobile_checkin_repository.py` - CRUD + duplicate check + dashboard
+- `geofence_zone_repository.py` - CRUD + geolocation queries
+- `offline_queue_repository.py` - Queue management + exponential backoff
+
+#### 4. Services (5 arquivos)
+- `geofence_service.py` - Validação de localização em zonas
+- `checkin_validation_service.py` - Sistema de validação com scores ponderados:
+  - geofence(30), biometric(25), photo(20), wifi(10), beacon(10), nfc(15), qr_code(10)
+  - Score mínimo auto-approve: 60
+  - Detecção de anomalias (velocidade impossível >200km/h)
+- `offline_sync_service.py` - Sincronização de fila offline
+- `push_notification_service.py` - Push via FCM (Android) e APNS (iOS)
+- `device_service.py` - Gerenciamento de dispositivos e trust score
+
+#### 5. Controllers (4 arquivos)
+- `device_controller.py` - 8+ endpoints (registro, aprovação, bloqueio, trust)
+- `checkin_controller.py` - 10+ endpoints (check-in, dashboard, histórico)
+- `geofence_controller.py` - 8+ endpoints (zonas, verificação, employee zones)
+- `offline_controller.py` - 6+ endpoints (queue, sync, retry, cleanup)
+
+#### 6. Migração Alembic
+- `sprint18_create_mobile_time_clock_tables.py` - 4 tabelas:
+  - `mobile_devices` (40+ campos com trust score)
+  - `geofence_zones` (35+ campos com polígonos)
+  - `mobile_checkins` (50+ campos com validações)
+  - `offline_queue` (25+ campos com retry logic)
+
+#### 7. Testes (3 arquivos)
+- `test_mobile_time_clock_models.py` - 30+ testes unitários para modelos
+- `test_mobile_time_clock_schemas.py` - 30+ testes para schemas
+- `test_mobile_time_clock_services.py` - 25+ testes para services
+
+### Funcionalidades Implementadas:
+
+#### Geofencing
+- Zonas circulares com raio configurável
+- Zonas poligonais com ray casting
+- Cálculo de distância Haversine (precisão métrica)
+- Tolerância configurável (grace period)
+- Verificação de horário e dia da semana
+
+#### Validação Multi-fator
+| Método | Peso | Descrição |
+|--------|------|-----------|
+| Geofence | 30 | Localização dentro da zona |
+| Biometric | 25 | Fingerprint, Face ID, Iris |
+| Photo | 20 | Foto no momento do check-in |
+| WiFi | 10 | SSID da rede corporativa |
+| Beacon | 10 | Bluetooth beacon proximity |
+| NFC | 15 | Tag NFC no local |
+| QR Code | 10 | QR dinâmico com timestamp |
+
+#### Níveis de Precisão GPS
+- HIGH: < 10m
+- MEDIUM: 10-50m
+- LOW: 50-100m
+- VERY_LOW: > 100m
+
+#### Offline Support
+- Fila local com capacidade ilimitada
+- Exponential backoff: 2^n minutos (máx 60min)
+- Expiração configurável (1-168 horas)
+- Detecção de duplicatas por timestamp
+- Retry automático em reconexão
+
+#### Push Notifications
+- FCM (Firebase Cloud Messaging) para Android
+- APNS (Apple Push Notification Service) para iOS
+- Tipos: reminder, confirmed, rejected, geofence_enter/exit, overtime_warning
+
+#### Segurança de Dispositivos
+- Trust score 0-100
+- Auto-block após 10 tentativas falhas
+- Device fingerprint único
+- Revogação remota de acesso
+
+### Métricas:
+- Linhas de código: +6.500
+- Arquivos criados: 26
+- Qualidade Pylint: 95.8% (9.58/10)
+- Testes adicionados: ~85
+
+### Próximos Passos:
+1. Sprint 19: Dashboard analytics de RH
+2. Sprint 20: Integração com folha de pagamento
+3. Sprint 21: Portal do funcionário
+
+### Problemas:
+- Nenhum
+
+---
