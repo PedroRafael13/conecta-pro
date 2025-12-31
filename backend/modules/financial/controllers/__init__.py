@@ -1,7 +1,6 @@
-"""Controllers do modulo financeiro - Contas a Pagar e Contas a Receber."""
+"""Controllers do módulo financeiro - Contas a Pagar, Contas a Receber e Fluxo de Caixa."""
 
 # Contas a Pagar
-from modules.financial.controllers.cashflow_controller import router as cashflow_router
 from modules.financial.controllers.payable_controller import router as payable_router
 from modules.financial.controllers.supplier_controller import router as supplier_router
 
@@ -13,14 +12,28 @@ from modules.financial.controllers.receivable_category_controller import (
 )
 from modules.financial.controllers.receivable_controller import router as receivable_router
 
+# Fluxo de Caixa
+from modules.financial.controllers.bank_account_controller import router as bank_account_router
+from modules.financial.controllers.bank_reconciliation_controller import (
+    router as bank_reconciliation_router,
+)
+from modules.financial.controllers.bank_transaction_controller import (
+    router as bank_transaction_router,
+)
+from modules.financial.controllers.cashflow_controller import router as cashflow_router
+
 __all__ = [
     # Contas a Pagar
     "supplier_router",
     "payable_router",
-    "cashflow_router",
     # Contas a Receber
     "customer_router",
     "receivable_category_router",
     "receivable_router",
     "billing_rule_router",
+    # Fluxo de Caixa
+    "bank_account_router",
+    "bank_transaction_router",
+    "bank_reconciliation_router",
+    "cashflow_router",
 ]

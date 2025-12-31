@@ -1,4 +1,4 @@
-"""Repositories do modulo financeiro - Contas a Pagar e Contas a Receber."""
+"""Repositories do modulo financeiro - Contas a Pagar, Contas a Receber e Fluxo de Caixa."""
 
 # Contas a Pagar
 from modules.financial.repositories.payable_repository import (
@@ -18,6 +18,15 @@ from modules.financial.repositories.receivable_repository import (
     ReceivablePaymentRepository,
 )
 
+# Fluxo de Caixa
+from modules.financial.repositories.cashflow_repository import (
+    BankAccountRepository,
+    BankReconciliationRepository,
+    BankTransactionRepository,
+    CashFlowEntryRepository,
+    CashFlowForecastRepository,
+)
+
 __all__ = [
     # Contas a Pagar
     "SupplierRepository",
@@ -31,4 +40,10 @@ __all__ = [
     "ReceivableInstallmentRepository",
     "ReceivablePaymentRepository",
     "BillingRuleRepository",
+    # Fluxo de Caixa
+    "BankAccountRepository",
+    "BankTransactionRepository",
+    "BankReconciliationRepository",
+    "CashFlowEntryRepository",
+    "CashFlowForecastRepository",
 ]

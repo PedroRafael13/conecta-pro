@@ -1,4 +1,4 @@
-"""Schemas do modulo financeiro - Contas a Pagar e Contas a Receber."""
+"""Schemas do modulo financeiro - Contas a Pagar, Contas a Receber e Fluxo de Caixa."""
 
 # Contas a Pagar
 from modules.financial.schemas.category import (
@@ -82,6 +82,48 @@ from modules.financial.schemas.receivable import (
     ReceivablePaymentUpdate,
     ReceivableProtestRequest,
     ReceivableWriteOffRequest,
+)
+
+# Fluxo de Caixa
+from modules.financial.schemas.cashflow import (
+    AIForecastRequest,
+    AIForecastResponse,
+    AnomalyDetectionRequest,
+    AnomalyDetectionResponse,
+    BankAccountCreate,
+    BankAccountFilter,
+    BankAccountResponse,
+    BankAccountStats,
+    BankAccountUpdate,
+    BankReconciliationCreate,
+    BankReconciliationResponse,
+    BankReconciliationUpdate,
+    BankTransactionCreate,
+    BankTransactionFilter,
+    BankTransactionImport,
+    BankTransactionResponse,
+    BankTransactionUpdate,
+    CashFlowDashboard,
+    CashFlowEntryCreate,
+    CashFlowEntryFilter,
+    CashFlowEntryRealize,
+    CashFlowEntryResponse,
+    CashFlowEntryUpdate,
+    CashFlowForecastCreate,
+    CashFlowForecastFilter,
+    CashFlowForecastResponse,
+    CashFlowForecastUpdate,
+    CashFlowProjection,
+    CashFlowSummary,
+    CashFlowTrend,
+    ForecastActualsUpdate,
+    ForecastOpportunity,
+    ForecastRisk,
+    OptimizationSuggestion,
+    ReconciliationAdjustment,
+    ReconciliationItemMatch,
+    StatementImport,
+    TransferRequest,
 )
 
 __all__ = [
@@ -172,4 +214,50 @@ __all__ = [
     "ReceivableWriteOffRequest",
     "ReceivableProtestRequest",
     "ReceivableAgreementRequest",
+    # === Fluxo de Caixa ===
+    # BankAccount
+    "BankAccountCreate",
+    "BankAccountUpdate",
+    "BankAccountResponse",
+    "BankAccountFilter",
+    "BankAccountStats",
+    # BankTransaction
+    "BankTransactionCreate",
+    "BankTransactionUpdate",
+    "BankTransactionResponse",
+    "BankTransactionFilter",
+    "BankTransactionImport",
+    "TransferRequest",
+    # BankReconciliation
+    "BankReconciliationCreate",
+    "BankReconciliationUpdate",
+    "BankReconciliationResponse",
+    "ReconciliationItemMatch",
+    "ReconciliationAdjustment",
+    "StatementImport",
+    # CashFlowEntry
+    "CashFlowEntryCreate",
+    "CashFlowEntryUpdate",
+    "CashFlowEntryResponse",
+    "CashFlowEntryFilter",
+    "CashFlowEntryRealize",
+    # CashFlowForecast
+    "CashFlowForecastCreate",
+    "CashFlowForecastUpdate",
+    "CashFlowForecastResponse",
+    "CashFlowForecastFilter",
+    "ForecastActualsUpdate",
+    "ForecastRisk",
+    "ForecastOpportunity",
+    # Projections & Analytics
+    "CashFlowProjection",
+    "CashFlowSummary",
+    "CashFlowTrend",
+    "CashFlowDashboard",
+    # AI
+    "AIForecastRequest",
+    "AIForecastResponse",
+    "AnomalyDetectionRequest",
+    "AnomalyDetectionResponse",
+    "OptimizationSuggestion",
 ]

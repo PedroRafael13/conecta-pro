@@ -1,4 +1,4 @@
-"""Models do modulo financeiro - Contas a Pagar e Contas a Receber."""
+"""Models do modulo financeiro - Contas a Pagar, Contas a Receber e Fluxo de Caixa."""
 
 # Contas a Pagar
 from modules.financial.models.payable_account import (
@@ -60,6 +60,40 @@ from modules.financial.models.receivable_payment import (
     ReceivablePayment,
 )
 
+# Fluxo de Caixa
+from modules.financial.models.bank_account import (
+    BankAccount,
+    BankAccountStatus,
+    BankAccountType,
+    PixKeyType,
+)
+from modules.financial.models.bank_reconciliation import (
+    BankReconciliation,
+    ReconciliationPeriodType,
+    ReconciliationStatus as BankReconciliationStatus,
+)
+from modules.financial.models.bank_transaction import (
+    BankTransaction,
+    ReconciliationStatus as TransactionReconciliationStatus,
+    TransactionCategory,
+    TransactionOrigin,
+    TransactionStatus,
+    TransactionType,
+)
+from modules.financial.models.cashflow_entry import (
+    CashFlowEntry,
+    CashFlowEntryStatus,
+    CashFlowEntryType,
+    CashFlowSourceType,
+    RecurrenceFrequency,
+)
+from modules.financial.models.cashflow_forecast import (
+    CashFlowForecast,
+    ForecastConfidence,
+    ForecastPeriodType,
+    ForecastStatus,
+)
+
 __all__ = [
     # === Contas a Pagar ===
     # Supplier
@@ -116,4 +150,32 @@ __all__ = [
     "BillingFrequency",
     "BillingRuleStatus",
     "NotificationType",
+    # === Fluxo de Caixa ===
+    # BankAccount
+    "BankAccount",
+    "BankAccountType",
+    "BankAccountStatus",
+    "PixKeyType",
+    # BankTransaction
+    "BankTransaction",
+    "TransactionType",
+    "TransactionCategory",
+    "TransactionStatus",
+    "TransactionOrigin",
+    "TransactionReconciliationStatus",
+    # BankReconciliation
+    "BankReconciliation",
+    "ReconciliationPeriodType",
+    "BankReconciliationStatus",
+    # CashFlowEntry
+    "CashFlowEntry",
+    "CashFlowEntryType",
+    "CashFlowSourceType",
+    "CashFlowEntryStatus",
+    "RecurrenceFrequency",
+    # CashFlowForecast
+    "CashFlowForecast",
+    "ForecastPeriodType",
+    "ForecastStatus",
+    "ForecastConfidence",
 ]

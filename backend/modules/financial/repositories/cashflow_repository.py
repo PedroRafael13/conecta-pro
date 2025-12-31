@@ -1,0 +1,702 @@
+"""Repository para Fluxo de Caixa."""
+
+import logging
+from datetime import date, timedelta
+from decimal import Decimal
+from typing import Dict, List, Optional, Tuple
+from uuid import UUID
+
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from modules.financial.models.bank_account import BankAccount, BankAccountStatus
+from modules.financial.models.bank_reconciliation import BankReconciliation, ReconciliationStatus
+from modules.financial.models.bank_transaction import BankTransaction
+from modules.financial.models.bank_transaction import (
+    ReconciliationStatus as TransactionReconciliationStatus,
+)
+from modules.financial.models.bank_transaction import TransactionStatus, TransactionType
+from modules.financial.models.cashflow_entry import (
+    CashFlowEntry,
+    CashFlowEntryStatus,
+    CashFlowEntryType,
+)
+from modules.financial.models.cashflow_forecast import CashFlowForecast, ForecastStatus
+from modules.financial.schemas.cashflow import (
+    BankAccountFilter,
+    BankTransactionFilter,
+    CashFlowEntryFilter,
+    CashFlowForecastFilter,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class BankAccountRepository:
+    """Repository para contas bancarias."""
+
+    def __init__(self, session: AsyncSession):
+        """Inicializa o repository."""
+        self.session = session
+
+    async def create(self, account: BankAccount) -> BankAccount:
+        """Cria conta bancaria."""
+        self.session.add(account)
+        await self.session.flush()
+        await self.session.refresh(account)
+        return account
+
+    async def get_by_id(
+        self,
+        account_id: UUID,
+        with_relations: bool = False,
+    ) -> Optional[BankAccount]:
+        """Busca conta por ID."""
+        query = select(BankAccount).where(
+            and_(
+                BankAccount.id == account_id,
+                BankAccount.ativo == True,  # noqa: E712
+            )
+        )
+
+        if with_relations:
+            query = query.options(selectinload(BankAccount.transactions))
+
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def list(
+        self,
+        condominio_id: UUID,
+        filters: Optional[BankAccountFilter] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[BankAccount]:
+        """Lista contas bancarias."""
+        query = select(BankAccount).where(
+            and_(
+                BankAccount.condominio_id == condominio_id,
+                BankAccount.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters:
+            if filters.status:
+                query = query.where(BankAccount.status == filters.status)
+            if filters.account_type:
+                query = query.where(BankAccount.account_type == filters.account_type)
+            if filters.bank_code:
+                query = query.where(BankAccount.bank_code == filters.bank_code)
+            if filters.is_main_account is not None:
+                query = query.where(BankAccount.is_main_account == filters.is_main_account)
+            if filters.pix_enabled is not None:
+                query = query.where(BankAccount.pix_enabled == filters.pix_enabled)
+            if filters.boleto_enabled is not None:
+                query = query.where(BankAccount.boleto_enabled == filters.boleto_enabled)
+
+        query = query.order_by(BankAccount.is_main_account.desc(), BankAccount.name)
+        query = query.offset(skip).limit(limit)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def count(
+        self,
+        condominio_id: UUID,
+        filters: Optional[BankAccountFilter] = None,
+    ) -> int:
+        """Conta registros."""
+        query = select(func.count(BankAccount.id)).where(
+            and_(
+                BankAccount.condominio_id == condominio_id,
+                BankAccount.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters:
+            if filters.status:
+                query = query.where(BankAccount.status == filters.status)
+            if filters.account_type:
+                query = query.where(BankAccount.account_type == filters.account_type)
+
+        result = await self.session.execute(query)
+        return result.scalar_one()
+
+    async def update(self, account: BankAccount) -> BankAccount:
+        """Atualiza conta."""
+        await self.session.flush()
+        await self.session.refresh(account)
+        return account
+
+    async def delete(self, account_id: UUID) -> bool:
+        """Deleta conta (soft delete)."""
+        account = await self.get_by_id(account_id)
+        if account:
+            account.ativo = False
+            account.status = BankAccountStatus.ENCERRADA.value
+            await self.session.flush()
+            return True
+        return False
+
+    async def get_main_account(self, condominio_id: UUID) -> Optional[BankAccount]:
+        """Busca conta principal do condominio."""
+        query = select(BankAccount).where(
+            and_(
+                BankAccount.condominio_id == condominio_id,
+                BankAccount.is_main_account == True,  # noqa: E712
+                BankAccount.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_total_balance(self, condominio_id: UUID) -> Decimal:
+        """Retorna saldo total de todas as contas."""
+        query = select(func.sum(BankAccount.current_balance)).where(
+            and_(
+                BankAccount.condominio_id == condominio_id,
+                BankAccount.status == BankAccountStatus.ATIVA.value,
+                BankAccount.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one() or Decimal("0")
+
+
+class BankTransactionRepository:
+    """Repository para movimentacoes bancarias."""
+
+    def __init__(self, session: AsyncSession):
+        """Inicializa o repository."""
+        self.session = session
+
+    async def create(self, transaction: BankTransaction) -> BankTransaction:
+        """Cria movimentacao."""
+        self.session.add(transaction)
+        await self.session.flush()
+        await self.session.refresh(transaction)
+        return transaction
+
+    async def get_by_id(self, transaction_id: UUID) -> Optional[BankTransaction]:
+        """Busca movimentacao por ID."""
+        query = select(BankTransaction).where(
+            and_(
+                BankTransaction.id == transaction_id,
+                BankTransaction.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def list(
+        self,
+        bank_account_id: UUID,
+        filters: Optional[BankTransactionFilter] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[BankTransaction]:
+        """Lista movimentacoes."""
+        query = select(BankTransaction).where(
+            and_(
+                BankTransaction.bank_account_id == bank_account_id,
+                BankTransaction.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters:
+            if filters.transaction_type:
+                query = query.where(BankTransaction.transaction_type == filters.transaction_type)
+            if filters.category:
+                query = query.where(BankTransaction.category == filters.category)
+            if filters.status:
+                query = query.where(BankTransaction.status == filters.status)
+            if filters.reconciliation_status:
+                query = query.where(
+                    BankTransaction.reconciliation_status == filters.reconciliation_status
+                )
+            if filters.origin:
+                query = query.where(BankTransaction.origin == filters.origin)
+            if filters.start_date:
+                query = query.where(BankTransaction.transaction_date >= filters.start_date)
+            if filters.end_date:
+                query = query.where(BankTransaction.transaction_date <= filters.end_date)
+            if filters.min_amount:
+                query = query.where(BankTransaction.amount >= filters.min_amount)
+            if filters.max_amount:
+                query = query.where(BankTransaction.amount <= filters.max_amount)
+            if filters.counterparty_name:
+                query = query.where(
+                    BankTransaction.counterparty_name.ilike(f"%{filters.counterparty_name}%")
+                )
+
+        query = query.order_by(BankTransaction.transaction_date.desc())
+        query = query.offset(skip).limit(limit)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def count(
+        self,
+        bank_account_id: UUID,
+        filters: Optional[BankTransactionFilter] = None,
+    ) -> int:
+        """Conta movimentacoes."""
+        query = select(func.count(BankTransaction.id)).where(
+            and_(
+                BankTransaction.bank_account_id == bank_account_id,
+                BankTransaction.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters and filters.start_date:
+            query = query.where(BankTransaction.transaction_date >= filters.start_date)
+        if filters and filters.end_date:
+            query = query.where(BankTransaction.transaction_date <= filters.end_date)
+
+        result = await self.session.execute(query)
+        return result.scalar_one()
+
+    async def update(self, transaction: BankTransaction) -> BankTransaction:
+        """Atualiza movimentacao."""
+        await self.session.flush()
+        await self.session.refresh(transaction)
+        return transaction
+
+    async def get_pending_reconciliation(
+        self,
+        bank_account_id: UUID,
+        start_date: date,
+        end_date: date,
+    ) -> List[BankTransaction]:
+        """Busca movimentacoes pendentes de conciliacao."""
+        query = select(BankTransaction).where(
+            and_(
+                BankTransaction.bank_account_id == bank_account_id,
+                BankTransaction.reconciliation_status
+                == TransactionReconciliationStatus.PENDENTE.value,
+                BankTransaction.transaction_date >= start_date,
+                BankTransaction.transaction_date <= end_date,
+                BankTransaction.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_by_period(
+        self,
+        bank_account_id: UUID,
+        start_date: date,
+        end_date: date,
+    ) -> List[BankTransaction]:
+        """Busca movimentacoes por periodo."""
+        query = (
+            select(BankTransaction)
+            .where(
+                and_(
+                    BankTransaction.bank_account_id == bank_account_id,
+                    BankTransaction.transaction_date >= start_date,
+                    BankTransaction.transaction_date <= end_date,
+                    BankTransaction.status == TransactionStatus.CONFIRMADA.value,
+                    BankTransaction.ativo == True,  # noqa: E712
+                )
+            )
+            .order_by(BankTransaction.transaction_date)
+        )
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+
+class BankReconciliationRepository:
+    """Repository para conciliacoes bancarias."""
+
+    def __init__(self, session: AsyncSession):
+        """Inicializa o repository."""
+        self.session = session
+
+    async def create(self, reconciliation: BankReconciliation) -> BankReconciliation:
+        """Cria conciliacao."""
+        self.session.add(reconciliation)
+        await self.session.flush()
+        await self.session.refresh(reconciliation)
+        return reconciliation
+
+    async def get_by_id(self, reconciliation_id: UUID) -> Optional[BankReconciliation]:
+        """Busca conciliacao por ID."""
+        query = select(BankReconciliation).where(
+            and_(
+                BankReconciliation.id == reconciliation_id,
+                BankReconciliation.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def list(
+        self,
+        bank_account_id: UUID,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[BankReconciliation]:
+        """Lista conciliacoes."""
+        query = (
+            select(BankReconciliation)
+            .where(
+                and_(
+                    BankReconciliation.bank_account_id == bank_account_id,
+                    BankReconciliation.ativo == True,  # noqa: E712
+                )
+            )
+            .order_by(BankReconciliation.period_end.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def update(self, reconciliation: BankReconciliation) -> BankReconciliation:
+        """Atualiza conciliacao."""
+        await self.session.flush()
+        await self.session.refresh(reconciliation)
+        return reconciliation
+
+    async def get_in_progress(self, bank_account_id: UUID) -> Optional[BankReconciliation]:
+        """Busca conciliacao em andamento."""
+        query = select(BankReconciliation).where(
+            and_(
+                BankReconciliation.bank_account_id == bank_account_id,
+                BankReconciliation.status == ReconciliationStatus.EM_ANDAMENTO.value,
+                BankReconciliation.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+
+class CashFlowEntryRepository:
+    """Repository para lancamentos de fluxo de caixa."""
+
+    def __init__(self, session: AsyncSession):
+        """Inicializa o repository."""
+        self.session = session
+
+    async def create(self, entry: CashFlowEntry) -> CashFlowEntry:
+        """Cria lancamento."""
+        self.session.add(entry)
+        await self.session.flush()
+        await self.session.refresh(entry)
+        return entry
+
+    async def get_by_id(self, entry_id: UUID) -> Optional[CashFlowEntry]:
+        """Busca lancamento por ID."""
+        query = select(CashFlowEntry).where(
+            and_(
+                CashFlowEntry.id == entry_id,
+                CashFlowEntry.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def list(
+        self,
+        condominio_id: UUID,
+        filters: Optional[CashFlowEntryFilter] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[CashFlowEntry]:
+        """Lista lancamentos."""
+        query = select(CashFlowEntry).where(
+            and_(
+                CashFlowEntry.condominio_id == condominio_id,
+                CashFlowEntry.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters:
+            if filters.entry_type:
+                query = query.where(CashFlowEntry.entry_type == filters.entry_type)
+            if filters.source_type:
+                query = query.where(CashFlowEntry.source_type == filters.source_type)
+            if filters.status:
+                query = query.where(CashFlowEntry.status == filters.status)
+            if filters.bank_account_id:
+                query = query.where(CashFlowEntry.bank_account_id == filters.bank_account_id)
+            if filters.start_date:
+                query = query.where(CashFlowEntry.entry_date >= filters.start_date)
+            if filters.end_date:
+                query = query.where(CashFlowEntry.entry_date <= filters.end_date)
+            if filters.min_amount:
+                query = query.where(CashFlowEntry.expected_amount >= filters.min_amount)
+            if filters.max_amount:
+                query = query.where(CashFlowEntry.expected_amount <= filters.max_amount)
+            if filters.is_recurring is not None:
+                query = query.where(CashFlowEntry.is_recurring == filters.is_recurring)
+            if filters.is_overdue:
+                today = date.today()
+                query = query.where(
+                    and_(
+                        CashFlowEntry.due_date < today,
+                        CashFlowEntry.status.in_(
+                            [
+                                CashFlowEntryStatus.PREVISTO.value,
+                                CashFlowEntryStatus.CONFIRMADO.value,
+                            ]
+                        ),
+                    )
+                )
+
+        query = query.order_by(CashFlowEntry.entry_date.desc())
+        query = query.offset(skip).limit(limit)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def count(
+        self,
+        condominio_id: UUID,
+        filters: Optional[CashFlowEntryFilter] = None,
+    ) -> int:
+        """Conta lancamentos."""
+        query = select(func.count(CashFlowEntry.id)).where(
+            and_(
+                CashFlowEntry.condominio_id == condominio_id,
+                CashFlowEntry.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters:
+            if filters.entry_type:
+                query = query.where(CashFlowEntry.entry_type == filters.entry_type)
+            if filters.status:
+                query = query.where(CashFlowEntry.status == filters.status)
+
+        result = await self.session.execute(query)
+        return result.scalar_one()
+
+    async def update(self, entry: CashFlowEntry) -> CashFlowEntry:
+        """Atualiza lancamento."""
+        await self.session.flush()
+        await self.session.refresh(entry)
+        return entry
+
+    async def delete(self, entry_id: UUID) -> bool:
+        """Deleta lancamento (soft delete)."""
+        entry = await self.get_by_id(entry_id)
+        if entry:
+            entry.ativo = False
+            await self.session.flush()
+            return True
+        return False
+
+    async def get_by_period(
+        self,
+        condominio_id: UUID,
+        start_date: date,
+        end_date: date,
+        entry_type: Optional[str] = None,
+    ) -> List[CashFlowEntry]:
+        """Busca lancamentos por periodo."""
+        query = select(CashFlowEntry).where(
+            and_(
+                CashFlowEntry.condominio_id == condominio_id,
+                CashFlowEntry.entry_date >= start_date,
+                CashFlowEntry.entry_date <= end_date,
+                CashFlowEntry.ativo == True,  # noqa: E712
+            )
+        )
+
+        if entry_type:
+            query = query.where(CashFlowEntry.entry_type == entry_type)
+
+        query = query.order_by(CashFlowEntry.entry_date)
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_pending(
+        self,
+        condominio_id: UUID,
+        entry_type: Optional[str] = None,
+    ) -> List[CashFlowEntry]:
+        """Busca lancamentos pendentes."""
+        query = select(CashFlowEntry).where(
+            and_(
+                CashFlowEntry.condominio_id == condominio_id,
+                CashFlowEntry.status.in_(
+                    [
+                        CashFlowEntryStatus.PREVISTO.value,
+                        CashFlowEntryStatus.CONFIRMADO.value,
+                    ]
+                ),
+                CashFlowEntry.ativo == True,  # noqa: E712
+            )
+        )
+
+        if entry_type:
+            query = query.where(CashFlowEntry.entry_type == entry_type)
+
+        query = query.order_by(CashFlowEntry.due_date)
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_totals_by_type(
+        self,
+        condominio_id: UUID,
+        start_date: date,
+        end_date: date,
+    ) -> Dict[str, Decimal]:
+        """Retorna totais por tipo de lancamento."""
+        query = (
+            select(
+                CashFlowEntry.entry_type,
+                func.sum(CashFlowEntry.expected_amount).label("total"),
+            )
+            .where(
+                and_(
+                    CashFlowEntry.condominio_id == condominio_id,
+                    CashFlowEntry.entry_date >= start_date,
+                    CashFlowEntry.entry_date <= end_date,
+                    CashFlowEntry.ativo == True,  # noqa: E712
+                )
+            )
+            .group_by(CashFlowEntry.entry_type)
+        )
+
+        result = await self.session.execute(query)
+        return {row.entry_type: row.total or Decimal("0") for row in result}
+
+
+class CashFlowForecastRepository:
+    """Repository para previsoes de fluxo de caixa."""
+
+    def __init__(self, session: AsyncSession):
+        """Inicializa o repository."""
+        self.session = session
+
+    async def create(self, forecast: CashFlowForecast) -> CashFlowForecast:
+        """Cria previsao."""
+        self.session.add(forecast)
+        await self.session.flush()
+        await self.session.refresh(forecast)
+        return forecast
+
+    async def get_by_id(self, forecast_id: UUID) -> Optional[CashFlowForecast]:
+        """Busca previsao por ID."""
+        query = select(CashFlowForecast).where(
+            and_(
+                CashFlowForecast.id == forecast_id,
+                CashFlowForecast.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def list(
+        self,
+        condominio_id: UUID,
+        filters: Optional[CashFlowForecastFilter] = None,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[CashFlowForecast]:
+        """Lista previsoes."""
+        query = select(CashFlowForecast).where(
+            and_(
+                CashFlowForecast.condominio_id == condominio_id,
+                CashFlowForecast.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters:
+            if filters.status:
+                query = query.where(CashFlowForecast.status == filters.status)
+            if filters.period_type:
+                query = query.where(CashFlowForecast.period_type == filters.period_type)
+            if filters.start_date:
+                query = query.where(CashFlowForecast.period_start >= filters.start_date)
+            if filters.end_date:
+                query = query.where(CashFlowForecast.period_end <= filters.end_date)
+            if filters.ai_generated is not None:
+                query = query.where(CashFlowForecast.ai_generated == filters.ai_generated)
+            if filters.has_alerts:
+                query = query.where(
+                    or_(
+                        CashFlowForecast.has_negative_balance_alert == True,  # noqa: E712
+                        CashFlowForecast.has_high_outflow_alert == True,  # noqa: E712
+                        CashFlowForecast.has_low_inflow_alert == True,  # noqa: E712
+                    )
+                )
+
+        query = query.order_by(CashFlowForecast.forecast_date.desc())
+        query = query.offset(skip).limit(limit)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def count(
+        self,
+        condominio_id: UUID,
+        filters: Optional[CashFlowForecastFilter] = None,
+    ) -> int:
+        """Conta previsoes."""
+        query = select(func.count(CashFlowForecast.id)).where(
+            and_(
+                CashFlowForecast.condominio_id == condominio_id,
+                CashFlowForecast.ativo == True,  # noqa: E712
+            )
+        )
+
+        if filters and filters.status:
+            query = query.where(CashFlowForecast.status == filters.status)
+
+        result = await self.session.execute(query)
+        return result.scalar_one()
+
+    async def update(self, forecast: CashFlowForecast) -> CashFlowForecast:
+        """Atualiza previsao."""
+        await self.session.flush()
+        await self.session.refresh(forecast)
+        return forecast
+
+    async def delete(self, forecast_id: UUID) -> bool:
+        """Deleta previsao (soft delete)."""
+        forecast = await self.get_by_id(forecast_id)
+        if forecast:
+            forecast.ativo = False
+            await self.session.flush()
+            return True
+        return False
+
+    async def get_active(self, condominio_id: UUID) -> Optional[CashFlowForecast]:
+        """Busca previsao ativa atual."""
+        today = date.today()
+        query = select(CashFlowForecast).where(
+            and_(
+                CashFlowForecast.condominio_id == condominio_id,
+                CashFlowForecast.status == ForecastStatus.ATIVA.value,
+                CashFlowForecast.period_start <= today,
+                CashFlowForecast.period_end >= today,
+                CashFlowForecast.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_period(
+        self,
+        condominio_id: UUID,
+        period_start: date,
+        period_end: date,
+    ) -> Optional[CashFlowForecast]:
+        """Busca previsao por periodo."""
+        query = select(CashFlowForecast).where(
+            and_(
+                CashFlowForecast.condominio_id == condominio_id,
+                CashFlowForecast.period_start == period_start,
+                CashFlowForecast.period_end == period_end,
+                CashFlowForecast.ativo == True,  # noqa: E712
+            )
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
