@@ -1,8 +1,8 @@
 # PROGRESSO GERAL - ERP CONECTA MAIS V2.0
 
-## Sprint Atual: Sprint 32 - Diaristas (PROXIMO)
+## Sprint Atual: Sprint 33 - Visitantes/Encomendas (PROXIMO)
 
-### Progresso Geral: 84% (32/38 modulos)
+### Progresso Geral: 87% (33/38 modulos)
 ### CRM Completo: 6/6 sprints (0-5 + Contratos) - 100%
 ### Operations: 8/8 sprints (Sprint 7-14) - 100%
 ### RH: 7/7 sprints (Sprint 15-21) - 100%
@@ -171,7 +171,7 @@
 
 **Críticos e IA (2 módulos):**
 - [x] Sprint 31: Kits Documentais ✅
-- [ ] Sprint 32: Diaristas
+- [x] Sprint 32: Diaristas ✅
 
 ---
 
@@ -179,13 +179,13 @@
 
 | Metrica | Valor |
 |---------|-------|
-| **Modulos completos** | **32/38 (84%)** |
-| Linhas de codigo | ~155000+ |
-| Arquivos criados | 615+ |
-| Testes escritos | 2800+ |
+| **Modulos completos** | **33/38 (87%)** |
+| Linhas de codigo | ~161000+ |
+| Arquivos criados | 627+ |
+| Testes escritos | 2900+ |
 | Coverage | 85%+ |
-| Commits | 35 |
-| Sessoes | 31 |
+| Commits | 38 |
+| Sessoes | 32 |
 | Auditor Score | 100/100 |
 
 ### Progresso por Categoria
@@ -197,8 +197,8 @@
 | Operacoes | 8 | 8 | 100% |
 | RH | 7 | 7 | 100% |
 | Financeiro | 9 | 9 | 100% |
-| Criticos/IA | 1 | 2 | 50% |
-| **TOTAL** | **32** | **38** | **84%** |
+| Criticos/IA | 2 | 2 | 100% |
+| **TOTAL** | **33** | **38** | **87%** |
 
 ---
 
@@ -1450,25 +1450,54 @@ Modulo para dashboards configuraveis, KPIs personalizados, cache de analytics e 
 
 ---
 
+## Sprint 32: Diaristas - Funcionalidades
+
+### Models (5)
+- **Diarist**: Cadastro completo com dados pessoais, profissionais, disponibilidade, financeiro, métricas
+- **DiaristAssignment**: Alocação em condominios/unidades com recorrência
+- **DiaristSchedule**: Agenda de trabalho com check-in/checkout geolocalizado
+- **DiaristPayment**: Pagamentos com retenções (INSS, ISS, IRRF)
+- **DiaristEvaluation**: Sistema de avaliações e notas
+
+### Enums (10)
+- DiaristType, DiaristStatus, DocumentType, AssignmentType, AssignmentStatus
+- RecurrenceType, ScheduleStatus, PaymentStatus, PaymentMethod, Weekday
+
+### Services IA
+- **DiaristAIService**:
+  - Sugestao de diaristas por data/tipo com scoring multi-fator
+  - Analise de disponibilidade com recomendações
+  - Analise de performance com dimensões (qualidade, pontualidade, confiabilidade, produtividade)
+  - Otimização de agendamentos com economia potencial
+  - Insights e tendências de desempenho
+
+### Endpoints REST (45+)
+- CRUD de diaristas, alocações, agendamentos, pagamentos, avaliações
+- Check-in/checkout com geolocalização
+- Estatísticas e métricas por diarista e condomínio
+- Ranking de melhores diaristas
+- 4 endpoints IA: sugestões, disponibilidade, performance, otimização
+
+---
+
 ## Ultima Atualizacao
 **Data:** 2026-01-01
-**Por:** Claude Code - Sessao 031
+**Por:** Claude Code - Sessao 032
 **Mudancas:**
-- Sprint 31 (Kits Documentais) COMPLETO
-- 4 Models: DocumentKit, DocumentKitItem, DocumentKitAssignment, DocumentKitItemStatus
-- 7 Enums: KitType, KitStatus, ItemType, ItemPriority, AssignmentStatus, ItemStatusEnum, EntityType
-- 2 Services: DocumentKitService, DocumentKitAIService
+- Sprint 32 (Diaristas) COMPLETO
+- 5 Models: Diarist, DiaristAssignment, DiaristSchedule, DiaristPayment, DiaristEvaluation
+- 10 Enums para tipos, status e configurações
+- 2 Services: DiaristService, DiaristAIService
 - IA Features:
-  - Sugestao automatica de kits por perfil de entidade
-  - Analise de risco de conformidade
-  - Predicao de data de conclusao
-  - Priorizacao inteligente de atribuicoes
-  - Analise de uso dos kits
-  - Alerta de documentos proximos do vencimento
-- 1 Controller com 60+ endpoints REST
-- Schemas Pydantic: 50+ para validacao
-- Migracao Alembic: 400+ linhas (4 tabelas + 7 enums)
-- Testes: 50+ unitarios
+  - Sugestão automática de diaristas com scoring multi-fator
+  - Análise de disponibilidade com recomendações
+  - Análise de performance em 4 dimensões
+  - Otimização de agendamentos com economia estimada
+  - Insights e tendências de desempenho
+- 1 Controller com 45+ endpoints REST
+- Schemas Pydantic: 25+ para validação
+- Migração Alembic: 350+ linhas (5 tabelas + 10 enums)
+- Testes: 100+ (unitários + API)
 - Auditor Pylint: 100% (10.00/10)
-- Progresso: 84% (32/38 modulos)
-- Criticos/IA: 1/2 sprints (50%)
+- Progresso: 87% (33/38 módulos)
+- Críticos/IA: 2/2 sprints (100%)
