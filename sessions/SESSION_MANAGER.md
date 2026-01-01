@@ -1565,3 +1565,158 @@ Implementar módulo completo de Contabilidade com Plano de Contas, Lançamentos 
 - Nenhum
 
 ---
+
+## Sessão 030: Sprint 29 - Custos (ABC, Rateio)
+**Data:** 2025-01-20
+**Status:** ✅ COMPLETO
+
+### Objetivo:
+Implementar módulo completo de Custeio ABC (Activity-Based Costing) com alocação de custos, análise de lucratividade e IA para otimização.
+
+### Estrutura Criada:
+```
+/opt/erp-conecta-mais/backend/modules/financial/costing/
+├── __init__.py
+├── models/
+│   ├── __init__.py
+│   ├── cost_driver.py          # Direcionadores de custo
+│   ├── cost_activity.py        # Atividades ABC
+│   ├── cost_pool.py            # Pools de custos indiretos
+│   ├── cost_object.py          # Objetos de custo (produtos, serviços)
+│   ├── cost_allocation.py      # Alocações/rateios
+│   └── cost_analysis.py        # Análises com IA
+├── schemas/
+│   ├── __init__.py
+│   └── costing_schemas.py      # Schemas Pydantic completos
+├── repositories/
+│   ├── __init__.py
+│   └── costing_repository.py   # 6 repositories
+├── services/
+│   ├── __init__.py
+│   ├── cost_ai_service.py      # IA para análise de custos
+│   ├── abc_service.py          # Custeio ABC duas etapas
+│   └── allocation_service.py   # Alocação e rateio
+└── controllers/
+    ├── __init__.py
+    └── costing_controller.py   # 80+ endpoints REST
+```
+
+### Models Implementados (6):
+
+#### 1. CostDriver - Direcionadores de Custo
+- 2 tipos: RESOURCE, ACTIVITY
+- 6 categorias: LABOR, EQUIPMENT, SPACE, ENERGY, TRANSACTION, OTHER
+- 8 unidades de medida: HOUR, UNIT, SQUARE_METER, KILOWATT, TRANSACTION, etc.
+- Capacidade prática vs usada (cálculo de ociosidade)
+- Custo de capacidade ociosa automático
+
+#### 2. CostActivity - Atividades ABC
+- 5 tipos: OPERATIONAL, SUPPORT, ADMINISTRATIVE, MAINTENANCE, QUALITY
+- 4 níveis ABC: UNIT, BATCH, PRODUCT, FACILITY
+- 3 tipos valor agregado: VALUE_ADDED, NON_VALUE_ADDED, BUSINESS_VALUE
+- Output e capacidade para taxa de atividade
+
+#### 3. CostPool - Pools de Custo
+- 8 tipos: OVERHEAD, LABOR, EQUIPMENT, UTILITIES, MAINTENANCE, TECHNOLOGY, ADMINISTRATIVE, OTHER
+- 5 bases de alocação: DRIVER, PERCENTAGE, EQUAL, PROPORTIONAL, STEP_DOWN
+- Valor total, alocado e não alocado
+- Hierarquia (parent_id)
+
+#### 4. CostObject - Objetos de Custo
+- 5 tipos: PRODUCT, SERVICE, CUSTOMER, PROJECT, CONTRACT
+- Custos: direto, indireto, fixo, variável
+- Receita e margem (bruta, contribuição, líquida)
+- 5 níveis de lucratividade: HIGH (>20%), MEDIUM (10-20%), LOW (5-10%), BREAK_EVEN (0-5%), NEGATIVE (<0%)
+
+#### 5. CostAllocation - Alocações/Rateios
+- 4 tipos: POOL_TO_ACTIVITY, ACTIVITY_TO_OBJECT, DIRECT, RECIPROCAL
+- 5 métodos: DRIVER_BASED, PERCENTAGE, PROPORTIONAL, EQUAL, STEP_DOWN
+- Workflow: DRAFT → PENDING → APPROVED → EXECUTED (+ REVERSED)
+- Suporte a reversão com motivo
+
+#### 6. CostAnalysis - Análises
+- 7 tipos: ABC_COSTING, PROFITABILITY, VARIANCE, BREAK_EVEN, TREND, FORECAST, OPTIMIZATION
+- Parâmetros, resultados, insights e recomendações como JSONB
+- Tempo de execução e status
+
+### Services Implementados (3):
+
+#### CostAIService - Análise com IA
+- `analyze_profitability()`: Análise de lucratividade com insights
+- `analyze_idle_capacity()`: Capacidade ociosa e custo de ociosidade
+- `detect_cost_anomalies()`: Detecção com z-score
+- `suggest_cost_optimization()`: Sugestões de otimização
+- `forecast_costs()`: Projeção de custos (pessimista, realista, otimista)
+- `run_analysis()`: Análise completa integrada
+
+#### ABCService - Custeio ABC
+- `calculate_driver_rates()`: Taxas dos cost drivers
+- `calculate_activity_costs()`: Custos das atividades (direto + alocado)
+- `calculate_object_costs()`: Custos dos objetos com margens
+- `run_abc_costing()`: Custeio completo duas etapas
+- `get_pool_distribution()`: Distribuição de pool para atividades
+- `get_activity_distribution()`: Distribuição de atividade para objetos
+- `calculate_break_even()`: Ponto de equilíbrio
+
+#### AllocationService - Alocação/Rateio
+- `allocate_pool_to_activities()`: Alocação pool → atividades
+- `allocate_activity_to_objects()`: Alocação atividade → objetos
+- `allocate_by_driver()`: Alocação proporcional ao driver
+- `allocate_equal()`: Alocação igual entre destinos
+- `approve_allocation()`: Aprovação de alocação
+- `execute_allocation()`: Execução de alocação
+- `reverse_allocation()`: Reversão de alocação
+- `batch_execute()`: Execução em lote
+- `get_allocation_summary()`: Resumo por período
+
+### Endpoints REST (80+):
+
+#### Cost Drivers (/costing/drivers/*)
+- CRUD + stats + por tipo/status
+
+#### Cost Activities (/costing/activities/*)
+- CRUD + por nível/valor agregado
+
+#### Cost Pools (/costing/pools/*)
+- CRUD + add-cost + distribution
+
+#### Cost Objects (/costing/objects/*)
+- CRUD + add-direct-cost + break-even + ranking + unprofitable
+
+#### Cost Allocations (/costing/allocations/*)
+- CRUD + approve + execute + reverse + batch-execute
+- pool-to-activities + activity-to-objects + by-driver + summary
+
+#### Cost Analyses (/costing/analyses/*)
+- CRUD + run-abc + run-ai + profitability + idle-capacity
+- anomalies + optimization-suggestions + forecast
+
+#### Dashboard & Stats
+- /costing/dashboard + /costing/stats + /costing/trends
+
+### Migração Alembic:
+- `sprint29_create_costing_tables.py`
+- 6 tabelas: cost_drivers, cost_activities, cost_pools, cost_objects, cost_allocations, cost_analyses
+- Índices para performance
+- Constraints de unicidade
+
+### Testes:
+- `test_costing_model.py` - 60+ testes unitários de modelos e enums
+- `test_costing_api.py` - 40+ testes de API e schemas
+
+### Métricas:
+- Linhas de código: +6.919
+- Arquivos criados: 18
+- Qualidade: 100% sintaxe válida
+- Testes adicionados: ~100
+- Endpoints REST: 80+
+
+### Próximos Passos:
+1. Sprint 30: BI e Dashboards Financeiros
+2. Sprint 31: Integração Bancária
+3. Sprint 32: Orçamento e Forecast
+
+### Problemas:
+- Nenhum
+
+---
