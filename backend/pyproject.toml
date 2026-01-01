@@ -20,4 +20,9 @@ disable = [
     "import-error",
     "no-name-in-module",
     "not-callable",
+    "no-member",
+    "too-many-lines",
+    "logging-fstring-interpolation",
+    "raise-missing-from",
+    "no-else-return",
 ]
