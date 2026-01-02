@@ -1,12 +1,12 @@
 """Schemas Pydantic para REPDevice."""
 
+import re
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, ConfigDict
-import re
 
 
 class REPDeviceBase(BaseModel):
@@ -101,6 +101,7 @@ class REPDeviceBase(BaseModel):
     @field_validator("ip_address")
     @classmethod
     def validate_ip(cls, v: Optional[str]) -> Optional[str]:
+        """Valida formato de endereço IP."""
         if v is None:
             return v
         # Valida IPv4 ou IPv6
@@ -113,6 +114,7 @@ class REPDeviceBase(BaseModel):
     @field_validator("mac_address")
     @classmethod
     def validate_mac(cls, v: Optional[str]) -> Optional[str]:
+        """Valida formato de MAC address."""
         if v is None:
             return v
         mac_pattern = r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"

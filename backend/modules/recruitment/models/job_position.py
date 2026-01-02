@@ -6,7 +6,6 @@ from typing import Optional, List, TYPE_CHECKING
 from decimal import Decimal
 
 from sqlalchemy import (
-    Column,
     String,
     Text,
     Boolean,
@@ -15,7 +14,6 @@ from sqlalchemy import (
     Integer,
     Numeric,
     Enum,
-    ForeignKey,
     JSON,
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
@@ -222,7 +220,9 @@ class JobPosition(Base, TimestampMixin, SoftDeleteMixin):
         """Pausa a vaga."""
         self.status = PositionStatus.PAUSADA
 
-    def close(self, reason: str = None) -> None:
+    def close(
+        self, reason: str = None  # pylint: disable=unused-argument
+    ) -> None:
         """Fecha a vaga."""
         self.status = PositionStatus.FECHADA
         self.closed_at = datetime.utcnow()

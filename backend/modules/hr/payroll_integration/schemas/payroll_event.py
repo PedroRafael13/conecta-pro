@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.hr.payroll_integration.models import EventCategory, EventStatus, EventType
+from modules.hr.payroll_integration.models import EventCategory, EventType
 
 
 class PayrollEventBase(BaseModel):

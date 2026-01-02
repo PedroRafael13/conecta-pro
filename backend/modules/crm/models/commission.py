@@ -4,9 +4,8 @@ Gerencia regras de comissão, cálculos e pagamentos.
 """
 
 from datetime import date, datetime
-from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -169,7 +168,7 @@ class CommissionRule(Base):
 
     def _calculate_progressive(self, sale_value: float) -> float:
         """Calcula comissão com escala progressiva."""
-        import json
+        import json  # pylint: disable=import-outside-toplevel
 
         if not self.progressive_scale:
             return sale_value * (self.base_value / 100)
@@ -191,7 +190,7 @@ class CommissionRule(Base):
             return sale_value * (self.base_value / 100)
 
 
-class SellerCommissionRule(Base):
+class SellerCommissionRule(Base):  # pylint: disable=too-few-public-methods
     """Associação entre vendedor e regra de comissão (regras específicas por vendedor)."""
 
     __tablename__ = "seller_commission_rules"
@@ -349,7 +348,7 @@ class Commission(Base):
         return delta.days
 
 
-class CommissionPayment(Base):
+class CommissionPayment(Base):  # pylint: disable=too-few-public-methods
     """Model para pagamento de comissão."""
 
     __tablename__ = "commission_payments"

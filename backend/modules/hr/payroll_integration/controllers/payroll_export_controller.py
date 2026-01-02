@@ -112,7 +112,7 @@ async def list_exports(
 async def get_export(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayrollExportResponse:
     """Busca exportação por ID."""
     try:
@@ -175,7 +175,7 @@ async def process_export(
 async def get_export_progress(
     export_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ExportProgressResponse:
     """Retorna progresso da exportação."""
     try:
@@ -361,7 +361,7 @@ async def process_pending_exports(
     summary="Formatos disponíveis",
 )
 async def get_available_formats(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list:
     """Retorna formatos de exportação disponíveis."""
     return [

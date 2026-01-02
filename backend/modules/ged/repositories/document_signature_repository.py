@@ -4,19 +4,16 @@ import logging
 from typing import Optional, List
 from datetime import datetime
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_signature import (
     DocumentSignature,
     SignatureStatus,
-    SignatureType,
-    SignatureRole,
 )
 from modules.ged.schemas.document_signature import (
     DocumentSignatureCreate,
     DocumentSignatureUpdate,
-    DocumentSignatureFilter,
 )
 
 logger = logging.getLogger(__name__)

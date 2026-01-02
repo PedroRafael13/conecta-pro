@@ -1,18 +1,25 @@
 """Controller para conciliação bancária."""
 
+import csv
+import io
 import logging
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_session
-from modules.financial.models import ReconciliationPeriodType
-from modules.financial.models import ReconciliationStatus as ReconcStatus
+from modules.financial.models import (
+    ReconciliationPeriodType,
+    ReconciliationStatus,
+    TransactionCategory,
+    TransactionStatus,
+    TransactionType,
+)
 from modules.financial.repositories import (
     BankAccountRepository,
     BankReconciliationRepository,
@@ -26,6 +33,7 @@ from modules.financial.schemas import (
     ReconciliationItemMatch,
     StatementImport,
 )
+from modules.financial.schemas.cashflow import BankReconciliationFilter
 
 logger = logging.getLogger(__name__)
 
@@ -100,18 +108,16 @@ async def create_reconciliation(
 )
 async def list_reconciliations(
     bank_account_id: UUID,
-    reconciliation_status: Optional[ReconcStatus] = Query(None),
+    reconciliation_status: Optional[ReconciliationStatus] = Query(None),
     period_type: Optional[ReconciliationPeriodType] = Query(None),
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: BankReconciliationRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[BankReconciliationResponse]:
     """Lista conciliações com filtros."""
-    from modules.financial.schemas.cashflow import BankReconciliationFilter
-
     filters = BankReconciliationFilter(
         bank_account_id=bank_account_id,
         status=reconciliation_status,
@@ -131,7 +137,7 @@ async def list_reconciliations(
 async def get_in_progress(
     bank_account_id: UUID,
     repo: BankReconciliationRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> Optional[BankReconciliationResponse]:
     """Retorna conciliação em andamento para a conta."""
     reconciliation = await repo.get_in_progress(bank_account_id)
@@ -148,7 +154,7 @@ async def get_in_progress(
 async def get_reconciliation(
     reconciliation_id: UUID,
     repo: BankReconciliationRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BankReconciliationResponse:
     """Retorna conciliação pelo ID."""
     reconciliation = await repo.get_by_id(reconciliation_id)
@@ -179,7 +185,7 @@ async def update_reconciliation(
             detail="Conciliação não encontrada",
         )
 
-    if reconciliation.status == ReconcStatus.CONCLUIDA:
+    if reconciliation.status == ReconciliationStatus.CONCLUIDA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não é possível alterar conciliação concluída",
@@ -209,7 +215,7 @@ async def delete_reconciliation(
             detail="Conciliação não encontrada",
         )
 
-    if reconciliation.status == ReconcStatus.CONCLUIDA:
+    if reconciliation.status == ReconciliationStatus.CONCLUIDA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não é possível excluir conciliação concluída",
@@ -241,7 +247,7 @@ async def import_statement(
             detail="Conciliação não encontrada",
         )
 
-    if reconciliation.status == ReconcStatus.CONCLUIDA:
+    if reconciliation.status == ReconciliationStatus.CONCLUIDA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Conciliação já foi concluída",
@@ -265,7 +271,7 @@ async def import_statement(
         "statement_date": data.statement_date,
         "statement_source": data.source,
         "import_filename": data.filename,
-        "status": ReconcStatus.EM_ANDAMENTO,
+        "status": ReconciliationStatus.EM_ANDAMENTO,
         "total_statement_items": items_count,
         "statement_credits": total_credits,
         "statement_debits": total_debits,
@@ -330,8 +336,6 @@ async def match_item(
         )
 
     # Atualiza transação como conciliada
-    from modules.financial.models import ReconciliationStatus
-
     await tx_repo.update(
         data.transaction_id,
         {
@@ -382,13 +386,6 @@ async def create_adjustment(
         )
 
     # Cria transação de ajuste
-    from modules.financial.models import (
-        ReconciliationStatus,
-        TransactionCategory,
-        TransactionStatus,
-        TransactionType,
-    )
-
     tx = await tx_repo.create(
         {
             "bank_account_id": reconciliation.bank_account_id,
@@ -405,10 +402,8 @@ async def create_adjustment(
     )
 
     # Atualiza saldo da conta
-    from modules.financial.repositories import BankAccountRepository
-
-    account_repo = BankAccountRepository(session)
-    account = await account_repo.get_by_id(reconciliation.bank_account_id)
+    local_account_repo = BankAccountRepository(session)
+    account = await local_account_repo.get_by_id(reconciliation.bank_account_id)
     if account:
         if data.transaction_type == TransactionType.CREDITO:
             account.update_balance(data.amount)
@@ -455,7 +450,7 @@ async def complete_reconciliation(
             detail="Conciliação não encontrada",
         )
 
-    if reconciliation.status == ReconcStatus.CONCLUIDA:
+    if reconciliation.status == ReconciliationStatus.CONCLUIDA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Conciliação já está concluída",
@@ -506,7 +501,7 @@ async def reopen_reconciliation(
             detail="Conciliação não encontrada",
         )
 
-    if reconciliation.status != ReconcStatus.CONCLUIDA:
+    if reconciliation.status != ReconciliationStatus.CONCLUIDA:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Apenas conciliações concluídas podem ser reabertas",
@@ -515,7 +510,7 @@ async def reopen_reconciliation(
     updated = await repo.update(
         reconciliation_id,
         {
-            "status": ReconcStatus.EM_ANDAMENTO,
+            "status": ReconciliationStatus.EM_ANDAMENTO,
             "completed_at": None,
             "notes": f"{reconciliation.notes or ''}\nReaberta: {reason}".strip(),
         },
@@ -540,7 +535,7 @@ async def get_reconciliation_details(
     repo: BankReconciliationRepository = Depends(get_repository),
     tx_repo: BankTransactionRepository = Depends(get_transaction_repository),
     account_repo: BankAccountRepository = Depends(get_account_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna detalhes completos da conciliação."""
     reconciliation = await repo.get_by_id(reconciliation_id)
@@ -561,8 +556,6 @@ async def get_reconciliation_details(
     )
 
     # Separa conciliadas e pendentes
-    from modules.financial.models import ReconciliationStatus
-
     reconciled = [
         t for t in transactions if t.reconciliation_status == ReconciliationStatus.CONCILIADO
     ]
@@ -610,10 +603,10 @@ async def get_reconciliation_details(
 )
 async def export_reconciliation(
     reconciliation_id: UUID,
-    format: str = Query("json", enum=["json", "csv"]),
+    export_format: str = Query("json", enum=["json", "csv"]),
     repo: BankReconciliationRepository = Depends(get_repository),
     tx_repo: BankTransactionRepository = Depends(get_transaction_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Exporta dados da conciliação."""
     reconciliation = await repo.get_by_id(reconciliation_id)
@@ -629,10 +622,7 @@ async def export_reconciliation(
         reconciliation.period_end,
     )
 
-    if format == "csv":
-        import csv
-        import io
-
+    if export_format == "csv":
         output = io.StringIO()
         writer = csv.writer(output)
         writer.writerow(["Data", "Descrição", "Tipo", "Valor", "Status Conciliação", "Referência"])

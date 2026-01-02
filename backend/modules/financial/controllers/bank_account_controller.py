@@ -10,8 +10,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user
 from core.database import get_session
-from modules.financial.models import BankAccountStatus, BankAccountType
-from modules.financial.repositories import BankAccountRepository
+from sqlalchemy import update as sql_update
+
+from modules.financial.models import (
+    BankAccount,
+    BankAccountStatus,
+    BankAccountType,
+    TransactionCategory,
+    TransactionType,
+)
+from modules.financial.repositories import BankAccountRepository, BankTransactionRepository
 from modules.financial.schemas import (
     BankAccountCreate,
     BankAccountFilter,
@@ -63,7 +71,7 @@ async def create_bank_account(
     response_model=List[BankAccountResponse],
     summary="Listar contas bancárias",
 )
-async def list_bank_accounts(
+async def list_bank_accounts(  # pylint: disable=unused-argument
     condominio_id: UUID,
     account_type: Optional[BankAccountType] = Query(None, description="Tipo de conta"),
     account_status: Optional[BankAccountStatus] = Query(None, description="Status"),
@@ -89,7 +97,7 @@ async def list_bank_accounts(
     response_model=BankAccountResponse,
     summary="Obter conta principal",
 )
-async def get_main_account(
+async def get_main_account(  # pylint: disable=unused-argument
     condominio_id: UUID,
     repo: BankAccountRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
@@ -109,7 +117,7 @@ async def get_main_account(
     response_model=BankAccountStats,
     summary="Estatísticas das contas",
 )
-async def get_stats(
+async def get_stats(  # pylint: disable=unused-argument
     condominio_id: UUID,
     repo: BankAccountRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
@@ -144,7 +152,7 @@ async def get_stats(
     response_model=BankAccountResponse,
     summary="Obter conta bancária",
 )
-async def get_bank_account(
+async def get_bank_account(  # pylint: disable=unused-argument
     account_id: UUID,
     repo: BankAccountRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
@@ -281,10 +289,6 @@ async def set_as_main_account(
         )
 
     # Remove flag de outras contas
-    from sqlalchemy import update as sql_update
-
-    from modules.financial.models import BankAccount
-
     await session.execute(
         sql_update(BankAccount)
         .where(BankAccount.condominio_id == account.condominio_id)
@@ -334,9 +338,6 @@ async def transfer_between_accounts(
         )
 
     # Cria transações
-    from modules.financial.models import TransactionCategory, TransactionType
-    from modules.financial.repositories import BankTransactionRepository
-
     tx_repo = BankTransactionRepository(session)
 
     # Débito na conta de origem
@@ -410,9 +411,6 @@ async def adjust_balance(
     difference = new_balance - account.current_balance
 
     # Cria transação de ajuste
-    from modules.financial.models import TransactionCategory, TransactionType
-    from modules.financial.repositories import BankTransactionRepository
-
     tx_repo = BankTransactionRepository(session)
     await tx_repo.create(
         {

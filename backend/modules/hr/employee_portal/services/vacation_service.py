@@ -35,7 +35,7 @@ class VacationService:
         self.period_repo = VacationPeriodRepository(db)
         self.request_repo = VacationRequestRepository(db)
 
-    async def get_vacation_balance(
+    async def get_vacation_balance(  # pylint: disable=too-many-locals
         self,
         employee_id: UUID,
     ) -> VacationBalanceResponse:
@@ -148,7 +148,7 @@ class VacationService:
 
         return await self.request_repo.submit(request_id)
 
-    async def calculate_vacation(
+    async def calculate_vacation(  # pylint: disable=too-many-locals
         self,
         data: VacationCalculationRequest,
         base_salary: Decimal,
@@ -212,7 +212,7 @@ class VacationService:
             },
         )
 
-    def _calculate_inss(self, base: Decimal) -> Decimal:
+    def _calculate_inss(self, base: Decimal) -> Decimal:  # pylint: disable=too-many-return-statements
         """Calcula INSS progressivo (simplificado)."""
         # Tabela 2024 simplificada
         if base <= Decimal("1412"):
@@ -225,7 +225,7 @@ class VacationService:
             return base * Decimal("0.14") - Decimal("181.18")
         return Decimal("908.85")
 
-    def _calculate_irrf(self, base: Decimal) -> Decimal:
+    def _calculate_irrf(self, base: Decimal) -> Decimal:  # pylint: disable=too-many-return-statements
         """Calcula IRRF (simplificado)."""
         if base <= Decimal("2259.20"):
             return Decimal("0")

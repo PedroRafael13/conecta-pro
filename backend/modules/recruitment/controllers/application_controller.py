@@ -39,7 +39,7 @@ router = APIRouter(prefix="/applications", tags=["Recruitment - Candidaturas"])
 async def create_application(
     data: ApplicationCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Cria uma nova candidatura."""
     service = ApplicationService(db)
@@ -62,7 +62,7 @@ async def create_application(
     response_model=ApplicationListResponse,
     summary="Listar candidaturas",
 )
-async def list_applications(
+async def list_applications(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     job_position_id: Optional[str] = None,
@@ -76,7 +76,7 @@ async def list_applications(
     order_by: str = "applied_at",
     order_desc: bool = True,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationListResponse:
     """Lista candidaturas com filtros e paginação."""
     service = ApplicationService(db)
@@ -115,7 +115,7 @@ async def list_by_position(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationListResponse:
     """Lista candidaturas de uma vaga específica."""
     service = ApplicationService(db)
@@ -139,7 +139,7 @@ async def list_by_candidate(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationListResponse:
     """Lista candidaturas de um candidato específico."""
     service = ApplicationService(db)
@@ -163,7 +163,7 @@ async def list_active(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationListResponse:
     """Lista candidaturas ativas (em processo)."""
     service = ApplicationService(db)
@@ -187,7 +187,7 @@ async def list_shortlisted(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationListResponse:
     """Lista candidaturas na lista restrita de uma vaga."""
     service = ApplicationService(db)
@@ -211,7 +211,7 @@ async def list_favorites(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationListResponse:
     """Lista candidaturas marcadas como favoritas."""
     service = ApplicationService(db)
@@ -233,7 +233,7 @@ async def list_favorites(
 async def get_application_stats(
     position_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationStats:
     """Retorna estatísticas das candidaturas."""
     service = ApplicationService(db)
@@ -249,7 +249,7 @@ async def get_application_stats(
 async def get_application(
     application_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Busca candidatura por ID com relacionamentos."""
     service = ApplicationService(db)
@@ -273,7 +273,7 @@ async def update_application(
     application_id: str,
     data: ApplicationUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Atualiza uma candidatura."""
     service = ApplicationService(db)
@@ -298,7 +298,7 @@ async def update_application(
 async def delete_application(
     application_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Remove uma candidatura (soft delete)."""
     service = ApplicationService(db)
@@ -320,7 +320,7 @@ async def advance_stage(
     application_id: str,
     data: ApplicationAdvance,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Avança candidatura para próxima etapa."""
     service = ApplicationService(db)
@@ -346,7 +346,7 @@ async def reject_application(
     application_id: str,
     data: ApplicationReject,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Rejeita uma candidatura."""
     service = ApplicationService(db)
@@ -370,7 +370,7 @@ async def send_proposal(
     application_id: str,
     data: ApplicationProposal,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Envia proposta ao candidato."""
     service = ApplicationService(db)
@@ -396,7 +396,7 @@ async def accept_proposal(
     application_id: str,
     start_date: Optional[datetime] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Aceita proposta de emprego."""
     service = ApplicationService(db)
@@ -422,7 +422,7 @@ async def reject_proposal(
     application_id: str,
     reason: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Recusa proposta de emprego."""
     service = ApplicationService(db)
@@ -446,7 +446,7 @@ async def hire_candidate(
     application_id: str,
     data: ApplicationHire,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Contrata o candidato."""
     service = ApplicationService(db)
@@ -471,7 +471,7 @@ async def hire_candidate(
 async def toggle_favorite(
     application_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Alterna status de favorito."""
     service = ApplicationService(db)
@@ -494,7 +494,7 @@ async def toggle_favorite(
 async def toggle_shortlist(
     application_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Alterna status de lista restrita."""
     service = ApplicationService(db)
@@ -520,7 +520,7 @@ async def update_scores(
     test_score: Optional[float] = None,
     reference_score: Optional[float] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ApplicationResponse:
     """Atualiza scores da candidatura."""
     service = ApplicationService(db)
@@ -544,7 +544,7 @@ async def update_scores(
 async def recalculate_matching(
     application_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Recalcula score de matching."""
     service = ApplicationService(db)
@@ -567,7 +567,7 @@ async def recalculate_matching(
 async def update_ranking(
     position_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Atualiza ranking das candidaturas de uma vaga."""
     service = ApplicationService(db)
@@ -581,7 +581,7 @@ async def update_ranking(
 async def bulk_action(
     data: ApplicationBulkAction,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Executa ação em lote em candidaturas."""
     service = ApplicationService(db)

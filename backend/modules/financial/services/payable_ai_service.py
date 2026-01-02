@@ -16,7 +16,7 @@ from modules.financial.models.supplier import Supplier
 logger = logging.getLogger(__name__)
 
 
-class PayableAnomalyType:
+class PayableAnomalyType:  # pylint: disable=too-few-public-methods
     """Tipos de anomalias detectadas."""
 
     VALUE_SPIKE = "value_spike"  # Valor muito acima do normal
@@ -55,7 +55,7 @@ class PayableAIService:
             query = select(PayableAccount).where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.created_at >= start_date,
                 )
             )
@@ -114,7 +114,7 @@ class PayableAIService:
             and_(
                 PayableAccount.condominio_id == account.condominio_id,
                 PayableAccount.supplier_id == account.supplier_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),
                 PayableAccount.id != account.id,
                 PayableAccount.created_at >= start_date,
             )
@@ -137,7 +137,10 @@ class PayableAIService:
                 return {
                     "type": PayableAnomalyType.VALUE_SPIKE,
                     "account_id": str(account.id),
-                    "description": f"Valor {current_value:.2f} está {z_score:.1f} desvios acima da média ({avg:.2f})",
+                    "description": (
+                        f"Valor {current_value:.2f} está {z_score:.1f} "
+                        f"desvios acima da média ({avg:.2f})"
+                    ),
                     "severity": "high" if z_score > 3 else "medium",
                     "data": {
                         "current_value": current_value,
@@ -150,7 +153,10 @@ class PayableAIService:
                 return {
                     "type": PayableAnomalyType.VALUE_DROP,
                     "account_id": str(account.id),
-                    "description": f"Valor {current_value:.2f} está {abs(z_score):.1f} desvios abaixo da média ({avg:.2f})",
+                    "description": (
+                        f"Valor {current_value:.2f} está {abs(z_score):.1f} "
+                        f"desvios abaixo da média ({avg:.2f})"
+                    ),
                     "severity": "low",
                     "data": {
                         "current_value": current_value,
@@ -171,7 +177,7 @@ class PayableAIService:
             and_(
                 PayableAccount.condominio_id == account.condominio_id,
                 PayableAccount.supplier_id == account.supplier_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),
                 PayableAccount.id != account.id,
                 PayableAccount.net_value == account.net_value,
                 PayableAccount.due_date >= account.due_date - date_range,
@@ -204,7 +210,7 @@ class PayableAIService:
             and_(
                 PayableAccount.condominio_id == account.condominio_id,
                 PayableAccount.supplier_id == account.supplier_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),
                 PayableAccount.id != account.id,
             )
         )
@@ -243,7 +249,7 @@ class PayableAIService:
                 and_(
                     PayableAccount.condominio_id == account.condominio_id,
                     PayableAccount.supplier_id == account.supplier_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.id != account.id,
                     PayableAccount.category_id.isnot(None),
                 )
@@ -278,7 +284,7 @@ class PayableAIService:
 
         return None
 
-    async def predict_cashflow(
+    async def predict_cashflow(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         months_ahead: int = 3,
@@ -298,7 +304,7 @@ class PayableAIService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date >= history_start,
                     PayableAccount.due_date <= today,
                 )
@@ -362,7 +368,10 @@ class PayableAIService:
                 {
                     "type": "negotiation",
                     "title": "Fornecedores para Negociação",
-                    "description": "Fornecedores com alto volume de pagamentos podem oferecer melhores condições",
+                    "description": (
+                        "Fornecedores com alto volume de pagamentos "
+                        "podem oferecer melhores condições"
+                    ),
                     "items": frequent_suppliers,
                     "potential_savings": sum(
                         s.get("potential_savings", 0) for s in frequent_suppliers
@@ -414,7 +423,7 @@ class PayableAIService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date >= last_year,
                 )
             )
@@ -437,7 +446,7 @@ class PayableAIService:
             for row in result
         ]
 
-    async def _analyze_growing_categories(
+    async def _analyze_growing_categories(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
     ) -> List[Dict]:
@@ -466,7 +475,7 @@ class PayableAIService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date >= current_quarter_start,
                 )
             )
@@ -483,7 +492,7 @@ class PayableAIService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date >= prev_quarter_start,
                     PayableAccount.due_date < current_quarter_start,
                 )
@@ -538,7 +547,7 @@ class PayableAIService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.status.in_(
                         [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
                     ),

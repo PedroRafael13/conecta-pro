@@ -80,7 +80,7 @@ class GeofenceService:
             message=f"Fora da zona. Distância: {nearest_distance:.0f}m",
         )
 
-    async def validate_checkin_location(
+    async def validate_checkin_location(  # pylint: disable=too-many-branches
         self,
         condominio_id: UUID,
         latitude: float,
@@ -199,8 +199,12 @@ class GeofenceService:
                 "is_primary": zone.is_primary,
                 "priority": zone.priority,
                 "allow_all_hours": zone.allow_all_hours,
-                "allowed_start_time": str(zone.allowed_start_time) if zone.allowed_start_time else None,
-                "allowed_end_time": str(zone.allowed_end_time) if zone.allowed_end_time else None,
+                "allowed_start_time": (
+                    str(zone.allowed_start_time) if zone.allowed_start_time else None
+                ),
+                "allowed_end_time": (
+                    str(zone.allowed_end_time) if zone.allowed_end_time else None
+                ),
                 "allowed_days": zone.allowed_days,
             }
 

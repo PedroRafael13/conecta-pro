@@ -26,7 +26,7 @@ router = APIRouter(prefix="/sync", tags=["REP Sync"])
 @router.post("/start", response_model=dict)
 async def start_sync(
     data: REPSyncStart,
-    background_tasks: BackgroundTasks,
+    background_tasks: BackgroundTasks,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> dict:
@@ -55,7 +55,7 @@ async def start_sync(
 async def sync_all_devices(
     condominio_id: Optional[UUID] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Sincroniza todos os dispositivos pendentes."""
     sync_service = SyncService(db)
@@ -72,7 +72,7 @@ async def list_syncs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPSyncList:
     """Lista histórico de sincronizações."""
     repo = REPSyncRepository(db)
@@ -100,7 +100,7 @@ async def list_syncs(
 async def get_sync(
     sync_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPSyncResponse:
     """Obtém detalhes de uma sincronização."""
     repo = REPSyncRepository(db)
@@ -119,7 +119,7 @@ async def get_sync(
 async def get_sync_progress(
     sync_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPSyncProgress:
     """Obtém progresso de uma sincronização."""
     sync_service = SyncService(db)
@@ -138,7 +138,7 @@ async def get_sync_progress(
 async def retry_sync(
     sync_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retenta uma sincronização que falhou."""
     sync_service = SyncService(db)
@@ -159,7 +159,7 @@ async def get_sync_statistics(
     condominio_id: Optional[UUID] = None,
     days: int = Query(30, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna estatísticas de sincronizações."""
     repo = REPSyncRepository(db)
@@ -170,7 +170,7 @@ async def get_sync_statistics(
 async def cancel_stale_syncs(
     timeout_minutes: int = Query(30, ge=5, le=120),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Cancela sincronizações travadas."""
     repo = REPSyncRepository(db)

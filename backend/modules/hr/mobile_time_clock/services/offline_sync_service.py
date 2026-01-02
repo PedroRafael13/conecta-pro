@@ -141,7 +141,7 @@ class OfflineSyncService:
                 checkin_id=checkin.id,
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error(f"Erro ao sincronizar item {item.offline_id}: {e}")
             await self.queue_repo.mark_failed(
                 item_id=item.id,

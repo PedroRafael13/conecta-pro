@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth.dependencies import get_current_user, require_permissions
+from core.auth.dependencies import get_current_user
 from core.database import get_session
 from modules.financial.schemas.supplier import (
     SupplierBlockRequest,
@@ -61,7 +61,7 @@ async def create_supplier(
     response_model=List[SupplierListResponse],
     summary="Listar fornecedores",
 )
-async def list_suppliers(
+async def list_suppliers(  # pylint: disable=too-many-locals,unused-argument
     condominio_id: UUID,
     search: Optional[str] = Query(None, description="Busca por nome, razão social ou CNPJ"),
     supplier_type: Optional[str] = Query(None, description="Tipo de fornecedor"),
@@ -88,7 +88,7 @@ async def list_suppliers(
         state=state,
     )
 
-    suppliers, total = await service.list(condominio_id, filters, skip, limit)
+    suppliers, _total = await service.list(condominio_id, filters, skip, limit)
     return [SupplierListResponse.model_validate(s) for s in suppliers]
 
 
@@ -97,7 +97,7 @@ async def list_suppliers(
     response_model=SupplierStats,
     summary="Estatísticas de fornecedores",
 )
-async def get_stats(
+async def get_stats(  # pylint: disable=unused-argument
     condominio_id: UUID,
     service: SupplierService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
@@ -111,7 +111,7 @@ async def get_stats(
     response_model=List[SupplierListResponse],
     summary="Busca rápida de fornecedores",
 )
-async def search_suppliers(
+async def search_suppliers(  # pylint: disable=unused-argument
     condominio_id: UUID,
     q: str = Query(..., min_length=2, description="Termo de busca"),
     limit: int = Query(10, ge=1, le=50),
@@ -128,7 +128,7 @@ async def search_suppliers(
     response_model=SupplierResponse,
     summary="Buscar fornecedor",
 )
-async def get_supplier(
+async def get_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,
     service: SupplierService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
@@ -148,7 +148,7 @@ async def get_supplier(
     response_model=SupplierResponse,
     summary="Atualizar fornecedor",
 )
-async def update_supplier(
+async def update_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,
     data: SupplierUpdate,
     service: SupplierService = Depends(get_service),
@@ -172,7 +172,7 @@ async def update_supplier(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Excluir fornecedor",
 )
-async def delete_supplier(
+async def delete_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,
     service: SupplierService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
@@ -215,7 +215,7 @@ async def block_supplier(
     response_model=SupplierResponse,
     summary="Desbloquear fornecedor",
 )
-async def unblock_supplier(
+async def unblock_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,
     service: SupplierService = Depends(get_service),
     current_user: dict = Depends(get_current_user),
@@ -238,7 +238,7 @@ async def unblock_supplier(
     response_model=SupplierResponse,
     summary="Qualificar fornecedor",
 )
-async def qualify_supplier(
+async def qualify_supplier(  # pylint: disable=unused-argument
     supplier_id: UUID,
     data: Optional[SupplierQualifyRequest] = None,
     service: SupplierService = Depends(get_service),
@@ -261,7 +261,7 @@ async def qualify_supplier(
     "/{supplier_id}/validate-payment",
     summary="Validar fornecedor para pagamento",
 )
-async def validate_for_payment(
+async def validate_for_payment(  # pylint: disable=unused-argument
     supplier_id: UUID,
     service: SupplierService = Depends(get_service),
     current_user: dict = Depends(get_current_user),

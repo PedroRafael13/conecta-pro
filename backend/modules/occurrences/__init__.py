@@ -76,7 +76,7 @@ def __getattr__(name: str):
         "CommentVisibility",
         "AttachmentType",
     ):
-        from modules.occurrences import models
+        from modules.occurrences import models  # pylint: disable=import-outside-toplevel
         return getattr(models, name)
 
     # Services
@@ -87,7 +87,7 @@ def __getattr__(name: str):
         "AttachmentService",
         "ClassificationAIService",
     ):
-        from modules.occurrences import services
+        from modules.occurrences import services  # pylint: disable=import-outside-toplevel
         return getattr(services, name)
 
     # Controllers
@@ -97,7 +97,7 @@ def __getattr__(name: str):
         "comment_router",
         "attachment_router",
     ):
-        from modules.occurrences import controllers
+        from modules.occurrences import controllers  # pylint: disable=import-outside-toplevel
         return getattr(controllers, name)
 
     raise AttributeError(f"module 'occurrences' has no attribute '{name}'")

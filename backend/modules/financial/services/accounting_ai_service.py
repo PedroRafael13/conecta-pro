@@ -4,32 +4,26 @@ import logging
 import uuid
 from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.models.accounting_account import (
-    AccountClassification,
     AccountingAccount,
-    AccountNature,
     AccountType,
 )
 from modules.financial.models.accounting_period import (
     AccountingPeriod,
     PeriodStatus,
-    PeriodType,
 )
 from modules.financial.models.chart_of_accounts import ChartOfAccounts, ChartStatus
 from modules.financial.models.cost_center import (
-    AllocationMethod,
     CostCenter,
     CostCenterStatus,
-    CostCenterType,
 )
 from modules.financial.models.journal_entry import (
-    EntryOrigin,
     EntryStatus,
     EntryType,
     JournalEntry,
@@ -37,9 +31,7 @@ from modules.financial.models.journal_entry import (
 )
 from modules.financial.models.trial_balance import (
     BalanceStatus,
-    BalanceType,
     TrialBalance,
-    TrialBalanceItem,
 )
 from modules.financial.repositories.accounting_repository import (
     AccountingAccountRepository,
@@ -144,7 +136,7 @@ class AccountingAIService:
                     JournalEntry.condominio_id == condominio_id,
                     JournalEntry.entry_date >= start_date,
                     JournalEntry.entry_date <= end_date,
-                    JournalEntry.ativo == True,  # noqa: E712
+                    JournalEntry.ativo.is_(True),
                 )
             )
             .order_by(JournalEntry.entry_date, JournalEntry.entry_number)
@@ -196,9 +188,14 @@ class AccountingAIService:
                             "type": "valor_atipico",
                             "entry_id": str(entry.id),
                             "entry_number": entry.entry_number,
-                            "entry_date": entry.entry_date.isoformat() if entry.entry_date else None,
+                            "entry_date": (
+                                entry.entry_date.isoformat() if entry.entry_date else None
+                            ),
                             "value": float(value),
-                            "expected_range": {"min": avg - (threshold * std_dev), "max": avg + (threshold * std_dev)},
+                            "expected_range": {
+                                "min": avg - (threshold * std_dev),
+                                "max": avg + (threshold * std_dev),
+                            },
                             "deviation": value - avg,
                             "z_score": z_score,
                             "severity": severity,
@@ -207,7 +204,10 @@ class AccountingAIService:
                                 f"Lancamento #{entry.entry_number} com valor R$ {value:,.2f} "
                                 f"fora do padrao (media: R$ {avg:,.2f}, desvio: {z_score:.1f} DP)"
                             ),
-                            "recommendation": "Verificar se o lancamento esta correto ou requer aprovacao especial",
+                            "recommendation": (
+                                "Verificar se o lancamento esta correto "
+                                "ou requer aprovacao especial"
+                            ),
                         }
                     )
 
@@ -236,7 +236,10 @@ class AccountingAIService:
                         "type": "horario_incomum",
                         "entry_id": str(entry.id),
                         "entry_number": entry.entry_number,
-                        "entry_date": entry.entry_date.isoformat() if entry.entry_date else None,
+                        "entry_date": (
+                            entry.entry_date.isoformat()
+                            if entry.entry_date else None
+                        ),
                         "created_at": entry.created_at.isoformat(),
                         "hour": hour,
                         "severity": "baixa",
@@ -245,7 +248,10 @@ class AccountingAIService:
                             f"Lancamento #{entry.entry_number} criado as {hour}h "
                             f"(fora do horario comercial)"
                         ),
-                        "recommendation": "Verificar se usuario tinha autorizacao para acesso fora do horario",
+                        "recommendation": (
+                            "Verificar se usuario tinha autorizacao "
+                            "para acesso fora do horario"
+                        ),
                     }
                 )
 
@@ -258,7 +264,10 @@ class AccountingAIService:
                         "type": "lancamento_fim_semana",
                         "entry_id": str(entry.id),
                         "entry_number": entry.entry_number,
-                        "entry_date": entry.entry_date.isoformat() if entry.entry_date else None,
+                        "entry_date": (
+                            entry.entry_date.isoformat()
+                            if entry.entry_date else None
+                        ),
                         "created_at": entry.created_at.isoformat(),
                         "weekday": weekday,
                         "severity": "baixa",
@@ -266,7 +275,10 @@ class AccountingAIService:
                         "description": (
                             f"Lancamento #{entry.entry_number} criado no {day_name}"
                         ),
-                        "recommendation": "Verificar procedimento de lancamentos em finais de semana",
+                        "recommendation": (
+                            "Verificar procedimento de lancamentos "
+                            "em finais de semana"
+                        ),
                     }
                 )
 
@@ -281,7 +293,7 @@ class AccountingAIService:
         checked_pairs = set()
 
         for i, entry1 in enumerate(entries):
-            for j, entry2 in enumerate(entries[i + 1 :], start=i + 1):
+            for _, entry2 in enumerate(entries[i + 1 :], start=i + 1):
                 pair_key = tuple(sorted([str(entry1.id), str(entry2.id)]))
                 if pair_key in checked_pairs:
                     continue
@@ -300,7 +312,10 @@ class AccountingAIService:
                             "type": "possivel_duplicata",
                             "entry_ids": [str(entry1.id), str(entry2.id)],
                             "entry_numbers": [entry1.entry_number, entry2.entry_number],
-                            "entry_date": entry1.entry_date.isoformat() if entry1.entry_date else None,
+                            "entry_date": (
+                                entry1.entry_date.isoformat()
+                                if entry1.entry_date else None
+                            ),
                             "value": float(entry1.total_debit or 0),
                             "description": entry1.description,
                             "severity": "alta",
@@ -351,7 +366,10 @@ class AccountingAIService:
                                 f"Falha na sequencia: {gap} numero(s) ausente(s) "
                                 f"entre #{prev.entry_number} e #{curr.entry_number}"
                             ),
-                            "recommendation": "Verificar se lancamentos foram excluidos ou se houve erro no sistema",
+                            "recommendation": (
+                                "Verificar se lancamentos foram excluidos "
+                                "ou se houve erro no sistema"
+                            ),
                         }
                     )
             except (ValueError, TypeError):
@@ -382,7 +400,7 @@ class AccountingAIService:
                     JournalEntry.condominio_id == condominio_id,
                     JournalEntry.entry_date >= historical_start,
                     JournalEntry.entry_date < period_start,
-                    JournalEntry.ativo == True,  # noqa: E712
+                    JournalEntry.ativo.is_(True),
                 )
             )
             .group_by(JournalEntryLine.account_id)
@@ -418,7 +436,10 @@ class AccountingAIService:
                                 f"Lancamento #{entry.entry_number} usa conta {line.account_code} "
                                 f"que nunca foi utilizada antes"
                             ),
-                            "recommendation": "Verificar se a conta esta correta para este tipo de operacao",
+                            "recommendation": (
+                                "Verificar se a conta esta correta "
+                                "para este tipo de operacao"
+                            ),
                         }
                     )
                 elif historical_usage[line.account_id] <= 2:
@@ -436,7 +457,8 @@ class AccountingAIService:
                             "severity_score": 15,
                             "description": (
                                 f"Lancamento #{entry.entry_number} usa conta {line.account_code} "
-                                f"raramente utilizada (apenas {historical_usage[line.account_id]}x no ultimo ano)"
+                                f"raramente utilizada "
+                                f"(apenas {historical_usage[line.account_id]}x no ultimo ano)"
                             ),
                             "recommendation": "Confirmar se a classificacao contabil esta adequada",
                         }
@@ -489,7 +511,7 @@ class AccountingAIService:
     # SUGESTOES DE CLASSIFICACAO DE CONTAS
     # =========================================================================
 
-    async def suggest_account_classification(
+    async def suggest_account_classification(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         description: str,
@@ -528,7 +550,9 @@ class AccountingAIService:
                         "similarity_scores": [],
                     }
                 account_usage[account_id]["usage_count"] += 1
-                account_usage[account_id]["total_value"] += line.debit_value or line.credit_value or Decimal("0")
+                account_usage[account_id]["total_value"] += (
+                    line.debit_value or line.credit_value or Decimal("0")
+                )
                 account_usage[account_id]["similarity_scores"].append(
                     self._calculate_description_similarity(description, entry.description or "")
                 )
@@ -564,12 +588,12 @@ class AccountingAIService:
         # Limita a 5 sugestoes
         return suggestions[:5]
 
-    async def _find_similar_entries(
+    async def _find_similar_entries(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         description: str,
         value: Decimal,
-        transaction_type: str,
+        transaction_type: str,  # pylint: disable=unused-argument
     ) -> List[JournalEntry]:
         """Busca lancamentos similares no historico."""
         # Busca lancamentos dos ultimos 12 meses
@@ -586,7 +610,7 @@ class AccountingAIService:
                 JournalEntry.entry_date >= start_date,
                 JournalEntry.entry_date <= end_date,
                 JournalEntry.status == EntryStatus.APROVADO.value,
-                JournalEntry.ativo == True,  # noqa: E712
+                JournalEntry.ativo.is_(True),
             )
         )
 
@@ -654,7 +678,7 @@ class AccountingAIService:
     # PREVISAO DE BALANCO
     # =========================================================================
 
-    async def forecast_balance(
+    async def forecast_balance(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         months_ahead: int = 3,
@@ -704,15 +728,21 @@ class AccountingAIService:
         }
 
         # Calcula totais projetados
-        total_ativo = projections["ativo_circulante"]["projected_value"] + projections["ativo_nao_circulante"]["projected_value"]
-        total_passivo = projections["passivo_circulante"]["projected_value"] + projections["passivo_nao_circulante"]["projected_value"]
+        total_ativo = (
+            projections["ativo_circulante"]["projected_value"]
+            + projections["ativo_nao_circulante"]["projected_value"]
+        )
+        total_passivo = (
+            projections["passivo_circulante"]["projected_value"]
+            + projections["passivo_nao_circulante"]["projected_value"]
+        )
         total_pl = projections["patrimonio_liquido"]["projected_value"]
 
         # Calcula indicadores projetados
+        ativo_circ = projections["ativo_circulante"]["projected_value"]
+        passivo_circ = projections["passivo_circulante"]["projected_value"]
         liquidity_ratio = (
-            projections["ativo_circulante"]["projected_value"] / projections["passivo_circulante"]["projected_value"]
-            if projections["passivo_circulante"]["projected_value"] > 0
-            else 0
+            ativo_circ / passivo_circ if passivo_circ > 0 else 0
         )
 
         debt_ratio = (
@@ -727,7 +757,10 @@ class AccountingAIService:
             "forecast_date": forecast_date.isoformat(),
             "months_ahead": months_ahead,
             "base_balance_id": str(latest_balance.id) if latest_balance else None,
-            "base_balance_date": latest_balance.reference_date.isoformat() if latest_balance and latest_balance.reference_date else None,
+            "base_balance_date": (
+                latest_balance.reference_date.isoformat()
+                if latest_balance and latest_balance.reference_date else None
+            ),
             "projections": {
                 "ativo_circulante": {
                     "current": projections["ativo_circulante"]["current_value"],
@@ -769,12 +802,20 @@ class AccountingAIService:
             "indicators": {
                 "liquidity_ratio": liquidity_ratio,
                 "debt_ratio": debt_ratio,
-                "liquidity_status": "saudavel" if liquidity_ratio >= 1 else "atencao" if liquidity_ratio >= 0.5 else "critico",
-                "debt_status": "baixo" if debt_ratio < 40 else "moderado" if debt_ratio < 70 else "alto",
+                "liquidity_status": (
+                    "saudavel" if liquidity_ratio >= 1
+                    else "atencao" if liquidity_ratio >= 0.5 else "critico"
+                ),
+                "debt_status": (
+                    "baixo" if debt_ratio < 40
+                    else "moderado" if debt_ratio < 70 else "alto"
+                ),
             },
             "trends": trends,
             "confidence": confidence,
-            "confidence_level": "alta" if confidence >= 75 else "media" if confidence >= 50 else "baixa",
+            "confidence_level": (
+                "alta" if confidence >= 75 else "media" if confidence >= 50 else "baixa"
+            ),
             "ai_model": "accounting-forecast-v1.0",
             "generated_at": datetime.now().isoformat(),
         }
@@ -790,7 +831,7 @@ class AccountingAIService:
                 and_(
                     TrialBalance.condominio_id == condominio_id,
                     TrialBalance.status == BalanceStatus.PUBLICADO.value,
-                    TrialBalance.ativo == True,  # noqa: E712
+                    TrialBalance.ativo.is_(True),
                 )
             )
             .order_by(TrialBalance.reference_date.desc())
@@ -815,7 +856,7 @@ class AccountingAIService:
                     TrialBalance.condominio_id == condominio_id,
                     TrialBalance.reference_date >= start_date,
                     TrialBalance.reference_date <= end_date,
-                    TrialBalance.ativo == True,  # noqa: E712
+                    TrialBalance.ativo.is_(True),
                 )
             )
             .order_by(TrialBalance.reference_date.asc())
@@ -880,8 +921,14 @@ class AccountingAIService:
                 continue
 
             values = [d["value"] for d in data]
-            first_half_avg = sum(values[: len(values) // 2]) / (len(values) // 2) if len(values) >= 2 else values[0]
-            second_half_avg = sum(values[len(values) // 2 :]) / len(values[len(values) // 2 :]) if len(values) >= 2 else values[-1]
+            first_half_avg = (
+                sum(values[: len(values) // 2]) / (len(values) // 2)
+                if len(values) >= 2 else values[0]
+            )
+            second_half_avg = (
+                sum(values[len(values) // 2 :]) / len(values[len(values) // 2 :])
+                if len(values) >= 2 else values[-1]
+            )
 
             if first_half_avg > 0:
                 change_rate = ((second_half_avg - first_half_avg) / first_half_avg) * 100
@@ -893,7 +940,10 @@ class AccountingAIService:
             variance = sum((v - avg) ** 2 for v in values) / len(values)
             volatility = (variance**0.5 / avg * 100) if avg > 0 else 0
 
-            direction = "crescente" if change_rate > 5 else "decrescente" if change_rate < -5 else "estavel"
+            direction = (
+                "crescente" if change_rate > 5
+                else "decrescente" if change_rate < -5 else "estavel"
+            )
 
             trends[group] = {
                 "direction": direction,
@@ -948,9 +998,15 @@ class AccountingAIService:
         # Projeta valor futuro
         projected_value = current_value * ((1 + avg_monthly_change) ** months_ahead)
 
-        change_percent = ((projected_value - current_value) / current_value * 100) if current_value > 0 else 0
+        change_percent = (
+            ((projected_value - current_value) / current_value * 100)
+            if current_value > 0 else 0
+        )
 
-        trend = "crescente" if avg_monthly_change > 0.01 else "decrescente" if avg_monthly_change < -0.01 else "estavel"
+        trend = (
+            "crescente" if avg_monthly_change > 0.01
+            else "decrescente" if avg_monthly_change < -0.01 else "estavel"
+        )
 
         return {
             "current_value": current_value,
@@ -1022,13 +1078,19 @@ class AccountingAIService:
         suggestions = []
 
         # 1. Centros de custo sem uso
-        unused = [cc for cc in cost_centers if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) == 0]
+        unused = [
+            cc for cc in cost_centers
+            if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) == 0
+        ]
         if unused:
             issues.append(
                 {
                     "type": "centros_sem_uso",
                     "count": len(unused),
-                    "centers": [{"id": str(cc.id), "code": cc.code, "name": cc.name} for cc in unused],
+                    "centers": [
+                        {"id": str(cc.id), "code": cc.code, "name": cc.name}
+                        for cc in unused
+                    ],
                     "severity": "media",
                     "impact": "Estrutura de custos desnecessariamente complexa",
                 }
@@ -1038,7 +1100,10 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "desativar_centros",
                     "title": "Desativar centros de custo sem uso",
-                    "description": f"{len(unused)} centro(s) de custo nao tem lancamentos. Considere desativa-los.",
+                    "description": (
+                        f"{len(unused)} centro(s) de custo nao tem lancamentos. "
+                        "Considere desativa-los."
+                    ),
                     "affected_centers": [cc.code for cc in unused],
                     "effort": "baixo",
                     "priority": "media",
@@ -1074,7 +1139,10 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "consolidar_centros",
                     "title": "Considerar consolidacao de centros",
-                    "description": f"{len(low_usage)} centro(s) com poucos lancamentos podem ser consolidados com centros relacionados",
+                    "description": (
+                        f"{len(low_usage)} centro(s) com poucos lancamentos "
+                        "podem ser consolidados com centros relacionados"
+                    ),
                     "affected_centers": [cc.code for cc in low_usage],
                     "effort": "medio",
                     "priority": "baixa",
@@ -1097,7 +1165,10 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "detalhar_custos",
                     "title": "Detalhar centros de custo concentrados",
-                    "description": "Centros com alta concentracao podem ser subdivididos para melhor analise",
+                    "description": (
+                        "Centros com alta concentracao podem ser "
+                        "subdivididos para melhor analise"
+                    ),
                     "affected_centers": [c["code"] for c in high_concentration],
                     "effort": "alto",
                     "priority": "media",
@@ -1110,7 +1181,10 @@ class AccountingAIService:
 
         # Calcula metricas gerais
         total_centers = len(cost_centers)
-        active_centers = len([cc for cc in cost_centers if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) > 0])
+        active_centers = len([
+            cc for cc in cost_centers
+            if usage_analysis.get(str(cc.id), {}).get("usage_count", 0) > 0
+        ])
 
         return {
             "condominio_id": str(condominio_id),
@@ -1118,7 +1192,9 @@ class AccountingAIService:
                 "total_cost_centers": total_centers,
                 "active_cost_centers": active_centers,
                 "inactive_cost_centers": total_centers - active_centers,
-                "utilization_rate": (active_centers / total_centers * 100) if total_centers > 0 else 0,
+                "utilization_rate": (
+                    (active_centers / total_centers * 100) if total_centers > 0 else 0
+                ),
             },
             "usage_analysis": usage_analysis,
             "issues": issues,
@@ -1137,7 +1213,7 @@ class AccountingAIService:
             and_(
                 CostCenter.condominio_id == condominio_id,
                 CostCenter.status == CostCenterStatus.ATIVO.value,
-                CostCenter.ativo == True,  # noqa: E712
+                CostCenter.ativo.is_(True),
             )
         )
         result = await self.session.execute(query)
@@ -1166,7 +1242,7 @@ class AccountingAIService:
                         JournalEntry.entry_date >= start_date,
                         JournalEntry.entry_date <= end_date,
                         JournalEntryLine.cost_center_id == cc.id,
-                        JournalEntry.ativo == True,  # noqa: E712
+                        JournalEntry.ativo.is_(True),
                     )
                 )
             )
@@ -1232,7 +1308,10 @@ class AccountingAIService:
                 {
                     "type": "hierarquia_incompleta",
                     "count": len(orphans),
-                    "centers": [{"id": str(cc.id), "code": cc.code, "name": cc.name} for cc in orphans],
+                    "centers": [
+                        {"id": str(cc.id), "code": cc.code, "name": cc.name}
+                        for cc in orphans
+                    ],
                     "severity": "media",
                     "impact": "Estrutura hierarquica inconsistente",
                 }
@@ -1243,7 +1322,7 @@ class AccountingAIService:
     def _calculate_cost_center_health(
         self,
         issues: List[Dict[str, Any]],
-        total_centers: int,
+        total_centers: int,  # pylint: disable=unused-argument
     ) -> int:
         """Calcula score de saude da estrutura de centros de custo."""
         score = 100
@@ -1263,7 +1342,7 @@ class AccountingAIService:
     # ANALISE DRE
     # =========================================================================
 
-    async def analyze_income_statement(
+    async def analyze_income_statement(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self,
         condominio_id: UUID,
         period_start: date,
@@ -1358,9 +1437,18 @@ class AccountingAIService:
         prev_net_income = prev_revenues - prev_expenses
 
         # Calcula variacoes
-        revenue_change = ((revenues - prev_revenues) / prev_revenues * 100) if prev_revenues > 0 else Decimal("0")
-        expense_change = ((expenses - prev_expenses) / prev_expenses * 100) if prev_expenses > 0 else Decimal("0")
-        income_change = ((net_income - prev_net_income) / abs(prev_net_income) * 100) if prev_net_income != 0 else Decimal("0")
+        revenue_change = (
+            ((revenues - prev_revenues) / prev_revenues * 100)
+            if prev_revenues > 0 else Decimal("0")
+        )
+        expense_change = (
+            ((expenses - prev_expenses) / prev_expenses * 100)
+            if prev_expenses > 0 else Decimal("0")
+        )
+        income_change = (
+            ((net_income - prev_net_income) / abs(prev_net_income) * 100)
+            if prev_net_income != 0 else Decimal("0")
+        )
 
         # Gera insights
         insights = self._generate_dre_insights(
@@ -1410,11 +1498,11 @@ class AccountingAIService:
     def _generate_dre_insights(
         self,
         revenues: Decimal,
-        expenses: Decimal,
+        expenses: Decimal,  # pylint: disable=unused-argument
         net_income: Decimal,
         revenue_change: Decimal,
         expense_change: Decimal,
-        revenue_breakdown: Dict[str, Decimal],
+        revenue_breakdown: Dict[str, Decimal],  # pylint: disable=unused-argument
         expense_breakdown: Dict[str, Decimal],
     ) -> List[Dict[str, Any]]:
         """Gera insights sobre a DRE."""
@@ -1427,7 +1515,12 @@ class AccountingAIService:
                     "type": "resultado_positivo",
                     "severity": "info",
                     "title": "Resultado positivo no periodo",
-                    "description": f"Superavit de R$ {float(net_income):,.2f} ({float(net_income/revenues*100):.1f}% de margem)" if revenues > 0 else f"Superavit de R$ {float(net_income):,.2f}",
+                    "description": (
+                        f"Superavit de R$ {float(net_income):,.2f} "
+                        f"({float(net_income/revenues*100):.1f}% de margem)"
+                        if revenues > 0
+                        else f"Superavit de R$ {float(net_income):,.2f}"
+                    ),
                 }
             )
         else:
@@ -1436,7 +1529,13 @@ class AccountingAIService:
                     "type": "resultado_negativo",
                     "severity": "alta",
                     "title": "Resultado negativo no periodo",
-                    "description": f"Deficit de R$ {float(abs(net_income)):,.2f}. Despesas excedem receitas em {float(abs(net_income)/revenues*100):.1f}%" if revenues > 0 else f"Deficit de R$ {float(abs(net_income)):,.2f}",
+                    "description": (
+                        f"Deficit de R$ {float(abs(net_income)):,.2f}. "
+                        f"Despesas excedem receitas em "
+                        f"{float(abs(net_income)/revenues*100):.1f}%"
+                        if revenues > 0
+                        else f"Deficit de R$ {float(abs(net_income)):,.2f}"
+                    ),
                 }
             )
 
@@ -1447,7 +1546,10 @@ class AccountingAIService:
                     "type": "receita_crescendo",
                     "severity": "info",
                     "title": "Crescimento de receitas",
-                    "description": f"Receitas cresceram {float(revenue_change):.1f}% em relacao ao periodo anterior",
+                    "description": (
+                        f"Receitas cresceram {float(revenue_change):.1f}% "
+                        "em relacao ao periodo anterior"
+                    ),
                 }
             )
         elif revenue_change < -10:
@@ -1456,7 +1558,10 @@ class AccountingAIService:
                     "type": "receita_caindo",
                     "severity": "alta",
                     "title": "Queda de receitas",
-                    "description": f"Receitas cairam {float(abs(revenue_change)):.1f}% em relacao ao periodo anterior",
+                    "description": (
+                        f"Receitas cairam {float(abs(revenue_change)):.1f}% "
+                        "em relacao ao periodo anterior"
+                    ),
                 }
             )
 
@@ -1467,7 +1572,10 @@ class AccountingAIService:
                     "type": "despesa_crescendo",
                     "severity": "media",
                     "title": "Aumento significativo de despesas",
-                    "description": f"Despesas aumentaram {float(expense_change):.1f}%. Recomenda-se revisar os principais gastos.",
+                    "description": (
+                        f"Despesas aumentaram {float(expense_change):.1f}%. "
+                        "Recomenda-se revisar os principais gastos."
+                    ),
                 }
             )
         elif expense_change < -10:
@@ -1476,7 +1584,10 @@ class AccountingAIService:
                     "type": "despesa_reduzindo",
                     "severity": "info",
                     "title": "Reducao de despesas",
-                    "description": f"Despesas reduziram {float(abs(expense_change)):.1f}% em relacao ao periodo anterior",
+                    "description": (
+                        f"Despesas reduziram {float(abs(expense_change)):.1f}% "
+                        "em relacao ao periodo anterior"
+                    ),
                 }
             )
 
@@ -1492,7 +1603,10 @@ class AccountingAIService:
                         "type": "concentracao_despesa",
                         "severity": "media",
                         "title": "Concentracao de despesas",
-                        "description": f"A categoria {top_expense[0]} representa {float(top_percentage):.1f}% das despesas totais",
+                        "description": (
+                            f"A categoria {top_expense[0]} representa "
+                            f"{float(top_percentage):.1f}% das despesas totais"
+                        ),
                     }
                 )
 
@@ -1563,8 +1677,10 @@ class AccountingAIService:
             and_(
                 AccountingPeriod.condominio_id == condominio_id,
                 AccountingPeriod.end_date < last_month_end,
-                AccountingPeriod.status.in_([PeriodStatus.ABERTO.value, PeriodStatus.EM_FECHAMENTO.value]),
-                AccountingPeriod.ativo == True,  # noqa: E712
+                AccountingPeriod.status.in_([
+                    PeriodStatus.ABERTO.value, PeriodStatus.EM_FECHAMENTO.value
+                ]),
+                AccountingPeriod.ativo.is_(True),
             )
         )
 
@@ -1605,7 +1721,7 @@ class AccountingAIService:
             and_(
                 JournalEntry.condominio_id == condominio_id,
                 JournalEntry.status == EntryStatus.RASCUNHO.value,
-                JournalEntry.ativo == True,  # noqa: E712
+                JournalEntry.ativo.is_(True),
             )
         )
 
@@ -1629,7 +1745,7 @@ class AccountingAIService:
             and_(
                 JournalEntry.condominio_id == condominio_id,
                 JournalEntry.status == EntryStatus.PENDENTE.value,
-                JournalEntry.ativo == True,  # noqa: E712
+                JournalEntry.ativo.is_(True),
             )
         )
 
@@ -1667,7 +1783,7 @@ class AccountingAIService:
                 func.extract("year", TrialBalance.reference_date) == last_month.year,
                 func.extract("month", TrialBalance.reference_date) == last_month.month,
                 TrialBalance.status == BalanceStatus.PUBLICADO.value,
-                TrialBalance.ativo == True,  # noqa: E712
+                TrialBalance.ativo.is_(True),
             )
         )
 
@@ -1680,7 +1796,10 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "balancete_pendente",
                     "title": "Balancete do mes anterior nao gerado",
-                    "description": f"O balancete de {last_month.strftime('%m/%Y')} ainda nao foi publicado",
+                    "description": (
+                        f"O balancete de {last_month.strftime('%m/%Y')} "
+                        "ainda nao foi publicado"
+                    ),
                     "priority": "alta",
                     "action": "Gerar e publicar o balancete do periodo",
                 }
@@ -1700,7 +1819,7 @@ class AccountingAIService:
             and_(
                 ChartOfAccounts.condominio_id == condominio_id,
                 ChartOfAccounts.status == ChartStatus.ATIVO.value,
-                ChartOfAccounts.ativo == True,  # noqa: E712
+                ChartOfAccounts.ativo.is_(True),
             )
         )
 
@@ -1724,7 +1843,10 @@ class AccountingAIService:
                     "id": str(uuid.uuid4()),
                     "type": "multiplos_planos",
                     "title": "Multiplos planos de contas ativos",
-                    "description": f"{len(charts)} planos de contas ativos. Recomenda-se manter apenas um ativo",
+                    "description": (
+                        f"{len(charts)} planos de contas ativos. "
+                        "Recomenda-se manter apenas um ativo"
+                    ),
                     "priority": "media",
                     "action": "Revisar e desativar planos de contas desnecessarios",
                 }

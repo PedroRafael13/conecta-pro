@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -30,8 +30,6 @@ class OrderItemBase(BaseModel):
 
 class OrderItemCreate(OrderItemBase):
     """Schema para criar item de ordem."""
-
-    pass
 
 
 class OrderItemUpdate(BaseModel):
@@ -64,7 +62,9 @@ class OrderItemResponse(OrderItemBase):
     actual_delivery_date: Optional[date] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -156,7 +156,9 @@ class PurchaseOrderResponse(PurchaseOrderBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 

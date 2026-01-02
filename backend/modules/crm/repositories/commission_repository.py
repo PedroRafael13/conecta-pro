@@ -66,7 +66,7 @@ class CommissionRepository:
         Returns:
             CommissionRule criada
         """
-        import json
+        import json  # pylint: disable=import-outside-toplevel
 
         rule = CommissionRule(
             id=str(uuid4()),
@@ -141,7 +141,7 @@ class CommissionRepository:
         self, rule_id: str, data: CommissionRuleUpdate
     ) -> Optional[CommissionRule]:
         """Atualiza regra de comissão."""
-        import json
+        import json  # pylint: disable=import-outside-toplevel
 
         rule = await self.get_rule_by_id(rule_id)
         if not rule:
@@ -303,7 +303,8 @@ class CommissionRepository:
             commission_type = data.commission_type.value if data.commission_type else "percentage"
             commission_rate = data.commission_rate or 0.0
             base_commission = data.sale_value * (commission_rate / 100)
-            trigger = data.trigger.value if data.trigger else CommissionTrigger.ON_FIRST_PAYMENT.value
+            default_trg = CommissionTrigger.ON_FIRST_PAYMENT.value
+            trigger = data.trigger.value if data.trigger else default_trg
             trigger_date = data.trigger_date or date.today()
             due_date = data.due_date or (trigger_date + timedelta(days=30))
 
@@ -363,7 +364,7 @@ class CommissionRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list(
+    async def list(  # pylint: disable=too-many-branches
         self,
         filters: Optional[CommissionFilter] = None,
         skip: int = 0,
@@ -402,11 +403,13 @@ class CommissionRepository:
                 query = query.where(Commission.final_commission <= filters.max_value)
                 count_query = count_query.where(Commission.final_commission <= filters.max_value)
             if filters.date_from:
-                query = query.where(Commission.created_at >= datetime.combine(filters.date_from, datetime.min.time()))
-                count_query = count_query.where(Commission.created_at >= datetime.combine(filters.date_from, datetime.min.time()))
+                dt_from = datetime.combine(filters.date_from, datetime.min.time())
+                query = query.where(Commission.created_at >= dt_from)
+                count_query = count_query.where(Commission.created_at >= dt_from)
             if filters.date_to:
-                query = query.where(Commission.created_at <= datetime.combine(filters.date_to, datetime.max.time()))
-                count_query = count_query.where(Commission.created_at <= datetime.combine(filters.date_to, datetime.max.time()))
+                dt_to = datetime.combine(filters.date_to, datetime.max.time())
+                query = query.where(Commission.created_at <= dt_to)
+                count_query = count_query.where(Commission.created_at <= dt_to)
             if filters.due_date_from:
                 query = query.where(Commission.due_date >= filters.due_date_from)
                 count_query = count_query.where(Commission.due_date >= filters.due_date_from)
@@ -672,9 +675,11 @@ class CommissionRepository:
         query = select(Commission).where(Commission.is_active.is_(True))
 
         if date_from:
-            query = query.where(Commission.created_at >= datetime.combine(date_from, datetime.min.time()))
+            dt_from = datetime.combine(date_from, datetime.min.time())
+            query = query.where(Commission.created_at >= dt_from)
         if date_to:
-            query = query.where(Commission.created_at <= datetime.combine(date_to, datetime.max.time()))
+            dt_to = datetime.combine(date_to, datetime.max.time())
+            query = query.where(Commission.created_at <= dt_to)
 
         result = await self.db.execute(query)
         return list(result.scalars().all())

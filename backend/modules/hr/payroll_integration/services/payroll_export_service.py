@@ -278,7 +278,7 @@ class PayrollExportService:
     def _generate_cnab240(
         self,
         export: PayrollExport,
-        events: list,
+        events: list,  # pylint: disable=unused-argument
     ) -> tuple:
         """Gera arquivo CNAB 240."""
         lines = []
@@ -373,7 +373,9 @@ class PayrollExportService:
             ExportFormat.CSV.value: "text/csv",
             ExportFormat.JSON.value: "application/json",
             ExportFormat.TXT.value: "text/plain",
-            ExportFormat.XLSX.value: ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            ExportFormat.XLSX.value: (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
             ExportFormat.XML.value: "application/xml",
             ExportFormat.CNAB240.value: "text/plain",
             ExportFormat.CNAB400.value: "text/plain",
@@ -443,7 +445,7 @@ class PayrollExportService:
             try:
                 await self.process_export(export.id, condominio_id)
                 results["success"] += 1
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 results["failed"] += 1
                 results["details"].append(
                     {

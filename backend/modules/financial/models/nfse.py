@@ -327,7 +327,7 @@ class NFSe(Base):
         )
 
 
-class NFSeLote(Base):
+class NFSeLote(Base):  # pylint: disable=too-few-public-methods
     """Lote de NFS-e para envio em lote."""
 
     __tablename__ = "nfse_lotes"
@@ -371,7 +371,7 @@ class NFSeLote(Base):
         return f"<NFSeLote {self.numero_lote} ({self.quantidade_rps} RPS)>"
 
 
-class CodigoServico(Base):
+class CodigoServico(Base):  # pylint: disable=too-few-public-methods
     """Codigo de servico conforme LC 116/2003."""
 
     __tablename__ = "codigos_servico"

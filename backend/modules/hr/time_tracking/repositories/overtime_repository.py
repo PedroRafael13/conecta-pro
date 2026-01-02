@@ -4,7 +4,7 @@ from datetime import date
 from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
@@ -47,7 +47,7 @@ class OvertimeRepository:
         result = await self.db.execute(
             select(Overtime).where(
                 Overtime.id == overtime_id,
-                Overtime.is_deleted == False,
+                Overtime.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -57,7 +57,7 @@ class OvertimeRepository:
         result = await self.db.execute(
             select(Overtime).where(
                 Overtime.code == code,
-                Overtime.is_deleted == False,
+                Overtime.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -80,14 +80,14 @@ class OvertimeRepository:
         overtime.soft_delete()
         await self.db.flush()
 
-    async def list(
+    async def list(  # pylint: disable=too-many-branches
         self,
         filters: OvertimeFilter = None,
         skip: int = 0,
         limit: int = 100,
     ) -> Tuple[List[Overtime], int]:
         """Lista horas extras com filtros."""
-        query = select(Overtime).where(Overtime.is_deleted == False)
+        query = select(Overtime).where(Overtime.is_deleted.is_(False))
 
         if filters:
             if filters.employee_id:
@@ -140,7 +140,7 @@ class OvertimeRepository:
                 Overtime.employee_id == employee_id,
                 Overtime.overtime_date >= start_date,
                 Overtime.overtime_date <= end_date,
-                Overtime.is_deleted == False,
+                Overtime.is_deleted.is_(False),
             ).order_by(Overtime.overtime_date)
         )
         return list(result.scalars().all())
@@ -157,7 +157,7 @@ class OvertimeRepository:
                 OvertimeStatus.PENDENTE,
                 OvertimeStatus.PRE_APROVADO,
             ]),
-            Overtime.is_deleted == False,
+            Overtime.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -176,8 +176,8 @@ class OvertimeRepository:
         query = select(Overtime).where(
             Overtime.status == OvertimeStatus.APROVADO,
             Overtime.compensation_type == CompensationType.BANCO_HORAS,
-            Overtime.is_compensated == False,
-            Overtime.is_deleted == False,
+            Overtime.is_compensated.is_(False),
+            Overtime.is_deleted.is_(False),
         )
 
         if employee_id:
@@ -196,8 +196,8 @@ class OvertimeRepository:
         query = select(Overtime).where(
             Overtime.status == OvertimeStatus.APROVADO,
             Overtime.compensation_type == CompensationType.PAGAMENTO,
-            Overtime.is_paid == False,
-            Overtime.is_deleted == False,
+            Overtime.is_paid.is_(False),
+            Overtime.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -206,7 +206,7 @@ class OvertimeRepository:
         result = await self.db.execute(query.order_by(Overtime.overtime_date))
         return list(result.scalars().all())
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         condominium_id: str = None,
         employee_id: str = None,
@@ -214,7 +214,7 @@ class OvertimeRepository:
         date_to: date = None,
     ) -> dict:
         """Calcula estatísticas de horas extras."""
-        base_where = [Overtime.is_deleted == False]
+        base_where = [Overtime.is_deleted.is_(False)]
 
         if condominium_id:
             base_where.append(Overtime.condominium_id == condominium_id)
@@ -319,7 +319,7 @@ class OvertimeRepository:
             Overtime.employee_id == employee_id,
             Overtime.overtime_date >= start_date,
             Overtime.overtime_date < end_date,
-            Overtime.is_deleted == False,
+            Overtime.is_deleted.is_(False),
         ]
 
         # Horas 50%

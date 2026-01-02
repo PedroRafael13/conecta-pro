@@ -136,7 +136,7 @@ class CustomerResponse(CustomerBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
 
         from_attributes = True
@@ -226,7 +226,7 @@ class ReceivableCategoryResponse(BaseModel):
 
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
 
         from_attributes = True
@@ -358,7 +358,7 @@ class ReceivableAccountResponse(ReceivableAccountBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
 
         from_attributes = True
@@ -388,7 +388,7 @@ class ReceivableAccountListResponse(BaseModel):
     boleto_generated: bool
     pix_generated: bool
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
 
         from_attributes = True
@@ -519,7 +519,7 @@ class ReceivableInstallmentResponse(BaseModel):
     notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
 
         from_attributes = True
@@ -636,7 +636,7 @@ class ReceivablePaymentResponse(BaseModel):
     notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
 
         from_attributes = True
@@ -783,7 +783,7 @@ class BillingRuleResponse(BillingRuleBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuracao do schema."""
 
         from_attributes = True

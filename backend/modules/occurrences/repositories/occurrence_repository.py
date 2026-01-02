@@ -13,8 +13,6 @@ from modules.occurrences.models.occurrence import (
     Occurrence,
     OccurrencePriority,
     OccurrenceStatus,
-    OccurrenceType,
-    ReporterType,
 )
 from modules.occurrences.schemas.occurrence import (
     OccurrenceCreate,
@@ -93,7 +91,7 @@ class OccurrenceRepository:
         await self.session.flush()
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[OccurrenceFilter] = None,
         skip: int = 0,
@@ -341,7 +339,7 @@ class OccurrenceRepository:
         )
         return list(result.scalars().all())
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-branches,too-many-locals,too-many-statements
         self, condominium_id: Optional[str] = None, date_from: Optional[datetime] = None
     ) -> dict:
         """Retorna estatísticas de ocorrências."""
@@ -432,17 +430,20 @@ class OccurrenceRepository:
 
         # Calculate averages
         if stats["resolution_times"]:
-            stats["avg_resolution_hours"] = sum(stats["resolution_times"]) / len(stats["resolution_times"])
+            res_times = stats["resolution_times"]
+            stats["avg_resolution_hours"] = sum(res_times) / len(res_times)
         else:
             stats["avg_resolution_hours"] = None
 
         if stats["response_times"]:
-            stats["avg_response_hours"] = sum(stats["response_times"]) / len(stats["response_times"])
+            resp_times = stats["response_times"]
+            stats["avg_response_hours"] = sum(resp_times) / len(resp_times)
         else:
             stats["avg_response_hours"] = None
 
         if stats["satisfaction_scores"]:
-            stats["avg_satisfaction"] = sum(stats["satisfaction_scores"]) / len(stats["satisfaction_scores"])
+            sat_scores = stats["satisfaction_scores"]
+            stats["avg_satisfaction"] = sum(sat_scores) / len(sat_scores)
         else:
             stats["avg_satisfaction"] = None
 
@@ -524,10 +525,16 @@ class OccurrenceRepository:
 
         old_status = occurrence.status
         occurrence.status = new_status
-        occurrence._add_history("status_change", f"{old_status.value} -> {new_status.value}: {reason or 'N/A'}")
+        msg = f"{old_status.value} -> {new_status.value}: {reason or 'N/A'}"
+        occurrence._add_history("status_change", msg)  # pylint: disable=protected-access
         occurrence.increment_updates()
 
-        if new_status in [OccurrenceStatus.RESOLVIDA, OccurrenceStatus.ARQUIVADA, OccurrenceStatus.CANCELADA]:
+        closed_statuses = [
+            OccurrenceStatus.RESOLVIDA,
+            OccurrenceStatus.ARQUIVADA,
+            OccurrenceStatus.CANCELADA,
+        ]
+        if new_status in closed_statuses:
             occurrence.closed_at = datetime.utcnow()
 
         await self.session.flush()

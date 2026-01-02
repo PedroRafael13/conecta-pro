@@ -1,11 +1,12 @@
 """Repository para DocumentShare."""
 
+import hashlib
 import logging
 import secrets
+from datetime import datetime
 from typing import Optional, List, Tuple
-from datetime import datetime, timedelta
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_share import DocumentShare, ShareStatus, ShareType
@@ -36,8 +37,6 @@ class DocumentShareRepository:
 
         # Hash da senha se fornecida
         if data.password:
-            import hashlib
-
             share_data["password_hash"] = hashlib.sha256(
                 data.password.encode()
             ).hexdigest()
@@ -234,8 +233,6 @@ class DocumentShareRepository:
         if not share or not share.password_protected:
             return True
 
-        import hashlib
-
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         return share.password_hash == password_hash
 
@@ -245,7 +242,7 @@ class DocumentShareRepository:
         query = select(DocumentShare).where(
             and_(
                 DocumentShare.status == ShareStatus.ATIVO,
-                DocumentShare.is_perpetual == False,
+                DocumentShare.is_perpetual.is_(False),
                 DocumentShare.expires_at < now,
             )
         )

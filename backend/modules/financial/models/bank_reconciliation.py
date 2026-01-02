@@ -1,10 +1,10 @@
 """Model para conciliacao bancaria."""
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -19,7 +19,6 @@ from sqlalchemy import (
     Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.models import Base
 

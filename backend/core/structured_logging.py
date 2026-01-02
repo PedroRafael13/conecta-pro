@@ -76,7 +76,7 @@ def setup_structured_logging():
         'uvicorn.access',
         'uvicorn.error',
         'sqlalchemy',
-        'modules.guardian',
+        'modules.field_service',
         'api',
         'core'
     ]
@@ -93,7 +93,7 @@ class GuardianLogger:
     """
 
     def __init__(self, module_name: str):
-        self.logger = logging.getLogger(f"modules.guardian.{module_name}")
+        self.logger = logging.getLogger(f"modules.field_service.{module_name}")
         self.module = module_name
 
     def info(self, message: str, **kwargs):

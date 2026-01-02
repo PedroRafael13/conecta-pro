@@ -38,7 +38,7 @@ router = APIRouter(prefix="/proposals", tags=["CRM - Proposals"])
 @router.post("/", response_model=ProposalDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_proposal(
     data: ProposalCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalDetailResponse:
     """
@@ -59,7 +59,7 @@ async def create_proposal(
 )
 async def create_proposal_from_opportunity(
     data: ProposalCreateFromOpportunity,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalDetailResponse:
     """
@@ -84,8 +84,8 @@ async def create_proposal_from_opportunity(
 
 
 @router.get("/", response_model=ProposalListResponse)
-async def list_proposals(
-    current_user: CurrentActiveUser,
+async def list_proposals(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
@@ -131,7 +131,7 @@ async def list_proposals(
 
 @router.get("/stats", response_model=ProposalStats)
 async def get_proposal_stats(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     created_by_id: Optional[str] = None,
 ) -> ProposalStats:
@@ -147,7 +147,7 @@ async def get_proposal_stats(
 @router.get("/{proposal_id}", response_model=ProposalDetailResponse)
 async def get_proposal(
     proposal_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalDetailResponse:
     """
@@ -169,7 +169,7 @@ async def get_proposal(
 async def update_proposal(
     proposal_id: str,
     data: ProposalUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalDetailResponse:
     """
@@ -193,7 +193,7 @@ async def update_proposal(
 @router.post("/{proposal_id}/submit", response_model=ProposalResponse)
 async def submit_proposal_for_approval(
     proposal_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalResponse:
     """
@@ -218,7 +218,7 @@ async def submit_proposal_for_approval(
 async def process_proposal_approval(
     proposal_id: str,
     data: ProposalApprovalRequest,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalResponse:
     """
@@ -244,7 +244,7 @@ async def process_proposal_approval(
 @router.post("/{proposal_id}/send", response_model=ProposalResponse)
 async def send_proposal(
     proposal_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalResponse:
     """
@@ -270,7 +270,7 @@ async def send_proposal(
 @router.post("/{proposal_id}/accept", response_model=ProposalResponse)
 async def accept_proposal(
     proposal_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalResponse:
     """
@@ -292,7 +292,7 @@ async def accept_proposal(
 @router.post("/{proposal_id}/reject", response_model=ProposalResponse)
 async def reject_proposal(
     proposal_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     reason: Optional[str] = None,
 ) -> ProposalResponse:
@@ -315,7 +315,7 @@ async def reject_proposal(
 @router.post("/{proposal_id}/new-version", response_model=ProposalDetailResponse)
 async def create_new_version(
     proposal_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalDetailResponse:
     """
@@ -342,7 +342,7 @@ async def create_new_version(
 @router.delete("/{proposal_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_proposal(
     proposal_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -367,7 +367,7 @@ async def delete_proposal(
 async def add_proposal_item(
     proposal_id: str,
     data: ProposalItemCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalItemResponse:
     """
@@ -393,7 +393,7 @@ async def add_proposal_item(
 async def remove_proposal_item(
     proposal_id: str,
     item_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -421,7 +421,7 @@ async def remove_proposal_item(
 )
 async def create_template(
     data: ProposalTemplateCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalTemplateResponse:
     """
@@ -435,7 +435,7 @@ async def create_template(
 
 @router.get("/templates", response_model=list[ProposalTemplateResponse])
 async def list_templates(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> list[ProposalTemplateResponse]:
     """
@@ -449,7 +449,7 @@ async def list_templates(
 @router.get("/templates/{template_id}", response_model=ProposalTemplateResponse)
 async def get_template(
     template_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalTemplateResponse:
     """
@@ -471,7 +471,7 @@ async def get_template(
 async def update_template(
     template_id: str,
     data: ProposalTemplateUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ProposalTemplateResponse:
     """
@@ -493,7 +493,7 @@ async def update_template(
 @router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_template(
     template_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

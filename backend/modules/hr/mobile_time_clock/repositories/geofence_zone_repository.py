@@ -41,7 +41,10 @@ class GeofenceZoneRepository:
             center_latitude=data.center_latitude,
             center_longitude=data.center_longitude,
             radius_meters=data.radius_meters,
-            polygon_coordinates=[c.model_dump() for c in data.polygon_coordinates] if data.polygon_coordinates else None,
+            polygon_coordinates=(
+                [c.model_dump() for c in data.polygon_coordinates]
+                if data.polygon_coordinates else None
+            ),
             address=data.address,
             city=data.city,
             state=data.state,
@@ -59,8 +62,14 @@ class GeofenceZoneRepository:
             exit_tolerance_minutes=data.exit_tolerance_minutes,
             grace_period_meters=data.grace_period_meters,
             allow_all_employees=data.allow_all_employees,
-            allowed_employees=[str(e) for e in data.allowed_employees] if data.allowed_employees else None,
-            allowed_departments=[str(d) for d in data.allowed_departments] if data.allowed_departments else None,
+            allowed_employees=(
+                [str(e) for e in data.allowed_employees]
+                if data.allowed_employees else None
+            ),
+            allowed_departments=(
+                [str(d) for d in data.allowed_departments]
+                if data.allowed_departments else None
+            ),
             is_primary=data.is_primary,
             priority=data.priority,
             created_by=created_by,
@@ -89,7 +98,7 @@ class GeofenceZoneRepository:
         )
 
         if active_only:
-            query = query.where(GeofenceZone.is_active == True)
+            query = query.where(GeofenceZone.is_active.is_(True))
             query = query.where(GeofenceZone.status == ZoneStatus.ACTIVE.value)
 
         result = await self.db.execute(
@@ -105,7 +114,7 @@ class GeofenceZoneRepository:
         result = await self.db.execute(
             select(GeofenceZone)
             .where(GeofenceZone.post_id == post_id)
-            .where(GeofenceZone.is_active == True)
+            .where(GeofenceZone.is_active.is_(True))
             .order_by(GeofenceZone.priority.desc())
         )
         return list(result.scalars().all())
@@ -186,7 +195,7 @@ class GeofenceZoneRepository:
             employee_id,
         )
 
-        for zone, distance, is_inside in zones:
+        for zone, _distance, is_inside in zones:
             if is_inside:
                 return zone
 

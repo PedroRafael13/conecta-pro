@@ -1,4 +1,5 @@
 """Controller para TimeEntry (Registros de Ponto)."""
+# pylint: disable=unused-argument
 
 from datetime import date
 from typing import Optional
@@ -79,7 +80,7 @@ async def create_time_entry(
     response_model=list[TimeEntryListResponse],
     summary="Listar registros de ponto",
 )
-async def list_time_entries(
+async def list_time_entries(  # pylint: disable=too-many-locals
     employee_id: Optional[str] = None,
     entry_type: Optional[EntryType] = None,
     entry_status: Optional[EntryStatus] = Query(None, alias="status"),
@@ -115,7 +116,7 @@ async def list_time_entries(
         is_manual_entry=is_manual_entry,
     )
 
-    entries, total = await repo.list(filters, skip, limit)
+    entries, _total = await repo.list(filters, skip, limit)
 
     return entries
 

@@ -15,12 +15,9 @@ from modules.hr.analytics_dashboard.schemas import (
     KPIDefinitionCreate,
     KPIDefinitionUpdate,
     KPIDefinitionResponse,
-    KPIValueRequest,
     KPIValueResponse,
     KPIDashboardResponse,
-    KPIHistoryRequest,
     KPIHistoryResponse,
-    KPIHistoryPoint,
 )
 from modules.hr.analytics_dashboard.repositories import KPIRepository
 from modules.hr.analytics_dashboard.services import KPICalculatorService
@@ -40,7 +37,7 @@ async def list_kpis(
 ):
     """Lista definições de KPIs."""
     repo = KPIRepository(db)
-    kpis, total = await repo.list_kpis(
+    kpis, _total = await repo.list_kpis(
         condominio_id=current_user["condominio_id"],
         category=category,
         featured_only=featured_only,
@@ -163,7 +160,7 @@ async def update_kpi(
     kpi_id: UUID,
     data: KPIDefinitionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Atualiza definição de KPI."""
     repo = KPIRepository(db)
@@ -180,7 +177,7 @@ async def update_kpi(
 async def delete_kpi(
     kpi_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Deleta KPI personalizado."""
     repo = KPIRepository(db)
@@ -298,7 +295,7 @@ async def toggle_featured(
     kpi_id: UUID,
     featured: bool = Query(...),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Alterna destaque de um KPI."""
     repo = KPIRepository(db)

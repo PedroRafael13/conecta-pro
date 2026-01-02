@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID

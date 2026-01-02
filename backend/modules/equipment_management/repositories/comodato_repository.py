@@ -79,7 +79,7 @@ class ComodatoRepository:
             select(EquipmentComodato).where(
                 and_(
                     EquipmentComodato.id == comodato_id,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
         )
@@ -91,7 +91,7 @@ class ComodatoRepository:
             select(EquipmentComodato).where(
                 and_(
                     EquipmentComodato.comodato_code == code,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
         )
@@ -104,7 +104,7 @@ class ComodatoRepository:
                 and_(
                     EquipmentComodato.equipment_id == equipment_id,
                     EquipmentComodato.status == ComodatoStatus.ACTIVE,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
         )
@@ -140,14 +140,14 @@ class ComodatoRepository:
         logger.info(f"Comodato desativado: {comodato.comodato_code}")
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[ComodatoFilter] = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[EquipmentComodato], int]:
         """Lista comodatos com filtros e paginação."""
-        query = select(EquipmentComodato).where(EquipmentComodato.is_active == True)
+        query = select(EquipmentComodato).where(EquipmentComodato.is_active.is_(True))
 
         if filters:
             conditions = []
@@ -175,15 +175,15 @@ class ComodatoRepository:
 
             if filters.is_signed is not None:
                 if filters.is_signed:
-                    conditions.append(EquipmentComodato.signed_at != None)
+                    conditions.append(EquipmentComodato.signed_at.isnot(None))
                 else:
-                    conditions.append(EquipmentComodato.signed_at == None)
+                    conditions.append(EquipmentComodato.signed_at.is_(None))
 
             if filters.is_delivered is not None:
                 if filters.is_delivered:
-                    conditions.append(EquipmentComodato.delivered_at != None)
+                    conditions.append(EquipmentComodato.delivered_at.isnot(None))
                 else:
-                    conditions.append(EquipmentComodato.delivered_at == None)
+                    conditions.append(EquipmentComodato.delivered_at.is_(None))
 
             if filters.is_expired is not None:
                 now = datetime.utcnow()
@@ -198,7 +198,7 @@ class ComodatoRepository:
                     conditions.append(
                         or_(
                             EquipmentComodato.end_date >= now,
-                            EquipmentComodato.end_date == None,
+                            EquipmentComodato.end_date.is_(None),
                         )
                     )
 
@@ -236,7 +236,7 @@ class ComodatoRepository:
             .where(
                 and_(
                     EquipmentComodato.client_id == client_id,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
             .order_by(EquipmentComodato.created_at.desc())
@@ -247,7 +247,7 @@ class ComodatoRepository:
         """Lista comodatos ativos."""
         conditions = [
             EquipmentComodato.status == ComodatoStatus.ACTIVE,
-            EquipmentComodato.is_active == True,
+            EquipmentComodato.is_active.is_(True),
         ]
 
         if client_id:
@@ -267,7 +267,7 @@ class ComodatoRepository:
             .where(
                 and_(
                     EquipmentComodato.status == ComodatoStatus.PENDING_SIGNATURE,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
             .order_by(EquipmentComodato.created_at)
@@ -281,9 +281,9 @@ class ComodatoRepository:
             .where(
                 and_(
                     EquipmentComodato.status == ComodatoStatus.ACTIVE,
-                    EquipmentComodato.signed_at != None,
-                    EquipmentComodato.delivered_at == None,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.signed_at.isnot(None),
+                    EquipmentComodato.delivered_at.is_(None),
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
             .order_by(EquipmentComodato.signed_at)
@@ -296,9 +296,9 @@ class ComodatoRepository:
             select(EquipmentComodato)
             .where(
                 and_(
-                    EquipmentComodato.return_requested_at != None,
-                    EquipmentComodato.returned_at == None,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.return_requested_at.isnot(None),
+                    EquipmentComodato.returned_at.is_(None),
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
             .order_by(EquipmentComodato.return_scheduled_at)
@@ -317,7 +317,7 @@ class ComodatoRepository:
                     EquipmentComodato.end_date > now,
                     EquipmentComodato.end_date <= limit_date,
                     EquipmentComodato.status == ComodatoStatus.ACTIVE,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
             .order_by(EquipmentComodato.end_date)
@@ -333,8 +333,8 @@ class ComodatoRepository:
                 and_(
                     EquipmentComodato.end_date < now,
                     EquipmentComodato.status == ComodatoStatus.ACTIVE,
-                    EquipmentComodato.returned_at == None,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.returned_at.is_(None),
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
             .order_by(EquipmentComodato.end_date)
@@ -347,8 +347,8 @@ class ComodatoRepository:
             select(EquipmentComodato)
             .where(
                 and_(
-                    EquipmentComodato.has_damages == True,
-                    EquipmentComodato.is_active == True,
+                    EquipmentComodato.has_damages.is_(True),
+                    EquipmentComodato.is_active.is_(True),
                 )
             )
             .order_by(EquipmentComodato.returned_at.desc())
@@ -511,9 +511,11 @@ class ComodatoRepository:
         logger.info(f"Comodato transferido: {comodato.comodato_code}")
         return comodato
 
-    async def get_stats(self, client_id: Optional[str] = None) -> dict:
+    async def get_stats(  # pylint: disable=too-many-branches
+        self, client_id: Optional[str] = None
+    ) -> dict:
         """Estatísticas de comodatos."""
-        conditions = [EquipmentComodato.is_active == True]
+        conditions = [EquipmentComodato.is_active.is_(True)]
 
         if client_id:
             conditions.append(EquipmentComodato.client_id == client_id)

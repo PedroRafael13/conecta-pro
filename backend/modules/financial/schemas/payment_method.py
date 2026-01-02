@@ -87,7 +87,7 @@ class PaymentMethodResponse(PaymentMethodBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -106,7 +106,7 @@ class PaymentMethodListResponse(BaseModel):
     days_to_process: int
     is_default: bool
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True

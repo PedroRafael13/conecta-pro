@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from modules.hr.payroll_integration.models import ExportFormat, ExportStatus
+from modules.hr.payroll_integration.models import ExportFormat
 
 
 class ExportScopeSchema(BaseModel):
@@ -55,7 +55,7 @@ class PayrollExportCreate(PayrollExportBase):
 
     @field_validator("period_id", "integration_id")
     @classmethod
-    def validate_source(cls, v, info):
+    def validate_source(cls, v, info):  # pylint: disable=unused-argument
         """Valida que pelo menos um source foi informado."""
         return v
 

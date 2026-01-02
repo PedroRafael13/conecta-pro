@@ -226,7 +226,7 @@ class REPDeviceRepository:
     async def update_sync_timestamp(
         self,
         device_id: UUID,
-        last_nsr: int = None,
+        last_nsr: int = None,  # pylint: disable=unused-argument
         events_count: int = None,
     ) -> None:
         """Atualiza timestamp de última sincronização."""

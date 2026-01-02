@@ -119,7 +119,8 @@ class WorkSchedule(Base):
     break_duration_minutes: Mapped[int] = mapped_column(Integer, default=60)
 
     # Horários por dia da semana (JSON)
-    # Formato: {"segunda": {"entry": "08:00", "exit": "17:48", "break_start": "12:00", "break_end": "13:00"}}
+    # Formato: {"segunda": {"entry": "08:00", "exit": "17:48",
+    #                       "break_start": "12:00", "break_end": "13:00"}}
     daily_schedule: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
 
     # Dias trabalhados
@@ -409,12 +410,14 @@ class WorkSchedule(Base):
         max_positive = self.time_bank_max_positive_hours * 60
         max_negative = -self.time_bank_max_negative_hours * 60
 
-        if self.time_bank_balance_minutes > max_positive:
-            self.time_bank_balance_minutes = max_positive
-        elif self.time_bank_balance_minutes < max_negative:
-            self.time_bank_balance_minutes = max_negative
+        self.time_bank_balance_minutes = min(
+            self.time_bank_balance_minutes, max_positive
+        )
+        self.time_bank_balance_minutes = max(
+            self.time_bank_balance_minutes, max_negative
+        )
 
-    def is_within_allowed_location(
+    def is_within_allowed_location(  # pylint: disable=too-many-locals
         self, latitude: float, longitude: float
     ) -> bool:
         """Verifica se coordenadas estão em área permitida.
@@ -432,6 +435,7 @@ class WorkSchedule(Base):
         if not self.allowed_locations:
             return True
 
+        # pylint: disable=import-outside-toplevel
         from math import radians, sin, cos, sqrt, atan2
 
         for location in self.allowed_locations:

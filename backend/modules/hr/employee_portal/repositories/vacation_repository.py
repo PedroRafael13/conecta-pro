@@ -12,7 +12,6 @@ from modules.hr.employee_portal.models import (
     VacationPeriod,
     VacationRequest,
     VacationStatus,
-    VacationType,
 )
 from modules.hr.employee_portal.schemas import (
     VacationPeriodCreate,
@@ -53,7 +52,11 @@ class VacationPeriodRepository:
         await self.db.commit()
         await self.db.refresh(period)
 
-        logger.info("Período aquisitivo %s criado para funcionário %s", period.id, data.employee_id)
+        logger.info(
+            "Período aquisitivo %s criado para funcionário %s",
+            period.id,
+            data.employee_id,
+        )
         return period
 
     async def get_by_id(self, period_id: UUID) -> Optional[VacationPeriod]:
@@ -187,6 +190,7 @@ class VacationRequestRepository:
 
     def _generate_code(self) -> str:
         """Gera código único da solicitação."""
+        # pylint: disable=import-outside-toplevel
         import random
         import string
         suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=8))
@@ -403,7 +407,11 @@ class VacationRequestRepository:
         await self.db.commit()
         await self.db.refresh(request)
 
-        logger.info("Férias %s programadas para %s", request.request_code, request.start_date)
+        logger.info(
+            "Férias %s programadas para %s",
+            request.request_code,
+            request.start_date,
+        )
         return request
 
     async def cancel(

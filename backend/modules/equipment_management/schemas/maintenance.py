@@ -235,9 +235,9 @@ class MaintenanceStats(BaseModel):
     """Estatísticas de manutenções."""
 
     total: int = Field(default=0, description="Total")
-    by_status: dict = Field(default_factory=dict, description="Por status")
-    by_type: dict = Field(default_factory=dict, description="Por tipo")
-    by_priority: dict = Field(default_factory=dict, description="Por prioridade")
+    by_status: dict[str, int] = Field(default_factory=dict, description="Por status")
+    by_type: dict[str, int] = Field(default_factory=dict, description="Por tipo")
+    by_priority: dict[str, int] = Field(default_factory=dict, description="Por prioridade")
 
     scheduled: int = Field(default=0, description="Agendadas")
     in_progress: int = Field(default=0, description="Em andamento")

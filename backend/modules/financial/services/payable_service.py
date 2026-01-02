@@ -6,6 +6,8 @@ from decimal import Decimal
 from typing import List, Optional, Tuple
 from uuid import UUID
 
+from dateutil.relativedelta import relativedelta
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
@@ -80,7 +82,7 @@ class PayableService:
         self,
         account_id: UUID,
         data: PayableAccountUpdate,
-        user_id: UUID,
+        user_id: UUID,  # pylint: disable=unused-argument
     ) -> Optional[PayableAccount]:
         """Atualiza uma conta a pagar."""
         account = await self.account_repo.get_by_id(account_id)
@@ -96,7 +98,7 @@ class PayableService:
         logger.info(f"Conta atualizada: {account_id}")
         return account
 
-    async def delete_account(self, account_id: UUID, user_id: UUID) -> bool:
+    async def delete_account(self, account_id: UUID, user_id: UUID) -> bool:  # pylint: disable=unused-argument
         """Deleta uma conta (soft delete)."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -155,7 +157,7 @@ class PayableService:
                     success_count += 1
                 else:
                     error_count += 1
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 logger.error(f"Erro ao aprovar conta {account_id}: {e}")
                 error_count += 1
 
@@ -164,7 +166,7 @@ class PayableService:
     async def reject_account(
         self,
         account_id: UUID,
-        user_id: UUID,
+        user_id: UUID,  # pylint: disable=unused-argument
         reason: str,
     ) -> Optional[PayableAccount]:
         """Rejeita uma conta."""
@@ -225,7 +227,6 @@ class PayableService:
 
         # Cria o pagamento
         payment = await self.payment_repo.create(
-            installment_id=installment_id,
             data=data,
             user_id=user_id,
         )
@@ -263,7 +264,7 @@ class PayableService:
                 payment_ids.append(payment.id)
                 success_count += 1
 
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 logger.error(f"Erro ao pagar parcela {installment_id}: {e}")
                 error_count += 1
 
@@ -361,7 +362,7 @@ class PayableService:
         self,
         installment_id: UUID,
         request: PayableInstallmentRenegotiateRequest,
-        user_id: UUID,
+        user_id: UUID,  # pylint: disable=unused-argument
     ) -> Optional[PayableInstallment]:
         """Renegocia uma parcela."""
         installment = await self.installment_repo.get_by_id(installment_id)
@@ -476,8 +477,6 @@ class PayableService:
         last_date: date,
     ) -> Optional[date]:
         """Calcula próxima data de recorrência."""
-        from dateutil.relativedelta import relativedelta
-
         recurrence_map = {
             "DIARIO": relativedelta(days=1),
             "SEMANAL": relativedelta(weeks=1),

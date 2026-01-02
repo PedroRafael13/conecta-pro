@@ -328,7 +328,7 @@ class ReceivableAccount(Base):
         self.status = ReceivableStatus.SUSPENSA.value
         self.internal_notes = f"Suspensa: {reason}\n{self.internal_notes or ''}"
 
-    def protest(self, user_id: uuid.UUID, protest_number: str) -> None:
+    def protest(self, user_id: uuid.UUID, protest_number: str) -> None:  # pylint: disable=unused-argument
         """Envia para protesto."""
         self.is_protested = True
         self.protested_at = datetime.utcnow()

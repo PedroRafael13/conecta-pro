@@ -23,6 +23,7 @@ class GeofenceZoneBase(BaseModel):
     @field_validator("zone_type")
     @classmethod
     def validate_zone_type(cls, v: str) -> str:
+        """Valida tipo de zona."""
         allowed = ["circle", "polygon", "rectangle"]
         if v.lower() not in allowed:
             raise ValueError(f"Zone type must be one of: {allowed}")
@@ -31,6 +32,7 @@ class GeofenceZoneBase(BaseModel):
     @field_validator("category")
     @classmethod
     def validate_category(cls, v: str) -> str:
+        """Valida categoria."""
         allowed = ["headquarters", "branch", "client_site", "external", "home_office", "temporary"]
         if v.lower() not in allowed:
             raise ValueError(f"Category must be one of: {allowed}")
@@ -168,7 +170,9 @@ class GeofenceZoneResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do Pydantic."""
+
         from_attributes = True
 
 

@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.equipment_management.models.maintenance import (
     EquipmentMaintenance,
-    MaintenancePriority,
     MaintenanceStatus,
     MaintenanceType,
 )
@@ -75,7 +74,7 @@ class MaintenanceRepository:
             select(EquipmentMaintenance).where(
                 and_(
                     EquipmentMaintenance.id == maintenance_id,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
         )
@@ -87,7 +86,7 @@ class MaintenanceRepository:
             select(EquipmentMaintenance).where(
                 and_(
                     EquipmentMaintenance.maintenance_code == code,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
         )
@@ -123,7 +122,7 @@ class MaintenanceRepository:
         logger.info(f"Manutenção desativada: {maintenance.maintenance_code}")
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches,too-many-statements
         self,
         filters: Optional[MaintenanceFilter] = None,
         page: int = 1,
@@ -131,7 +130,7 @@ class MaintenanceRepository:
     ) -> tuple[list[EquipmentMaintenance], int]:
         """Lista manutenções com filtros e paginação."""
         query = select(EquipmentMaintenance).where(
-            EquipmentMaintenance.is_active == True
+            EquipmentMaintenance.is_active.is_(True)
         )
 
         if filters:
@@ -193,7 +192,7 @@ class MaintenanceRepository:
                     conditions.append(
                         or_(
                             EquipmentMaintenance.sla_deadline >= now,
-                            EquipmentMaintenance.sla_deadline == None,
+                            EquipmentMaintenance.sla_deadline.is_(None),
                             EquipmentMaintenance.status.in_(
                                 [
                                     MaintenanceStatus.COMPLETED,
@@ -256,7 +255,7 @@ class MaintenanceRepository:
             .where(
                 and_(
                     EquipmentMaintenance.equipment_id == equipment_id,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
             .order_by(EquipmentMaintenance.created_at.desc())
@@ -270,7 +269,7 @@ class MaintenanceRepository:
             .where(
                 and_(
                     EquipmentMaintenance.client_id == client_id,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
             .order_by(EquipmentMaintenance.created_at.desc())
@@ -283,7 +282,7 @@ class MaintenanceRepository:
         """Lista manutenções de um técnico."""
         conditions = [
             EquipmentMaintenance.technician_id == technician_id,
-            EquipmentMaintenance.is_active == True,
+            EquipmentMaintenance.is_active.is_(True),
         ]
 
         if not include_completed:
@@ -321,7 +320,7 @@ class MaintenanceRepository:
                 and_(
                     EquipmentMaintenance.scheduled_date >= start,
                     EquipmentMaintenance.scheduled_date < end,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                     EquipmentMaintenance.status.in_(
                         [
                             MaintenanceStatus.SCHEDULED,
@@ -354,7 +353,7 @@ class MaintenanceRepository:
                             MaintenanceStatus.WAITING_PARTS,
                         ]
                     ),
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
             .order_by(EquipmentMaintenance.sla_deadline)
@@ -368,7 +367,7 @@ class MaintenanceRepository:
             .where(
                 and_(
                     EquipmentMaintenance.status == MaintenanceStatus.WAITING_PARTS,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
             .order_by(EquipmentMaintenance.priority.desc())
@@ -382,9 +381,9 @@ class MaintenanceRepository:
             select(EquipmentMaintenance)
             .where(
                 and_(
-                    EquipmentMaintenance.needs_followup == True,
+                    EquipmentMaintenance.needs_followup.is_(True),
                     EquipmentMaintenance.followup_date <= now,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
             .order_by(EquipmentMaintenance.followup_date)
@@ -398,10 +397,10 @@ class MaintenanceRepository:
             select(EquipmentMaintenance)
             .where(
                 and_(
-                    EquipmentMaintenance.is_recurring == True,
+                    EquipmentMaintenance.is_recurring.is_(True),
                     EquipmentMaintenance.next_maintenance_date <= now,
                     EquipmentMaintenance.status == MaintenanceStatus.COMPLETED,
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
             .order_by(EquipmentMaintenance.next_maintenance_date)
@@ -507,14 +506,14 @@ class MaintenanceRepository:
         logger.info(f"Manutenção assinada: {maintenance.maintenance_code}")
         return maintenance
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements,E1137
         self,
         client_id: Optional[str] = None,
         date_from: Optional[datetime] = None,
         date_to: Optional[datetime] = None,
     ) -> MaintenanceStats:
         """Calcula estatísticas de manutenções."""
-        conditions = [EquipmentMaintenance.is_active == True]
+        conditions = [EquipmentMaintenance.is_active.is_(True)]
 
         if client_id:
             conditions.append(EquipmentMaintenance.client_id == client_id)

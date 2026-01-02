@@ -4,13 +4,12 @@ from datetime import datetime, date, timedelta
 from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, update, and_
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
     MobileCheckIn,
     CheckInStatus,
-    CheckInType,
 )
 from modules.hr.mobile_time_clock.schemas import (
     MobileCheckInCreate,
@@ -283,7 +282,7 @@ class MobileCheckInRepository:
         )
         return list(result.scalars().all())
 
-    async def get_statistics(
+    async def get_statistics(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID = None,
         date_from: date = None,

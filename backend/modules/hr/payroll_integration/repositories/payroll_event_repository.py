@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.payroll_integration.models import (

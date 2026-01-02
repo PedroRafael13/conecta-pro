@@ -1,22 +1,14 @@
 """Cost AI Service - Inteligência Artificial para Análise de Custos."""
 
 import statistics
-from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.costing.models import (
-    AnalysisScope,
-    AnalysisStatus,
     AnalysisType,
-    CostActivity,
-    CostAllocation,
     CostAnalysis,
-    CostObject,
-    CostPool,
     ProfitabilityLevel,
     ValueAddedType,
 )
@@ -41,7 +33,7 @@ class CostAIService:
         self.allocation_repo = CostAllocationRepository(db)
         self.analysis_repo = CostAnalysisRepository(db)
 
-    async def analyze_profitability(
+    async def analyze_profitability(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         object_ids: list[UUID] = None,
@@ -166,7 +158,7 @@ class CostAIService:
             "recommendations": recommendations,
         }
 
-    async def analyze_idle_capacity(
+    async def analyze_idle_capacity(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
     ) -> dict:
@@ -299,7 +291,10 @@ class CostAIService:
                         "z_score": round(z_score, 2),
                         "severity": severity,
                         "type": "high_value" if z_score > 0 else "low_value",
-                        "date": allocation.allocation_date.isoformat() if allocation.allocation_date else None,
+                        "date": (
+                            allocation.allocation_date.isoformat()
+                            if allocation.allocation_date else None
+                        ),
                     })
 
         # Ordenar por z_score absoluto
@@ -473,7 +468,7 @@ class CostAIService:
             "suggestions": suggestions,
         }
 
-    async def forecast_costs(
+    async def forecast_costs(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         periods_ahead: int = 3,
@@ -630,7 +625,7 @@ class CostAIService:
 
             analysis.complete(results)
 
-        except Exception as e:
+        except (ValueError, TypeError, RuntimeError) as e:
             analysis.fail(str(e))
 
         await self.analysis_repo.update(analysis)

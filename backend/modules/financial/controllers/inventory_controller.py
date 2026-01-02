@@ -2,7 +2,7 @@
 
 import logging
 import uuid
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from typing import Optional
 
@@ -13,26 +13,20 @@ from core.auth.dependencies import get_current_user
 from core.database import get_db
 from modules.financial.models.stock_inventory import (
     InventoryStatus,
-    InventoryType,
     StockInventory,
-    StockInventoryItem,
 )
 from modules.financial.models.stock_item import StockItem, StockItemStatus
 from modules.financial.models.stock_movement import (
-    MovementReason,
     MovementStatus,
     MovementType,
     StockMovement,
 )
 from modules.financial.models.stock_reservation import (
-    ReservationPriority,
     ReservationStatus,
-    ReservationType,
     StockReservation,
 )
-from modules.financial.models.warehouse import Warehouse, WarehouseStatus, WarehouseType
+from modules.financial.models.warehouse import Warehouse, WarehouseStatus
 from modules.financial.repositories.inventory_repository import (
-    StockInventoryItemRepository,
     StockInventoryRepository,
     StockItemRepository,
     StockMovementRepository,
@@ -41,30 +35,20 @@ from modules.financial.repositories.inventory_repository import (
 )
 from modules.financial.schemas.inventory_schemas import (
     InventoryStats,
-    MovementFilter,
     MovementStats,
     ReservationStats,
-    StockFilter,
     StockInventoryCreate,
-    StockInventoryItemCount,
-    StockInventoryItemCreate,
-    StockInventoryItemResponse,
     StockInventoryListResponse,
     StockInventoryResponse,
-    StockInventoryUpdate,
-    StockItemCreate,
     StockItemListResponse,
     StockItemResponse,
-    StockItemUpdate,
     StockMovementCreate,
     StockMovementListResponse,
     StockMovementResponse,
-    StockMovementUpdate,
     StockReservationCreate,
     StockReservationListResponse,
     StockReservationRelease,
     StockReservationResponse,
-    StockReservationUpdate,
     StockStats,
     WarehouseCreate,
     WarehouseListResponse,
@@ -85,7 +69,7 @@ router = APIRouter(prefix="/inventory", tags=["Estoque"])
 
 @router.get("/warehouses", response_model=list[WarehouseListResponse])
 async def list_warehouses(
-    status: Optional[WarehouseStatus] = None,
+    item_status: Optional[WarehouseStatus] = Query(None, alias="status"),
     warehouse_type: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -97,7 +81,7 @@ async def list_warehouses(
         repo = WarehouseRepository(db)
         warehouses = repo.list_all(
             condominio_id=_current_user["condominio_id"],
-            status=status,
+            status=item_status,
             warehouse_type=warehouse_type,
             skip=skip,
             limit=limit,
@@ -302,7 +286,7 @@ async def unblock_warehouse(
 async def list_stock_items(
     warehouse_id: Optional[uuid.UUID] = None,
     product_id: Optional[uuid.UUID] = None,
-    status: Optional[StockItemStatus] = None,
+    item_status: Optional[StockItemStatus] = Query(None, alias="status"),
     is_low_stock: Optional[bool] = None,
     is_expired: Optional[bool] = None,
     skip: int = Query(0, ge=0),
@@ -315,7 +299,7 @@ async def list_stock_items(
         repo = StockItemRepository(db)
 
         if warehouse_id:
-            items = repo.list_by_warehouse(warehouse_id, status, skip, limit)
+            items = repo.list_by_warehouse(warehouse_id, item_status, skip, limit)
         elif product_id:
             items = repo.list_by_product(
                 product_id, _current_user["condominio_id"], include_zero=True
@@ -329,7 +313,7 @@ async def list_stock_items(
             wh_repo = WarehouseRepository(db)
             main_wh = wh_repo.get_main_warehouse(_current_user["condominio_id"])
             if main_wh:
-                items = repo.list_by_warehouse(main_wh.id, status, skip, limit)
+                items = repo.list_by_warehouse(main_wh.id, item_status, skip, limit)
             else:
                 items = []
 

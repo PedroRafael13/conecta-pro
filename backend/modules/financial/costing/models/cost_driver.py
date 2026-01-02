@@ -3,14 +3,13 @@
 import enum
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
     Enum,
-    ForeignKey,
     Integer,
     Numeric,
     String,

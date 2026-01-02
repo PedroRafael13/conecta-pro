@@ -12,9 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.logging import logger
 from modules.crm.models.lead import Lead, LeadStatus
 from modules.crm.models.opportunity import (
-    LossReason,
     Opportunity,
-    OpportunityPriority,
     OpportunityStage,
 )
 from modules.crm.schemas.opportunity import (
@@ -373,7 +371,7 @@ class OpportunityRepository:
         logger.info(f"Opportunity deletada (soft): {opportunity.id}")
         return True
 
-    async def get_pipeline_stats(
+    async def get_pipeline_stats(  # pylint: disable=too-many-locals
         self, owner_id: Optional[str] = None
     ) -> PipelineStats:
         """

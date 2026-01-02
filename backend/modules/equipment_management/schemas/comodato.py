@@ -53,7 +53,9 @@ class ComodatoCreate(BaseModel):
 
     damage_penalty_percent: Optional[float] = Field(None, ge=0, le=100, description="% multa dano")
     loss_penalty_percent: float = Field(default=100.0, ge=0, le=100, description="% multa perda")
-    early_return_penalty: Optional[float] = Field(None, ge=0, description="Multa devolução antecipada")
+    early_return_penalty: Optional[float] = Field(
+        None, ge=0, description="Multa devolução antecipada"
+    )
 
     notes: Optional[str] = Field(None, description="Observações")
 

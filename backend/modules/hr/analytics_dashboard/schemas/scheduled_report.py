@@ -37,7 +37,10 @@ class ScheduledReportCreate(ScheduledReportBase):
     # Período dos dados
     period_type: str = Field(
         default="previous_month",
-        pattern="^(previous_day|previous_week|previous_month|previous_quarter|custom|rolling_\\d+_days)$",
+        pattern=(
+            "^(previous_day|previous_week|previous_month|"
+            "previous_quarter|custom|rolling_\\d+_days)$"
+        ),
     )
     custom_period_start: Optional[datetime] = None
     custom_period_end: Optional[datetime] = None

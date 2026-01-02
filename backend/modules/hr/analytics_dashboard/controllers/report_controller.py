@@ -15,10 +15,7 @@ from modules.hr.analytics_dashboard.schemas import (
     ScheduledReportCreate,
     ScheduledReportUpdate,
     ScheduledReportResponse,
-    ReportRunRequest,
     ReportRunResponse,
-    ReportHistoryResponse,
-    ReportHistoryItem,
 )
 from modules.hr.analytics_dashboard.repositories import ReportRepository
 from modules.hr.analytics_dashboard.services import ReportGeneratorService
@@ -38,7 +35,7 @@ async def list_reports(
 ):
     """Lista relatórios agendados."""
     repo = ReportRepository(db)
-    reports, total = await repo.list_reports(
+    reports, _total = await repo.list_reports(
         condominio_id=current_user["condominio_id"],
         report_type=report_type,
         status=report_status,
@@ -239,7 +236,7 @@ async def resume_report(
 
 
 @router.get("/{report_id}/history")
-async def get_report_history(
+async def get_report_history(  # pylint: disable=unused-argument
     report_id: UUID,
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),

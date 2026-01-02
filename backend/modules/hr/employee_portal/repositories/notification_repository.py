@@ -359,6 +359,7 @@ class NotificationRepository:
         days_old: int = 90,
     ) -> int:
         """Arquiva notificações antigas."""
+        # pylint: disable=import-outside-toplevel
         from datetime import timedelta
 
         cutoff = datetime.utcnow() - timedelta(days=days_old)

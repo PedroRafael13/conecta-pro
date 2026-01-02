@@ -5,7 +5,9 @@ from datetime import datetime
 from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, func, and_, or_
+import re
+
+from sqlalchemy import select, update, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -58,7 +60,7 @@ class DashboardRepository:
         """Busca dashboard por ID."""
         query = select(DashboardConfig).where(
             DashboardConfig.id == dashboard_id,
-            DashboardConfig.is_active == True,  # noqa: E712
+            DashboardConfig.is_active.is_(True),
         )
         if include_widgets:
             query = query.options(selectinload(DashboardConfig.widgets))
@@ -75,17 +77,17 @@ class DashboardRepository:
         query = select(DashboardConfig).where(
             DashboardConfig.slug == slug,
             DashboardConfig.condominio_id == condominio_id,
-            DashboardConfig.is_active == True,  # noqa: E712
+            DashboardConfig.is_active.is_(True),
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def list_dashboards(
+    async def list_dashboards(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         user_id: UUID,
-        user_role: str = None,
-        department_id: UUID = None,
+        user_role: str = None,  # pylint: disable=unused-argument
+        department_id: UUID = None,  # pylint: disable=unused-argument
         dashboard_type: str = None,
         include_shared: bool = True,
         page: int = 1,
@@ -94,7 +96,7 @@ class DashboardRepository:
         """Lista dashboards com filtros."""
         conditions = [
             DashboardConfig.condominio_id == condominio_id,
-            DashboardConfig.is_active == True,  # noqa: E712
+            DashboardConfig.is_active.is_(True),
         ]
 
         # Filtrar por acesso
@@ -180,7 +182,7 @@ class DashboardRepository:
             .where(
                 DashboardConfig.condominio_id == condominio_id,
                 DashboardConfig.owner_id == owner_id,
-                DashboardConfig.is_default == True,  # noqa: E712
+                DashboardConfig.is_default.is_(True),
             )
             .values(is_default=False)
         )
@@ -221,7 +223,6 @@ class DashboardRepository:
             return None
 
         # Gerar slug único
-        import re
         base_slug = re.sub(r"[^a-zA-Z0-9]+", "-", new_name.lower()).strip("-")
         slug = f"{base_slug}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
 
@@ -303,7 +304,7 @@ class DashboardRepository:
         """Busca widget por ID."""
         query = select(DashboardWidget).where(
             DashboardWidget.id == widget_id,
-            DashboardWidget.is_active == True,  # noqa: E712
+            DashboardWidget.is_active.is_(True),
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -316,10 +317,10 @@ class DashboardRepository:
         """Lista widgets de um dashboard."""
         conditions = [
             DashboardWidget.dashboard_id == dashboard_id,
-            DashboardWidget.is_active == True,  # noqa: E712
+            DashboardWidget.is_active.is_(True),
         ]
         if visible_only:
-            conditions.append(DashboardWidget.is_visible == True)  # noqa: E712
+            conditions.append(DashboardWidget.is_visible.is_(True))
 
         query = (
             select(DashboardWidget)
@@ -411,12 +412,12 @@ class DashboardRepository:
         """Retorna widgets que precisam de refresh."""
         query = select(DashboardWidget).where(
             DashboardWidget.dashboard_id == dashboard_id,
-            DashboardWidget.is_active == True,  # noqa: E712
-            DashboardWidget.is_visible == True,  # noqa: E712
+            DashboardWidget.is_active.is_(True),
+            DashboardWidget.is_visible.is_(True),
             or_(
                 DashboardWidget.last_refreshed_at.is_(None),
-                DashboardWidget.last_refreshed_at
-                < func.now() - func.make_interval(0, 0, 0, 0, 0, 0, DashboardWidget.cache_duration_seconds),
+                DashboardWidget.last_refreshed_at < func.now() - func.make_interval(
+                    0, 0, 0, 0, 0, 0, DashboardWidget.cache_duration_seconds),
             ),
         )
         result = await self.db.execute(query)

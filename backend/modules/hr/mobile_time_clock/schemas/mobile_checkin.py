@@ -54,6 +54,7 @@ class MobileCheckInCreate(BaseModel):
     @field_validator("checkin_type")
     @classmethod
     def validate_checkin_type(cls, v: str) -> str:
+        """Valida tipo de checkin."""
         allowed = ["entry", "exit", "break_start", "break_end", "extra_entry", "extra_exit"]
         if v.lower() not in allowed:
             raise ValueError(f"CheckIn type must be one of: {allowed}")
@@ -117,7 +118,9 @@ class MobileCheckInResponse(BaseModel):
     review_notes: Optional[str]
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do Pydantic."""
+
         from_attributes = True
 
 

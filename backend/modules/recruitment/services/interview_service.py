@@ -8,9 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.recruitment.models.interview import (
     Interview,
-    InterviewType,
     InterviewStatus,
-    InterviewResult,
 )
 from modules.recruitment.schemas.interview import (
     InterviewCreate,
@@ -108,7 +106,7 @@ class InterviewService:
         if interview:
             await self.session.commit()
             logger.info(
-                f"Entrevista atualizada",
+                "Entrevista atualizada",
                 extra={"interview_id": str(interview.id)},
             )
         return interview
@@ -449,7 +447,7 @@ class InterviewService:
 
         return interview
 
-    async def get_available_slots(
+    async def get_available_slots(  # pylint: disable=too-many-locals,too-many-nested-blocks
         self,
         interviewer_ids: List[str],
         start_date: date,

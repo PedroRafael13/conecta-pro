@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from core.auth.dependencies import get_current_user
 from modules.hr.rep_integration.repositories import REPEventRepository
-from modules.hr.rep_integration.services import EventProcessorService, SyncService
+from modules.hr.rep_integration.services import EventProcessorService
 from modules.hr.rep_integration.schemas import (
     REPEventResponse,
     REPEventList,
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/events", tags=["REP Events"])
 
 
 @router.get("/", response_model=REPEventList)
-async def list_events(
+async def list_events(  # pylint: disable=too-many-locals
     device_id: Optional[UUID] = None,
     condominio_id: Optional[UUID] = None,
     employee_id: Optional[UUID] = None,
@@ -39,7 +39,7 @@ async def list_events(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPEventList:
     """Lista eventos de ponto."""
     repo = REPEventRepository(db)
@@ -71,7 +71,7 @@ async def list_events(
 async def get_event(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPEventResponse:
     """Obtém evento por ID."""
     repo = REPEventRepository(db)
@@ -91,7 +91,7 @@ async def process_pending_events(
     device_id: Optional[UUID] = None,
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Processa eventos pendentes."""
     processor = EventProcessorService(db)
@@ -103,7 +103,7 @@ async def link_event_to_employee(
     event_id: UUID,
     data: REPEventProcess,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPEventProcessResult:
     """Vincula evento a funcionário e processa."""
     processor = EventProcessorService(db)
@@ -132,7 +132,7 @@ async def link_event_to_employee(
 async def bulk_link_events(
     mappings: List[dict],
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Vincula múltiplos eventos a funcionários."""
     processor = EventProcessorService(db)
@@ -153,7 +153,7 @@ async def list_unidentified_events(
     date_to: Optional[date] = None,
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Lista eventos sem funcionário identificado."""
     processor = EventProcessorService(db)
@@ -175,7 +175,7 @@ async def reprocess_failed_events(
     device_id: Optional[UUID] = None,
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Reprocessa eventos que falharam."""
     processor = EventProcessorService(db)
@@ -189,7 +189,7 @@ async def get_events_statistics(
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPEventStats:
     """Retorna estatísticas de eventos."""
     repo = REPEventRepository(db)

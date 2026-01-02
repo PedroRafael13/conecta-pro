@@ -45,7 +45,7 @@ async def create_inspection(
 
 
 @router.get("/", response_model=InspectionListResponse)
-async def list_inspections(
+async def list_inspections(  # pylint: disable=too-many-locals
     search: Optional[str] = Query(None),
     inspection_type: Optional[InspectionType] = Query(None, alias="type"),
     inspection_status: Optional[InspectionStatus] = Query(None, alias="status"),

@@ -3,26 +3,21 @@
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
-from uuid import UUID, uuid4
+from typing import Any, Optional
+from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
     Column,
     Date,
     DateTime,
-    ForeignKey,
     Numeric,
     String,
     Text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
-from sqlalchemy.orm import relationship
 
 from core.models.base import Base
-
-if TYPE_CHECKING:
-    pass
 
 
 class TaxRegime(str, Enum):
@@ -176,7 +171,9 @@ class TaxConfiguration(Base):
     tax_regime = Column(String(30), nullable=False, index=True)
 
     # Configuracao
-    calculation_type = Column(String(30), nullable=False, default=TaxCalculationType.PERCENTUAL.value)
+    calculation_type = Column(
+        String(30), nullable=False, default=TaxCalculationType.PERCENTUAL.value
+    )
     rate = Column(Numeric(8, 4), nullable=True)  # Aliquota em %
     fixed_value = Column(Numeric(15, 2), nullable=True)  # Valor fixo
     base_reduction = Column(Numeric(8, 4), nullable=True)  # Reducao de base (%)

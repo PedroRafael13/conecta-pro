@@ -8,7 +8,6 @@ from difflib import SequenceMatcher
 
 from modules.recruitment.models.job_position import JobPosition
 from modules.recruitment.models.candidate import Candidate
-from modules.recruitment.models.application import Application
 from modules.recruitment.models.candidate_skill import CandidateSkill, SkillLevel
 
 logger = logging.getLogger(__name__)
@@ -99,7 +98,7 @@ class RecruitmentAIService:
 
         # Calcula score final ponderado
         final_score = sum(
-            scores[key] * self.WEIGHTS[key] for key in scores
+            score * self.WEIGHTS[key] for key, score in scores.items()
         )
 
         return {
@@ -110,7 +109,7 @@ class RecruitmentAIService:
             "calculated_at": datetime.utcnow().isoformat(),
         }
 
-    async def _calculate_skills_match(
+    async def _calculate_skills_match(  # pylint: disable=too-many-locals,too-many-branches
         self,
         candidate: Candidate,
         position: JobPosition,
@@ -304,7 +303,7 @@ class RecruitmentAIService:
             "meets_requirement": candidate_value >= required_value,
         }
 
-    def _calculate_salary_match(
+    def _calculate_salary_match(  # pylint: disable=too-many-branches,too-many-return-statements
         self,
         candidate: Candidate,
         position: JobPosition,
@@ -357,7 +356,7 @@ class RecruitmentAIService:
             "compatible": score >= 0.7,
         }
 
-    def _calculate_location_match(
+    def _calculate_location_match(  # pylint: disable=too-many-return-statements
         self,
         candidate: Candidate,
         position: JobPosition,
@@ -394,7 +393,7 @@ class RecruitmentAIService:
 
         return {"score": 0.3, "reason": "Localização incompatível"}
 
-    def _calculate_availability_match(
+    def _calculate_availability_match(  # pylint: disable=too-many-return-statements
         self,
         candidate: Candidate,
         position: JobPosition,
@@ -498,7 +497,9 @@ class RecruitmentAIService:
 
         return rankings
 
-    async def parse_resume(self, resume_text: str) -> Dict[str, Any]:
+    async def parse_resume(  # pylint: disable=too-many-branches,too-many-locals
+        self, resume_text: str
+    ) -> Dict[str, Any]:
         """
         Extrai informações do currículo.
 
@@ -668,9 +669,9 @@ class RecruitmentAIService:
 
         return gaps
 
-    async def generate_interview_questions(
+    async def generate_interview_questions(  # pylint: disable=too-many-locals
         self,
-        candidate: Candidate,
+        candidate: Candidate,  # pylint: disable=unused-argument
         position: JobPosition,
         matching_result: Dict = None,
     ) -> List[Dict[str, Any]]:

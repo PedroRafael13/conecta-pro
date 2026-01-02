@@ -26,7 +26,7 @@ class MaintenanceAIService:
         """Inicializa o service."""
         self.session = session
 
-    async def analyze_equipment_health(
+    async def analyze_equipment_health(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self, equipment_id: str | UUID
     ) -> Optional[dict]:
         """Analisa saúde do equipamento e gera score."""
@@ -36,7 +36,7 @@ class MaintenanceAIService:
         # Buscar equipamento
         result = await self.session.execute(
             select(Equipment).where(
-                and_(Equipment.id == equipment_id, Equipment.is_active == True)
+                and_(Equipment.id == equipment_id, Equipment.is_active.is_(True))
             )
         )
         equipment = result.scalar_one_or_none()
@@ -49,7 +49,7 @@ class MaintenanceAIService:
             .where(
                 and_(
                     EquipmentMaintenance.equipment_id == str(equipment_id),
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
             .order_by(EquipmentMaintenance.created_at.desc())
@@ -148,7 +148,9 @@ class MaintenanceAIService:
                     risk_factors.append({
                         "factor": "high_corrective_ratio",
                         "severity": "medium",
-                        "description": f"Alto índice de manutenções corretivas: {corrective_ratio:.0%}",
+                        "description": (
+                            f"Alto índice de manutenções corretivas: {corrective_ratio:.0%}"
+                        ),
                     })
                     recommendations.append({
                         "action": "increase_preventive",
@@ -276,13 +278,13 @@ class MaintenanceAIService:
             "prediction_date": datetime.utcnow().isoformat(),
         }
 
-    async def recommend_maintenance_schedule(
+    async def recommend_maintenance_schedule(  # pylint: disable=too-many-locals
         self, client_id: Optional[str] = None
     ) -> list[dict]:
         """Recomenda agenda de manutenções preventivas."""
         # Buscar equipamentos que precisam de atenção
         conditions = [
-            Equipment.is_active == True,
+            Equipment.is_active.is_(True),
             Equipment.status == EquipmentStatus.INSTALADO,
         ]
 
@@ -363,7 +365,7 @@ class MaintenanceAIService:
 
         return recommendations
 
-    async def optimize_technician_route(
+    async def optimize_technician_route(  # pylint: disable=too-many-locals
         self, technician_id: str, date: datetime
     ) -> list[dict]:
         """Otimiza rota de manutenções para técnico."""
@@ -381,7 +383,7 @@ class MaintenanceAIService:
                         MaintenanceStatus.SCHEDULED,
                         MaintenanceStatus.PENDING,
                     ]),
-                    EquipmentMaintenance.is_active == True,
+                    EquipmentMaintenance.is_active.is_(True),
                 )
             )
         )
@@ -389,6 +391,8 @@ class MaintenanceAIService:
 
         if not maintenances:
             return []
+
+        now = datetime.utcnow()
 
         # Buscar equipamentos para obter localizações
         equipment_locations = {}
@@ -445,18 +449,16 @@ class MaintenanceAIService:
 
         return route
 
-    async def analyze_maintenance_patterns(
+    async def analyze_maintenance_patterns(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self, client_id: Optional[str] = None, months: int = 12
     ) -> dict:
         """Analisa padrões de manutenção para insights."""
-        from datetime import timedelta
-
         now = datetime.utcnow()
         start_date = now - timedelta(days=months * 30)
 
         conditions = [
             EquipmentMaintenance.created_at >= start_date,
-            EquipmentMaintenance.is_active == True,
+            EquipmentMaintenance.is_active.is_(True),
         ]
 
         if client_id:
@@ -496,11 +498,11 @@ class MaintenanceAIService:
                 by_equipment_type[eq_type]["costs"].append(m.total_cost)
 
         # Calcular médias
-        for eq_type in by_equipment_type:
-            costs = by_equipment_type[eq_type]["costs"]
+        for eq_type, eq_data in by_equipment_type.items():
+            costs = eq_data["costs"]
             if costs:
-                by_equipment_type[eq_type]["avg_cost"] = sum(costs) / len(costs)
-            del by_equipment_type[eq_type]["costs"]
+                eq_data["avg_cost"] = sum(costs) / len(costs)
+            del eq_data["costs"]
 
         # Análise por mês
         by_month = {}
@@ -516,8 +518,12 @@ class MaintenanceAIService:
 
         # Gerar insights
         insights = []
-        total_corrective = sum(1 for m in maintenances if m.maintenance_type == MaintenanceType.CORRETIVA)
-        total_preventive = sum(1 for m in maintenances if m.maintenance_type == MaintenanceType.PREVENTIVA)
+        total_corrective = sum(
+            1 for m in maintenances if m.maintenance_type == MaintenanceType.CORRETIVA
+        )
+        total_preventive = sum(
+            1 for m in maintenances if m.maintenance_type == MaintenanceType.PREVENTIVA
+        )
 
         corrective_ratio = total_corrective / len(maintenances) if maintenances else 0
 
@@ -525,7 +531,10 @@ class MaintenanceAIService:
             insights.append({
                 "type": "warning",
                 "title": "Alto índice de manutenções corretivas",
-                "description": f"{corrective_ratio:.0%} das manutenções são corretivas. Considere aumentar preventivas.",
+                "description": (
+                    f"{corrective_ratio:.0%} das manutenções são corretivas. "
+                    "Considere aumentar preventivas."
+                ),
             })
 
         if corrective_ratio < 0.3:
@@ -554,7 +563,10 @@ class MaintenanceAIService:
             insights.append({
                 "type": "warning",
                 "title": "Equipamentos com muitas manutenções",
-                "description": f"{len(problematic)} equipamentos tiveram mais de 3 manutenções no período.",
+                "description": (
+                    f"{len(problematic)} equipamentos tiveram mais de 3 "
+                    "manutenções no período."
+                ),
                 "equipment": problematic[:5],
             })
 

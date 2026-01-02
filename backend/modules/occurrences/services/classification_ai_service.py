@@ -343,7 +343,9 @@ class ClassificationAIService:
 
         return min(confidence, 100.0)
 
-    async def calculate_priority_score(self, occurrence_id: str | UUID) -> Optional[dict]:
+    async def calculate_priority_score(  # pylint: disable=too-many-locals
+        self, occurrence_id: str | UUID
+    ) -> Optional[dict]:
         """Calcula score de prioridade para uma ocorrência."""
         if isinstance(occurrence_id, str):
             occurrence_id = UUID(occurrence_id)
@@ -500,7 +502,7 @@ class ClassificationAIService:
             "best_suggestion": suggestions[0] if suggestions else None,
         }
 
-    async def analyze_trends(
+    async def analyze_trends(  # pylint: disable=too-many-locals
         self, condominium_id: Optional[str] = None, days: int = 30
     ) -> dict:
         """Analisa tendências de ocorrências."""

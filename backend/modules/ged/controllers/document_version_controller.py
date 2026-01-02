@@ -1,7 +1,7 @@
 """Controller para DocumentVersion."""
 
 import logging
-from typing import Optional, List
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,10 +11,8 @@ from core.auth.dependencies import get_current_user
 from modules.ged.repositories.document_version_repository import (
     DocumentVersionRepository,
 )
-from modules.ged.models.document_version import VersionStatus
 from modules.ged.schemas.document_version import (
     DocumentVersionResponse,
-    DocumentVersionListResponse,
     DocumentVersionCompare,
 )
 

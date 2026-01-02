@@ -33,7 +33,9 @@ NOTIFICATION_CONFIG = {
         "icon": "beach_access",
         "color": "blue",
         "priority": NotificationPriority.HIGH,
-        "channels": [NotificationChannel.PORTAL, NotificationChannel.EMAIL, NotificationChannel.PUSH],
+        "channels": [
+            NotificationChannel.PORTAL, NotificationChannel.EMAIL, NotificationChannel.PUSH
+        ],
     },
     NotificationType.VACATION_REJECTED: {
         "icon": "cancel",

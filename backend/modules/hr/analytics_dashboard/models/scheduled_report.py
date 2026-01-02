@@ -135,8 +135,9 @@ class ScheduledReport(Base):
         default=ScheduleFrequency.MONTHLY.value,
     )
     schedule_time: Mapped[time] = mapped_column(Time, default=time(6, 0))
-    schedule_day: Mapped[Optional[int]] = mapped_column(Integer)  # 1-31 para monthly, 0-6 para weekly
-    schedule_month: Mapped[Optional[int]] = mapped_column(Integer)  # 1-12 para yearly
+    # 1-31 para monthly, 0-6 para weekly
+    schedule_day: Mapped[Optional[int]] = mapped_column(Integer)
+    schedule_month: Mapped[Optional[int]] = mapped_column(Integer)  # yearly
     timezone: Mapped[str] = mapped_column(String(50), default="America/Sao_Paulo")
 
     # Próxima execução
@@ -240,6 +241,7 @@ class ScheduledReport(Base):
 
     def calculate_next_run(self) -> Optional[datetime]:
         """Calcula próxima execução baseado na frequência."""
+        # pylint: disable=import-outside-toplevel
         from datetime import timedelta
         from dateutil.relativedelta import relativedelta
 
@@ -287,7 +289,10 @@ class ScheduledReport(Base):
 
         return next_run
 
-    def record_run(self, success: bool, error: str = None, file_path: str = None, file_size: int = None, duration_ms: int = None) -> None:
+    def record_run(
+        self, success: bool, error: str = None, file_path: str = None,
+        file_size: int = None, duration_ms: int = None
+    ) -> None:
         """Registra execução do relatório."""
         self.run_count += 1
         self.last_run_at = datetime.utcnow()
@@ -309,8 +314,9 @@ class ScheduledReport(Base):
         if duration_ms:
             if self.avg_generation_time_ms:
                 # Média móvel
+                prev_total = self.avg_generation_time_ms * (self.run_count - 1)
                 self.avg_generation_time_ms = int(
-                    (self.avg_generation_time_ms * (self.run_count - 1) + duration_ms) / self.run_count
+                    (prev_total + duration_ms) / self.run_count
                 )
             else:
                 self.avg_generation_time_ms = duration_ms

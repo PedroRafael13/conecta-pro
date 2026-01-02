@@ -68,7 +68,7 @@ async def list_categories(
     page: int = Query(1, ge=1, description="Pagina"),
     page_size: int = Query(100, ge=1, le=500, description="Itens por pagina"),
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CategoryListResponse:
     """Lista categorias de ocorrencia."""
     return await service.list_all(is_active, is_public, parent_id, page, page_size)
@@ -81,7 +81,7 @@ async def list_categories(
 )
 async def get_category_tree(
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[CategoryTree]:
     """Retorna arvore hierarquica de categorias."""
     return await service.get_tree()
@@ -94,7 +94,7 @@ async def get_category_tree(
 )
 async def get_root_categories(
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[CategoryResponse]:
     """Lista categorias raiz (sem pai)."""
     return await service.get_root_categories()
@@ -109,7 +109,7 @@ async def get_category(
     category_id: UUID,
     include_children: bool = Query(False, description="Incluir subcategorias"),
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CategoryResponse:
     """Busca categoria por ID."""
     result = await service.get_by_id(category_id, include_children)
@@ -129,7 +129,7 @@ async def get_category(
 async def get_category_by_code(
     code: str,
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CategoryResponse:
     """Busca categoria por codigo."""
     result = await service.get_by_code(code)
@@ -149,7 +149,7 @@ async def get_category_by_code(
 async def get_children(
     category_id: UUID,
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[CategoryResponse]:
     """Lista subcategorias de uma categoria."""
     return await service.get_children(category_id)
@@ -162,7 +162,7 @@ async def get_children(
 async def get_category_sla(
     category_id: UUID,
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna informacoes de SLA da categoria."""
     result = await service.get_with_sla(category_id)
@@ -247,7 +247,7 @@ async def reorder_category(
     category_id: UUID,
     new_order: int = Query(..., ge=0, description="Nova ordem"),
     service: CategoryService = Depends(get_category_service),
-    current_user: dict = Depends(require_roles(["admin", "sindico"])),
+    current_user: dict = Depends(require_roles(["admin", "sindico"])),  # noqa pylint: disable=unused-argument
 ) -> CategoryResponse:
     """Reordena uma categoria."""
     result = await service.reorder(category_id, new_order)

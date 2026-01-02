@@ -1,4 +1,5 @@
 """Controller para TimeSheet (Folha de Ponto)."""
+# pylint: disable=unused-argument
 
 from typing import Optional, List
 from uuid import UUID
@@ -12,7 +13,6 @@ from modules.hr.time_tracking.repositories import TimeSheetRepository
 from modules.hr.time_tracking.services import TimeSheetService, ReportService
 from modules.hr.time_tracking.schemas import (
     TimeSheetCreate,
-    TimeSheetUpdate,
     TimeSheetResponse,
     TimeSheetListResponse,
     TimeSheetFilter,
@@ -21,8 +21,6 @@ from modules.hr.time_tracking.schemas import (
     TimeSheetEmployeeApproval,
     TimeSheetManagerApproval,
     TimeSheetHRApproval,
-    TimeSheetReview,
-    TimeSheetClose,
     TimeSheetPayroll,
     TimeSheetReopen,
     TimeSheetBatchAction,
@@ -142,7 +140,7 @@ async def generate_time_sheets_batch(
     response_model=list[TimeSheetListResponse],
     summary="Listar folhas de ponto",
 )
-async def list_time_sheets(
+async def list_time_sheets(  # pylint: disable=too-many-locals
     employee_id: Optional[str] = None,
     reference_month: Optional[int] = Query(None, ge=1, le=12),
     reference_year: Optional[int] = Query(None, ge=2000, le=2100),
@@ -170,7 +168,7 @@ async def list_time_sheets(
         is_fully_approved=is_fully_approved,
     )
 
-    sheets, total = await repo.list(filters, skip, limit)
+    sheets, _total = await repo.list(filters, skip, limit)
 
     return sheets
 
@@ -606,7 +604,7 @@ async def batch_action(
 
             results["success"].append(sheet_id)
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             results["errors"].append({
                 "id": sheet_id,
                 "error": str(e),

@@ -6,7 +6,6 @@ from typing import Optional, List, TYPE_CHECKING
 from decimal import Decimal
 
 from sqlalchemy import (
-    Column,
     String,
     Text,
     Boolean,
@@ -15,7 +14,6 @@ from sqlalchemy import (
     Integer,
     Numeric,
     Enum,
-    ForeignKey,
     JSON,
 )
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
@@ -233,7 +231,7 @@ class Candidate(Base, TimestampMixin, SoftDeleteMixin):
         return ", ".join(parts) if parts else ""
 
     @property
-    def profile_completeness(self) -> int:
+    def profile_completeness(self) -> int:  # pylint: disable=too-many-branches
         """Calcula completude do perfil (0-100)."""
         score = 0
         total = 0

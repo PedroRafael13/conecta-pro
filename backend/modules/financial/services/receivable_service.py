@@ -92,7 +92,7 @@ class ReceivableService:
         self,
         account_id: UUID,
         data: ReceivableAccountUpdate,
-        user_id: UUID,
+        user_id: UUID,  # pylint: disable=unused-argument
     ) -> Optional[ReceivableAccount]:
         """Atualiza uma conta a receber."""
         account = await self.account_repo.get_by_id(account_id)
@@ -108,7 +108,9 @@ class ReceivableService:
         logger.info(f"Conta atualizada: {account_id}")
         return account
 
-    async def delete_account(self, account_id: UUID, user_id: UUID) -> bool:
+    async def delete_account(  # pylint: disable=unused-argument
+        self, account_id: UUID, user_id: UUID
+    ) -> bool:
         """Deleta uma conta (soft delete)."""
         account = await self.account_repo.get_by_id(account_id)
         if not account:
@@ -138,7 +140,7 @@ class ReceivableService:
     async def cancel_account(
         self,
         account_id: UUID,
-        user_id: UUID,
+        user_id: UUID,  # pylint: disable=unused-argument
         reason: str,
     ) -> Optional[ReceivableAccount]:
         """Cancela uma conta."""
@@ -167,7 +169,7 @@ class ReceivableService:
     async def suspend_account(
         self,
         account_id: UUID,
-        user_id: UUID,
+        user_id: UUID,  # pylint: disable=unused-argument
         reason: str,
     ) -> Optional[ReceivableAccount]:
         """Suspende uma conta."""
@@ -290,7 +292,7 @@ class ReceivableService:
                 payment_ids.append(payment.id)
                 success_count += 1
 
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 logger.error(f"Erro ao receber parcela {installment_id}: {e}")
                 error_count += 1
 
@@ -393,7 +395,7 @@ class ReceivableService:
         self,
         installment_id: UUID,
         request: ReceivableInstallmentRenegotiateRequest,
-        user_id: UUID,
+        user_id: UUID,  # pylint: disable=unused-argument
     ) -> Optional[ReceivableInstallment]:
         """Renegocia uma parcela."""
         installment = await self.installment_repo.get_by_id(installment_id)

@@ -48,7 +48,7 @@ class KPIRepository:
         """Busca KPI por ID."""
         query = select(KPIDefinition).where(
             KPIDefinition.id == kpi_id,
-            KPIDefinition.is_active == True,  # noqa: E712
+            KPIDefinition.is_active.is_(True),
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -61,7 +61,7 @@ class KPIRepository:
         """Busca KPI por código."""
         conditions = [
             KPIDefinition.code == code.upper(),
-            KPIDefinition.is_active == True,  # noqa: E712
+            KPIDefinition.is_active.is_(True),
         ]
 
         # Buscar KPI específico do condomínio ou global
@@ -93,7 +93,7 @@ class KPIRepository:
         page_size: int = 50,
     ) -> Tuple[List[KPIDefinition], int]:
         """Lista KPIs com filtros."""
-        conditions = [KPIDefinition.is_active == True]  # noqa: E712
+        conditions = [KPIDefinition.is_active.is_(True)]
 
         if condominio_id:
             conditions.append(
@@ -109,10 +109,10 @@ class KPIRepository:
             conditions.append(KPIDefinition.category == category.value)
 
         if featured_only:
-            conditions.append(KPIDefinition.is_featured == True)  # noqa: E712
+            conditions.append(KPIDefinition.is_featured.is_(True))
 
         if not include_system:
-            conditions.append(KPIDefinition.is_system == False)  # noqa: E712
+            conditions.append(KPIDefinition.is_system.is_(False))
 
         # Query principal
         query = (
@@ -251,7 +251,7 @@ class KPIRepository:
         condominio_id: UUID = None,
     ) -> List[str]:
         """Retorna lista de códigos de KPI."""
-        conditions = [KPIDefinition.is_active == True]  # noqa: E712
+        conditions = [KPIDefinition.is_active.is_(True)]
 
         if condominio_id:
             conditions.append(

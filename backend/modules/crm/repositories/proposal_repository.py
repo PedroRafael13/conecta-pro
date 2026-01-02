@@ -14,7 +14,6 @@ from core.logging import logger
 from modules.crm.models.opportunity import Opportunity
 from modules.crm.models.proposal import (
     ApprovalAction,
-    DiscountType,
     Proposal,
     ProposalApproval,
     ProposalItem,
@@ -272,7 +271,7 @@ class ProposalRepository:
 
         return proposals, total
 
-    def _apply_filters(self, query, filters: ProposalFilter):
+    def _apply_filters(self, query, filters: ProposalFilter):  # pylint: disable=too-many-branches
         """Aplica filtros a query."""
         if filters.status:
             query = query.where(Proposal.status == filters.status.value)
@@ -425,7 +424,7 @@ class ProposalRepository:
         proposal_id: str,
         status: ProposalStatus,
         notes: Optional[str] = None,
-        user_id: Optional[str] = None,
+        user_id: Optional[str] = None,  # pylint: disable=unused-argument
     ) -> Optional[Proposal]:
         """
         Atualiza status da proposta.
@@ -465,7 +464,7 @@ class ProposalRepository:
         return proposal
 
     async def submit_for_approval(
-        self, proposal_id: str, user_id: Optional[str] = None
+        self, proposal_id: str, user_id: Optional[str] = None  # pylint: disable=unused-argument
     ) -> Optional[Proposal]:
         """Submete proposta para aprovacao."""
         proposal = await self.get_by_id(proposal_id)
@@ -625,7 +624,7 @@ class ProposalRepository:
         logger.info(f"Proposal deletada (soft): {proposal.id}")
         return True
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self, created_by_id: Optional[str] = None
     ) -> ProposalStats:
         """

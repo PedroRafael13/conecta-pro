@@ -16,7 +16,6 @@ from modules.financial.costing.models import (
     CostObject,
     CostAllocation,
 )
-from modules.financial.costing.models.cost_pool import AllocationBasis
 from modules.financial.costing.models.cost_allocation import (
     AllocationStatus,
     AllocationType,
@@ -41,7 +40,7 @@ class AllocationService:
         """Inicializa o serviço de alocação."""
         self.session = session
 
-    async def allocate_pool_to_activities(
+    async def allocate_pool_to_activities(  # pylint: disable=too-many-locals
         self,
         pool_id: UUID,
         activity_allocations: list[dict[str, Any]],
@@ -105,7 +104,10 @@ class AllocationService:
                 destino_id=activity_id,
                 valor_alocado=valor,
                 percentual_alocado=percentual,
-                driver_id=UUID(alloc_data["driver_id"]) if alloc_data.get("driver_id") else pool.driver_id,
+                driver_id=(
+                    UUID(alloc_data["driver_id"])
+                    if alloc_data.get("driver_id") else pool.driver_id
+                ),
                 driver_quantidade=Decimal(str(alloc_data.get("driver_quantidade", 0))),
                 data_alocacao=data_alocacao,
                 periodo_inicio=data_alocacao.replace(day=1),
@@ -133,7 +135,7 @@ class AllocationService:
         )
         return allocations
 
-    async def allocate_activity_to_objects(
+    async def allocate_activity_to_objects(  # pylint: disable=too-many-locals
         self,
         activity_id: UUID,
         object_allocations: list[dict[str, Any]],
@@ -211,7 +213,10 @@ class AllocationService:
                 destino_id=object_id,
                 valor_alocado=valor,
                 percentual_alocado=percentual,
-                driver_id=UUID(alloc_data["driver_id"]) if alloc_data.get("driver_id") else activity.driver_id,
+                driver_id=(
+                    UUID(alloc_data["driver_id"])
+                    if alloc_data.get("driver_id") else activity.driver_id
+                ),
                 driver_quantidade=Decimal(str(alloc_data.get("driver_quantidade", 0))),
                 data_alocacao=data_alocacao,
                 periodo_inicio=data_alocacao.replace(day=1),
@@ -239,7 +244,7 @@ class AllocationService:
         )
         return allocations
 
-    async def allocate_by_driver(
+    async def allocate_by_driver(  # pylint: disable=too-many-locals
         self,
         origem_tipo: str,
         origem_id: UUID,
@@ -313,7 +318,10 @@ class AllocationService:
 
             allocation = CostAllocation(
                 condominio_id=origem.condominio_id,
-                codigo=f"ALLOC-DRV-{driver.codigo}-{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}",
+                codigo=(
+                    f"ALLOC-DRV-{driver.codigo}-"
+                    f"{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}"
+                ),
                 tipo=alloc_type,
                 metodo=AllocationMethod.DRIVER_BASED,
                 origem_tipo=origem_tipo,
@@ -350,7 +358,7 @@ class AllocationService:
         )
         return allocations
 
-    async def allocate_equal(
+    async def allocate_equal(  # pylint: disable=too-many-locals
         self,
         origem_tipo: str,
         origem_id: UUID,
@@ -407,7 +415,10 @@ class AllocationService:
         for destino_id in destino_ids:
             allocation = CostAllocation(
                 condominio_id=origem.condominio_id,
-                codigo=f"ALLOC-EQ-{origem.codigo}-{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}",
+                codigo=(
+                    f"ALLOC-EQ-{origem.codigo}-"
+                    f"{data_alocacao.strftime('%Y%m%d')}-{destino_id.hex[:8]}"
+                ),
                 tipo=alloc_type,
                 metodo=AllocationMethod.EQUAL,
                 origem_tipo=origem_tipo,
@@ -617,7 +628,7 @@ class AllocationService:
                     "id": str(allocation.id),
                     "valor": float(allocation.valor_alocado),
                 })
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 failed.append({
                     "id": str(alloc_id),
                     "erro": str(e),
@@ -642,7 +653,7 @@ class AllocationService:
         )
         return result
 
-    async def get_allocation_summary(
+    async def get_allocation_summary(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         periodo_inicio: date,

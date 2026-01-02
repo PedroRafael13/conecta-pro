@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
@@ -81,7 +81,7 @@ class ReceivableAIService:
         """Inicializa o service."""
         self.session = session
 
-    async def calculate_customer_risk(
+    async def calculate_customer_risk(  # pylint: disable=too-many-locals
         self,
         customer_id: UUID,
     ) -> CustomerRiskScore:
@@ -154,7 +154,10 @@ class ReceivableAIService:
 
         # Fator: divida vencida
         if customer.overdue_debt > 0:
-            overdue_ratio = float(customer.overdue_debt / customer.total_debt) if customer.total_debt > 0 else 0
+            overdue_ratio = (
+                float(customer.overdue_debt / customer.total_debt)
+                if customer.total_debt > 0 else 0
+            )
             risk_factors.append(overdue_ratio * 40)
 
         # Fator: dias de atraso medio
@@ -242,7 +245,7 @@ class ReceivableAIService:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < today,
                     ReceivableAccount.status.notin_(
                         [
@@ -308,7 +311,7 @@ class ReceivableAIService:
 
         return value_score + days_score
 
-    def _get_recommended_action(
+    def _get_recommended_action(  # pylint: disable=too-many-return-statements
         self,
         days_overdue: int,
         value: Decimal,
@@ -349,7 +352,7 @@ class ReceivableAIService:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableInstallment.ativo == True,  # noqa: E712
+                    ReceivableInstallment.ativo.is_(True),
                     ReceivableInstallment.due_date >= today,
                     ReceivableInstallment.due_date <= end_date,
                     ReceivableInstallment.status.in_(
@@ -448,7 +451,7 @@ class ReceivableAIService:
             select(func.count(Customer.id)).where(
                 and_(
                     Customer.condominio_id == condominio_id,
-                    Customer.ativo == True,  # noqa: E712
+                    Customer.ativo.is_(True),
                     Customer.status != CustomerStatus.INATIVO.value,
                 )
             )
@@ -460,7 +463,7 @@ class ReceivableAIService:
             select(func.count(Customer.id)).where(
                 and_(
                     Customer.condominio_id == condominio_id,
-                    Customer.ativo == True,  # noqa: E712
+                    Customer.ativo.is_(True),
                     Customer.overdue_debt > 0,
                 )
             )
@@ -473,7 +476,7 @@ class ReceivableAIService:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < today,
                     ReceivableAccount.status.notin_(
                         [ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]
@@ -528,7 +531,7 @@ class ReceivableAIService:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < reference_date,
                     ReceivableAccount.status.notin_(
                         [ReceivableStatus.PAGA.value, ReceivableStatus.CANCELADA.value]
@@ -570,7 +573,7 @@ class ReceivableAIService:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < today,
                     ReceivableAccount.due_date >= current_month_start,
                     ReceivableAccount.status.notin_(
@@ -589,7 +592,7 @@ class ReceivableAIService:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),
                     ReceivableAccount.due_date < prev_month_end,
                     ReceivableAccount.due_date >= prev_month_start,
                     ReceivableAccount.status.notin_(

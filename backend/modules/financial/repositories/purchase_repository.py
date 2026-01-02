@@ -95,7 +95,7 @@ class ProductCategoryRepository:
             .where(
                 and_(
                     ProductCategory.id == category_id,
-                    ProductCategory.ativo == True,  # noqa: E712,C0121
+                    ProductCategory.ativo.is_(True),
                 )
             )
         )
@@ -112,7 +112,7 @@ class ProductCategoryRepository:
                 and_(
                     ProductCategory.code == code,
                     ProductCategory.condominio_id == condominio_id,
-                    ProductCategory.ativo == True,  # noqa: E712,C0121
+                    ProductCategory.ativo.is_(True),
                 )
             )
         )
@@ -132,7 +132,7 @@ class ProductCategoryRepository:
             .where(
                 and_(
                     ProductCategory.condominio_id == condominio_id,
-                    ProductCategory.ativo == True,  # noqa: E712,C0121
+                    ProductCategory.ativo.is_(True),
                 )
             )
         )
@@ -154,7 +154,7 @@ class ProductCategoryRepository:
             .where(
                 and_(
                     ProductCategory.condominio_id == condominio_id,
-                    ProductCategory.ativo == True,  # noqa: E712,C0121
+                    ProductCategory.ativo.is_(True),
                     ProductCategory.parent_id.is_(None),
                 )
             )
@@ -194,7 +194,7 @@ class ProductCategoryRepository:
             .where(
                 and_(
                     ProductCategory.condominio_id == condominio_id,
-                    ProductCategory.ativo == True,  # noqa: E712,C0121
+                    ProductCategory.ativo.is_(True),
                 )
             )
             .group_by(ProductCategory.status)
@@ -210,7 +210,7 @@ class ProductCategoryRepository:
             .where(
                 and_(
                     ProductCategory.condominio_id == condominio_id,
-                    ProductCategory.ativo == True,  # noqa: E712,C0121
+                    ProductCategory.ativo.is_(True),
                 )
             )
             .group_by(ProductCategory.category_type)
@@ -251,7 +251,7 @@ class ProductRepository:
             select(Product).where(
                 and_(
                     Product.id == product_id,
-                    Product.ativo == True,  # noqa: E712,C0121
+                    Product.ativo.is_(True),
                 )
             )
         )
@@ -268,7 +268,7 @@ class ProductRepository:
                 and_(
                     Product.code == code,
                     Product.condominio_id == condominio_id,
-                    Product.ativo == True,  # noqa: E712,C0121
+                    Product.ativo.is_(True),
                 )
             )
         )
@@ -287,7 +287,7 @@ class ProductRepository:
         query = select(Product).where(
             and_(
                 Product.condominio_id == condominio_id,
-                Product.ativo == True,  # noqa: E712,C0121
+                Product.ativo.is_(True),
             )
         )
 
@@ -323,7 +323,7 @@ class ProductRepository:
         query = select(func.count(Product.id)).where(
             and_(
                 Product.condominio_id == condominio_id,
-                Product.ativo == True,  # noqa: E712,C0121
+                Product.ativo.is_(True),
             )
         )
 
@@ -385,7 +385,7 @@ class ProductRepository:
             .where(
                 and_(
                     Product.condominio_id == condominio_id,
-                    Product.ativo == True,  # noqa: E712,C0121
+                    Product.ativo.is_(True),
                 )
             )
             .group_by(Product.status)
@@ -401,7 +401,7 @@ class ProductRepository:
             .where(
                 and_(
                     Product.condominio_id == condominio_id,
-                    Product.ativo == True,  # noqa: E712,C0121
+                    Product.ativo.is_(True),
                 )
             )
             .group_by(Product.product_type)
@@ -412,7 +412,7 @@ class ProductRepository:
         low_stock_query = select(func.count(Product.id)).where(
             and_(
                 Product.condominio_id == condominio_id,
-                Product.ativo == True,  # noqa: E712,C0121
+                Product.ativo.is_(True),
                 Product.current_stock <= Product.minimum_stock,
                 Product.minimum_stock > 0,
             )
@@ -471,7 +471,7 @@ class PurchaseRequisitionRepository:
             .where(
                 and_(
                     PurchaseRequisition.id == requisition_id,
-                    PurchaseRequisition.ativo == True,  # noqa: E712,C0121
+                    PurchaseRequisition.ativo.is_(True),
                 )
             )
         )
@@ -490,7 +490,7 @@ class PurchaseRequisitionRepository:
                 and_(
                     PurchaseRequisition.number == number,
                     PurchaseRequisition.condominio_id == condominio_id,
-                    PurchaseRequisition.ativo == True,  # noqa: E712,C0121
+                    PurchaseRequisition.ativo.is_(True),
                 )
             )
         )
@@ -510,7 +510,7 @@ class PurchaseRequisitionRepository:
             .where(
                 and_(
                     PurchaseRequisition.condominio_id == condominio_id,
-                    PurchaseRequisition.ativo == True,  # noqa: E712,C0121
+                    PurchaseRequisition.ativo.is_(True),
                 )
             )
         )
@@ -554,7 +554,7 @@ class PurchaseRequisitionRepository:
         query = select(func.count(PurchaseRequisition.id)).where(
             and_(
                 PurchaseRequisition.condominio_id == condominio_id,
-                PurchaseRequisition.ativo == True,  # noqa: E712,C0121
+                PurchaseRequisition.ativo.is_(True),
             )
         )
 
@@ -602,7 +602,7 @@ class PurchaseRequisitionRepository:
             .where(
                 and_(
                     PurchaseRequisition.condominio_id == condominio_id,
-                    PurchaseRequisition.ativo == True,  # noqa: E712,C0121
+                    PurchaseRequisition.ativo.is_(True),
                 )
             )
             .group_by(PurchaseRequisition.status)
@@ -618,7 +618,7 @@ class PurchaseRequisitionRepository:
             .where(
                 and_(
                     PurchaseRequisition.condominio_id == condominio_id,
-                    PurchaseRequisition.ativo == True,  # noqa: E712,C0121
+                    PurchaseRequisition.ativo.is_(True),
                 )
             )
             .group_by(PurchaseRequisition.priority)
@@ -632,7 +632,7 @@ class PurchaseRequisitionRepository:
         total_query = select(func.sum(PurchaseRequisition.estimated_total)).where(
             and_(
                 PurchaseRequisition.condominio_id == condominio_id,
-                PurchaseRequisition.ativo == True,  # noqa: E712,C0121
+                PurchaseRequisition.ativo.is_(True),
                 PurchaseRequisition.status.in_(
                     [
                         RequisitionStatus.PENDENTE_APROVACAO.value,
@@ -694,7 +694,7 @@ class PurchaseQuotationRepository:
             .where(
                 and_(
                     PurchaseQuotation.id == quotation_id,
-                    PurchaseQuotation.ativo == True,  # noqa: E712,C0121
+                    PurchaseQuotation.ativo.is_(True),
                 )
             )
         )
@@ -713,7 +713,7 @@ class PurchaseQuotationRepository:
                 and_(
                     PurchaseQuotation.number == number,
                     PurchaseQuotation.condominio_id == condominio_id,
-                    PurchaseQuotation.ativo == True,  # noqa: E712,C0121
+                    PurchaseQuotation.ativo.is_(True),
                 )
             )
         )
@@ -730,7 +730,7 @@ class PurchaseQuotationRepository:
             .where(
                 and_(
                     PurchaseQuotation.requisition_id == requisition_id,
-                    PurchaseQuotation.ativo == True,  # noqa: E712,C0121
+                    PurchaseQuotation.ativo.is_(True),
                 )
             )
             .order_by(PurchaseQuotation.overall_score.desc())
@@ -754,7 +754,7 @@ class PurchaseQuotationRepository:
             .where(
                 and_(
                     PurchaseQuotation.condominio_id == condominio_id,
-                    PurchaseQuotation.ativo == True,  # noqa: E712,C0121
+                    PurchaseQuotation.ativo.is_(True),
                 )
             )
         )
@@ -781,7 +781,7 @@ class PurchaseQuotationRepository:
         query = select(func.count(PurchaseQuotation.id)).where(
             and_(
                 PurchaseQuotation.condominio_id == condominio_id,
-                PurchaseQuotation.ativo == True,  # noqa: E712,C0121
+                PurchaseQuotation.ativo.is_(True),
             )
         )
 
@@ -822,7 +822,7 @@ class PurchaseQuotationRepository:
             .where(
                 and_(
                     PurchaseQuotation.condominio_id == condominio_id,
-                    PurchaseQuotation.ativo == True,  # noqa: E712,C0121
+                    PurchaseQuotation.ativo.is_(True),
                 )
             )
             .group_by(PurchaseQuotation.status)
@@ -833,7 +833,7 @@ class PurchaseQuotationRepository:
         avg_score_query = select(func.avg(PurchaseQuotation.overall_score)).where(
             and_(
                 PurchaseQuotation.condominio_id == condominio_id,
-                PurchaseQuotation.ativo == True,  # noqa: E712,C0121
+                PurchaseQuotation.ativo.is_(True),
                 PurchaseQuotation.overall_score.isnot(None),
             )
         )
@@ -887,7 +887,7 @@ class PurchaseOrderRepository:
             .where(
                 and_(
                     PurchaseOrder.id == order_id,
-                    PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                    PurchaseOrder.ativo.is_(True),
                 )
             )
         )
@@ -906,7 +906,7 @@ class PurchaseOrderRepository:
                 and_(
                     PurchaseOrder.number == number,
                     PurchaseOrder.condominio_id == condominio_id,
-                    PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                    PurchaseOrder.ativo.is_(True),
                 )
             )
         )
@@ -926,7 +926,7 @@ class PurchaseOrderRepository:
             .where(
                 and_(
                     PurchaseOrder.condominio_id == condominio_id,
-                    PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                    PurchaseOrder.ativo.is_(True),
                 )
             )
         )
@@ -963,7 +963,7 @@ class PurchaseOrderRepository:
         query = select(func.count(PurchaseOrder.id)).where(
             and_(
                 PurchaseOrder.condominio_id == condominio_id,
-                PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                PurchaseOrder.ativo.is_(True),
             )
         )
 
@@ -995,7 +995,7 @@ class PurchaseOrderRepository:
         order.updated_at = datetime.utcnow()
         await self.session.flush()
 
-    async def get_stats(self, condominio_id: UUID) -> OrderStats:
+    async def get_stats(self, condominio_id: UUID) -> OrderStats:  # pylint: disable=too-many-locals
         """Retorna estatísticas de ordens."""
         status_query = (
             select(
@@ -1005,7 +1005,7 @@ class PurchaseOrderRepository:
             .where(
                 and_(
                     PurchaseOrder.condominio_id == condominio_id,
-                    PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                    PurchaseOrder.ativo.is_(True),
                 )
             )
             .group_by(PurchaseOrder.status)
@@ -1021,7 +1021,7 @@ class PurchaseOrderRepository:
             .where(
                 and_(
                     PurchaseOrder.condominio_id == condominio_id,
-                    PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                    PurchaseOrder.ativo.is_(True),
                 )
             )
             .group_by(PurchaseOrder.priority)
@@ -1042,7 +1042,7 @@ class PurchaseOrderRepository:
         total_query = select(func.sum(PurchaseOrder.total)).where(
             and_(
                 PurchaseOrder.condominio_id == condominio_id,
-                PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                PurchaseOrder.ativo.is_(True),
             )
         )
         total_result = await self.session.execute(total_query)
@@ -1051,7 +1051,7 @@ class PurchaseOrderRepository:
         pending_query = select(func.sum(PurchaseOrder.total - PurchaseOrder.paid_total)).where(
             and_(
                 PurchaseOrder.condominio_id == condominio_id,
-                PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                PurchaseOrder.ativo.is_(True),
                 PurchaseOrder.status.notin_(
                     [OrderStatus.CANCELADA.value, OrderStatus.REJEITADA.value]
                 ),
@@ -1063,7 +1063,7 @@ class PurchaseOrderRepository:
         overdue_query = select(func.count(PurchaseOrder.id)).where(
             and_(
                 PurchaseOrder.condominio_id == condominio_id,
-                PurchaseOrder.ativo == True,  # noqa: E712,C0121
+                PurchaseOrder.ativo.is_(True),
                 PurchaseOrder.expected_delivery_date < date.today(),
                 PurchaseOrder.status.in_(
                     [
@@ -1127,7 +1127,7 @@ class GoodsReceiptRepository:
             .where(
                 and_(
                     GoodsReceipt.id == receipt_id,
-                    GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                    GoodsReceipt.ativo.is_(True),
                 )
             )
         )
@@ -1146,7 +1146,7 @@ class GoodsReceiptRepository:
                 and_(
                     GoodsReceipt.number == number,
                     GoodsReceipt.condominio_id == condominio_id,
-                    GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                    GoodsReceipt.ativo.is_(True),
                 )
             )
         )
@@ -1160,7 +1160,7 @@ class GoodsReceiptRepository:
             .where(
                 and_(
                     GoodsReceipt.order_id == order_id,
-                    GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                    GoodsReceipt.ativo.is_(True),
                 )
             )
             .order_by(GoodsReceipt.receipt_date.desc())
@@ -1181,7 +1181,7 @@ class GoodsReceiptRepository:
             .where(
                 and_(
                     GoodsReceipt.condominio_id == condominio_id,
-                    GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                    GoodsReceipt.ativo.is_(True),
                 )
             )
         )
@@ -1225,7 +1225,7 @@ class GoodsReceiptRepository:
         query = select(func.count(GoodsReceipt.id)).where(
             and_(
                 GoodsReceipt.condominio_id == condominio_id,
-                GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                GoodsReceipt.ativo.is_(True),
             )
         )
 
@@ -1267,7 +1267,7 @@ class GoodsReceiptRepository:
             .where(
                 and_(
                     GoodsReceipt.condominio_id == condominio_id,
-                    GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                    GoodsReceipt.ativo.is_(True),
                 )
             )
             .group_by(GoodsReceipt.status)
@@ -1283,7 +1283,7 @@ class GoodsReceiptRepository:
             .where(
                 and_(
                     GoodsReceipt.condominio_id == condominio_id,
-                    GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                    GoodsReceipt.ativo.is_(True),
                 )
             )
             .group_by(GoodsReceipt.receipt_type)
@@ -1296,8 +1296,8 @@ class GoodsReceiptRepository:
         divergence_query = select(func.count(GoodsReceipt.id)).where(
             and_(
                 GoodsReceipt.condominio_id == condominio_id,
-                GoodsReceipt.ativo == True,  # noqa: E712,C0121
-                GoodsReceipt.has_divergence == True,  # noqa: E712,C0121
+                GoodsReceipt.ativo.is_(True),
+                GoodsReceipt.has_divergence.is_(True),
             )
         )
         divergence_result = await self.session.execute(divergence_query)
@@ -1306,7 +1306,7 @@ class GoodsReceiptRepository:
         total_query = select(func.sum(GoodsReceipt.total_accepted)).where(
             and_(
                 GoodsReceipt.condominio_id == condominio_id,
-                GoodsReceipt.ativo == True,  # noqa: E712,C0121
+                GoodsReceipt.ativo.is_(True),
             )
         )
         total_result = await self.session.execute(total_query)
@@ -1346,7 +1346,7 @@ class PurchaseApprovalRepository:
             select(PurchaseApproval).where(
                 and_(
                     PurchaseApproval.id == approval_id,
-                    PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                    PurchaseApproval.ativo.is_(True),
                 )
             )
         )
@@ -1364,7 +1364,7 @@ class PurchaseApprovalRepository:
                 and_(
                     PurchaseApproval.document_id == document_id,
                     PurchaseApproval.approval_type == approval_type.value,
-                    PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                    PurchaseApproval.ativo.is_(True),
                 )
             )
             .order_by(PurchaseApproval.sequence)
@@ -1384,7 +1384,7 @@ class PurchaseApprovalRepository:
                     PurchaseApproval.approver_id == approver_id,
                     PurchaseApproval.condominio_id == condominio_id,
                     PurchaseApproval.status == ApprovalStatus.PENDENTE.value,
-                    PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                    PurchaseApproval.ativo.is_(True),
                 )
             )
             .order_by(PurchaseApproval.requested_at)
@@ -1402,7 +1402,7 @@ class PurchaseApprovalRepository:
         query = select(PurchaseApproval).where(
             and_(
                 PurchaseApproval.condominio_id == condominio_id,
-                PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                PurchaseApproval.ativo.is_(True),
             )
         )
 
@@ -1446,7 +1446,7 @@ class PurchaseApprovalRepository:
         query = select(func.count(PurchaseApproval.id)).where(
             and_(
                 PurchaseApproval.condominio_id == condominio_id,
-                PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                PurchaseApproval.ativo.is_(True),
             )
         )
 
@@ -1478,7 +1478,7 @@ class PurchaseApprovalRepository:
         approval.updated_at = datetime.utcnow()
         await self.session.flush()
 
-    async def get_stats(self, condominio_id: UUID) -> ApprovalStats:
+    async def get_stats(self, condominio_id: UUID) -> ApprovalStats:  # pylint: disable=too-many-locals
         """Retorna estatísticas de aprovações."""
         status_query = (
             select(
@@ -1488,7 +1488,7 @@ class PurchaseApprovalRepository:
             .where(
                 and_(
                     PurchaseApproval.condominio_id == condominio_id,
-                    PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                    PurchaseApproval.ativo.is_(True),
                 )
             )
             .group_by(PurchaseApproval.status)
@@ -1504,7 +1504,7 @@ class PurchaseApprovalRepository:
             .where(
                 and_(
                     PurchaseApproval.condominio_id == condominio_id,
-                    PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                    PurchaseApproval.ativo.is_(True),
                 )
             )
             .group_by(PurchaseApproval.approval_type)
@@ -1520,7 +1520,7 @@ class PurchaseApprovalRepository:
             .where(
                 and_(
                     PurchaseApproval.condominio_id == condominio_id,
-                    PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                    PurchaseApproval.ativo.is_(True),
                 )
             )
             .group_by(PurchaseApproval.approval_level)
@@ -1533,7 +1533,7 @@ class PurchaseApprovalRepository:
         overdue_query = select(func.count(PurchaseApproval.id)).where(
             and_(
                 PurchaseApproval.condominio_id == condominio_id,
-                PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                PurchaseApproval.ativo.is_(True),
                 PurchaseApproval.status == ApprovalStatus.PENDENTE.value,
                 PurchaseApproval.deadline < datetime.utcnow(),
             )
@@ -1544,7 +1544,7 @@ class PurchaseApprovalRepository:
         avg_time_query = select(func.avg(PurchaseApproval.response_time_hours)).where(
             and_(
                 PurchaseApproval.condominio_id == condominio_id,
-                PurchaseApproval.ativo == True,  # noqa: E712,C0121
+                PurchaseApproval.ativo.is_(True),
                 PurchaseApproval.response_time_hours.isnot(None),
             )
         )

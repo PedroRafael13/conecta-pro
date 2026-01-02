@@ -3,12 +3,10 @@ Service para Dashboard e Analytics do CRM.
 Centraliza KPIs, métricas e análises de desempenho comercial.
 """
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from typing import List, Optional
 
 from pydantic import BaseModel
-
-from core.logging import logger
 from modules.crm.models.commission import Commission, CommissionStatus
 from modules.crm.models.lead import Lead, LeadStatus
 from modules.crm.models.opportunity import Opportunity, OpportunityStage
@@ -94,14 +92,14 @@ class PerformanceMetrics(BaseModel):
 class DashboardService:
     """Service para Dashboard e Analytics do CRM."""
 
-    def calculate_kpis(
+    def calculate_kpis(  # pylint: disable=too-many-locals
         self,
         leads: List[Lead],
         opportunities: List[Opportunity],
         proposals: List[Proposal],
         commissions: List[Commission],
-        date_from: Optional[date] = None,
-        date_to: Optional[date] = None,
+        date_from: Optional[date] = None,  # pylint: disable=unused-argument
+        date_to: Optional[date] = None,  # pylint: disable=unused-argument
     ) -> DashboardKPIs:
         """
         Calcula todos os KPIs principais do CRM.
@@ -338,7 +336,7 @@ class DashboardService:
             datasets=[{"data": values}],
         )
 
-    def generate_trends(
+    def generate_trends(  # pylint: disable=too-many-locals
         self,
         data: List,
         date_field: str,

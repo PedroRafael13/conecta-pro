@@ -2,6 +2,7 @@
 Service Schemas - Pydantic Models
 Sprint 31: Gestão de Serviços
 """
+# pylint: disable=too-few-public-methods
 
 from datetime import datetime, date
 from decimal import Decimal

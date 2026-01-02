@@ -106,7 +106,7 @@ async def list_comments_by_occurrence(
 async def get_comment(
     comment_id: UUID,
     service: CommentService = Depends(get_comment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CommentResponse:
     """Busca comentario por ID."""
     result = await service.get_by_id(comment_id)
@@ -127,7 +127,7 @@ async def list_replies(
     comment_id: UUID,
     include_deleted: bool = Query(False, description="Incluir deletados"),
     service: CommentService = Depends(get_comment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[CommentResponse]:
     """Lista respostas de um comentario."""
     return await service.list_replies(comment_id, include_deleted)
@@ -141,7 +141,7 @@ async def list_replies(
 async def get_solutions(
     occurrence_id: UUID,
     service: CommentService = Depends(get_comment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[CommentResponse]:
     """Lista comentarios marcados como solucao."""
     return await service.get_solutions(occurrence_id)
@@ -155,7 +155,7 @@ async def get_solutions(
 async def get_pinned(
     occurrence_id: UUID,
     service: CommentService = Depends(get_comment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[CommentResponse]:
     """Lista comentarios fixados."""
     return await service.get_pinned(occurrence_id)
@@ -169,7 +169,7 @@ async def get_pinned(
 async def get_first_response(
     occurrence_id: UUID,
     service: CommentService = Depends(get_comment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CommentResponse:
     """Retorna o primeiro comentario de staff."""
     result = await service.get_first_response(occurrence_id)
@@ -345,7 +345,7 @@ async def unpin_comment(
 async def like_comment(
     comment_id: UUID,
     service: CommentService = Depends(get_comment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CommentResponse:
     """Adiciona like a um comentario."""
     result = await service.add_like(comment_id)
@@ -365,7 +365,7 @@ async def like_comment(
 async def unlike_comment(
     comment_id: UUID,
     service: CommentService = Depends(get_comment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CommentResponse:
     """Remove like de um comentario."""
     result = await service.remove_like(comment_id)

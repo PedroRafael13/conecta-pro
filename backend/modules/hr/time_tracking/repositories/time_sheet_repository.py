@@ -1,6 +1,6 @@
 """Repository para TimeSheet."""
 
-from datetime import date, datetime
+from datetime import date, datetime  # pylint: disable=unused-import
 from decimal import Decimal
 from typing import Optional, List, Tuple
 from uuid import UUID
@@ -43,7 +43,7 @@ class TimeSheetRepository:
         result = await self.db.execute(
             select(TimeSheet).where(
                 TimeSheet.id == sheet_id,
-                TimeSheet.is_deleted == False,
+                TimeSheet.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -53,7 +53,7 @@ class TimeSheetRepository:
         result = await self.db.execute(
             select(TimeSheet).where(
                 TimeSheet.code == code,
-                TimeSheet.is_deleted == False,
+                TimeSheet.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -70,7 +70,7 @@ class TimeSheetRepository:
                 TimeSheet.employee_id == employee_id,
                 TimeSheet.reference_month == reference_month,
                 TimeSheet.reference_year == reference_year,
-                TimeSheet.is_deleted == False,
+                TimeSheet.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -100,7 +100,7 @@ class TimeSheetRepository:
         limit: int = 100,
     ) -> Tuple[List[TimeSheet], int]:
         """Lista folhas de ponto com filtros."""
-        query = select(TimeSheet).where(TimeSheet.is_deleted == False)
+        query = select(TimeSheet).where(TimeSheet.is_deleted.is_(False))
 
         if filters:
             if filters.employee_id:
@@ -128,16 +128,16 @@ class TimeSheetRepository:
             if filters.is_fully_approved is not None:
                 if filters.is_fully_approved:
                     query = query.where(
-                        TimeSheet.approved_by_employee == True,
-                        TimeSheet.approved_by_manager == True,
-                        TimeSheet.approved_by_hr == True,
+                        TimeSheet.approved_by_employee.is_(True),
+                        TimeSheet.approved_by_manager.is_(True),
+                        TimeSheet.approved_by_hr.is_(True),
                     )
                 else:
                     query = query.where(
                         ~and_(
-                            TimeSheet.approved_by_employee == True,
-                            TimeSheet.approved_by_manager == True,
-                            TimeSheet.approved_by_hr == True,
+                            TimeSheet.approved_by_employee.is_(True),
+                            TimeSheet.approved_by_manager.is_(True),
+                            TimeSheet.approved_by_hr.is_(True),
                         )
                     )
 
@@ -167,7 +167,7 @@ class TimeSheetRepository:
         query = select(TimeSheet).where(
             TimeSheet.reference_month == reference_month,
             TimeSheet.reference_year == reference_year,
-            TimeSheet.is_deleted == False,
+            TimeSheet.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -186,8 +186,8 @@ class TimeSheetRepository:
         """Busca folhas pendentes de aprovação do funcionário."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
-            TimeSheet.approved_by_employee == False,
-            TimeSheet.is_deleted == False,
+            TimeSheet.approved_by_employee.is_(False),
+            TimeSheet.is_deleted.is_(False),
         )
 
         if employee_id:
@@ -211,9 +211,9 @@ class TimeSheetRepository:
         """Busca folhas pendentes de aprovação do gestor."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
-            TimeSheet.approved_by_employee == True,
-            TimeSheet.approved_by_manager == False,
-            TimeSheet.is_deleted == False,
+            TimeSheet.approved_by_employee.is_(True),
+            TimeSheet.approved_by_manager.is_(False),
+            TimeSheet.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -236,10 +236,10 @@ class TimeSheetRepository:
         """Busca folhas pendentes de aprovação do RH."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
-            TimeSheet.approved_by_employee == True,
-            TimeSheet.approved_by_manager == True,
-            TimeSheet.approved_by_hr == False,
-            TimeSheet.is_deleted == False,
+            TimeSheet.approved_by_employee.is_(True),
+            TimeSheet.approved_by_manager.is_(True),
+            TimeSheet.approved_by_hr.is_(False),
+            TimeSheet.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -260,11 +260,11 @@ class TimeSheetRepository:
         """Busca folhas prontas para fechamento."""
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.ABERTO,
-            TimeSheet.approved_by_employee == True,
-            TimeSheet.approved_by_manager == True,
-            TimeSheet.approved_by_hr == True,
-            TimeSheet.has_pending_issues == False,
-            TimeSheet.is_deleted == False,
+            TimeSheet.approved_by_employee.is_(True),
+            TimeSheet.approved_by_manager.is_(True),
+            TimeSheet.approved_by_hr.is_(True),
+            TimeSheet.has_pending_issues.is_(False),
+            TimeSheet.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -286,7 +286,7 @@ class TimeSheetRepository:
         query = select(TimeSheet).where(
             TimeSheet.status == TimeSheetStatus.FECHADO,
             TimeSheet.sent_to_payroll_at.is_(None),
-            TimeSheet.is_deleted == False,
+            TimeSheet.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -300,14 +300,14 @@ class TimeSheetRepository:
         )
         return list(result.scalars().all())
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         condominium_id: str = None,
         reference_month: int = None,
         reference_year: int = None,
     ) -> dict:
         """Calcula estatísticas de folhas de ponto."""
-        base_where = [TimeSheet.is_deleted == False]
+        base_where = [TimeSheet.is_deleted.is_(False)]
 
         if condominium_id:
             base_where.append(TimeSheet.condominium_id == condominium_id)
@@ -383,9 +383,9 @@ class TimeSheetRepository:
                 *base_where,
                 TimeSheet.status == TimeSheetStatus.ABERTO,
                 ~and_(
-                    TimeSheet.approved_by_employee == True,
-                    TimeSheet.approved_by_manager == True,
-                    TimeSheet.approved_by_hr == True,
+                    TimeSheet.approved_by_employee.is_(True),
+                    TimeSheet.approved_by_manager.is_(True),
+                    TimeSheet.approved_by_hr.is_(True),
                 ),
             )
         )
@@ -465,7 +465,7 @@ class TimeSheetRepository:
             TimeSheet.reference_month == reference_month,
             TimeSheet.reference_year == reference_year,
             TimeSheet.status == TimeSheetStatus.FECHADO,
-            TimeSheet.is_deleted == False,
+            TimeSheet.is_deleted.is_(False),
         )
 
         if condominium_id:

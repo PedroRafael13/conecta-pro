@@ -14,13 +14,11 @@ from modules.hr.analytics_dashboard.schemas import (
     DashboardConfigUpdate,
     DashboardConfigResponse,
     DashboardListResponse,
-    DashboardShare,
     DashboardCloneRequest,
     DashboardWidgetCreate,
     DashboardWidgetUpdate,
     DashboardWidgetResponse,
     WidgetBatchPositionUpdate,
-    WidgetDataRequest,
     WidgetDataResponse,
 )
 from modules.hr.analytics_dashboard.services import DashboardService
@@ -39,7 +37,7 @@ async def list_dashboards(
 ):
     """Lista dashboards do usuário."""
     service = DashboardService(db)
-    dashboards, total = await service.list_user_dashboards(
+    dashboards, _total = await service.list_user_dashboards(
         condominio_id=current_user["condominio_id"],
         user_id=current_user["id"],
         user_role=current_user.get("role"),
@@ -216,7 +214,11 @@ async def list_widgets(
     return widgets
 
 
-@router.post("/{dashboard_id}/widgets", response_model=DashboardWidgetResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{dashboard_id}/widgets",
+    response_model=DashboardWidgetResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_widget(
     dashboard_id: UUID,
     data: DashboardWidgetCreate,

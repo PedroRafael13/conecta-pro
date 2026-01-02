@@ -250,7 +250,7 @@ async def review_checkin(
     summary="Listar check-ins",
     dependencies=[Depends(require_roles(["admin", "rh", "gestor"]))],
 )
-async def list_checkins(
+async def list_checkins(  # pylint: disable=too-many-locals
     device_id: UUID = Query(None),
     employee_id: UUID = Query(None),
     condominio_id: UUID = Query(None),

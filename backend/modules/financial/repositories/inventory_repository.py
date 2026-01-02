@@ -16,7 +16,6 @@ from modules.financial.models.stock_inventory import (
 )
 from modules.financial.models.stock_item import StockItem, StockItemStatus
 from modules.financial.models.stock_movement import (
-    MovementReason,
     MovementStatus,
     MovementType,
     StockMovement,
@@ -53,7 +52,7 @@ class WarehouseRepository:
                 and_(
                     Warehouse.code == code,
                     Warehouse.condominio_id == condominio_id,
-                    Warehouse.ativo == True,  # noqa: E712
+                    Warehouse.ativo.is_(True),
                 )
             )
             .first()
@@ -71,7 +70,7 @@ class WarehouseRepository:
         query = self.db.query(Warehouse).filter(
             and_(
                 Warehouse.condominio_id == condominio_id,
-                Warehouse.ativo == True,  # noqa: E712
+                Warehouse.ativo.is_(True),
             )
         )
 
@@ -91,7 +90,7 @@ class WarehouseRepository:
         query = self.db.query(func.count(Warehouse.id)).filter(
             and_(
                 Warehouse.condominio_id == condominio_id,
-                Warehouse.ativo == True,  # noqa: E712
+                Warehouse.ativo.is_(True),
             )
         )
 
@@ -121,7 +120,7 @@ class WarehouseRepository:
                     Warehouse.condominio_id == condominio_id,
                     Warehouse.warehouse_type == "principal",
                     Warehouse.status == WarehouseStatus.ATIVO.value,
-                    Warehouse.ativo == True,  # noqa: E712
+                    Warehouse.ativo.is_(True),
                 )
             )
             .first()
@@ -138,7 +137,7 @@ class WarehouseRepository:
             .filter(
                 and_(
                     Warehouse.condominio_id == condominio_id,
-                    Warehouse.ativo == True,  # noqa: E712
+                    Warehouse.ativo.is_(True),
                 )
             )
             .scalar()
@@ -207,7 +206,7 @@ class StockItemRepository:
             and_(
                 StockItem.product_id == product_id,
                 StockItem.warehouse_id == warehouse_id,
-                StockItem.ativo == True,  # noqa: E712
+                StockItem.ativo.is_(True),
             )
         )
 
@@ -229,7 +228,7 @@ class StockItemRepository:
             and_(
                 StockItem.product_id == product_id,
                 StockItem.condominio_id == condominio_id,
-                StockItem.ativo == True,  # noqa: E712
+                StockItem.ativo.is_(True),
             )
         )
 
@@ -249,7 +248,7 @@ class StockItemRepository:
         query = self.db.query(StockItem).filter(
             and_(
                 StockItem.warehouse_id == warehouse_id,
-                StockItem.ativo == True,  # noqa: E712
+                StockItem.ativo.is_(True),
             )
         )
 
@@ -265,7 +264,7 @@ class StockItemRepository:
             .filter(
                 and_(
                     StockItem.condominio_id == condominio_id,
-                    StockItem.ativo == True,  # noqa: E712
+                    StockItem.ativo.is_(True),
                     StockItem.min_quantity.isnot(None),
                     StockItem.quantity_on_hand < StockItem.min_quantity,
                 )
@@ -281,7 +280,7 @@ class StockItemRepository:
             .filter(
                 and_(
                     StockItem.condominio_id == condominio_id,
-                    StockItem.ativo == True,  # noqa: E712
+                    StockItem.ativo.is_(True),
                     StockItem.expiry_date.isnot(None),
                     StockItem.expiry_date <= expiry_limit,
                     StockItem.quantity_on_hand > 0,
@@ -298,7 +297,7 @@ class StockItemRepository:
             .filter(
                 and_(
                     StockItem.condominio_id == condominio_id,
-                    StockItem.ativo == True,  # noqa: E712
+                    StockItem.ativo.is_(True),
                     StockItem.expiry_date.isnot(None),
                     StockItem.expiry_date < date.today(),
                     StockItem.quantity_on_hand > 0,
@@ -315,7 +314,7 @@ class StockItemRepository:
                 and_(
                     StockItem.product_id == product_id,
                     StockItem.condominio_id == condominio_id,
-                    StockItem.ativo == True,  # noqa: E712
+                    StockItem.ativo.is_(True),
                     StockItem.status == StockItemStatus.DISPONIVEL.value,
                 )
             )
@@ -340,7 +339,7 @@ class StockItemRepository:
                 and_(
                     StockItem.product_id == product_id,
                     StockItem.warehouse_id == warehouse_id,
-                    StockItem.ativo == True,  # noqa: E712
+                    StockItem.ativo.is_(True),
                     StockItem.status == StockItemStatus.DISPONIVEL.value,
                 )
             )
@@ -365,7 +364,7 @@ class StockItemRepository:
         query = self.db.query(StockItem).filter(
             and_(
                 StockItem.condominio_id == condominio_id,
-                StockItem.ativo == True,  # noqa: E712
+                StockItem.ativo.is_(True),
             )
         )
 
@@ -375,7 +374,7 @@ class StockItemRepository:
             .filter(
                 and_(
                     StockItem.condominio_id == condominio_id,
-                    StockItem.ativo == True,  # noqa: E712
+                    StockItem.ativo.is_(True),
                 )
             )
             .scalar()
@@ -385,7 +384,7 @@ class StockItemRepository:
             .filter(
                 and_(
                     StockItem.condominio_id == condominio_id,
-                    StockItem.ativo == True,  # noqa: E712
+                    StockItem.ativo.is_(True),
                 )
             )
             .scalar()
@@ -458,7 +457,7 @@ class StockMovementRepository:
         query = self.db.query(StockMovement).filter(
             and_(
                 StockMovement.condominio_id == condominio_id,
-                StockMovement.ativo == True,  # noqa: E712
+                StockMovement.ativo.is_(True),
             )
         )
 
@@ -494,7 +493,7 @@ class StockMovementRepository:
             .filter(
                 and_(
                     StockMovement.condominio_id == condominio_id,
-                    StockMovement.ativo == True,  # noqa: E712
+                    StockMovement.ativo.is_(True),
                     StockMovement.status.in_(
                         [
                             MovementStatus.RASCUNHO.value,
@@ -519,7 +518,7 @@ class StockMovementRepository:
                 and_(
                     StockMovement.reference_type == reference_type,
                     StockMovement.reference_id == reference_id,
-                    StockMovement.ativo == True,  # noqa: E712
+                    StockMovement.ativo.is_(True),
                 )
             )
             .order_by(StockMovement.movement_date.desc())
@@ -536,7 +535,7 @@ class StockMovementRepository:
         query = self.db.query(func.count(StockMovement.id)).filter(
             and_(
                 StockMovement.condominio_id == condominio_id,
-                StockMovement.ativo == True,  # noqa: E712
+                StockMovement.ativo.is_(True),
             )
         )
 
@@ -569,7 +568,7 @@ class StockMovementRepository:
         query = self.db.query(StockMovement).filter(
             and_(
                 StockMovement.condominio_id == condominio_id,
-                StockMovement.ativo == True,  # noqa: E712
+                StockMovement.ativo.is_(True),
                 StockMovement.status == MovementStatus.CONFIRMADA.value,
             )
         )
@@ -620,7 +619,7 @@ class StockMovementRepository:
             .filter(
                 and_(
                     StockMovement.condominio_id == condominio_id,
-                    StockMovement.ativo == True,  # noqa: E712
+                    StockMovement.ativo.is_(True),
                     StockMovement.status == MovementStatus.CONFIRMADA.value,
                     StockMovement.movement_type.in_(
                         [
@@ -638,7 +637,7 @@ class StockMovementRepository:
             .filter(
                 and_(
                     StockMovement.condominio_id == condominio_id,
-                    StockMovement.ativo == True,  # noqa: E712
+                    StockMovement.ativo.is_(True),
                     StockMovement.status == MovementStatus.CONFIRMADA.value,
                     StockMovement.movement_type.in_(
                         [
@@ -738,7 +737,7 @@ class StockInventoryRepository:
         query = self.db.query(StockInventory).filter(
             and_(
                 StockInventory.condominio_id == condominio_id,
-                StockInventory.ativo == True,  # noqa: E712
+                StockInventory.ativo.is_(True),
             )
         )
 
@@ -756,7 +755,7 @@ class StockInventoryRepository:
             .filter(
                 and_(
                     StockInventory.condominio_id == condominio_id,
-                    StockInventory.ativo == True,  # noqa: E712
+                    StockInventory.ativo.is_(True),
                     StockInventory.status.in_(
                         [
                             InventoryStatus.EM_ANDAMENTO.value,
@@ -778,7 +777,7 @@ class StockInventoryRepository:
         query = self.db.query(func.count(StockInventory.id)).filter(
             and_(
                 StockInventory.condominio_id == condominio_id,
-                StockInventory.ativo == True,  # noqa: E712
+                StockInventory.ativo.is_(True),
             )
         )
 
@@ -893,7 +892,7 @@ class StockInventoryItemRepository:
         query = self.db.query(StockInventoryItem).filter(
             and_(
                 StockInventoryItem.inventory_id == inventory_id,
-                StockInventoryItem.ativo == True,  # noqa: E712
+                StockInventoryItem.ativo.is_(True),
             )
         )
 
@@ -910,7 +909,7 @@ class StockInventoryItemRepository:
                 and_(
                     StockInventoryItem.inventory_id == inventory_id,
                     StockInventoryItem.status == InventoryItemStatus.PENDENTE.value,
-                    StockInventoryItem.ativo == True,  # noqa: E712
+                    StockInventoryItem.ativo.is_(True),
                 )
             )
             .order_by(StockInventoryItem.location_code)
@@ -925,7 +924,7 @@ class StockInventoryItemRepository:
                 and_(
                     StockInventoryItem.inventory_id == inventory_id,
                     StockInventoryItem.status == InventoryItemStatus.DIVERGENTE.value,
-                    StockInventoryItem.ativo == True,  # noqa: E712
+                    StockInventoryItem.ativo.is_(True),
                 )
             )
             .all()
@@ -991,7 +990,7 @@ class StockReservationRepository:
         query = self.db.query(StockReservation).filter(
             and_(
                 StockReservation.condominio_id == condominio_id,
-                StockReservation.ativo == True,  # noqa: E712
+                StockReservation.ativo.is_(True),
             )
         )
 
@@ -1013,7 +1012,7 @@ class StockReservationRepository:
                     StockReservation.product_id == product_id,
                     StockReservation.warehouse_id == warehouse_id,
                     StockReservation.status == ReservationStatus.ATIVA.value,
-                    StockReservation.ativo == True,  # noqa: E712
+                    StockReservation.ativo.is_(True),
                 )
             )
             .order_by(StockReservation.required_date.asc())
@@ -1031,7 +1030,7 @@ class StockReservationRepository:
                     StockReservation.status == ReservationStatus.ATIVA.value,
                     StockReservation.expiry_date.isnot(None),
                     StockReservation.expiry_date <= expiry_limit,
-                    StockReservation.ativo == True,  # noqa: E712
+                    StockReservation.ativo.is_(True),
                 )
             )
             .order_by(StockReservation.expiry_date)
@@ -1048,7 +1047,7 @@ class StockReservationRepository:
                     StockReservation.status == ReservationStatus.ATIVA.value,
                     StockReservation.required_date.isnot(None),
                     StockReservation.required_date < datetime.utcnow(),
-                    StockReservation.ativo == True,  # noqa: E712
+                    StockReservation.ativo.is_(True),
                 )
             )
             .order_by(StockReservation.required_date)
@@ -1067,7 +1066,7 @@ class StockReservationRepository:
                 and_(
                     StockReservation.reference_type == reference_type,
                     StockReservation.reference_id == reference_id,
-                    StockReservation.ativo == True,  # noqa: E712
+                    StockReservation.ativo.is_(True),
                 )
             )
             .all()
@@ -1082,7 +1081,7 @@ class StockReservationRepository:
                     StockReservation.product_id == product_id,
                     StockReservation.warehouse_id == warehouse_id,
                     StockReservation.status == ReservationStatus.ATIVA.value,
-                    StockReservation.ativo == True,  # noqa: E712
+                    StockReservation.ativo.is_(True),
                 )
             )
             .scalar()
@@ -1098,7 +1097,7 @@ class StockReservationRepository:
         query = self.db.query(func.count(StockReservation.id)).filter(
             and_(
                 StockReservation.condominio_id == condominio_id,
-                StockReservation.ativo == True,  # noqa: E712
+                StockReservation.ativo.is_(True),
             )
         )
 
@@ -1139,7 +1138,7 @@ class StockReservationRepository:
                 and_(
                     StockReservation.condominio_id == condominio_id,
                     StockReservation.status == ReservationStatus.ATIVA.value,
-                    StockReservation.ativo == True,  # noqa: E712
+                    StockReservation.ativo.is_(True),
                 )
             )
             .scalar()

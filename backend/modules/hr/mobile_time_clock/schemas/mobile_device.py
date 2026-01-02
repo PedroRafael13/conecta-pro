@@ -28,6 +28,7 @@ class MobileDeviceRegister(MobileDeviceBase):
     @field_validator("platform")
     @classmethod
     def validate_platform(cls, v: str) -> str:
+        """Valida plataforma."""
         allowed = ["android", "ios", "web"]
         if v.lower() not in allowed:
             raise ValueError(f"Platform must be one of: {allowed}")
@@ -88,7 +89,9 @@ class MobileDeviceResponse(BaseModel):
     is_active: bool
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do Pydantic."""
+
         from_attributes = True
 
 

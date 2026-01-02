@@ -2,11 +2,11 @@
 Repository para operações de banco de dados com Substitution.
 """
 
-from datetime import date, datetime
-from typing import List, Optional
+from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
@@ -275,12 +275,19 @@ class SubstitutionRepository:
         logger.info(f"Substitution rejeitada: {substitution.id}")
         return substitution
 
-    async def complete(self, substitution_id: str) -> Optional[Substitution]:
+    async def complete(
+        self,
+        substitution_id: str,
+        overtime_hours: float = 0,  # pylint: disable=unused-argument
+        additional_cost: float = 0,  # pylint: disable=unused-argument
+    ) -> Optional[Substitution]:
         """
         Marca substituição como concluída.
 
         Args:
             substitution_id: ID da substituição
+            overtime_hours: Horas extras realizadas
+            additional_cost: Custo adicional
 
         Returns:
             Substitution concluída ou None

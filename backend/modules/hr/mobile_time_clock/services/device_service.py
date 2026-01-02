@@ -193,7 +193,7 @@ class DeviceService:
             active_only=not include_inactive,
         )
 
-    async def validate_device_for_checkin(
+    async def validate_device_for_checkin(  # pylint: disable=too-many-return-statements
         self,
         device_uuid: str,
     ) -> Tuple[bool, Optional[MobileDevice], Optional[str]]:

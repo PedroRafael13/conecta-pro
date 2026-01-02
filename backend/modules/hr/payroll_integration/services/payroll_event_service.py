@@ -88,7 +88,7 @@ class PayrollEventService:
                     created_by=user_id,
                 )
                 results["created"] += 1
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 results["failed"] += 1
                 results["errors"].append(
                     {
@@ -261,7 +261,7 @@ class PayrollEventService:
         """Retorna totais do período."""
         return await self.event_repo.get_period_totals(period_id)
 
-    async def recalculate_employee(
+    async def recalculate_employee(  # pylint: disable=too-many-locals
         self,
         employee_id: UUID,
         period_id: UUID,
@@ -271,6 +271,7 @@ class PayrollEventService:
     ) -> Dict[str, Any]:
         """Recalcula folha de um funcionário."""
         # Importar aqui para evitar circular import
+        # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.repositories import EmployeePayrollConfigRepository
         from modules.hr.payroll_integration.services.payroll_calculation_service import (
             PayrollCalculationService,
@@ -295,6 +296,7 @@ class PayrollEventService:
 
         # Recalcular
         calc_service = PayrollCalculationService(self.db)
+        # pylint: disable=protected-access
         events = await calc_service._calculate_employee_payroll(
             employee=config,
             period=period,
@@ -335,9 +337,9 @@ class PayrollEventService:
         period_id: UUID,
         file_content: bytes,
         file_format: str,
-        condominio_id: UUID,
+        condominio_id: UUID,  # pylint: disable=unused-argument
         *,
-        user_id: UUID = None,
+        user_id: UUID = None,  # pylint: disable=unused-argument
     ) -> Dict[str, Any]:
         """Importa eventos de arquivo."""
         # Validar período

@@ -2,7 +2,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -27,9 +27,7 @@ class RequisitionItemBase(BaseModel):
 
 
 class RequisitionItemCreate(RequisitionItemBase):
-    """Schema para criar item de requisição."""
-
-    pass
+    """Schema para criar item de requisicao."""
 
 
 class RequisitionItemUpdate(BaseModel):
@@ -57,7 +55,9 @@ class RequisitionItemResponse(RequisitionItemBase):
     estimated_total: Optional[Decimal] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -134,7 +134,9 @@ class PurchaseRequisitionResponse(PurchaseRequisitionBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 

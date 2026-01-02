@@ -1,7 +1,7 @@
 """Controller para gerenciamento de zonas de geofencing."""
 
 import logging
-from typing import List
+from typing import List  # noqa: F401  # pylint: disable=unused-import
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -108,7 +108,7 @@ async def create_zone(
 async def get_zone(
     zone_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Obtém detalhes de uma zona."""
     repo = GeofenceZoneRepository(db)
@@ -202,7 +202,7 @@ async def deactivate_zone(
     summary="Listar zonas",
     dependencies=[Depends(require_roles(["admin", "rh", "gestor"]))],
 )
-async def list_zones(
+async def list_zones(  # pylint: disable=too-many-locals
     condominio_id: UUID = Query(None),
     post_id: UUID = Query(None),
     category: str = Query(None),

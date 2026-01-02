@@ -118,18 +118,17 @@ class VacationPeriod(Base):
         delta = self.concession_end - date.today()
         return max(0, delta.days)
 
-    def calculate_entitled_days(self) -> int:
+    def calculate_entitled_days(self) -> int:  # pylint: disable=too-many-return-statements
         """Calcula dias de direito baseado em faltas (CLT Art. 130)."""
         if self.absences_count <= 5:
             return 30
-        elif self.absences_count <= 14:
+        if self.absences_count <= 14:
             return 24
-        elif self.absences_count <= 23:
+        if self.absences_count <= 23:
             return 18
-        elif self.absences_count <= 32:
+        if self.absences_count <= 32:
             return 12
-        else:
-            return 0  # Perde o direito
+        return 0  # Perde o direito
 
 
 class VacationRequest(Base):
@@ -312,15 +311,19 @@ class VacationRequest(Base):
 
     def to_summary(self) -> dict:
         """Retorna resumo para listagem."""
+        start_date_str = self.start_date.isoformat() if self.start_date else None
+        end_date_str = self.end_date.isoformat() if self.end_date else None
+        net_value_float = float(self.net_value) if self.net_value else None
+
         return {
             "id": str(self.id),
             "request_code": self.request_code,
             "vacation_type": self.vacation_type,
             "status": self.status,
-            "start_date": self.start_date.isoformat() if self.start_date else None,
-            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "start_date": start_date_str,
+            "end_date": end_date_str,
             "days_requested": self.days_requested,
             "sell_days": self.sell_days,
-            "net_value": float(self.net_value) if self.net_value else None,
+            "net_value": net_value_float,
             "days_until_start": self.days_until_start,
         }

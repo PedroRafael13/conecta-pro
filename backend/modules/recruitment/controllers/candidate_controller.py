@@ -35,7 +35,7 @@ router = APIRouter(prefix="/candidates", tags=["Recruitment - Candidatos"])
 async def create_candidate(
     data: CandidateCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Cria um novo candidato."""
     service = CandidateService(db)
@@ -62,7 +62,7 @@ async def create_candidate(
 async def import_candidate(
     data: CandidateImport,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Importa candidato a partir do currículo."""
     service = CandidateService(db)
@@ -85,7 +85,7 @@ async def import_candidate(
     response_model=CandidateListResponse,
     summary="Listar candidatos",
 )
-async def list_candidates(
+async def list_candidates(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     status_filter: Optional[CandidateStatus] = Query(None, alias="status"),
@@ -103,7 +103,7 @@ async def list_candidates(
     order_by: str = "created_at",
     order_desc: bool = True,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateListResponse:
     """Lista candidatos com filtros e paginação."""
     service = CandidateService(db)
@@ -145,7 +145,7 @@ async def list_active_candidates(
     limit: int = Query(50, ge=1, le=100),
     condominium_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateListResponse:
     """Lista candidatos ativos e não bloqueados."""
     service = CandidateService(db)
@@ -168,7 +168,7 @@ async def list_blocked_candidates(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateListResponse:
     """Lista candidatos bloqueados."""
     service = CandidateService(db)
@@ -191,7 +191,7 @@ async def search_by_skills(
     skills: List[str] = Query(..., min_length=1),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateListResponse:
     """Busca candidatos por habilidades."""
     service = CandidateService(db)
@@ -214,7 +214,7 @@ async def list_recently_active(
     days: int = Query(30, ge=1, le=90),
     limit: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateListResponse:
     """Lista candidatos que tiveram atividade recente."""
     service = CandidateService(db)
@@ -236,7 +236,7 @@ async def list_recently_active(
 async def get_candidate_stats(
     condominium_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateStats:
     """Retorna estatísticas dos candidatos."""
     service = CandidateService(db)
@@ -252,7 +252,7 @@ async def get_candidate_stats(
 async def get_candidate(
     candidate_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Busca candidato por ID com relacionamentos."""
     service = CandidateService(db)
@@ -275,7 +275,7 @@ async def get_candidate(
 async def get_candidate_by_email(
     email: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Busca candidato por email."""
     service = CandidateService(db)
@@ -299,7 +299,7 @@ async def update_candidate(
     candidate_id: str,
     data: CandidateUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Atualiza um candidato existente."""
     service = CandidateService(db)
@@ -324,7 +324,7 @@ async def update_candidate(
 async def delete_candidate(
     candidate_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Remove um candidato (soft delete)."""
     service = CandidateService(db)
@@ -346,7 +346,7 @@ async def block_candidate(
     candidate_id: str,
     data: CandidateBlock,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Bloqueia um candidato."""
     service = CandidateService(db)
@@ -369,7 +369,7 @@ async def block_candidate(
 async def unblock_candidate(
     candidate_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Desbloqueia um candidato."""
     service = CandidateService(db)
@@ -392,7 +392,7 @@ async def unblock_candidate(
 async def archive_candidate(
     candidate_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Arquiva um candidato."""
     service = CandidateService(db)
@@ -415,7 +415,7 @@ async def archive_candidate(
 async def activate_candidate(
     candidate_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Ativa um candidato."""
     service = CandidateService(db)
@@ -439,7 +439,7 @@ async def update_candidate_tags(
     candidate_id: str,
     tags: List[str],
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Atualiza tags do candidato."""
     service = CandidateService(db)
@@ -463,7 +463,7 @@ async def add_candidate_note(
     candidate_id: str,
     note: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Adiciona nota ao candidato."""
     service = CandidateService(db)
@@ -488,7 +488,7 @@ async def merge_candidates(
     primary_id: str,
     secondary_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CandidateResponse:
     """Mescla candidatos duplicados."""
     service = CandidateService(db)

@@ -1,4 +1,8 @@
-"""Controllers do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade."""
+"""
+Controllers do modulo financeiro.
+
+Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade.
+"""
 
 # Contabilidade
 from modules.financial.controllers.accounting_controller import router as accounting_router

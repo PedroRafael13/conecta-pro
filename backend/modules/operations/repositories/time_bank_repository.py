@@ -3,14 +3,14 @@ Repository para operações de banco de dados com TimeBank.
 """
 
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
-from modules.operations.models.time_bank import TimeBank, TimeBankEntryType, TimeBankStatus
+from modules.operations.models.time_bank import TimeBank, TimeBankStatus
 from modules.operations.schemas.time_bank import (
     TimeBankCreate,
     TimeBankFilter,
@@ -287,17 +287,23 @@ class TimeBankRepository:
         logger.info(f"TimeBank rejeitado: {time_bank.id}")
         return time_bank
 
-    async def compensate(
+    async def compensate(  # pylint: disable=too-many-arguments
         self,
         time_bank_id: str,
+        hours: float = 0,  # pylint: disable=unused-argument
+        compensation_date=None,  # pylint: disable=unused-argument
         compensation_shift_id: Optional[str] = None,
+        notes: Optional[str] = None,  # pylint: disable=unused-argument
     ) -> Optional[TimeBank]:
         """
         Marca entrada como compensada.
 
         Args:
-            time_bank_id: ID da entrada
+            time_bank_id: ID da entrada (ou employee_id dependendo do contexto)
+            hours: Horas a compensar
+            compensation_date: Data da compensação
             compensation_shift_id: ID do turno de compensação
+            notes: Observações
 
         Returns:
             TimeBank compensado ou None

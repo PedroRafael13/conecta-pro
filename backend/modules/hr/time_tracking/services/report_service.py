@@ -154,18 +154,30 @@ class ReportService:
             ],
             "approvals": {
                 "employee_approved": sheet.approved_by_employee,
-                "employee_approved_at": sheet.employee_approved_at.isoformat() if sheet.employee_approved_at else None,
+                "employee_approved_at": (
+                    sheet.employee_approved_at.isoformat()
+                    if sheet.employee_approved_at else None
+                ),
                 "manager_approved": sheet.approved_by_manager,
                 "manager_name": sheet.manager_name,
-                "manager_approved_at": sheet.manager_approved_at.isoformat() if sheet.manager_approved_at else None,
+                "manager_approved_at": (
+                    sheet.manager_approved_at.isoformat()
+                    if sheet.manager_approved_at else None
+                ),
                 "hr_approved": sheet.approved_by_hr,
                 "hr_name": sheet.hr_approver_name,
-                "hr_approved_at": sheet.hr_approved_at.isoformat() if sheet.hr_approved_at else None,
+                "hr_approved_at": (
+                    sheet.hr_approved_at.isoformat()
+                    if sheet.hr_approved_at else None
+                ),
             },
             "status": {
                 "status": sheet.status.value,
                 "closed_at": sheet.closed_at.isoformat() if sheet.closed_at else None,
-                "sent_to_payroll_at": sheet.sent_to_payroll_at.isoformat() if sheet.sent_to_payroll_at else None,
+                "sent_to_payroll_at": (
+                    sheet.sent_to_payroll_at.isoformat()
+                    if sheet.sent_to_payroll_at else None
+                ),
                 "has_pending_issues": sheet.has_pending_issues,
                 "pending_issues": sheet.pending_issues or [],
             },
@@ -173,7 +185,7 @@ class ReportService:
 
         return report
 
-    async def generate_department_report(
+    async def generate_department_report(  # pylint: disable=too-many-locals
         self,
         department_id: str,
         reference_month: int,
@@ -181,6 +193,7 @@ class ReportService:
         condominium_id: str = None,
     ) -> Dict[str, Any]:
         """Gera relatório consolidado do departamento."""
+        # pylint: disable=import-outside-toplevel
         from modules.hr.time_tracking.schemas import TimeSheetFilter
 
         filters = TimeSheetFilter(
@@ -190,7 +203,7 @@ class ReportService:
             condominium_id=condominium_id,
         )
 
-        sheets, total = await self.sheet_repo.list(filters, limit=1000)
+        sheets, _total = await self.sheet_repo.list(filters, limit=1000)
 
         if not sheets:
             return {"error": "Nenhuma folha encontrada para o período"}
@@ -242,7 +255,9 @@ class ReportService:
                 "avg_overtime": round(total_overtime / len(sheets) / 60, 2),
                 "sheets_pending": len([s for s in sheets if s.status == TimeSheetStatus.ABERTO]),
                 "sheets_closed": len([s for s in sheets if s.status == TimeSheetStatus.FECHADO]),
-                "sheets_sent": len([s for s in sheets if s.status == TimeSheetStatus.ENVIADO_FOLHA]),
+                "sheets_sent": len(
+                    [s for s in sheets if s.status == TimeSheetStatus.ENVIADO_FOLHA]
+                ),
             },
         }
 
@@ -291,9 +306,11 @@ class ReportService:
             reverse=True
         )[:10]
 
+        date_from_str = date_from.isoformat() if date_from else 'N/A'
+        date_to_str = date_to.isoformat() if date_to else 'N/A'
         report = {
             "header": {
-                "period": f"{date_from.isoformat() if date_from else 'N/A'} a {date_to.isoformat() if date_to else 'N/A'}",
+                "period": f"{date_from_str} a {date_to_str}",
                 "total_anomalies": len(entries),
                 "generated_at": datetime.utcnow().isoformat(),
             },
@@ -317,7 +334,7 @@ class ReportService:
 
         return report
 
-    async def generate_overtime_report(
+    async def generate_overtime_report(  # pylint: disable=too-many-locals
         self,
         condominium_id: str = None,
         date_from: date = None,
@@ -331,6 +348,7 @@ class ReportService:
         )
 
         # Busca detalhes
+        # pylint: disable=import-outside-toplevel
         from modules.hr.time_tracking.schemas import OvertimeFilter
 
         filters = OvertimeFilter(
@@ -339,7 +357,7 @@ class ReportService:
             date_to=date_to,
         )
 
-        overtimes, total = await self.overtime_repo.list(filters, limit=500)
+        overtimes, _total = await self.overtime_repo.list(filters, limit=500)
 
         # Agrupa por funcionário
         by_employee: Dict[str, Dict] = {}
@@ -361,9 +379,11 @@ class ReportService:
             elif ot.status in [OvertimeStatus.PENDENTE, OvertimeStatus.PRE_APROVADO]:
                 by_employee[emp_id]["pending_minutes"] += ot.total_minutes
 
+        date_from_str = date_from.isoformat() if date_from else 'N/A'
+        date_to_str = date_to.isoformat() if date_to else 'N/A'
         report = {
             "header": {
-                "period": f"{date_from.isoformat() if date_from else 'N/A'} a {date_to.isoformat() if date_to else 'N/A'}",
+                "period": f"{date_from_str} a {date_to_str}",
                 "total_records": stats["total_records"],
                 "generated_at": datetime.utcnow().isoformat(),
             },
@@ -532,6 +552,7 @@ class ReportService:
         date_to: date,
     ) -> List[TimeEntry]:
         """Busca entradas para exportação."""
+        # pylint: disable=import-outside-toplevel
         from modules.hr.time_tracking.schemas import TimeEntryFilter
 
         filters = TimeEntryFilter(

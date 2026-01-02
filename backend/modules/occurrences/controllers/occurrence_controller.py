@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_async_session
 from core.auth.dependencies import get_current_user, require_roles
-from modules.occurrences.models.occurrence import OccurrencePriority, OccurrenceStatus
+from modules.occurrences.models.occurrence import OccurrenceStatus
 from modules.occurrences.schemas.occurrence import (
     OccurrenceAssign,
     OccurrenceCreate,
@@ -80,7 +80,7 @@ async def create_occurrence(
     response_model=OccurrenceListResponse,
     summary="Listar ocorrencias",
 )
-async def list_occurrences(
+async def list_occurrences(  # pylint: disable=too-many-locals
     condominium_id: Optional[str] = Query(None, description="ID do condominio"),
     category_id: Optional[str] = Query(None, description="ID da categoria"),
     occurrence_type: Optional[str] = Query(None, description="Tipo da ocorrencia"),
@@ -95,7 +95,7 @@ async def list_occurrences(
     order_by: str = Query("created_at", description="Campo de ordenacao"),
     order_desc: bool = Query(True, description="Ordem descendente"),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceListResponse:
     """Lista ocorrencias com filtros."""
     filters = OccurrenceFilter(
@@ -121,7 +121,7 @@ async def list_open_occurrences(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceListResponse:
     """Lista ocorrencias abertas."""
     return await service.get_open(page, page_size)
@@ -136,7 +136,7 @@ async def list_overdue_occurrences(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceListResponse:
     """Lista ocorrencias atrasadas."""
     return await service.get_overdue(page, page_size)
@@ -151,7 +151,7 @@ async def list_escalated_occurrences(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceListResponse:
     """Lista ocorrencias escalonadas."""
     return await service.get_escalated(page, page_size)
@@ -166,7 +166,7 @@ async def list_high_priority_occurrences(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceListResponse:
     """Lista ocorrencias de alta prioridade."""
     return await service.get_high_priority(page, page_size)
@@ -181,7 +181,7 @@ async def list_unassigned_occurrences(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceListResponse:
     """Lista ocorrencias nao atribuidas."""
     return await service.get_unassigned(page, page_size)
@@ -195,7 +195,7 @@ async def list_unassigned_occurrences(
 async def get_occurrence_stats(
     condominium_id: Optional[str] = Query(None, description="ID do condominio"),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceStats:
     """Retorna estatisticas de ocorrencias."""
     return await service.get_stats(condominium_id)
@@ -243,7 +243,7 @@ async def list_by_condominium(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceListResponse:
     """Lista ocorrencias de um condominio."""
     return await service.get_by_condominium(condominium_id, page, page_size)
@@ -258,7 +258,7 @@ async def get_occurrence(
     occurrence_id: UUID,
     include_relations: bool = Query(False, description="Incluir relacoes"),
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceResponse:
     """Busca ocorrencia por ID."""
     result = await service.get_by_id(occurrence_id, include_relations)
@@ -281,7 +281,7 @@ async def get_occurrence(
 async def get_occurrence_by_code(
     code: str,
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceResponse:
     """Busca ocorrencia por codigo."""
     result = await service.get_by_code(code)
@@ -377,7 +377,7 @@ async def assign_occurrence(
 async def unassign_occurrence(
     occurrence_id: UUID,
     service: OccurrenceService = Depends(get_occurrence_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> OccurrenceResponse:
     """Remove atribuicao de responsavel."""
     result = await service.unassign(occurrence_id)
@@ -573,7 +573,7 @@ async def classify_occurrence(
     title: str = Query(..., description="Titulo da ocorrencia"),
     description: str = Query(..., description="Descricao da ocorrencia"),
     service: ClassificationAIService = Depends(get_classification_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Classifica uma ocorrencia usando IA."""
     return await service.classify_occurrence(title, description)
@@ -586,7 +586,7 @@ async def classify_occurrence(
 async def get_priority_score(
     occurrence_id: UUID,
     service: ClassificationAIService = Depends(get_classification_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Calcula score de prioridade de uma ocorrencia."""
     result = await service.calculate_priority_score(occurrence_id)
@@ -605,7 +605,7 @@ async def get_priority_score(
 async def suggest_assignee(
     occurrence_id: UUID,
     service: ClassificationAIService = Depends(get_classification_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Sugere responsavel para uma ocorrencia."""
     result = await service.suggest_assignee(occurrence_id)
@@ -625,7 +625,7 @@ async def analyze_trends(
     condominium_id: Optional[str] = Query(None, description="ID do condominio"),
     days: int = Query(30, ge=7, le=365, description="Periodo em dias"),
     service: ClassificationAIService = Depends(get_classification_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Analisa tendencias de ocorrencias."""
     return await service.analyze_trends(condominium_id, days)

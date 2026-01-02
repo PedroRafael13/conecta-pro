@@ -474,7 +474,7 @@ class CostAllocationBase(BaseModel):
         try:
             year = int(v[:4])
             month = int(v[5:7])
-            if not (1 <= month <= 12) or not (2000 <= year <= 2100):
+            if not 1 <= month <= 12 or not 2000 <= year <= 2100:
                 raise ValueError
         except ValueError:
             raise ValueError("Período inválido")

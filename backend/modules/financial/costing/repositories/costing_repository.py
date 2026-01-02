@@ -206,7 +206,7 @@ class CostActivityRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_all(
+    async def list_all(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         skip: int = 0,
@@ -355,7 +355,7 @@ class CostPoolRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_all(
+    async def list_all(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         skip: int = 0,
@@ -483,7 +483,7 @@ class CostObjectRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_all(
+    async def list_all(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         skip: int = 0,
@@ -617,7 +617,7 @@ class CostAllocationRepository:
         self, allocations: list[CostAllocation]
     ) -> list[CostAllocation]:
         """Cria lote de alocações."""
-        batch_id = allocations[0].batch_id if allocations else None
+        _batch_id = allocations[0].batch_id if allocations else None  # Reserved
         for i, allocation in enumerate(allocations):
             allocation.batch_sequence = i + 1
             result = await self.db.execute(
@@ -670,7 +670,7 @@ class CostAllocationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_all(
+    async def list_all(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         skip: int = 0,
@@ -852,7 +852,7 @@ class CostAnalysisRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_all(
+    async def list_all(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         skip: int = 0,

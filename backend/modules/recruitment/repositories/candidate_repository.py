@@ -118,7 +118,7 @@ class CandidateRepository:
         await self.session.flush()
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[CandidateFilter] = None,
         skip: int = 0,
@@ -192,7 +192,7 @@ class CandidateRepository:
         query = select(Candidate).where(
             and_(
                 Candidate.status == CandidateStatus.ATIVO,
-                Candidate.is_blocked == False,
+                Candidate.is_blocked.is_(False),
                 Candidate.deleted_at.is_(None),
             )
         )
@@ -231,7 +231,7 @@ class CandidateRepository:
             select(Candidate)
             .where(
                 and_(
-                    Candidate.is_blocked == True,
+                    Candidate.is_blocked.is_(True),
                     Candidate.deleted_at.is_(None),
                 )
             )

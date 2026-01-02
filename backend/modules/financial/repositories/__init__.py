@@ -1,4 +1,7 @@
-"""Repositories do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade."""
+"""Repositories do modulo financeiro.
+
+Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade.
+"""
 
 # Contabilidade
 from modules.financial.repositories.accounting_repository import (

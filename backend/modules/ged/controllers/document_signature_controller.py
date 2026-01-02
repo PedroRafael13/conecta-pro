@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from core.auth.dependencies import get_current_user
 from modules.ged.services.document_signature_service import DocumentSignatureService
-from modules.ged.models.document_signature import SignatureStatus, SignatureRole
+from modules.ged.models.document_signature import SignatureStatus
 from modules.ged.schemas.document_signature import (
     DocumentSignatureCreate,
     DocumentSignatureUpdate,

@@ -115,7 +115,7 @@ async def list_attachments_by_occurrence(
     page: int = Query(1, ge=1, description="Pagina"),
     page_size: int = Query(50, ge=1, le=200, description="Itens por pagina"),
     service: AttachmentService = Depends(get_attachment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> AttachmentListResponse:
     """Lista anexos de uma ocorrencia."""
     return await service.list_by_occurrence(
@@ -131,7 +131,7 @@ async def list_attachments_by_occurrence(
 async def list_images(
     occurrence_id: UUID,
     service: AttachmentService = Depends(get_attachment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[AttachmentResponse]:
     """Lista apenas imagens de uma ocorrencia."""
     return await service.list_images(occurrence_id)
@@ -145,7 +145,7 @@ async def list_images(
 async def list_documents(
     occurrence_id: UUID,
     service: AttachmentService = Depends(get_attachment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[AttachmentResponse]:
     """Lista apenas documentos de uma ocorrencia."""
     return await service.list_documents(occurrence_id)
@@ -159,7 +159,7 @@ async def list_documents(
 async def list_media(
     occurrence_id: UUID,
     service: AttachmentService = Depends(get_attachment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> list[AttachmentResponse]:
     """Lista videos e audios de uma ocorrencia."""
     return await service.list_media(occurrence_id)
@@ -172,7 +172,7 @@ async def list_media(
 async def get_attachment_stats(
     occurrence_id: UUID,
     service: AttachmentService = Depends(get_attachment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna estatisticas de anexos por tipo."""
     return await service.get_stats_by_type(occurrence_id)
@@ -186,7 +186,7 @@ async def get_attachment_stats(
 async def get_attachment(
     attachment_id: UUID,
     service: AttachmentService = Depends(get_attachment_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> AttachmentResponse:
     """Busca anexo por ID."""
     result = await service.get_by_id(attachment_id)

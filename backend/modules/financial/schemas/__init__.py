@@ -1,4 +1,7 @@
-"""Schemas do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Estoque."""
+"""Schemas do modulo financeiro.
+
+Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Estoque.
+"""
 
 # Contas a Pagar
 # Fluxo de Caixa

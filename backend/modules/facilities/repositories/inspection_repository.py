@@ -126,7 +126,7 @@ class InspectionRepository:
 
         return inspections, total
 
-    def _apply_filters(self, query, filters: InspectionFilter):
+    def _apply_filters(self, query, filters: InspectionFilter):  # pylint: disable=too-many-branches
         """Aplica filtros à query."""
         if filters.search:
             search_term = f"%{filters.search}%"
@@ -298,7 +298,7 @@ class InspectionRepository:
         logger.info(f"Inspection deletada (soft): {inspection.id}")
         return True
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         client_id: Optional[str] = None,
         area_id: Optional[str] = None,

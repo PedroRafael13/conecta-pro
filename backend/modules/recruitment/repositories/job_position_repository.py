@@ -10,9 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.recruitment.models.job_position import (
     JobPosition,
     PositionStatus,
-    PositionType,
-    PositionLevel,
-    WorkModel,
     Department,
 )
 from modules.recruitment.schemas.job_position import (
@@ -94,7 +91,7 @@ class JobPositionRepository:
         await self.session.flush()
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[JobPositionFilter] = None,
         skip: int = 0,
@@ -205,8 +202,7 @@ class JobPositionRepository:
         """Retorna vagas próximas da expiração."""
         deadline = date.today()
         deadline_limit = date.today()
-        # Calcula data limite adicionando dias
-        from datetime import timedelta
+        from datetime import timedelta  # pylint: disable=import-outside-toplevel
         deadline_limit = deadline + timedelta(days=days)
 
         query = select(JobPosition).where(

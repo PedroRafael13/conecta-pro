@@ -61,7 +61,7 @@ async def _get_all_commissions(db: AsyncSession) -> List[Commission]:
 
 @router.get("/kpis", response_model=DashboardKPIs)
 async def get_dashboard_kpis(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
@@ -93,7 +93,7 @@ async def get_dashboard_kpis(
 
 @router.get("/funnel", response_model=DashboardChart)
 async def get_sales_funnel(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> DashboardChart:
     """
@@ -110,7 +110,7 @@ async def get_sales_funnel(
 
 @router.get("/trends/leads", response_model=List[DashboardTrend])
 async def get_leads_trends(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     period: str = Query("month", pattern="^(day|week|month)$"),
     periods_count: int = Query(6, ge=2, le=12),
@@ -138,7 +138,7 @@ async def get_leads_trends(
 
 @router.get("/trends/sales", response_model=List[DashboardTrend])
 async def get_sales_trends(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     period: str = Query("month", pattern="^(day|week|month)$"),
     periods_count: int = Query(6, ge=2, le=12),
@@ -152,9 +152,11 @@ async def get_sales_trends(
     # Filtrar apenas opportunities ganhas
     won_opps = [o for o in opportunities if o.is_won]
 
+    has_close_date = won_opps and hasattr(won_opps[0], 'actual_close_date')
+    date_fld = "actual_close_date" if has_close_date else "updated_at"
     trends = service.generate_trends(
         data=won_opps,
-        date_field="actual_close_date" if won_opps and hasattr(won_opps[0], 'actual_close_date') else "updated_at",
+        date_field=date_fld,
         value_field="value",
         period=period,
         periods_count=periods_count,
@@ -165,7 +167,7 @@ async def get_sales_trends(
 
 @router.get("/trends/commissions", response_model=List[DashboardTrend])
 async def get_commissions_trends(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     period: str = Query("month", pattern="^(day|week|month)$"),
     periods_count: int = Query(6, ge=2, le=12),
@@ -189,7 +191,7 @@ async def get_commissions_trends(
 
 @router.get("/conversion-rates", response_model=dict)
 async def get_conversion_rates(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -207,7 +209,7 @@ async def get_conversion_rates(
 @router.get("/seller/{seller_id}/performance", response_model=PerformanceMetrics)
 async def get_seller_performance(
     seller_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     target: Optional[float] = None,
 ) -> PerformanceMetrics:
@@ -233,7 +235,7 @@ async def get_seller_performance(
 
 @router.get("/top-performers", response_model=List[PerformanceMetrics])
 async def get_top_performers(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     limit: int = Query(5, ge=1, le=20),
 ) -> List[PerformanceMetrics]:
@@ -271,7 +273,7 @@ async def get_top_performers(
 
 @router.get("/charts/leads-by-status", response_model=DashboardChart)
 async def get_leads_by_status_chart(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> DashboardChart:
     """Retorna gráfico de distribuição de leads por status."""
@@ -289,7 +291,7 @@ async def get_leads_by_status_chart(
 
 @router.get("/charts/opportunities-by-stage", response_model=DashboardChart)
 async def get_opportunities_by_stage_chart(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> DashboardChart:
     """Retorna gráfico de distribuição de opportunities por estágio."""
@@ -307,7 +309,7 @@ async def get_opportunities_by_stage_chart(
 
 @router.get("/charts/proposals-by-status", response_model=DashboardChart)
 async def get_proposals_by_status_chart(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> DashboardChart:
     """Retorna gráfico de distribuição de propostas por status."""
@@ -325,7 +327,7 @@ async def get_proposals_by_status_chart(
 
 @router.get("/charts/commissions-by-status", response_model=DashboardChart)
 async def get_commissions_by_status_chart(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> DashboardChart:
     """Retorna gráfico de distribuição de comissões por status."""

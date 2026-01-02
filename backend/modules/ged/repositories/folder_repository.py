@@ -6,7 +6,6 @@ from uuid import uuid4
 
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from modules.ged.models.folder import Folder, FolderStatus, FolderType
 from modules.ged.schemas.folder import FolderCreate, FolderUpdate, FolderFilter
@@ -58,9 +57,9 @@ class FolderRepository:
         return result.scalar_one_or_none()
 
     async def get_by_path(self, path: str) -> Optional[Folder]:
-        """Busca pasta por caminho."""
+        """Busca pasta por caminho (usando coluna path)."""
         result = await self.session.execute(
-            select(Folder).where(Folder.full_path == path)
+            select(Folder).where(Folder.path == path)
         )
         return result.scalar_one_or_none()
 

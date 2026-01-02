@@ -1,7 +1,7 @@
 """Repository para Interview."""
 
 import logging
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 from typing import Optional, List, Tuple
 
 from sqlalchemy import select, func, and_, or_
@@ -10,7 +10,6 @@ from sqlalchemy.orm import selectinload
 
 from modules.recruitment.models.interview import (
     Interview,
-    InterviewType,
     InterviewStatus,
     InterviewResult,
 )
@@ -230,8 +229,8 @@ class InterviewRepository:
                     Interview.scheduled_date <= tomorrow,
                     Interview.status == InterviewStatus.AGENDADA,
                     or_(
-                        Interview.candidate_confirmed == False,
-                        Interview.interviewer_confirmed == False,
+                        Interview.candidate_confirmed.is_(False),
+                        Interview.interviewer_confirmed.is_(False),
                     ),
                     Interview.deleted_at.is_(None),
                 )
@@ -322,7 +321,9 @@ class InterviewRepository:
             await self.session.flush()
         return interview
 
-    async def get_stats(self, application_id: str = None) -> dict:
+    async def get_stats(  # pylint: disable=too-many-branches
+        self, application_id: str = None
+    ) -> dict:
         """Retorna estatísticas."""
         query = select(Interview).where(Interview.deleted_at.is_(None))
         if application_id:

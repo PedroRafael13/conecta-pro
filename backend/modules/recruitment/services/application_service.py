@@ -11,9 +11,6 @@ from modules.recruitment.models.application import (
     ApplicationStatus,
     RejectionReason,
 )
-from modules.recruitment.models.job_position import JobPosition
-from modules.recruitment.models.candidate import Candidate
-from modules.recruitment.models.candidate_skill import CandidateSkill
 from modules.recruitment.schemas.application import (
     ApplicationCreate,
     ApplicationUpdate,
@@ -96,8 +93,8 @@ class ApplicationService:
                 candidate, position
             )
             application.matching_score = matching["final_score"]
-        except Exception as e:
-            logger.warning(f"Erro ao calcular matching: {e}")
+        except (ValueError, KeyError, TypeError) as e:
+            logger.warning("Erro ao calcular matching: %s", e)
 
         await self.session.commit()
 
@@ -139,7 +136,7 @@ class ApplicationService:
         if application:
             await self.session.commit()
             logger.info(
-                f"Candidatura atualizada",
+                "Candidatura atualizada",
                 extra={"application_id": str(application.id)},
             )
         return application
@@ -530,8 +527,8 @@ class ApplicationService:
                     success += 1
                 else:
                     failed += 1
-            except Exception as e:
-                logger.error(f"Erro em ação bulk para {app_id}: {e}")
+            except (ValueError, KeyError, TypeError) as e:
+                logger.error("Erro em ação bulk para %s: %s", app_id, e)
                 failed += 1
 
         await self.session.commit()

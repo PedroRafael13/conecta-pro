@@ -178,7 +178,9 @@ class DashboardConfig(Base):
             or bool(self.shared_with_departments)
         )
 
-    def can_view(self, user_id: uuid.UUID, user_role: str = None, department_id: uuid.UUID = None) -> bool:
+    def can_view(  # pylint: disable=too-many-return-statements
+        self, user_id: uuid.UUID, user_role: str = None, department_id: uuid.UUID = None
+    ) -> bool:
         """Verifica se usuário pode visualizar."""
         if self.owner_id == user_id:
             return True
@@ -190,8 +192,9 @@ class DashboardConfig(Base):
             return True
         if user_role and user_role in (self.shared_with_roles or []):
             return True
-        if department_id and str(department_id) in [str(d) for d in (self.shared_with_departments or [])]:
-            return True
+        if department_id:
+            if str(department_id) in [str(d) for d in (self.shared_with_departments or [])]:
+                return True
         return False
 
     def can_edit(self, user_id: uuid.UUID) -> bool:

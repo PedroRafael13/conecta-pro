@@ -3,7 +3,9 @@
 import uuid
 from datetime import date, datetime, time
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import Optional
+
+from dateutil.relativedelta import relativedelta
 
 from sqlalchemy import (
     Boolean,
@@ -19,7 +21,6 @@ from sqlalchemy import (
     Time,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.models import Base
 
@@ -266,8 +267,6 @@ class BillingRule(Base):
 
     def _calculate_next_run(self) -> None:
         """Calcula proxima execucao."""
-        from dateutil.relativedelta import relativedelta
-
         today = date.today()
         if self.generation_day > today.day:
             next_date = today.replace(day=self.generation_day)

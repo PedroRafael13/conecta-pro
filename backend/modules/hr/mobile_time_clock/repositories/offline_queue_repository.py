@@ -4,13 +4,12 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, func, update, delete, and_
+from sqlalchemy import select, func, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.mobile_time_clock.models import (
     OfflineQueue,
     QueueStatus,
-    QueuePriority,
 )
 from modules.hr.mobile_time_clock.schemas import (
     OfflineQueueItemCreate,
@@ -101,7 +100,7 @@ class OfflineQueueRepository:
         """Busca itens pendentes para processamento."""
         query = select(OfflineQueue).where(
             OfflineQueue.status == QueueStatus.PENDING.value,
-            OfflineQueue.is_expired == False,
+            OfflineQueue.is_expired.is_(False),
         )
 
         if device_id:
@@ -109,7 +108,7 @@ class OfflineQueueRepository:
 
         # Verificar retry
         query = query.where(
-            (OfflineQueue.next_retry_at == None) |
+            (OfflineQueue.next_retry_at.is_(None)) |
             (OfflineQueue.next_retry_at <= datetime.utcnow())
         )
 
@@ -130,7 +129,7 @@ class OfflineQueueRepository:
         result = await self.db.execute(
             select(OfflineQueue)
             .where(OfflineQueue.status == QueueStatus.FAILED.value)
-            .where(OfflineQueue.is_expired == False)
+            .where(OfflineQueue.is_expired.is_(False))
             .where(OfflineQueue.retry_count < OfflineQueue.max_retries)
             .where(OfflineQueue.next_retry_at <= now)
             .order_by(OfflineQueue.next_retry_at.asc())

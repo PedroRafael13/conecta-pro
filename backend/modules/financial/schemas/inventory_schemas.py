@@ -155,7 +155,9 @@ class WarehouseResponse(WarehouseBase):
     available_positions: int = 0
     is_climate_controlled: bool = False
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -174,7 +176,9 @@ class WarehouseListResponse(BaseModel):
     occupancy_rate: Optional[float] = None
     is_active: bool = True
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -282,7 +286,9 @@ class StockItemResponse(StockItemBase):
     full_location: str = ""
     classification: str = "--"
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -303,7 +309,9 @@ class StockItemListResponse(BaseModel):
     is_low_stock: bool = False
     is_expired: bool = False
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -410,7 +418,9 @@ class StockMovementResponse(StockMovementBase):
     dest_full_location: str = ""
     signed_quantity: float = 0
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -431,7 +441,9 @@ class StockMovementListResponse(BaseModel):
     reference_number: Optional[str] = None
     is_confirmed: bool = False
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -522,7 +534,9 @@ class StockInventoryResponse(StockInventoryBase):
     can_start: bool = True
     can_finish: bool = False
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -542,7 +556,9 @@ class StockInventoryListResponse(BaseModel):
     progress_percentage: float = 0
     accuracy_rate: Optional[float] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -615,7 +631,9 @@ class StockInventoryItemResponse(StockInventoryItemBase):
     divergence_percentage: Optional[float] = None
     full_location: str = ""
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -717,7 +735,9 @@ class StockReservationResponse(StockReservationBase):
     days_until_expiry: Optional[int] = None
     is_high_priority: bool = False
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -738,7 +758,9 @@ class StockReservationListResponse(BaseModel):
     reference_number: Optional[str] = None
     is_overdue: bool = False
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 

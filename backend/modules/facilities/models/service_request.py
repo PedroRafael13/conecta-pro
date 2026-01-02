@@ -14,10 +14,10 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.base import Base
+from modules.facilities.models.maintenance import Maintenance
 
 if TYPE_CHECKING:
     from .area import Area
-    from .maintenance import Maintenance
 
 
 class ServiceRequestStatus(str, Enum):
@@ -347,8 +347,6 @@ class ServiceRequest(Base):
 
 
 # Adicionar relacionamento reverso no Maintenance
-from modules.facilities.models.maintenance import Maintenance
-
 Maintenance.service_request = relationship(
     "ServiceRequest",
     back_populates="maintenances",

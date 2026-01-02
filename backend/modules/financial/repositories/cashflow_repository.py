@@ -1,9 +1,9 @@
 """Repository para Fluxo de Caixa."""
 
 import logging
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -16,11 +16,10 @@ from modules.financial.models.bank_transaction import BankTransaction
 from modules.financial.models.bank_transaction import (
     ReconciliationStatus as TransactionReconciliationStatus,
 )
-from modules.financial.models.bank_transaction import TransactionStatus, TransactionType
+from modules.financial.models.bank_transaction import TransactionStatus
 from modules.financial.models.cashflow_entry import (
     CashFlowEntry,
     CashFlowEntryStatus,
-    CashFlowEntryType,
 )
 from modules.financial.models.cashflow_forecast import CashFlowForecast, ForecastStatus
 from modules.financial.schemas.cashflow import (
@@ -56,7 +55,7 @@ class BankAccountRepository:
         query = select(BankAccount).where(
             and_(
                 BankAccount.id == account_id,
-                BankAccount.ativo == True,  # noqa: E712
+                BankAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -77,7 +76,7 @@ class BankAccountRepository:
         query = select(BankAccount).where(
             and_(
                 BankAccount.condominio_id == condominio_id,
-                BankAccount.ativo == True,  # noqa: E712
+                BankAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -110,7 +109,7 @@ class BankAccountRepository:
         query = select(func.count(BankAccount.id)).where(
             and_(
                 BankAccount.condominio_id == condominio_id,
-                BankAccount.ativo == True,  # noqa: E712
+                BankAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -144,8 +143,8 @@ class BankAccountRepository:
         query = select(BankAccount).where(
             and_(
                 BankAccount.condominio_id == condominio_id,
-                BankAccount.is_main_account == True,  # noqa: E712
-                BankAccount.ativo == True,  # noqa: E712
+                BankAccount.is_main_account.is_(True),  # noqa: E712
+                BankAccount.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -157,7 +156,7 @@ class BankAccountRepository:
             and_(
                 BankAccount.condominio_id == condominio_id,
                 BankAccount.status == BankAccountStatus.ATIVA.value,
-                BankAccount.ativo == True,  # noqa: E712
+                BankAccount.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -183,7 +182,7 @@ class BankTransactionRepository:
         query = select(BankTransaction).where(
             and_(
                 BankTransaction.id == transaction_id,
-                BankTransaction.ativo == True,  # noqa: E712
+                BankTransaction.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -200,7 +199,7 @@ class BankTransactionRepository:
         query = select(BankTransaction).where(
             and_(
                 BankTransaction.bank_account_id == bank_account_id,
-                BankTransaction.ativo == True,  # noqa: E712
+                BankTransaction.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -245,7 +244,7 @@ class BankTransactionRepository:
         query = select(func.count(BankTransaction.id)).where(
             and_(
                 BankTransaction.bank_account_id == bank_account_id,
-                BankTransaction.ativo == True,  # noqa: E712
+                BankTransaction.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -277,7 +276,7 @@ class BankTransactionRepository:
                 == TransactionReconciliationStatus.PENDENTE.value,
                 BankTransaction.transaction_date >= start_date,
                 BankTransaction.transaction_date <= end_date,
-                BankTransaction.ativo == True,  # noqa: E712
+                BankTransaction.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -298,7 +297,7 @@ class BankTransactionRepository:
                     BankTransaction.transaction_date >= start_date,
                     BankTransaction.transaction_date <= end_date,
                     BankTransaction.status == TransactionStatus.CONFIRMADA.value,
-                    BankTransaction.ativo == True,  # noqa: E712
+                    BankTransaction.ativo.is_(True),  # noqa: E712
                 )
             )
             .order_by(BankTransaction.transaction_date)
@@ -327,7 +326,7 @@ class BankReconciliationRepository:
         query = select(BankReconciliation).where(
             and_(
                 BankReconciliation.id == reconciliation_id,
-                BankReconciliation.ativo == True,  # noqa: E712
+                BankReconciliation.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -345,7 +344,7 @@ class BankReconciliationRepository:
             .where(
                 and_(
                     BankReconciliation.bank_account_id == bank_account_id,
-                    BankReconciliation.ativo == True,  # noqa: E712
+                    BankReconciliation.ativo.is_(True),  # noqa: E712
                 )
             )
             .order_by(BankReconciliation.period_end.desc())
@@ -368,7 +367,7 @@ class BankReconciliationRepository:
             and_(
                 BankReconciliation.bank_account_id == bank_account_id,
                 BankReconciliation.status == ReconciliationStatus.EM_ANDAMENTO.value,
-                BankReconciliation.ativo == True,  # noqa: E712
+                BankReconciliation.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -394,7 +393,7 @@ class CashFlowEntryRepository:
         query = select(CashFlowEntry).where(
             and_(
                 CashFlowEntry.id == entry_id,
-                CashFlowEntry.ativo == True,  # noqa: E712
+                CashFlowEntry.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -411,7 +410,7 @@ class CashFlowEntryRepository:
         query = select(CashFlowEntry).where(
             and_(
                 CashFlowEntry.condominio_id == condominio_id,
-                CashFlowEntry.ativo == True,  # noqa: E712
+                CashFlowEntry.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -463,7 +462,7 @@ class CashFlowEntryRepository:
         query = select(func.count(CashFlowEntry.id)).where(
             and_(
                 CashFlowEntry.condominio_id == condominio_id,
-                CashFlowEntry.ativo == True,  # noqa: E712
+                CashFlowEntry.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -504,7 +503,7 @@ class CashFlowEntryRepository:
                 CashFlowEntry.condominio_id == condominio_id,
                 CashFlowEntry.entry_date >= start_date,
                 CashFlowEntry.entry_date <= end_date,
-                CashFlowEntry.ativo == True,  # noqa: E712
+                CashFlowEntry.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -530,7 +529,7 @@ class CashFlowEntryRepository:
                         CashFlowEntryStatus.CONFIRMADO.value,
                     ]
                 ),
-                CashFlowEntry.ativo == True,  # noqa: E712
+                CashFlowEntry.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -558,7 +557,7 @@ class CashFlowEntryRepository:
                     CashFlowEntry.condominio_id == condominio_id,
                     CashFlowEntry.entry_date >= start_date,
                     CashFlowEntry.entry_date <= end_date,
-                    CashFlowEntry.ativo == True,  # noqa: E712
+                    CashFlowEntry.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(CashFlowEntry.entry_type)
@@ -587,7 +586,7 @@ class CashFlowForecastRepository:
         query = select(CashFlowForecast).where(
             and_(
                 CashFlowForecast.id == forecast_id,
-                CashFlowForecast.ativo == True,  # noqa: E712
+                CashFlowForecast.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -604,7 +603,7 @@ class CashFlowForecastRepository:
         query = select(CashFlowForecast).where(
             and_(
                 CashFlowForecast.condominio_id == condominio_id,
-                CashFlowForecast.ativo == True,  # noqa: E712
+                CashFlowForecast.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -622,9 +621,9 @@ class CashFlowForecastRepository:
             if filters.has_alerts:
                 query = query.where(
                     or_(
-                        CashFlowForecast.has_negative_balance_alert == True,  # noqa: E712
-                        CashFlowForecast.has_high_outflow_alert == True,  # noqa: E712
-                        CashFlowForecast.has_low_inflow_alert == True,  # noqa: E712
+                        CashFlowForecast.has_negative_balance_alert.is_(True),  # noqa: E712
+                        CashFlowForecast.has_high_outflow_alert.is_(True),  # noqa: E712
+                        CashFlowForecast.has_low_inflow_alert.is_(True),  # noqa: E712
                     )
                 )
 
@@ -643,7 +642,7 @@ class CashFlowForecastRepository:
         query = select(func.count(CashFlowForecast.id)).where(
             and_(
                 CashFlowForecast.condominio_id == condominio_id,
-                CashFlowForecast.ativo == True,  # noqa: E712
+                CashFlowForecast.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -677,7 +676,7 @@ class CashFlowForecastRepository:
                 CashFlowForecast.status == ForecastStatus.ATIVA.value,
                 CashFlowForecast.period_start <= today,
                 CashFlowForecast.period_end >= today,
-                CashFlowForecast.ativo == True,  # noqa: E712
+                CashFlowForecast.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)
@@ -695,7 +694,7 @@ class CashFlowForecastRepository:
                 CashFlowForecast.condominio_id == condominio_id,
                 CashFlowForecast.period_start == period_start,
                 CashFlowForecast.period_end == period_end,
-                CashFlowForecast.ativo == True,  # noqa: E712
+                CashFlowForecast.ativo.is_(True),  # noqa: E712
             )
         )
         result = await self.session.execute(query)

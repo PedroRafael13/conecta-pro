@@ -27,7 +27,7 @@ router = APIRouter(prefix="/posts", tags=["Operations - Posts"])
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
 async def create_post(
     data: PostCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """
@@ -43,8 +43,8 @@ async def create_post(
 
 
 @router.get("/", response_model=PostListResponse)
-async def list_posts(
-    current_user: CurrentActiveUser,
+async def list_posts(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -93,7 +93,7 @@ async def list_posts(
 
 @router.get("/stats", response_model=PostStats)
 async def get_post_stats(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> PostStats:
     """
@@ -106,7 +106,7 @@ async def get_post_stats(
 @router.get("/{post_id}", response_model=PostResponse)
 async def get_post(
     post_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """
@@ -128,7 +128,7 @@ async def get_post(
 async def update_post(
     post_id: str,
     data: PostUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """
@@ -150,7 +150,7 @@ async def update_post(
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(
     post_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -171,7 +171,7 @@ async def delete_post(
 @router.get("/contract/{contract_id}", response_model=list[PostResponse])
 async def get_posts_by_contract(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> list[PostResponse]:
     """
@@ -186,7 +186,7 @@ async def get_posts_by_contract(
 @router.get("/client/{client_id}", response_model=list[PostResponse])
 async def get_posts_by_client(
     client_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> list[PostResponse]:
     """

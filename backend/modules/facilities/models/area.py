@@ -14,6 +14,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.models.base import Base
+from modules.facilities.models.maintenance import MaintenanceStatus
 
 if TYPE_CHECKING:
     from .checklist import Checklist
@@ -225,8 +226,6 @@ class Area(Base):
     @property
     def has_pending_maintenance(self) -> bool:
         """Verifica se há manutenção pendente."""
-        from modules.facilities.models.maintenance import MaintenanceStatus
-
         return any(
             m.status
             in (

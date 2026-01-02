@@ -5,7 +5,6 @@ from datetime import datetime, date
 from typing import Optional, List, TYPE_CHECKING
 
 from sqlalchemy import (
-    Column,
     String,
     Text,
     Boolean,
@@ -157,7 +156,9 @@ class CandidateExperience(Base, TimestampMixin):
         remaining_months = months % 12
 
         if years and remaining_months:
-            return f"{years} {'ano' if years == 1 else 'anos'} e {remaining_months} {'mês' if remaining_months == 1 else 'meses'}"
+            year_label = 'ano' if years == 1 else 'anos'
+            month_label = 'mês' if remaining_months == 1 else 'meses'
+            return f"{years} {year_label} e {remaining_months} {month_label}"
         if years:
             return f"{years} {'ano' if years == 1 else 'anos'}"
         return f"{remaining_months} {'mês' if remaining_months == 1 else 'meses'}"

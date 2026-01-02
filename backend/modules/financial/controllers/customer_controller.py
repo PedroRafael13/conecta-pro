@@ -70,7 +70,7 @@ async def list_customers(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Lista clientes com filtros."""
     filters = CustomerFilter(
@@ -96,7 +96,7 @@ async def list_debtors(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Lista clientes com divida ativa."""
     customers = await repo.get_debtors(condominio_id, only_overdue, skip, limit)
@@ -111,7 +111,7 @@ async def list_debtors(
 async def get_customer(
     customer_id: UUID,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CustomerResponse:
     """Busca cliente por ID."""
     customer = await repo.get_by_id(customer_id)
@@ -131,7 +131,7 @@ async def get_customer(
 async def get_customer_by_document(
     document: str,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CustomerResponse:
     """Busca cliente por CPF/CNPJ."""
     customer = await repo.get_by_document(document)
@@ -151,7 +151,7 @@ async def get_customer_by_document(
 async def get_customer_by_morador(
     morador_id: UUID,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CustomerResponse:
     """Busca cliente pelo ID do morador."""
     customer = await repo.get_by_morador(morador_id)
@@ -171,7 +171,7 @@ async def get_customer_by_morador(
 async def get_customers_by_unidade(
     unidade_id: UUID,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Busca clientes de uma unidade."""
     customers = await repo.get_by_unidade(unidade_id)
@@ -187,7 +187,7 @@ async def update_customer(
     customer_id: UUID,
     data: CustomerUpdate,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CustomerResponse:
     """Atualiza um cliente."""
     try:
@@ -212,7 +212,7 @@ async def update_customer(
 async def delete_customer(
     customer_id: UUID,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Exclui um cliente (soft delete)."""
     customer = await repo.get_by_id(customer_id)
@@ -240,7 +240,7 @@ async def block_customer(
     customer_id: UUID,
     reason: str = Query(..., min_length=5, description="Motivo do bloqueio"),
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CustomerResponse:
     """Bloqueia um cliente."""
     customer = await repo.get_by_id(customer_id)
@@ -263,7 +263,7 @@ async def block_customer(
 async def unblock_customer(
     customer_id: UUID,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CustomerResponse:
     """Desbloqueia um cliente."""
     customer = await repo.get_by_id(customer_id)
@@ -285,7 +285,7 @@ async def unblock_customer(
 async def get_customer_debt_summary(
     customer_id: UUID,
     repo: CustomerRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna resumo completo de divida do cliente."""
     customer = await repo.get_by_id(customer_id)
@@ -302,5 +302,7 @@ async def get_customer_debt_summary(
         "overdue_debt": float(customer.overdue_debt),
         "status": customer.status,
         "is_blocked": customer.status == CustomerStatus.BLOQUEADO.value,
-        "block_reason": customer.notes if customer.status == CustomerStatus.BLOQUEADO.value else None,
+        "block_reason": (
+            customer.notes if customer.status == CustomerStatus.BLOQUEADO.value else None
+        ),
     }

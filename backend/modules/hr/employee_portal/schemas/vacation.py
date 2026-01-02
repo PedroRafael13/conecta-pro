@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from modules.hr.employee_portal.models import VacationStatus, VacationType
+from modules.hr.employee_portal.models import VacationType
 
 
 class VacationPeriodCreate(BaseModel):

@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth.dependencies import get_current_user, require_permissions
+from core.auth.dependencies import get_current_user
 from core.database import get_session
 from modules.financial.models.payable_account import PayableStatus
 from modules.financial.schemas.payable import (
@@ -74,7 +74,7 @@ async def create_account(
     response_model=List[PayableAccountListResponse],
     summary="Listar contas a pagar",
 )
-async def list_accounts(
+async def list_accounts(  # pylint: disable=too-many-locals
     condominio_id: UUID,
     search: Optional[str] = Query(None, description="Busca na descrição"),
     supplier_id: Optional[UUID] = Query(None, description="Filtrar por fornecedor"),
@@ -89,7 +89,7 @@ async def list_accounts(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Lista contas a pagar com filtros."""
     filters = PayableAccountFilter(
@@ -105,7 +105,7 @@ async def list_accounts(
         max_value=str(max_value) if max_value else None,
     )
 
-    accounts, total = await service.list_accounts(condominio_id, filters, skip, limit)
+    accounts, _total = await service.list_accounts(condominio_id, filters, skip, limit)
 
     # Header com total
     return [PayableAccountListResponse.model_validate(a) for a in accounts]
@@ -119,7 +119,7 @@ async def list_accounts(
 async def get_stats(
     condominio_id: UUID,
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayableAccountStats:
     """Retorna estatísticas de contas a pagar."""
     return await service.get_stats(condominio_id)
@@ -134,7 +134,7 @@ async def get_overdue(
     condominio_id: UUID,
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna contas vencidas."""
     accounts = await service.get_overdue_accounts(condominio_id, limit)
@@ -151,7 +151,7 @@ async def get_due_soon(
     days: int = Query(7, ge=1, le=90, description="Dias para vencimento"),
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna contas a vencer nos próximos dias."""
     accounts = await service.get_due_soon_accounts(condominio_id, days, limit)
@@ -166,7 +166,7 @@ async def get_due_soon(
 async def get_account(
     account_id: UUID,
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayableAccountResponse:
     """Busca conta por ID."""
     account = await service.get_account(account_id)
@@ -331,7 +331,7 @@ async def schedule_payment(
 async def list_installments(
     account_id: UUID,
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Lista parcelas de uma conta."""
     installments = await service.list_installments(account_id)
@@ -348,7 +348,7 @@ async def get_pending_installments(
     due_date_start: Optional[date] = Query(None),
     due_date_end: Optional[date] = Query(None),
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna parcelas pendentes."""
     installments = await service.get_pending_installments(
@@ -366,7 +366,7 @@ async def update_installment(
     installment_id: UUID,
     data: PayableInstallmentUpdate,
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayableInstallmentResponse:
     """Atualiza uma parcela."""
     try:
@@ -505,7 +505,7 @@ async def reconcile_payment(
 async def get_pending_reconciliation(
     condominio_id: UUID,
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna pagamentos pendentes de reconciliação."""
     payments = await service.get_pending_reconciliation(condominio_id)
@@ -523,7 +523,7 @@ async def process_recurring(
     condominio_id: UUID,
     reference_date: Optional[date] = None,
     service: PayableService = Depends(get_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Processa contas recorrentes e gera novas."""
     accounts = await service.process_recurring_accounts(condominio_id, reference_date)

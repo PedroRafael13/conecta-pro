@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.database import get_db
 from modules.hr.rep_integration.services import SyncService
 from modules.hr.rep_integration.repositories import REPDeviceRepository
-from modules.hr.rep_integration.schemas import REPEventWebhook
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhook", tags=["REP Webhooks"])
@@ -65,7 +64,7 @@ async def receive_events_webhook(
 
     # Parsear eventos
     try:
-        import json
+        import json  # pylint: disable=import-outside-toplevel
         data = json.loads(body)
         events = data.get("events", [])
     except Exception as e:
@@ -112,7 +111,7 @@ async def receive_control_id_webhook(
     body = await request.body()
 
     try:
-        import json
+        import json  # pylint: disable=import-outside-toplevel
         data = json.loads(body)
     except Exception:
         raise HTTPException(
@@ -132,6 +131,7 @@ async def receive_control_id_webhook(
 
     # Converter formato Control iD para formato interno
     events = []
+    _ = data  # Usado na conversão Control iD
     values = data.get("values", [])
 
     for val in values:
@@ -148,7 +148,7 @@ async def receive_control_id_webhook(
 
     # Processar
     sync_service = SyncService(db)
-    success, result = await sync_service.process_webhook_events(
+    _success, result = await sync_service.process_webhook_events(
         device_serial=device_serial,
         events=events,
     )
@@ -166,8 +166,8 @@ async def receive_intelbras_webhook(
     body = await request.body()
 
     try:
-        import json
-        data = json.loads(body)
+        import json  # pylint: disable=import-outside-toplevel
+        _ = json.loads(body)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -186,11 +186,11 @@ async def receive_intelbras_webhook(
 
     # Converter formato Intelbras
     events = []
-    # TODO: Implementar conversão do formato Intelbras
+    # TODO: Implementar conversão do formato Intelbras  # pylint: disable=fixme
 
     # Processar
     sync_service = SyncService(db)
-    success, result = await sync_service.process_webhook_events(
+    _success, result = await sync_service.process_webhook_events(
         device_serial=device_serial,
         events=events,
     )

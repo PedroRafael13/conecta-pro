@@ -10,8 +10,7 @@ Gerencia todo o ciclo de vida dos contratos:
 """
 
 import enum
-import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Optional
 
@@ -309,7 +308,7 @@ class Contract(Base):
             return []
 
 
-class ContractTemplate(Base):
+class ContractTemplate(Base):  # pylint: disable=too-few-public-methods
     """
     Template de Contrato.
 
@@ -357,7 +356,7 @@ class ContractTemplate(Base):
         return content
 
 
-class ContractItem(Base):
+class ContractItem(Base):  # pylint: disable=too-few-public-methods
     """
     Item/Serviço do Contrato.
 

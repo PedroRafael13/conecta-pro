@@ -19,8 +19,6 @@ from modules.financial.costing.models import (
 )
 from modules.financial.costing.models.cost_driver import DriverStatus
 from modules.financial.costing.models.cost_activity import ActivityStatus
-from modules.financial.costing.models.cost_pool import PoolStatus
-from modules.financial.costing.models.cost_object import ProfitabilityLevel
 from modules.financial.costing.models.cost_allocation import (
     AllocationStatus,
     AllocationType,
@@ -45,8 +43,8 @@ class ABCService:
     async def calculate_driver_rates(
         self,
         condominio_id: UUID,
-        periodo_inicio: date,
-        periodo_fim: date,
+        periodo_inicio: date,  # pylint: disable=unused-argument
+        periodo_fim: date,  # pylint: disable=unused-argument
     ) -> list[dict[str, Any]]:
         """Calcula taxas dos cost drivers para o período.
 
@@ -61,7 +59,7 @@ class ABCService:
         query = select(CostDriver).where(
             CostDriver.condominio_id == condominio_id,
             CostDriver.status == DriverStatus.ACTIVE,
-            CostDriver.ativo == True,
+            CostDriver.ativo.is_(True),
         )
         result = await self.session.execute(query)
         drivers = result.scalars().all()
@@ -113,7 +111,7 @@ class ABCService:
         query = select(CostActivity).where(
             CostActivity.condominio_id == condominio_id,
             CostActivity.status == ActivityStatus.ACTIVE,
-            CostActivity.ativo == True,
+            CostActivity.ativo.is_(True),
         )
         result = await self.session.execute(query)
         activities = result.scalars().all()
@@ -146,7 +144,9 @@ class ABCService:
                 "codigo": activity.codigo,
                 "nome": activity.nome,
                 "nivel": activity.nivel.value if activity.nivel else None,
-                "tipo_valor": activity.tipo_valor_agregado.value if activity.tipo_valor_agregado else None,
+                "tipo_valor": (
+                    activity.tipo_valor_agregado.value if activity.tipo_valor_agregado else None
+                ),
                 "custo_direto": float(activity.custo_direto or 0),
                 "custo_alocado": float(allocated_cost),
                 "custo_total": float(total_cost),
@@ -162,7 +162,7 @@ class ABCService:
         )
         return activity_costs
 
-    async def calculate_object_costs(
+    async def calculate_object_costs(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         periodo_inicio: date,
@@ -182,7 +182,7 @@ class ABCService:
         """
         query = select(CostObject).where(
             CostObject.condominio_id == condominio_id,
-            CostObject.ativo == True,
+            CostObject.ativo.is_(True),
         )
         result = await self.session.execute(query)
         objects = result.scalars().all()
@@ -233,7 +233,9 @@ class ABCService:
                 "margem_bruta_percentual": float(gross_margin_pct),
                 "quantidade": float(obj.quantidade or 0),
                 "custo_unitario": float(unit_cost),
-                "nivel_lucratividade": obj.profitability_level.value if obj.profitability_level else None,
+                "nivel_lucratividade": (
+                    obj.profitability_level.value if obj.profitability_level else None
+                ),
             })
 
         # Ordena por margem (do pior para o melhor para identificar problemas)
@@ -245,7 +247,7 @@ class ABCService:
         )
         return object_costs
 
-    async def run_abc_costing(
+    async def run_abc_costing(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         periodo_inicio: date,
@@ -317,7 +319,9 @@ class ABCService:
                 "custo_total_objetos": total_object_cost,
                 "receita_total": total_revenue,
                 "margem_total": total_margin,
-                "margem_percentual": (total_margin / total_revenue * 100) if total_revenue > 0 else 0,
+                "margem_percentual": (
+                    (total_margin / total_revenue * 100) if total_revenue > 0 else 0
+                ),
             },
             "analise_valor": {
                 "atividades_valor_agregado": len(value_added),
@@ -347,9 +351,17 @@ class ABCService:
             resultados=result["resumo"],
             insights=[
                 f"Custo total alocado: R$ {total_object_cost:,.2f}",
-                f"Custo de ociosidade: R$ {total_idle_cost:,.2f} ({total_idle_cost/total_driver_cost*100:.1f}%)" if total_driver_cost > 0 else "Sem custos de ociosidade",
+                (
+                    f"Custo de ociosidade: R$ {total_idle_cost:,.2f} "
+                    f"({total_idle_cost/total_driver_cost*100:.1f}%)"
+                    if total_driver_cost > 0
+                    else "Sem custos de ociosidade"
+                ),
                 f"Margem média: {result['resumo']['margem_percentual']:.1f}%",
-                f"Atividades sem valor agregado: {len(non_value_added)} ({sum(a['custo_total'] for a in non_value_added):,.2f})",
+                (
+                    f"Atividades sem valor agregado: {len(non_value_added)} "
+                    f"({sum(a['custo_total'] for a in non_value_added):,.2f})"
+                ),
             ],
             executado_por=user_id,
             executado_em=datetime.utcnow(),
@@ -422,11 +434,13 @@ class ABCService:
             "valor_total": float(pool.valor_total or 0),
             "valor_alocado": float(total_allocated),
             "valor_nao_alocado": float(unallocated),
-            "percentual_alocado": float(total_allocated / pool.valor_total * 100) if pool.valor_total else 0,
+            "percentual_alocado": (
+                float(total_allocated / pool.valor_total * 100) if pool.valor_total else 0
+            ),
             "distribuicao": distribution,
         }
 
-    async def get_activity_distribution(
+    async def get_activity_distribution(  # pylint: disable=too-many-locals
         self,
         activity_id: UUID,
         periodo_inicio: date,
@@ -501,7 +515,9 @@ class ABCService:
             "custo_total": float(activity_total),
             "valor_alocado": float(total_allocated),
             "valor_nao_alocado": float(unallocated),
-            "percentual_alocado": float(total_allocated / activity_total * 100) if activity_total else 0,
+            "percentual_alocado": (
+                float(total_allocated / activity_total * 100) if activity_total else 0
+            ),
             "distribuicao": distribution,
         }
 

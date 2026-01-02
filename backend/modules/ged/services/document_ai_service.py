@@ -11,6 +11,8 @@ from modules.ged.repositories.document_repository import DocumentRepository
 from modules.ged.repositories.folder_repository import FolderRepository
 from modules.ged.repositories.document_tag_repository import DocumentTagRepository
 from modules.ged.models.document import DocumentType, DocumentCategory
+from modules.ged.models.folder import FolderType
+from modules.ged.schemas.document import DocumentFilter
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +102,7 @@ class DocumentAIService:
             ],
         }
 
-    async def classify_document(
+    async def classify_document(  # pylint: disable=too-many-locals
         self, text: str, file_name: str = None
     ) -> dict:
         """Classifica documento baseado no conteúdo."""
@@ -272,8 +274,6 @@ class DocumentAIService:
         self, document_type: DocumentType, condominium_id: str
     ) -> Optional[str]:
         """Sugere pasta para documento baseado no tipo."""
-        from modules.ged.models.folder import FolderType
-
         # Mapeia tipo de documento para tipo de pasta
         default_folder = FolderType.DEPARTAMENTO
         proposta_folder = (
@@ -431,16 +431,13 @@ class DocumentAIService:
             "alerts_count": len(recommendations),
         }
 
-    async def analyze_document_trends(
+    async def analyze_document_trends(  # pylint: disable=too-many-locals
         self, condominium_id: str = None, days: int = 30
     ) -> dict:
         """Analisa tendências de documentos."""
-        from datetime import date
-
         # Busca documentos do período
         filters = None
         if condominium_id:
-            from modules.ged.schemas.document import DocumentFilter
             filters = DocumentFilter(
                 condominium_id=condominium_id,
                 created_from=datetime.utcnow() - timedelta(days=days),

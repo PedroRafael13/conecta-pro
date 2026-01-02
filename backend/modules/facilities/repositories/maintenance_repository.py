@@ -142,7 +142,7 @@ class MaintenanceRepository:
 
         return maintenances, total
 
-    def _apply_filters(self, query, filters: MaintenanceFilter):
+    def _apply_filters(self, query, filters: MaintenanceFilter):  # pylint: disable=too-many-branches
         """Aplica filtros à query."""
         if filters.search:
             search_term = f"%{filters.search}%"
@@ -342,7 +342,7 @@ class MaintenanceRepository:
         logger.info(f"Maintenance deletada (soft): {maintenance.id}")
         return True
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         client_id: Optional[str] = None,
         area_id: Optional[str] = None,

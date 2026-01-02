@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.hr.payroll_integration.models import ContractType, EmployeePayrollConfig, OvertimeRule
+from modules.hr.payroll_integration.models import ContractType, EmployeePayrollConfig
 from modules.hr.payroll_integration.schemas import (
     EmployeePayrollConfigCreate,
     EmployeePayrollConfigUpdate,
@@ -77,7 +77,9 @@ class EmployeePayrollConfigRepository:
             union_contribution_enabled=data.union_contribution_enabled,
             union_contribution_type=data.union_contribution_type,
             union_contribution_value=data.union_contribution_value,
-            calculation_config=(data.calculation_config.model_dump() if data.calculation_config else {}),
+            calculation_config=(
+                data.calculation_config.model_dump() if data.calculation_config else {}
+            ),
             external_codes=(data.external_codes.model_dump() if data.external_codes else {}),
             created_by=created_by,
         )

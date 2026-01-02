@@ -1,7 +1,7 @@
 """Model para contas a pagar."""
 
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 
-from modules.ged.models.document_share import ShareType, SharePermission, ShareStatus
+from modules.ged.models.document_share import ShareType, ShareStatus
 
 
 class DocumentShareBase(BaseModel):

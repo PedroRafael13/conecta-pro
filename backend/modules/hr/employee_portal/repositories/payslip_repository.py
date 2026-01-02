@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional, List, Tuple
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, func, and_, or_, desc
+from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.employee_portal.models import PaySlip, PaySlipStatus, PaySlipType
@@ -78,6 +78,7 @@ class PaySlipRepository:
 
     def _generate_code(self, year: int, month: int) -> str:
         """Gera código único do contracheque."""
+        # pylint: disable=import-outside-toplevel
         import random
         import string
         suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
@@ -295,7 +296,7 @@ class PaySlipRepository:
         payslip_id: UUID,
         resolution: str,
         *,
-        resolved_by: Optional[UUID] = None,
+        resolved_by: Optional[UUID] = None,  # pylint: disable=unused-argument
     ) -> Optional[PaySlip]:
         """Resolve contestação do contracheque."""
         payslip = await self.get_by_id(payslip_id)

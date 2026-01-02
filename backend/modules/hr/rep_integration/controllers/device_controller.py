@@ -28,7 +28,7 @@ router = APIRouter(prefix="/devices", tags=["REP Devices"])
 async def create_device(
     data: REPDeviceCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPDeviceResponse:
     """Cadastra novo dispositivo REP."""
     repo = REPDeviceRepository(db)
@@ -55,7 +55,7 @@ async def list_devices(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPDeviceList:
     """Lista dispositivos REP."""
     repo = REPDeviceRepository(db)
@@ -83,7 +83,7 @@ async def list_devices(
 async def get_device(
     device_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPDeviceResponse:
     """Obtém dispositivo por ID."""
     repo = REPDeviceRepository(db)
@@ -127,7 +127,7 @@ async def update_device(
 async def delete_device(
     device_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Desativa dispositivo (soft delete)."""
     repo = REPDeviceRepository(db)
@@ -145,7 +145,7 @@ async def delete_device(
 async def test_connection(
     device_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> REPDeviceTestConnection:
     """Testa conexão com o dispositivo."""
     repo = REPDeviceRepository(db)
@@ -179,7 +179,7 @@ async def test_connection(
 async def sync_device_time(
     device_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Sincroniza horário do dispositivo."""
     repo = REPDeviceRepository(db)
@@ -201,7 +201,7 @@ async def sync_device_time(
 async def get_device_users(
     device_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Lista usuários cadastrados no dispositivo."""
     repo = REPDeviceRepository(db)
@@ -226,7 +226,7 @@ async def get_device_users(
 async def get_devices_statistics(
     condominio_id: Optional[UUID] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna estatísticas dos dispositivos."""
     repo = REPDeviceRepository(db)

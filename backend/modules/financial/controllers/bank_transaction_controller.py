@@ -1,7 +1,8 @@
 """Controller para transações bancárias."""
 
 import logging
-from datetime import date
+import re
+from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
@@ -105,7 +106,7 @@ async def list_transactions(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: BankTransactionRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[BankTransactionResponse]:
     """Lista transações bancárias com filtros."""
     filters = BankTransactionFilter(
@@ -132,7 +133,7 @@ async def get_pending_reconciliation(
     bank_account_id: UUID,
     limit: int = Query(100, ge=1, le=500),
     repo: BankTransactionRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[BankTransactionResponse]:
     """Retorna transações pendentes de conciliação bancária."""
     transactions = await repo.get_pending_reconciliation(bank_account_id, limit)
@@ -149,7 +150,7 @@ async def get_by_period(
     start_date: date = Query(..., description="Data inicial"),
     end_date: date = Query(..., description="Data final"),
     repo: BankTransactionRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[BankTransactionResponse]:
     """Retorna transações em um período específico."""
     transactions = await repo.get_by_period(bank_account_id, start_date, end_date)
@@ -165,7 +166,7 @@ async def get_summary(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     repo: BankTransactionRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna resumo de transações por período."""
     filters = BankTransactionFilter(
@@ -209,7 +210,7 @@ async def get_summary(
 async def get_transaction(
     transaction_id: UUID,
     repo: BankTransactionRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BankTransactionResponse:
     """Retorna transação pelo ID."""
     transaction = await repo.get_by_id(transaction_id)
@@ -484,7 +485,7 @@ async def import_transactions(
                 }
             )
             created += 1
-        except Exception as e:
+        except (ValueError, TypeError, RuntimeError) as e:
             errors.append({"index": i, "error": str(e)})
 
     await session.commit()
@@ -574,9 +575,6 @@ async def import_ofx_file(
 
 def _parse_ofx(content: str) -> List[dict]:
     """Parse simplificado de arquivo OFX."""
-    import re
-    from datetime import datetime
-
     transactions = []
 
     # Busca transações

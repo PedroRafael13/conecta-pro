@@ -140,7 +140,7 @@ class ServiceRequestRepository:
 
         return requests, total
 
-    def _apply_filters(self, query, filters: ServiceRequestFilter):
+    def _apply_filters(self, query, filters: ServiceRequestFilter):  # pylint: disable=too-many-branches
         """Aplica filtros à query."""
         if filters.search:
             search_term = f"%{filters.search}%"
@@ -459,7 +459,7 @@ class ServiceRequestRepository:
         logger.info(f"ServiceRequest deletada (soft): {service_request.id}")
         return True
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         client_id: Optional[str] = None,
         condominium_id: Optional[str] = None,

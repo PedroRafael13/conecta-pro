@@ -286,7 +286,7 @@ class AreaRepository:
 
         return hierarchy
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         client_id: Optional[str] = None,
         condominium_id: Optional[str] = None,

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field
 
 from modules.financial.models.supplier import (
     PaymentTerms,
@@ -162,7 +162,7 @@ class SupplierResponse(SupplierBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -185,7 +185,7 @@ class SupplierListResponse(BaseModel):
     is_blocked: bool = False
     rating: Optional[str] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True

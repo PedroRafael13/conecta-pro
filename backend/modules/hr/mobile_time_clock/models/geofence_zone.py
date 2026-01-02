@@ -218,7 +218,7 @@ class GeofenceZone(Base):
 
     def calculate_distance(self, lat: float, lng: float) -> float:
         """Calcula distância em metros usando Haversine."""
-        R = 6371000  # Raio da Terra em metros
+        earth_radius = 6371000  # Raio da Terra em metros
 
         lat1 = math.radians(self.center_latitude)
         lat2 = math.radians(lat)
@@ -231,7 +231,7 @@ class GeofenceZone(Base):
         )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-        return R * c
+        return earth_radius * c
 
     def is_time_allowed(self, check_time: time) -> bool:
         """Verifica se horário é permitido."""

@@ -3,11 +3,10 @@
 import logging
 from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, insert, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ged.models.document_tag import DocumentTag, TagType, document_tag_association
-from modules.ged.models.document import Document
 from modules.ged.schemas.document_tag import (
     DocumentTagCreate,
     DocumentTagUpdate,
@@ -65,7 +64,7 @@ class DocumentTagRepository:
             query = query.where(
                 or_(
                     DocumentTag.condominium_id == condominium_id,
-                    DocumentTag.is_global == True,
+                    DocumentTag.is_global.is_(True),
                 )
             )
         result = await self.session.execute(query)
@@ -121,7 +120,7 @@ class DocumentTagRepository:
                 query = query.where(
                     or_(
                         DocumentTag.condominium_id == filters.condominium_id,
-                        DocumentTag.is_global == True,
+                        DocumentTag.is_global.is_(True),
                     )
                 )
             if filters.is_global is not None:
@@ -162,14 +161,14 @@ class DocumentTagRepository:
         query = select(DocumentTag).where(
             and_(
                 DocumentTag.parent_id.is_(None),
-                DocumentTag.is_active == True,
+                DocumentTag.is_active.is_(True),
             )
         )
         if condominium_id:
             query = query.where(
                 or_(
                     DocumentTag.condominium_id == condominium_id,
-                    DocumentTag.is_global == True,
+                    DocumentTag.is_global.is_(True),
                 )
             )
 
@@ -183,7 +182,7 @@ class DocumentTagRepository:
             .where(
                 and_(
                     DocumentTag.parent_id == tag_id,
-                    DocumentTag.is_active == True,
+                    DocumentTag.is_active.is_(True),
                 )
             )
             .order_by(DocumentTag.order, DocumentTag.name)
@@ -198,14 +197,14 @@ class DocumentTagRepository:
         query = select(DocumentTag).where(
             and_(
                 DocumentTag.tag_type == tag_type,
-                DocumentTag.is_active == True,
+                DocumentTag.is_active.is_(True),
             )
         )
         if condominium_id:
             query = query.where(
                 or_(
                     DocumentTag.condominium_id == condominium_id,
-                    DocumentTag.is_global == True,
+                    DocumentTag.is_global.is_(True),
                 )
             )
 
@@ -216,8 +215,6 @@ class DocumentTagRepository:
         self, document_id: str, tag_id: str, created_by: str
     ) -> bool:
         """Atribui tag a documento."""
-        from sqlalchemy import insert
-
         tag = await self.get_by_id(tag_id)
         if not tag:
             return False
@@ -234,8 +231,6 @@ class DocumentTagRepository:
 
     async def remove_from_document(self, document_id: str, tag_id: str) -> bool:
         """Remove tag de documento."""
-        from sqlalchemy import delete
-
         tag = await self.get_by_id(tag_id)
         if not tag:
             return False
@@ -315,7 +310,7 @@ class DocumentTagRepository:
             select(DocumentTag)
             .where(
                 and_(
-                    DocumentTag.is_active == True,
+                    DocumentTag.is_active.is_(True),
                     DocumentTag.last_used_at.isnot(None),
                 )
             )
@@ -334,7 +329,7 @@ class DocumentTagRepository:
             select(DocumentTag)
             .where(
                 and_(
-                    DocumentTag.is_active == True,
+                    DocumentTag.is_active.is_(True),
                     or_(
                         DocumentTag.name.ilike(search_term),
                         DocumentTag.description.ilike(search_term),
@@ -347,7 +342,7 @@ class DocumentTagRepository:
             query = query.where(
                 or_(
                     DocumentTag.condominium_id == condominium_id,
-                    DocumentTag.is_global == True,
+                    DocumentTag.is_global.is_(True),
                 )
             )
 
@@ -361,7 +356,7 @@ class DocumentTagRepository:
             query = query.where(
                 or_(
                     DocumentTag.condominium_id == condominium_id,
-                    DocumentTag.is_global == True,
+                    DocumentTag.is_global.is_(True),
                 )
             )
 

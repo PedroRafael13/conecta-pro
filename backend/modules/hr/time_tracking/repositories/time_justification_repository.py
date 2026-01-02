@@ -11,7 +11,6 @@ from modules.hr.time_tracking.models import (
     TimeJustification,
     JustificationType,
     JustificationStatus,
-    JustificationCategory,
 )
 from modules.hr.time_tracking.schemas import (
     TimeJustificationCreate,
@@ -47,7 +46,7 @@ class TimeJustificationRepository:
         result = await self.db.execute(
             select(TimeJustification).where(
                 TimeJustification.id == justification_id,
-                TimeJustification.is_deleted == False,
+                TimeJustification.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -57,7 +56,7 @@ class TimeJustificationRepository:
         result = await self.db.execute(
             select(TimeJustification).where(
                 TimeJustification.code == code,
-                TimeJustification.is_deleted == False,
+                TimeJustification.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -80,7 +79,7 @@ class TimeJustificationRepository:
         justification.soft_delete()
         await self.db.flush()
 
-    async def list(
+    async def list(  # pylint: disable=too-many-branches
         self,
         filters: TimeJustificationFilter = None,
         skip: int = 0,
@@ -88,7 +87,7 @@ class TimeJustificationRepository:
     ) -> Tuple[List[TimeJustification], int]:
         """Lista justificativas com filtros."""
         query = select(TimeJustification).where(
-            TimeJustification.is_deleted == False
+            TimeJustification.is_deleted.is_(False)
         )
 
         if filters:
@@ -182,7 +181,7 @@ class TimeJustificationRepository:
                         TimeJustification.end_date >= end_date,
                     ),
                 ),
-                TimeJustification.is_deleted == False,
+                TimeJustification.is_deleted.is_(False),
             ).order_by(TimeJustification.start_date)
         )
         return list(result.scalars().all())
@@ -199,7 +198,7 @@ class TimeJustificationRepository:
                 JustificationStatus.SUBMETIDO,
                 JustificationStatus.EM_ANALISE,
             ]),
-            TimeJustification.is_deleted == False,
+            TimeJustification.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -223,8 +222,8 @@ class TimeJustificationRepository:
         """Busca justificativas aprovadas pendentes de verificação do RH."""
         query = select(TimeJustification).where(
             TimeJustification.status == JustificationStatus.APROVADO,
-            TimeJustification.is_verified == False,
-            TimeJustification.is_deleted == False,
+            TimeJustification.is_verified.is_(False),
+            TimeJustification.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -251,7 +250,7 @@ class TimeJustificationRepository:
                 TimeJustification.start_date <= target_date,
                 TimeJustification.end_date >= target_date,
                 TimeJustification.status == JustificationStatus.APROVADO,
-                TimeJustification.is_deleted == False,
+                TimeJustification.is_deleted.is_(False),
             )
         )
         return list(result.scalars().all())
@@ -275,7 +274,7 @@ class TimeJustificationRepository:
 
         query = select(TimeJustification).where(
             TimeJustification.justification_type.in_(medical_types),
-            TimeJustification.is_deleted == False,
+            TimeJustification.is_deleted.is_(False),
         )
 
         if employee_id:
@@ -292,7 +291,7 @@ class TimeJustificationRepository:
         )
         return list(result.scalars().all())
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         condominium_id: str = None,
         employee_id: str = None,
@@ -300,7 +299,7 @@ class TimeJustificationRepository:
         date_to: date = None,
     ) -> dict:
         """Calcula estatísticas de justificativas."""
-        base_where = [TimeJustification.is_deleted == False]
+        base_where = [TimeJustification.is_deleted.is_(False)]
 
         if condominium_id:
             base_where.append(TimeJustification.condominium_id == condominium_id)
@@ -366,7 +365,7 @@ class TimeJustificationRepository:
         late_result = await self.db.execute(
             select(func.count()).where(
                 *base_where,
-                TimeJustification.is_late_submission == True,
+                TimeJustification.is_late_submission.is_(True),
             )
         )
         late_count = late_result.scalar() or 0
@@ -376,7 +375,7 @@ class TimeJustificationRepository:
             select(func.count()).where(
                 *base_where,
                 TimeJustification.status == JustificationStatus.APROVADO,
-                TimeJustification.is_verified == False,
+                TimeJustification.is_verified.is_(False),
             )
         )
         verification_pending = verification_result.scalar() or 0
@@ -417,7 +416,7 @@ class TimeJustificationRepository:
                 ),
             ),
             TimeJustification.status != JustificationStatus.REJEITADO,
-            TimeJustification.is_deleted == False,
+            TimeJustification.is_deleted.is_(False),
         )
 
         if exclude_id:

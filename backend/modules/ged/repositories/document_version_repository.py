@@ -2,7 +2,6 @@
 
 import logging
 from typing import Optional, List
-from uuid import uuid4
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.ged.models.document_version import (
     DocumentVersion,
     VersionStatus,
-    VersionType,
 )
 from modules.ged.schemas.document_version import DocumentVersionCreate
 
@@ -39,7 +37,7 @@ class DocumentVersionRepository:
         query = select(DocumentVersion).where(
             and_(
                 DocumentVersion.document_id == document_id,
-                DocumentVersion.is_current == True,
+                DocumentVersion.is_current.is_(True),
             )
         )
         result = await self.session.execute(query)
@@ -79,7 +77,7 @@ class DocumentVersionRepository:
             select(DocumentVersion).where(
                 and_(
                     DocumentVersion.document_id == document_id,
-                    DocumentVersion.is_current == True,
+                    DocumentVersion.is_current.is_(True),
                 )
             )
         )

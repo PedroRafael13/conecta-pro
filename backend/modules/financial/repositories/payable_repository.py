@@ -1,6 +1,6 @@
 """Repository para contas a pagar."""
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional
 from uuid import UUID
@@ -11,9 +11,7 @@ from sqlalchemy.orm import selectinload
 
 from modules.financial.models.payable_account import (
     PayableAccount,
-    PayablePriority,
     PayableStatus,
-    PayableType,
 )
 from modules.financial.models.payable_category import PayableCategory
 from modules.financial.models.payable_installment import InstallmentStatus, PayableInstallment
@@ -24,7 +22,6 @@ from modules.financial.schemas.payable import (
     PayableAccountFilter,
     PayableAccountStats,
     PayableAccountUpdate,
-    PayableInstallmentCreate,
     PayableInstallmentUpdate,
     PayablePaymentCreate,
 )
@@ -117,7 +114,7 @@ class PayableAccountRepository:
         query = select(PayableAccount).where(
             and_(
                 PayableAccount.id == payable_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -142,7 +139,7 @@ class PayableAccountRepository:
         query = select(PayableAccount).where(
             and_(
                 PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -162,7 +159,9 @@ class PayableAccountRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    def _apply_filters(self, query, filters: PayableAccountFilter):
+    def _apply_filters(  # pylint: disable=too-many-branches
+        self, query, filters: PayableAccountFilter
+    ):
         """Aplica filtros à query."""
         if filters.search:
             search_term = f"%{filters.search}%"
@@ -242,7 +241,7 @@ class PayableAccountRepository:
         query = select(func.count(PayableAccount.id)).where(
             and_(
                 PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -299,7 +298,7 @@ class PayableAccountRepository:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),  # noqa: E712
                     PayableAccount.due_date < today,
                     PayableAccount.status.notin_(
                         [
@@ -325,8 +324,6 @@ class PayableAccountRepository:
         today = date.today()
         end_date = date(today.year, today.month, today.day)
         # Calcula data futura
-        from datetime import timedelta
-
         end_date = today + timedelta(days=days)
 
         result = await self.session.execute(
@@ -334,7 +331,7 @@ class PayableAccountRepository:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),  # noqa: E712
                     PayableAccount.due_date >= today,
                     PayableAccount.due_date <= end_date,
                     PayableAccount.status.notin_(
@@ -361,7 +358,7 @@ class PayableAccountRepository:
         query = select(PayableAccount).where(
             and_(
                 PayableAccount.supplier_id == supplier_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -372,7 +369,9 @@ class PayableAccountRepository:
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_stats(self, condominio_id: UUID) -> PayableAccountStats:
+    async def get_stats(  # pylint: disable=too-many-locals
+        self, condominio_id: UUID
+    ) -> PayableAccountStats:
         """Retorna estatísticas de contas a pagar."""
         today = date.today()
 
@@ -386,7 +385,7 @@ class PayableAccountRepository:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(PayableAccount.status)
@@ -418,7 +417,7 @@ class PayableAccountRepository:
         ).where(
             and_(
                 PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),  # noqa: E712
                 PayableAccount.due_date < today,
                 PayableAccount.status.notin_(
                     [
@@ -446,7 +445,7 @@ class PayableAccountRepository:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(PayableCategory.name)
@@ -472,7 +471,7 @@ class PayableAccountRepository:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(Supplier.name)
@@ -495,7 +494,7 @@ class PayableAccountRepository:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(PayableAccount.priority)
@@ -532,7 +531,7 @@ class PayableInstallmentRepository:
             .where(
                 and_(
                     PayableInstallment.id == installment_id,
-                    PayableInstallment.ativo == True,  # noqa: E712
+                    PayableInstallment.ativo.is_(True),  # noqa: E712
                 )
             )
             .options(selectinload(PayableInstallment.payments))
@@ -549,7 +548,7 @@ class PayableInstallmentRepository:
             .where(
                 and_(
                     PayableInstallment.payable_account_id == payable_account_id,
-                    PayableInstallment.ativo == True,  # noqa: E712
+                    PayableInstallment.ativo.is_(True),  # noqa: E712
                 )
             )
             .order_by(PayableInstallment.installment_number)
@@ -567,7 +566,7 @@ class PayableInstallmentRepository:
         query = select(PayableInstallment).where(
             and_(
                 PayableInstallment.condominio_id == condominio_id,
-                PayableInstallment.ativo == True,  # noqa: E712
+                PayableInstallment.ativo.is_(True),  # noqa: E712
                 PayableInstallment.status.in_(
                     [
                         InstallmentStatus.PENDENTE.value,
@@ -676,7 +675,7 @@ class PayablePaymentRepository:
             select(PayablePayment).where(
                 and_(
                     PayablePayment.id == payment_id,
-                    PayablePayment.ativo == True,  # noqa: E712
+                    PayablePayment.ativo.is_(True),  # noqa: E712
                 )
             )
         )
@@ -692,7 +691,7 @@ class PayablePaymentRepository:
             .where(
                 and_(
                     PayablePayment.installment_id == installment_id,
-                    PayablePayment.ativo == True,  # noqa: E712
+                    PayablePayment.ativo.is_(True),  # noqa: E712
                 )
             )
             .order_by(PayablePayment.payment_date)
@@ -712,7 +711,7 @@ class PayablePaymentRepository:
             .where(
                 and_(
                     PayablePayment.condominio_id == condominio_id,
-                    PayablePayment.ativo == True,  # noqa: E712
+                    PayablePayment.ativo.is_(True),  # noqa: E712
                     PayablePayment.payment_date >= start_date,
                     PayablePayment.payment_date <= end_date,
                 )
@@ -733,8 +732,8 @@ class PayablePaymentRepository:
             .where(
                 and_(
                     PayablePayment.condominio_id == condominio_id,
-                    PayablePayment.ativo == True,  # noqa: E712
-                    PayablePayment.is_reconciled == False,  # noqa: E712
+                    PayablePayment.ativo.is_(True),  # noqa: E712
+                    PayablePayment.is_reconciled.is_(False),  # noqa: E712
                     PayablePayment.status == PaymentStatus.CONFIRMADO.value,
                 )
             )

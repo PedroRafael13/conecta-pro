@@ -5,7 +5,7 @@ Repository para operações de banco de dados com Post.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select

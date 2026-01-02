@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from modules.hr.analytics_dashboard.models import (
     ScheduledReport,
     ReportStatus,
-    ScheduleFrequency,
 )
 from modules.hr.analytics_dashboard.schemas import (
     ScheduledReportCreate,
@@ -56,7 +55,7 @@ class ReportRepository:
         """Busca relatório por ID."""
         query = select(ScheduledReport).where(
             ScheduledReport.id == report_id,
-            ScheduledReport.is_active == True,  # noqa: E712
+            ScheduledReport.is_active.is_(True),
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -73,7 +72,7 @@ class ReportRepository:
         """Lista relatórios com filtros."""
         conditions = [
             ScheduledReport.condominio_id == condominio_id,
-            ScheduledReport.is_active == True,  # noqa: E712
+            ScheduledReport.is_active.is_(True),
         ]
 
         if owner_id:
@@ -162,7 +161,7 @@ class ReportRepository:
             select(ScheduledReport)
             .where(
                 ScheduledReport.status == ReportStatus.ACTIVE.value,
-                ScheduledReport.is_active == True,  # noqa: E712
+                ScheduledReport.is_active.is_(True),
                 ScheduledReport.next_run_at <= datetime.utcnow(),
             )
             .order_by(ScheduledReport.next_run_at)
@@ -229,7 +228,7 @@ class ReportRepository:
     ) -> List[ScheduledReport]:
         """Busca relatórios por destinatário."""
         conditions = [
-            ScheduledReport.is_active == True,  # noqa: E712
+            ScheduledReport.is_active.is_(True),
             ScheduledReport.status == ReportStatus.ACTIVE.value,
         ]
 
@@ -262,7 +261,7 @@ class ReportRepository:
             .where(
                 ScheduledReport.condominio_id == condominio_id,
                 ScheduledReport.status == ReportStatus.ACTIVE.value,
-                ScheduledReport.is_active == True,  # noqa: E712
+                ScheduledReport.is_active.is_(True),
                 ScheduledReport.next_run_at.between(datetime.utcnow(), future),
             )
             .order_by(ScheduledReport.next_run_at)
@@ -270,12 +269,12 @@ class ReportRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_statistics(
+    async def get_statistics(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID = None,
     ) -> dict:
         """Retorna estatísticas de relatórios."""
-        conditions = [ScheduledReport.is_active == True]  # noqa: E712
+        conditions = [ScheduledReport.is_active.is_(True)]
         if condominio_id:
             conditions.append(ScheduledReport.condominio_id == condominio_id)
 

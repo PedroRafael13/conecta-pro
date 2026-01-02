@@ -10,7 +10,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
-from modules.crm.models.lead import Lead, LeadSource, LeadStatus
+from modules.crm.models.lead import Lead, LeadStatus
 from modules.crm.schemas.lead import LeadCreate, LeadFilter, LeadStats, LeadUpdate
 from modules.crm.services.lead_service import lead_service
 

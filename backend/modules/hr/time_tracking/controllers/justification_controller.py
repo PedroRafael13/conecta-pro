@@ -1,4 +1,5 @@
 """Controller para TimeJustification (Justificativas)."""
+# pylint: disable=unused-argument
 
 from datetime import date
 from typing import Optional
@@ -75,7 +76,7 @@ async def create_justification(
     response_model=list[TimeJustificationListResponse],
     summary="Listar justificativas",
 )
-async def list_justifications(
+async def list_justifications(  # pylint: disable=too-many-locals,unused-argument
     employee_id: Optional[str] = None,
     justification_type: Optional[JustificationType] = None,
     category: Optional[JustificationCategory] = None,
@@ -111,7 +112,7 @@ async def list_justifications(
         is_late_submission=is_late_submission,
     )
 
-    justifications, total = await repo.list(filters, skip, limit)
+    justifications, _total = await repo.list(filters, skip, limit)
 
     return justifications
 
@@ -121,7 +122,7 @@ async def list_justifications(
     response_model=TimeJustificationStats,
     summary="Estatísticas de justificativas",
 )
-async def get_justification_stats(
+async def get_justification_stats(  # pylint: disable=unused-argument
     condominium_id: Optional[str] = None,
     employee_id: Optional[str] = None,
     date_from: Optional[date] = None,
@@ -147,7 +148,7 @@ async def get_justification_stats(
     response_model=list[TimeJustificationListResponse],
     summary="Justificativas pendentes de aprovação",
 )
-async def get_pending_approval(
+async def get_pending_approval(  # pylint: disable=unused-argument
     condominium_id: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -167,7 +168,7 @@ async def get_pending_approval(
     response_model=list[TimeJustificationListResponse],
     summary="Justificativas pendentes de verificação RH",
 )
-async def get_pending_verification(
+async def get_pending_verification(  # pylint: disable=unused-argument
     condominium_id: Optional[str] = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
@@ -460,7 +461,10 @@ async def reject_justification(
     ]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Justificativa com status '{justification.status.value}' não pode ser rejeitada",
+            detail=(
+            f"Justificativa com status '{justification.status.value}' "
+            "não pode ser rejeitada"
+        ),
         )
 
     justification.reject(
@@ -539,7 +543,7 @@ async def add_attachment(
         )
 
     # Validações de arquivo
-    max_size = 10 * 1024 * 1024  # 10MB
+    _max_size = 10 * 1024 * 1024  # 10MB (reservado para validação futura)
     allowed_types = [
         "application/pdf",
         "image/jpeg",

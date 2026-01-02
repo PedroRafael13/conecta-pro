@@ -1,7 +1,7 @@
 """Repository para Equipment."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from uuid import UUID
 
@@ -10,9 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.equipment_management.models.equipment import (
     Equipment,
-    EquipmentCategory,
     EquipmentStatus,
-    EquipmentType,
 )
 from modules.equipment_management.schemas.equipment import (
     EquipmentCreate,
@@ -74,7 +72,7 @@ class EquipmentRepository:
             equipment_id = UUID(equipment_id)
         result = await self.session.execute(
             select(Equipment).where(
-                and_(Equipment.id == equipment_id, Equipment.is_active == True)
+                and_(Equipment.id == equipment_id, Equipment.is_active.is_(True))
             )
         )
         return result.scalar_one_or_none()
@@ -83,7 +81,7 @@ class EquipmentRepository:
         """Busca equipamento por código."""
         result = await self.session.execute(
             select(Equipment).where(
-                and_(Equipment.equipment_code == code, Equipment.is_active == True)
+                and_(Equipment.equipment_code == code, Equipment.is_active.is_(True))
             )
         )
         return result.scalar_one_or_none()
@@ -92,7 +90,7 @@ class EquipmentRepository:
         """Busca equipamento por número de série."""
         result = await self.session.execute(
             select(Equipment).where(
-                and_(Equipment.serial_number == serial, Equipment.is_active == True)
+                and_(Equipment.serial_number == serial, Equipment.is_active.is_(True))
             )
         )
         return result.scalar_one_or_none()
@@ -127,14 +125,14 @@ class EquipmentRepository:
         logger.info(f"Equipamento desativado: {equipment.equipment_code}")
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[EquipmentFilter] = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Equipment], int]:
         """Lista equipamentos com filtros e paginação."""
-        query = select(Equipment).where(Equipment.is_active == True)
+        query = select(Equipment).where(Equipment.is_active.is_(True))
 
         if filters:
             conditions = []
@@ -183,7 +181,7 @@ class EquipmentRepository:
                     conditions.append(
                         or_(
                             Equipment.warranty_end <= now,
-                            Equipment.warranty_end == None,
+                            Equipment.warranty_end.is_(None),
                         )
                     )
 
@@ -195,7 +193,7 @@ class EquipmentRepository:
                     conditions.append(
                         or_(
                             Equipment.next_maintenance_at > now,
-                            Equipment.next_maintenance_at == None,
+                            Equipment.next_maintenance_at.is_(None),
                         )
                     )
 
@@ -224,7 +222,7 @@ class EquipmentRepository:
             .where(
                 and_(
                     Equipment.client_id == client_id,
-                    Equipment.is_active == True,
+                    Equipment.is_active.is_(True),
                 )
             )
             .order_by(Equipment.name)
@@ -238,7 +236,7 @@ class EquipmentRepository:
             .where(
                 and_(
                     Equipment.contract_id == contract_id,
-                    Equipment.is_active == True,
+                    Equipment.is_active.is_(True),
                 )
             )
             .order_by(Equipment.name)
@@ -252,7 +250,7 @@ class EquipmentRepository:
             .where(
                 and_(
                     Equipment.status == EquipmentStatus.ESTOQUE,
-                    Equipment.is_active == True,
+                    Equipment.is_active.is_(True),
                 )
             )
             .order_by(Equipment.name)
@@ -267,7 +265,7 @@ class EquipmentRepository:
             .where(
                 and_(
                     Equipment.next_maintenance_at <= now,
-                    Equipment.is_active == True,
+                    Equipment.is_active.is_(True),
                     Equipment.status == EquipmentStatus.INSTALADO,
                 )
             )
@@ -281,9 +279,9 @@ class EquipmentRepository:
             select(Equipment)
             .where(
                 and_(
-                    Equipment.is_online == False,
+                    Equipment.is_online.is_(False),
                     Equipment.status == EquipmentStatus.INSTALADO,
-                    Equipment.is_active == True,
+                    Equipment.is_active.is_(True),
                 )
             )
             .order_by(Equipment.last_offline_at)
@@ -292,8 +290,6 @@ class EquipmentRepository:
 
     async def get_expiring_warranty(self, days: int = 30) -> list[Equipment]:
         """Lista equipamentos com garantia expirando."""
-        from datetime import timedelta
-
         now = datetime.utcnow()
         limit_date = now + timedelta(days=days)
         result = await self.session.execute(
@@ -302,16 +298,18 @@ class EquipmentRepository:
                 and_(
                     Equipment.warranty_end > now,
                     Equipment.warranty_end <= limit_date,
-                    Equipment.is_active == True,
+                    Equipment.is_active.is_(True),
                 )
             )
             .order_by(Equipment.warranty_end)
         )
         return list(result.scalars().all())
 
-    async def get_stats(self, client_id: Optional[str] = None) -> EquipmentStats:
+    async def get_stats(  # pylint: disable=too-many-branches,E1137
+        self, client_id: Optional[str] = None
+    ) -> EquipmentStats:
         """Calcula estatísticas de equipamentos."""
-        base_query = select(Equipment).where(Equipment.is_active == True)
+        base_query = select(Equipment).where(Equipment.is_active.is_(True))
         if client_id:
             base_query = base_query.where(Equipment.client_id == client_id)
 

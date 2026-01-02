@@ -285,7 +285,7 @@ class ClientAIService:
     # MÉTODOS PRIVADOS - CÁLCULOS
     # =========================================================================
 
-    def _calculate_health_score(self, client: Client) -> int:
+    def _calculate_health_score(self, client: Client) -> int:  # pylint: disable=too-many-branches
         """Calcula score de saúde do cliente (0-100)."""
         score = 100
 
@@ -364,7 +364,7 @@ class ClientAIService:
 
         return max(0, min(100, score))
 
-    def _calculate_value_score(self, client: Client) -> int:
+    def _calculate_value_score(self, client: Client) -> int:  # pylint: disable=too-many-branches
         """Calcula score de valor do cliente (0-100)."""
         score = 0
 
@@ -413,7 +413,7 @@ class ClientAIService:
         probability = self._calculate_churn_probability(client)
         return self._probability_to_level(probability)
 
-    def _calculate_churn_probability(self, client: Client) -> float:
+    def _calculate_churn_probability(self, client: Client) -> float:  # pylint: disable=too-many-branches
         """Calcula probabilidade de churn (0-100)."""
         probability = 10.0  # Base
 

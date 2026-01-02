@@ -176,7 +176,7 @@ class SPEDFile(Base):
         return str(self.ano)
 
 
-class SPEDRegistro(Base):
+class SPEDRegistro(Base):  # pylint: disable=too-few-public-methods
     """Registro individual do SPED (para rastreabilidade)."""
 
     __tablename__ = "sped_registros"
@@ -211,7 +211,7 @@ class SPEDRegistro(Base):
         return f"<SPEDRegistro {self.bloco}{self.registro} L{self.linha}>"
 
 
-class EFDICMSIPIResumo(Base):
+class EFDICMSIPIResumo(Base):  # pylint: disable=too-few-public-methods
     """Resumo do EFD ICMS/IPI por periodo."""
 
     __tablename__ = "efd_icms_ipi_resumos"
@@ -275,7 +275,7 @@ class EFDICMSIPIResumo(Base):
         return f"<EFDICMSIPIResumo {self.ano:04d}-{self.mes:02d}>"
 
 
-class EFDContribuicoesResumo(Base):
+class EFDContribuicoesResumo(Base):  # pylint: disable=too-few-public-methods
     """Resumo do EFD Contribuicoes (PIS/COFINS)."""
 
     __tablename__ = "efd_contribuicoes_resumos"
@@ -328,7 +328,7 @@ class EFDContribuicoesResumo(Base):
         return f"<EFDContribuicoesResumo {self.ano:04d}-{self.mes:02d}>"
 
 
-class ECDResumo(Base):
+class ECDResumo(Base):  # pylint: disable=too-few-public-methods
     """Resumo da ECD (Escrituracao Contabil Digital)."""
 
     __tablename__ = "ecd_resumos"

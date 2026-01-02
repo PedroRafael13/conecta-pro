@@ -80,7 +80,7 @@ class AttachmentService:
         await self.session.refresh(attachment)
         return AttachmentResponse.model_validate(attachment)
 
-    async def upload_file(
+    async def upload_file(  # pylint: disable=too-many-locals
         self,
         occurrence_id: UUID,
         file: UploadFile,

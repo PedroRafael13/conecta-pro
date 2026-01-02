@@ -49,7 +49,7 @@ async def create_service_request(
 
 
 @router.get("/", response_model=ServiceRequestListResponse)
-async def list_service_requests(
+async def list_service_requests(  # pylint: disable=too-many-locals
     search: Optional[str] = Query(None),
     request_status: Optional[ServiceRequestStatus] = Query(None, alias="status"),
     priority: Optional[ServiceRequestPriority] = Query(None),

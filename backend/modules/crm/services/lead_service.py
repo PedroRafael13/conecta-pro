@@ -9,7 +9,7 @@ from core.logging import logger
 from modules.crm.models.lead import Lead, LeadSource, LeadStatus
 
 
-class LeadScoringEngine:
+class LeadScoringEngine:  # pylint: disable=too-few-public-methods
     """
     Motor de scoring de leads usando algoritmo baseado em regras e heurísticas.
 
@@ -157,7 +157,9 @@ class LeadScoringEngine:
 
         return status_scores.get(lead.status, 30)
 
-    def _score_response_time(self, lead: Lead) -> float:
+    def _score_response_time(  # pylint: disable=too-many-return-statements
+        self, lead: Lead
+    ) -> float:
         """Pontua baseado no tempo desde último contato."""
         if not lead.last_contact_at:
             # Novo lead, sem contato ainda
@@ -226,7 +228,9 @@ class LeadService:
         """
         return self.scoring_engine.calculate_score(lead)
 
-    def get_recommended_action(self, lead: Lead) -> str:
+    def get_recommended_action(  # pylint: disable=too-many-return-statements
+        self, lead: Lead
+    ) -> str:
         """
         Retorna ação recomendada para o lead.
 

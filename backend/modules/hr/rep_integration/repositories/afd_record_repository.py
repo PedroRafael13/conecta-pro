@@ -180,7 +180,7 @@ class AFDRecordRepository:
         )
         return list(result.scalars().all())
 
-    async def generate_afd_file(
+    async def generate_afd_file(  # pylint: disable=too-many-locals
         self,
         device_id: UUID,
         start_date: date,

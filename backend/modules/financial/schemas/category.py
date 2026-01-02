@@ -85,7 +85,7 @@ class PayableCategoryResponse(PayableCategoryBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -107,7 +107,7 @@ class PayableCategoryTreeResponse(BaseModel):
     color: Optional[str] = None
     children: List["PayableCategoryTreeResponse"] = Field(default_factory=list)
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -127,7 +127,7 @@ class PayableCategoryListResponse(BaseModel):
     is_active: bool
     parent_id: Optional[UUID] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True

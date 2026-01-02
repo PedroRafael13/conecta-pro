@@ -2,20 +2,16 @@
 
 import logging
 import uuid
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.financial.models.bank_account import BankAccount
-from modules.financial.models.bank_transaction import BankTransaction, TransactionType
-from modules.financial.models.cashflow_entry import CashFlowEntry, CashFlowEntryType
 from modules.financial.models.cashflow_forecast import (
     CashFlowForecast,
-    ForecastConfidence,
     ForecastPeriodType,
     ForecastStatus,
 )
@@ -42,7 +38,7 @@ class CashFlowAIService:
         self.entry_repo = CashFlowEntryRepository(session)
         self.forecast_repo = CashFlowForecastRepository(session)
 
-    async def generate_forecast(
+    async def generate_forecast(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         months_ahead: int = 3,
@@ -215,7 +211,9 @@ class CashFlowAIService:
             ),
         }
 
-    async def _analyze_patterns(self, historical_data: Dict[str, Any]) -> Dict[str, float]:
+    async def _analyze_patterns(  # pylint: disable=too-many-locals
+        self, historical_data: Dict[str, Any]
+    ) -> Dict[str, float]:
         """Analisa padroes nos dados historicos."""
         patterns = {
             "payment_regularity": 0.0,
@@ -285,7 +283,7 @@ class CashFlowAIService:
                         ReceivableStatus.VENCIDA.value,
                     ]
                 ),
-                ReceivableAccount.ativo == True,  # noqa: E712
+                ReceivableAccount.ativo.is_(True),
             )
         )
 
@@ -318,7 +316,7 @@ class CashFlowAIService:
                         PayableStatus.VENCIDA.value,
                     ]
                 ),
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),
             )
         )
 
@@ -353,7 +351,7 @@ class CashFlowAIService:
                             ReceivableStatus.VENCIDA.value,
                         ]
                     ),
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),
                 )
             )
             .group_by(ReceivableAccount.account_type)
@@ -388,7 +386,7 @@ class CashFlowAIService:
                             PayableStatus.APROVADA.value,
                         ]
                     ),
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                 )
             )
             .group_by(PayableAccount.account_type)
@@ -618,7 +616,7 @@ class CashFlowAIService:
         result = await self.session.execute(query)
         return result.scalar_one() or Decimal("0")
 
-    async def detect_anomalies(
+    async def detect_anomalies(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         period_months: int = 6,

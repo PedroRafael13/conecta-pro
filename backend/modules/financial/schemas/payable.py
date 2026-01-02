@@ -166,7 +166,7 @@ class PayableAccountResponse(PayableAccountBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -193,7 +193,7 @@ class PayableAccountListResponse(BaseModel):
     days_overdue: int
     total_installments: int
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -322,7 +322,7 @@ class PayableInstallmentResponse(BaseModel):
     notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -420,7 +420,7 @@ class PayablePaymentResponse(BaseModel):
     notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True

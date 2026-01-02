@@ -59,7 +59,7 @@ async def create_maintenance(
 
 
 @router.get("/", response_model=MaintenanceListResponse)
-async def list_maintenances(
+async def list_maintenances(  # pylint: disable=too-many-locals
     search: Optional[str] = Query(None),
     maintenance_type: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None, alias="status"),

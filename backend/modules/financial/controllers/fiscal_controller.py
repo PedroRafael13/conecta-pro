@@ -446,7 +446,7 @@ async def criar_nfe(
 
 
 @router.get("/nfe", response_model=NFeListResponse)
-async def listar_nfes(
+async def listar_nfes(  # pylint: disable=too-many-locals
     condominio_id: UUID,
     tipo: Optional[str] = None,
     status: Optional[str] = None,

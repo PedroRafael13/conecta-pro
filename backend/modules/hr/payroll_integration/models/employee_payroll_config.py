@@ -142,9 +142,10 @@ def calculate_irrf(
         num_dependents = int(dependents_or_inss) if isinstance(dependents_or_inss, int) else 0
     else:
         # Chamada: calculate_irrf(salary, inss, dependents)
-        inss_value = (
-            Decimal(str(dependents_or_inss)) if not isinstance(dependents_or_inss, Decimal) else dependents_or_inss
-        )
+        if isinstance(dependents_or_inss, Decimal):
+            inss_value = dependents_or_inss
+        else:
+            inss_value = Decimal(str(dependents_or_inss))
         num_dependents = dependents
 
     # Base de cálculo
@@ -426,6 +427,8 @@ class EmployeePayrollConfig(Base):
             "weekly_hours": float(self.weekly_hours) if self.weekly_hours else None,
             "overtime_rule": self.overtime_rule,
             "bank_hours_enabled": self.bank_hours_enabled,
-            "bank_hours_balance": (float(self.bank_hours_balance) if self.bank_hours_balance else 0),
+            "bank_hours_balance": (
+                float(self.bank_hours_balance) if self.bank_hours_balance else 0
+            ),
             "dependents_count": self.dependents_count,
         }

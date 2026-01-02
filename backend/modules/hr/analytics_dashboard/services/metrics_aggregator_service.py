@@ -137,7 +137,7 @@ class MetricsAggregatorService:
 
         return {"error": f"Data source not implemented: {data_source.value}"}
 
-    async def _aggregate_time_entries(
+    async def _aggregate_time_entries(  # pylint: disable=unused-argument
         self,
         aggregation: AggregationType,
         condominio_id: UUID,
@@ -167,7 +167,11 @@ class MetricsAggregatorService:
             ]
         elif group_by == "employee":
             data = [
-                {"employee_id": f"emp_{i}", "employee_name": f"Funcionário {i}", "value": random.randint(160, 200)}
+                {
+                    "employee_id": f"emp_{i}",
+                    "employee_name": f"Funcionário {i}",
+                    "value": random.randint(160, 200)
+                }
                 for i in range(1, min((limit or 10) + 1, 11))
             ]
         else:
@@ -183,7 +187,7 @@ class MetricsAggregatorService:
             "computed_at": datetime.utcnow().isoformat(),
         }
 
-    async def _aggregate_checkins(
+    async def _aggregate_checkins(  # pylint: disable=unused-argument
         self,
         aggregation: AggregationType,
         condominio_id: UUID,
@@ -218,7 +222,7 @@ class MetricsAggregatorService:
             "computed_at": datetime.utcnow().isoformat(),
         }
 
-    async def _aggregate_employees(
+    async def _aggregate_employees(  # pylint: disable=unused-argument
         self,
         aggregation: AggregationType,
         condominio_id: UUID,
@@ -255,7 +259,7 @@ class MetricsAggregatorService:
             "computed_at": datetime.utcnow().isoformat(),
         }
 
-    async def _aggregate_departments(
+    async def _aggregate_departments(  # pylint: disable=unused-argument
         self,
         aggregation: AggregationType,
         condominio_id: UUID,
@@ -295,7 +299,7 @@ class MetricsAggregatorService:
             "computed_at": datetime.utcnow().isoformat(),
         }
 
-    async def _aggregate_overtime(
+    async def _aggregate_overtime(  # pylint: disable=unused-argument
         self,
         aggregation: AggregationType,
         condominio_id: UUID,
@@ -338,7 +342,7 @@ class MetricsAggregatorService:
             "computed_at": datetime.utcnow().isoformat(),
         }
 
-    async def _aggregate_absences(
+    async def _aggregate_absences(  # pylint: disable=unused-argument
         self,
         aggregation: AggregationType,
         condominio_id: UUID,
@@ -378,7 +382,7 @@ class MetricsAggregatorService:
             "computed_at": datetime.utcnow().isoformat(),
         }
 
-    async def get_time_series(
+    async def get_time_series(  # pylint: disable=unused-argument
         self,
         data_source: DataSource,
         condominio_id: UUID,
@@ -455,7 +459,9 @@ class MetricsAggregatorService:
             "previous": previous,
             "change_absolute": current_value - previous_value,
             "change_percentage": round(change_percentage, 2),
-            "trend": "up" if change_percentage > 0 else "down" if change_percentage < 0 else "stable",
+            "trend": (
+                "up" if change_percentage > 0 else "down" if change_percentage < 0 else "stable"
+            ),
         }
 
     def _extract_total(self, data) -> float:

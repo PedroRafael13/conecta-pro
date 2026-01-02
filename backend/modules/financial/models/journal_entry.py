@@ -1,7 +1,7 @@
 """Journal Entry model - Lançamento Contábil."""
 
 import enum
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
@@ -172,7 +172,7 @@ class JournalEntry(Base):
     # Flags
     is_template = Column(Boolean, default=False, nullable=False)  # É template
     is_recurring = Column(Boolean, default=False, nullable=False)  # É recorrente
-    is_balanced = Column(Boolean, default=True, nullable=False)  # Está balanceado
+    balanced_flag = Column(Boolean, default=True, nullable=False)  # Está balanceado
     active = Column(Boolean, default=True, nullable=False)
 
     # Observações

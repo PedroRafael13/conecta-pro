@@ -93,7 +93,9 @@ class ProductResponse(ProductBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 

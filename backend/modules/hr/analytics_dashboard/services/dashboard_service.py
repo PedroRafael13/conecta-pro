@@ -349,7 +349,7 @@ class DashboardService:
                     "widget_id": str(widget.id),
                     "status": "success",
                 })
-            except Exception as e:
+            except (ValueError, KeyError, TypeError, RuntimeError) as e:
                 results["widgets_failed"] += 1
                 results["details"].append({
                     "widget_id": str(widget.id),

@@ -61,7 +61,9 @@ class OfflineQueueResponse(BaseModel):
     received_at: datetime
     processed_at: Optional[datetime]
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do Pydantic."""
+
         from_attributes = True
 
 

@@ -234,9 +234,9 @@ class EquipmentStats(BaseModel):
     """Estatísticas de equipamentos."""
 
     total: int = Field(default=0, description="Total de equipamentos")
-    by_status: dict = Field(default_factory=dict, description="Por status")
-    by_type: dict = Field(default_factory=dict, description="Por tipo")
-    by_category: dict = Field(default_factory=dict, description="Por categoria")
+    by_status: dict[str, int] = Field(default_factory=dict, description="Por status")
+    by_type: dict[str, int] = Field(default_factory=dict, description="Por tipo")
+    by_category: dict[str, int] = Field(default_factory=dict, description="Por categoria")
     in_stock: int = Field(default=0, description="Em estoque")
     installed: int = Field(default=0, description="Instalados")
     in_maintenance: int = Field(default=0, description="Em manutenção")

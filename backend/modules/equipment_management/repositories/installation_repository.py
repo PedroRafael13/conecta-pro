@@ -69,7 +69,7 @@ class InstallationRepository:
             select(EquipmentInstallation).where(
                 and_(
                     EquipmentInstallation.id == installation_id,
-                    EquipmentInstallation.is_active == True,
+                    EquipmentInstallation.is_active.is_(True),
                 )
             )
         )
@@ -81,7 +81,7 @@ class InstallationRepository:
             select(EquipmentInstallation).where(
                 and_(
                     EquipmentInstallation.installation_code == code,
-                    EquipmentInstallation.is_active == True,
+                    EquipmentInstallation.is_active.is_(True),
                 )
             )
         )
@@ -117,7 +117,7 @@ class InstallationRepository:
         logger.info(f"Instalação desativada: {installation.installation_code}")
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[InstallationFilter] = None,
         page: int = 1,
@@ -125,7 +125,7 @@ class InstallationRepository:
     ) -> tuple[list[EquipmentInstallation], int]:
         """Lista instalações com filtros e paginação."""
         query = select(EquipmentInstallation).where(
-            EquipmentInstallation.is_active == True
+            EquipmentInstallation.is_active.is_(True)
         )
 
         if filters:
@@ -223,7 +223,7 @@ class InstallationRepository:
             .where(
                 and_(
                     EquipmentInstallation.client_id == client_id,
-                    EquipmentInstallation.is_active == True,
+                    EquipmentInstallation.is_active.is_(True),
                 )
             )
             .order_by(EquipmentInstallation.scheduled_date.desc())
@@ -236,7 +236,7 @@ class InstallationRepository:
         """Lista instalações de um técnico."""
         conditions = [
             EquipmentInstallation.technician_id == technician_id,
-            EquipmentInstallation.is_active == True,
+            EquipmentInstallation.is_active.is_(True),
         ]
 
         if not include_completed:
@@ -270,7 +270,7 @@ class InstallationRepository:
                 and_(
                     EquipmentInstallation.scheduled_date >= start,
                     EquipmentInstallation.scheduled_date < end,
-                    EquipmentInstallation.is_active == True,
+                    EquipmentInstallation.is_active.is_(True),
                     EquipmentInstallation.status != InstallationStatus.CANCELLED,
                 )
             )
@@ -292,7 +292,7 @@ class InstallationRepository:
                             InstallationStatus.PENDING_APPROVAL,
                         ]
                     ),
-                    EquipmentInstallation.is_active == True,
+                    EquipmentInstallation.is_active.is_(True),
                 )
             )
             .order_by(EquipmentInstallation.scheduled_date)
@@ -306,8 +306,8 @@ class InstallationRepository:
             .where(
                 and_(
                     EquipmentInstallation.status == InstallationStatus.PENDING_APPROVAL,
-                    EquipmentInstallation.client_accepted == False,
-                    EquipmentInstallation.is_active == True,
+                    EquipmentInstallation.client_accepted.is_(False),
+                    EquipmentInstallation.is_active.is_(True),
                 )
             )
             .order_by(EquipmentInstallation.completed_at)
@@ -412,7 +412,7 @@ class InstallationRepository:
                 and_(
                     EquipmentInstallation.scheduled_date >= date_from,
                     EquipmentInstallation.scheduled_date <= date_to,
-                    EquipmentInstallation.is_active == True,
+                    EquipmentInstallation.is_active.is_(True),
                 )
             )
         )

@@ -6,7 +6,6 @@ from typing import Optional, List, TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
     String,
     Boolean,
     DateTime,

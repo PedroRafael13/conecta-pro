@@ -188,7 +188,7 @@ class OfflineQueue(Base):
 
         # Calcular próximo retry com backoff exponencial
         if self.can_retry:
-            from datetime import timedelta
+            from datetime import timedelta  # pylint: disable=import-outside-toplevel
             backoff_minutes = min(2 ** self.retry_count, 60)  # Max 1 hora
             self.next_retry_at = datetime.utcnow() + timedelta(minutes=backoff_minutes)
         else:

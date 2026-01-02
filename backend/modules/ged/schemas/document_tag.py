@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 
-from modules.ged.models.document_tag import TagType, TagColor
+from modules.ged.models.document_tag import TagType
 
 
 class DocumentTagBase(BaseModel):

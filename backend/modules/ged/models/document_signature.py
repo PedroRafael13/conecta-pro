@@ -1,12 +1,12 @@
 """Model de Assinatura de Documento para GED."""
 
-from datetime import datetime
+import secrets
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional, TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
-    Column,
     String,
     Boolean,
     DateTime,
@@ -258,9 +258,6 @@ class DocumentSignature(Base):
 
     def generate_token(self, expires_in_hours: int = 72) -> str:
         """Gera token de assinatura."""
-        import secrets
-        from datetime import timedelta
-
         self.signature_token = secrets.token_urlsafe(32)
         self.token_expires_at = datetime.utcnow() + timedelta(hours=expires_in_hours)
         return self.signature_token

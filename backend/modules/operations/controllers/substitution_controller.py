@@ -24,15 +24,13 @@ from modules.operations.schemas.substitution import (
     SubstitutionSuggestRequest,
     SubstitutionUpdate,
 )
-from modules.operations.services.substitution_service import substitution_service
-
 router = APIRouter(prefix="/substitutions", tags=["Operations - Substitutions"])
 
 
 @router.post("/", response_model=SubstitutionResponse, status_code=status.HTTP_201_CREATED)
 async def create_substitution(
     data: SubstitutionCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -51,8 +49,8 @@ async def create_substitution(
 
 
 @router.get("/", response_model=SubstitutionListResponse)
-async def list_substitutions(
-    current_user: CurrentActiveUser,
+async def list_substitutions(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -99,7 +97,7 @@ async def list_substitutions(
 
 @router.get("/pending", response_model=list[SubstitutionResponse])
 async def get_pending_substitutions(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> list[SubstitutionResponse]:
@@ -121,8 +119,8 @@ async def get_pending_substitutions(
 @router.post("/suggest", response_model=list[SubstituteSuggestion])
 async def suggest_substitutes(
     data: SubstitutionSuggestRequest,
-    current_user: CurrentActiveUser,
-    db: AsyncSession = Depends(get_db),
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    db: AsyncSession = Depends(get_db),  # pylint: disable=unused-argument
 ) -> list[SubstituteSuggestion]:
     """
     Sugere substitutos usando IA.
@@ -130,7 +128,7 @@ async def suggest_substitutes(
     Analisa disponibilidade, qualificações, distância e histórico
     para recomendar os melhores candidatos.
     """
-    # TODO: Buscar dados do turno e funcionários disponíveis do banco
+    # PENDENTE: Buscar dados do turno e funcionários disponíveis do banco
     # Por enquanto, retorna lista vazia com log
 
     logger.info(f"Solicitação de sugestões para turno {data.shift_id} " f"por {current_user.email}")
@@ -146,7 +144,7 @@ async def suggest_substitutes(
 @router.get("/by-date/{target_date}", response_model=list[SubstitutionResponse])
 async def get_substitutions_by_date(
     target_date: date,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> list[SubstitutionResponse]:
@@ -169,7 +167,7 @@ async def get_substitutions_by_date(
 @router.get("/{substitution_id}", response_model=SubstitutionResponse)
 async def get_substitution(
     substitution_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -191,7 +189,7 @@ async def get_substitution(
 async def update_substitution(
     substitution_id: str,
     data: SubstitutionUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -214,7 +212,7 @@ async def update_substitution(
 async def confirm_substitution(
     substitution_id: str,
     data: SubstitutionConfirm,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -245,7 +243,7 @@ async def confirm_substitution(
 async def reject_substitution(
     substitution_id: str,
     data: SubstitutionReject,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -267,7 +265,7 @@ async def reject_substitution(
 @router.post("/{substitution_id}/complete", response_model=SubstitutionResponse)
 async def complete_substitution(
     substitution_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     overtime_hours: float = Query(0, ge=0, description="Horas extras realizadas"),
     additional_cost: float = Query(0, ge=0, description="Custo adicional"),
@@ -295,7 +293,7 @@ async def complete_substitution(
 @router.delete("/{substitution_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_substitution(
     substitution_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

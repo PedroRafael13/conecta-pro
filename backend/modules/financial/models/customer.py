@@ -2,8 +2,9 @@
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import (
     Boolean,
@@ -184,8 +185,6 @@ class Customer(Base):
 
     def update_debt(self, total: float, overdue: float) -> None:
         """Atualiza divida do cliente."""
-        from decimal import Decimal
-
         self.total_debt = Decimal(str(total))
         self.overdue_debt = Decimal(str(overdue))
         if overdue > 0 and not self.is_blocked:

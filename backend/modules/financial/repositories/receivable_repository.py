@@ -67,7 +67,7 @@ class CustomerRepository:
             select(Customer).where(
                 and_(
                     Customer.id == customer_id,
-                    Customer.ativo == True,  # noqa: E712
+                    Customer.ativo.is_(True),
                 )
             )
         )
@@ -84,7 +84,7 @@ class CustomerRepository:
                 and_(
                     Customer.condominio_id == condominio_id,
                     Customer.cpf_cnpj == cpf_cnpj,
-                    Customer.ativo == True,  # noqa: E712
+                    Customer.ativo.is_(True),
                 )
             )
         )
@@ -99,7 +99,7 @@ class CustomerRepository:
             select(Customer).where(
                 and_(
                     Customer.unidade_id == unidade_id,
-                    Customer.ativo == True,  # noqa: E712
+                    Customer.ativo.is_(True),
                 )
             )
         )
@@ -116,7 +116,7 @@ class CustomerRepository:
         query = select(Customer).where(
             and_(
                 Customer.condominio_id == condominio_id,
-                Customer.ativo == True,  # noqa: E712
+                Customer.ativo.is_(True),
             )
         )
 
@@ -168,7 +168,7 @@ class CustomerRepository:
         query = select(func.count(Customer.id)).where(
             and_(
                 Customer.condominio_id == condominio_id,
-                Customer.ativo == True,  # noqa: E712
+                Customer.ativo.is_(True),
             )
         )
 
@@ -230,7 +230,7 @@ class ReceivableCategoryRepository:
             select(ReceivableCategory).where(
                 and_(
                     ReceivableCategory.id == category_id,
-                    ReceivableCategory.ativo == True,  # noqa: E712
+                    ReceivableCategory.ativo.is_(True),  # noqa: E712
                 )
             )
         )
@@ -248,7 +248,7 @@ class ReceivableCategoryRepository:
             .where(
                 and_(
                     ReceivableCategory.condominio_id == condominio_id,
-                    ReceivableCategory.ativo == True,  # noqa: E712
+                    ReceivableCategory.ativo.is_(True),  # noqa: E712
                 )
             )
             .order_by(ReceivableCategory.display_order, ReceivableCategory.name)
@@ -381,7 +381,7 @@ class ReceivableAccountRepository:
         query = select(ReceivableAccount).where(
             and_(
                 ReceivableAccount.id == receivable_id,
-                ReceivableAccount.ativo == True,  # noqa: E712
+                ReceivableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -406,7 +406,7 @@ class ReceivableAccountRepository:
         query = select(ReceivableAccount).where(
             and_(
                 ReceivableAccount.condominio_id == condominio_id,
-                ReceivableAccount.ativo == True,  # noqa: E712
+                ReceivableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -514,7 +514,7 @@ class ReceivableAccountRepository:
         query = select(func.count(ReceivableAccount.id)).where(
             and_(
                 ReceivableAccount.condominio_id == condominio_id,
-                ReceivableAccount.ativo == True,  # noqa: E712
+                ReceivableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -570,7 +570,7 @@ class ReceivableAccountRepository:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),  # noqa: E712
                     ReceivableAccount.due_date < today,
                     ReceivableAccount.status.notin_(
                         [
@@ -601,7 +601,7 @@ class ReceivableAccountRepository:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),  # noqa: E712
                     ReceivableAccount.due_date >= today,
                     ReceivableAccount.due_date <= end_date,
                     ReceivableAccount.status.notin_(
@@ -628,7 +628,7 @@ class ReceivableAccountRepository:
         query = select(ReceivableAccount).where(
             and_(
                 ReceivableAccount.customer_id == customer_id,
-                ReceivableAccount.ativo == True,  # noqa: E712
+                ReceivableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -649,7 +649,7 @@ class ReceivableAccountRepository:
         query = select(ReceivableAccount).where(
             and_(
                 ReceivableAccount.unidade_id == unidade_id,
-                ReceivableAccount.ativo == True,  # noqa: E712
+                ReceivableAccount.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -674,7 +674,7 @@ class ReceivableAccountRepository:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(ReceivableAccount.status)
@@ -706,7 +706,7 @@ class ReceivableAccountRepository:
         ).where(
             and_(
                 ReceivableAccount.condominio_id == condominio_id,
-                ReceivableAccount.ativo == True,  # noqa: E712
+                ReceivableAccount.ativo.is_(True),  # noqa: E712
                 ReceivableAccount.due_date < today,
                 ReceivableAccount.status.notin_(
                     [
@@ -734,7 +734,7 @@ class ReceivableAccountRepository:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(ReceivableCategory.name)
@@ -755,7 +755,7 @@ class ReceivableAccountRepository:
             .where(
                 and_(
                     ReceivableAccount.condominio_id == condominio_id,
-                    ReceivableAccount.ativo == True,  # noqa: E712
+                    ReceivableAccount.ativo.is_(True),  # noqa: E712
                 )
             )
             .group_by(ReceivableAccount.priority)
@@ -791,7 +791,7 @@ class ReceivableInstallmentRepository:
             .where(
                 and_(
                     ReceivableInstallment.id == installment_id,
-                    ReceivableInstallment.ativo == True,  # noqa: E712
+                    ReceivableInstallment.ativo.is_(True),  # noqa: E712
                 )
             )
             .options(selectinload(ReceivableInstallment.payments))
@@ -808,7 +808,7 @@ class ReceivableInstallmentRepository:
             .where(
                 and_(
                     ReceivableInstallment.receivable_account_id == receivable_account_id,
-                    ReceivableInstallment.ativo == True,  # noqa: E712
+                    ReceivableInstallment.ativo.is_(True),  # noqa: E712
                 )
             )
             .order_by(ReceivableInstallment.installment_number)
@@ -826,7 +826,7 @@ class ReceivableInstallmentRepository:
         query = select(ReceivableInstallment).where(
             and_(
                 ReceivableInstallment.condominio_id == condominio_id,
-                ReceivableInstallment.ativo == True,  # noqa: E712
+                ReceivableInstallment.ativo.is_(True),  # noqa: E712
                 ReceivableInstallment.status.in_(
                     [
                         InstallmentStatus.PENDENTE.value,
@@ -861,10 +861,10 @@ class ReceivableInstallmentRepository:
             .where(
                 and_(
                     ReceivableInstallment.condominio_id == condominio_id,
-                    ReceivableInstallment.ativo == True,  # noqa: E712
+                    ReceivableInstallment.ativo.is_(True),  # noqa: E712
                     ReceivableInstallment.due_date <= target_date,
                     ReceivableInstallment.due_date >= today,
-                    ReceivableInstallment.boleto_generated == False,  # noqa: E712
+                    ReceivableInstallment.boleto_generated.is_(False),  # noqa: E712
                     ReceivableInstallment.status == InstallmentStatus.PENDENTE.value,
                 )
             )
@@ -976,7 +976,7 @@ class ReceivablePaymentRepository:
             select(ReceivablePayment).where(
                 and_(
                     ReceivablePayment.id == payment_id,
-                    ReceivablePayment.ativo == True,  # noqa: E712
+                    ReceivablePayment.ativo.is_(True),  # noqa: E712
                 )
             )
         )
@@ -992,7 +992,7 @@ class ReceivablePaymentRepository:
             .where(
                 and_(
                     ReceivablePayment.installment_id == installment_id,
-                    ReceivablePayment.ativo == True,  # noqa: E712
+                    ReceivablePayment.ativo.is_(True),  # noqa: E712
                 )
             )
             .order_by(ReceivablePayment.payment_date)
@@ -1012,7 +1012,7 @@ class ReceivablePaymentRepository:
             .where(
                 and_(
                     ReceivablePayment.condominio_id == condominio_id,
-                    ReceivablePayment.ativo == True,  # noqa: E712
+                    ReceivablePayment.ativo.is_(True),  # noqa: E712
                     ReceivablePayment.payment_date >= start_date,
                     ReceivablePayment.payment_date <= end_date,
                 )
@@ -1033,8 +1033,8 @@ class ReceivablePaymentRepository:
             .where(
                 and_(
                     ReceivablePayment.condominio_id == condominio_id,
-                    ReceivablePayment.ativo == True,  # noqa: E712
-                    ReceivablePayment.is_reconciled == False,  # noqa: E712
+                    ReceivablePayment.ativo.is_(True),  # noqa: E712
+                    ReceivablePayment.is_reconciled.is_(False),  # noqa: E712
                     ReceivablePayment.status == PaymentStatus.CONFIRMADO.value,
                 )
             )
@@ -1072,7 +1072,7 @@ class BillingRuleRepository:
             select(BillingRule).where(
                 and_(
                     BillingRule.id == rule_id,
-                    BillingRule.ativo == True,  # noqa: E712
+                    BillingRule.ativo.is_(True),  # noqa: E712
                 )
             )
         )
@@ -1089,7 +1089,7 @@ class BillingRuleRepository:
         query = select(BillingRule).where(
             and_(
                 BillingRule.condominio_id == condominio_id,
-                BillingRule.ativo == True,  # noqa: E712
+                BillingRule.ativo.is_(True),  # noqa: E712
             )
         )
 
@@ -1141,7 +1141,7 @@ class BillingRuleRepository:
             select(BillingRule).where(
                 and_(
                     BillingRule.condominio_id == condominio_id,
-                    BillingRule.ativo == True,  # noqa: E712
+                    BillingRule.ativo.is_(True),  # noqa: E712
                     BillingRule.status == BillingRuleStatus.ATIVA.value,
                     BillingRule.start_date <= today,
                     or_(

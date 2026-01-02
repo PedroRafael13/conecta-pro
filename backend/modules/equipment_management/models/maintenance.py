@@ -2,7 +2,7 @@
 Model EquipmentMaintenance - Manutenções de Equipamentos.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional
 from uuid import uuid4
@@ -344,8 +344,6 @@ class EquipmentMaintenance(Base):
 
         # Programar próxima manutenção (se preventiva recorrente)
         if self.is_recurring and self.recurrence_interval_days:
-            from datetime import timedelta
-
             self.next_maintenance_date = (
                 self.completed_at + timedelta(days=self.recurrence_interval_days)
             )

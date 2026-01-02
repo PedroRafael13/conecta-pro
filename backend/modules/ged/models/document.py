@@ -7,7 +7,6 @@ from uuid import uuid4
 import hashlib
 
 from sqlalchemy import (
-    Column,
     String,
     Boolean,
     DateTime,

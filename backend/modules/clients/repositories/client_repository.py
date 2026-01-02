@@ -80,7 +80,7 @@ class ClientRepository:
             .first()
         )
 
-    def list_clients(
+    def list_clients(  # pylint: disable=too-many-branches
         self,
         filters: Optional[ClientFilter] = None,
         skip: int = 0,

@@ -284,8 +284,8 @@ class AllocationRepository:
         return True
 
     async def get_available_employees(
-        self, shift_date: date, post_id: Optional[str] = None
-    ) -> List[str]:
+        self, shift_date: date, post_id: Optional[str] = None  # pylint: disable=unused-argument
+    ) -> list[str]:
         """
         Lista funcionários disponíveis em uma data.
 

@@ -35,7 +35,7 @@ class KPICalculatorService:
         self.kpi_repo = KPIRepository(db)
         self.cache_repo = CacheRepository(db)
 
-    async def calculate_kpi(
+    async def calculate_kpi(  # pylint: disable=too-many-locals
         self,
         kpi_code: str,
         condominio_id: UUID,
@@ -181,7 +181,7 @@ class KPICalculatorService:
 
         return 0.0
 
-    async def _calc_absenteeism_rate(
+    async def _calc_absenteeism_rate(  # pylint: disable=unused-argument
         self,
         condominio_id: UUID,
         period_start: datetime,
@@ -197,11 +197,11 @@ class KPICalculatorService:
             base_rate = 3.0
             variation = random.uniform(-1.0, 1.0)
             return round(base_rate + variation, 2)
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular absenteísmo: %s", e)
             return 0.0
 
-    async def _calc_punctuality_rate(
+    async def _calc_punctuality_rate(  # pylint: disable=unused-argument
         self,
         condominio_id: UUID,
         period_start: datetime,
@@ -214,11 +214,11 @@ class KPICalculatorService:
             base_rate = 92.0
             variation = random.uniform(-3.0, 5.0)
             return round(base_rate + variation, 2)
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular pontualidade: %s", e)
             return 0.0
 
-    async def _calc_overtime_hours(
+    async def _calc_overtime_hours(  # pylint: disable=unused-argument
         self,
         condominio_id: UUID,
         period_start: datetime,
@@ -230,11 +230,11 @@ class KPICalculatorService:
             base_hours = 8.0
             variation = random.uniform(-3.0, 5.0)
             return round(base_hours + variation, 1)
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular horas extras: %s", e)
             return 0.0
 
-    async def _calc_bank_hours_balance(
+    async def _calc_bank_hours_balance(  # pylint: disable=unused-argument
         self,
         condominio_id: UUID,
         period_start: datetime,
@@ -244,11 +244,11 @@ class KPICalculatorService:
         """Calcula saldo do banco de horas."""
         try:
             return round(random.uniform(-50.0, 150.0), 1)
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular banco de horas: %s", e)
             return 0.0
 
-    async def _calc_clt_compliance(
+    async def _calc_clt_compliance(  # pylint: disable=unused-argument
         self,
         condominio_id: UUID,
         period_start: datetime,
@@ -260,11 +260,11 @@ class KPICalculatorService:
             base_rate = 97.0
             variation = random.uniform(-2.0, 3.0)
             return min(100.0, round(base_rate + variation, 2))
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular conformidade CLT: %s", e)
             return 0.0
 
-    async def _calc_overtime_cost(
+    async def _calc_overtime_cost(  # pylint: disable=unused-argument
         self,
         condominio_id: UUID,
         period_start: datetime,
@@ -276,11 +276,11 @@ class KPICalculatorService:
             base_cost = 15000.0
             variation = random.uniform(-5000.0, 8000.0)
             return round(base_cost + variation, 2)
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular custo de horas extras: %s", e)
             return 0.0
 
-    async def _calc_worked_hours_efficiency(
+    async def _calc_worked_hours_efficiency(  # pylint: disable=unused-argument
         self,
         condominio_id: UUID,
         period_start: datetime,
@@ -292,11 +292,11 @@ class KPICalculatorService:
             base_rate = 98.0
             variation = random.uniform(-3.0, 2.0)
             return round(base_rate + variation, 2)
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError) as e:
             logger.error("Erro ao calcular eficiência: %s", e)
             return 0.0
 
-    async def _execute_custom_query(
+    async def _execute_custom_query(  # pylint: disable=unused-argument
         self,
         kpi: KPIDefinition,
         condominio_id: UUID,
@@ -345,7 +345,7 @@ class KPICalculatorService:
                     period_end=period_end,
                 )
                 results.append(result)
-            except Exception as e:
+            except (ValueError, KeyError, TypeError, RuntimeError) as e:
                 logger.error("Erro ao calcular KPI %s: %s", code, e)
 
         return results

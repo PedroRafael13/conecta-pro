@@ -58,7 +58,7 @@ async def create_client(
 
 
 @router.get("/", response_model=List[ClientListResponse])
-async def list_clients(
+async def list_clients(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     client_type: Optional[ClientType] = Query(None, alias="type"),

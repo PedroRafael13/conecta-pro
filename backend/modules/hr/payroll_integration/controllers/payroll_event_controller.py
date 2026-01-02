@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.auth.dependencies import get_current_user, require_permissions
+from core.auth.dependencies import get_current_user
 from core.database import get_db
 from modules.hr.payroll_integration.models import EventCategory, EventType
 from modules.hr.payroll_integration.schemas import (
@@ -111,7 +111,7 @@ async def list_period_events(
     page: int = Query(1, ge=1, description="Página"),
     page_size: int = Query(100, ge=1, le=1000, description="Itens por página"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayrollEventListResponse:
     """Lista eventos de um período com filtros."""
     try:
@@ -148,7 +148,7 @@ async def get_employee_events(
     employee_id: UUID,
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[PayrollEventResponse]:
     """Retorna todos eventos de um funcionário no período."""
     try:
@@ -176,7 +176,7 @@ async def get_employee_summary(
     employee_id: UUID,
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> EmployeePayrollSummary:
     """Retorna resumo da folha de um funcionário."""
     try:
@@ -203,7 +203,7 @@ async def get_employee_summary(
 async def get_period_totals(
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna totais consolidados do período."""
     try:
@@ -232,14 +232,15 @@ async def get_period_totals(
 async def get_events_by_category(
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna eventos agrupados por categoria."""
     try:
         service = PayrollEventService(db)
         grouped = await service.get_events_by_category(period_id)
         return {
-            category: [PayrollEventResponse.model_validate(e) for e in events] for category, events in grouped.items()
+            category: [PayrollEventResponse.model_validate(e) for e in events]
+            for category, events in grouped.items()
         }
     except Exception as e:
         logger.error("Erro ao agrupar eventos por categoria: %s", e)
@@ -257,7 +258,7 @@ async def get_events_by_category(
 async def get_event(
     event_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayrollEventResponse:
     """Busca evento por ID."""
     try:

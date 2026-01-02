@@ -142,7 +142,7 @@ class MaintenanceSchedulerService:
             ),
         }
 
-    def optimize_schedule(
+    def optimize_schedule(  # pylint: disable=too-many-locals
         self,
         maintenances: List[Dict[str, Any]],
         available_resources: Dict[str, Any],
@@ -223,7 +223,7 @@ class MaintenanceSchedulerService:
 
         return scheduled
 
-    def predict_next_maintenance(
+    def predict_next_maintenance(  # pylint: disable=too-many-locals
         self,
         equipment_id: str,
         maintenance_history: List[Dict[str, Any]],

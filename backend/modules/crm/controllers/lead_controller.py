@@ -29,7 +29,7 @@ router = APIRouter(prefix="/leads", tags=["CRM - Leads"])
 @router.post("/", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
 async def create_lead(
     data: LeadCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
     """
@@ -54,8 +54,8 @@ async def create_lead(
 
 
 @router.get("/", response_model=LeadListResponse)
-async def list_leads(
-    current_user: CurrentActiveUser,
+async def list_leads(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -101,7 +101,7 @@ async def list_leads(
 
 @router.get("/stats", response_model=LeadStats)
 async def get_lead_stats(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     assigned_to_id: Optional[str] = None,
 ) -> LeadStats:
@@ -117,7 +117,7 @@ async def get_lead_stats(
 @router.get("/{lead_id}", response_model=LeadResponse)
 async def get_lead(
     lead_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
     """
@@ -139,7 +139,7 @@ async def get_lead(
 async def update_lead(
     lead_id: str,
     data: LeadUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
     """
@@ -165,7 +165,7 @@ async def update_lead(
 async def update_lead_status(
     lead_id: str,
     data: LeadStatusUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
     """
@@ -191,7 +191,7 @@ async def update_lead_status(
 @router.post("/{lead_id}/recalculate-score", response_model=LeadResponse)
 async def recalculate_lead_score(
     lead_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> LeadResponse:
     """
@@ -214,7 +214,7 @@ async def recalculate_lead_score(
 @router.get("/{lead_id}/recommended-action")
 async def get_recommended_action(
     lead_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -246,7 +246,7 @@ async def get_recommended_action(
 @router.delete("/{lead_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_lead(
     lead_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

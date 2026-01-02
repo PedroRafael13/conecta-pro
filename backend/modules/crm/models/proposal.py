@@ -143,7 +143,9 @@ class Proposal(Base):
     # Relationships
     items = relationship("ProposalItem", back_populates="proposal", cascade="all, delete-orphan")
     versions = relationship("Proposal", backref="parent", remote_side=[id])
-    approvals = relationship("ProposalApproval", back_populates="proposal", cascade="all, delete-orphan")
+    approvals = relationship(
+        "ProposalApproval", back_populates="proposal", cascade="all, delete-orphan"
+    )
 
     @property
     def is_draft(self) -> bool:
@@ -281,7 +283,7 @@ class ProposalItem(Base):
         self.total = self.subtotal - self.discount_amount
 
 
-class ProposalTemplate(Base):
+class ProposalTemplate(Base):  # pylint: disable=too-few-public-methods
     """Model para template de proposta."""
 
     __tablename__ = "proposal_templates"
@@ -318,7 +320,7 @@ class ApprovalAction(str, Enum):
     REQUEST_CHANGES = "request_changes"
 
 
-class ProposalApproval(Base):
+class ProposalApproval(Base):  # pylint: disable=too-few-public-methods
     """Model para histórico de aprovações."""
 
     __tablename__ = "proposal_approvals"

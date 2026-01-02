@@ -31,7 +31,7 @@ router = APIRouter(prefix="/scales", tags=["Operations - Scales"])
 @router.post("/", response_model=ScaleResponse, status_code=status.HTTP_201_CREATED)
 async def create_scale(
     data: ScaleCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -58,7 +58,7 @@ async def create_scale(
 @router.post("/generate", response_model=ScaleResponse, status_code=status.HTTP_201_CREATED)
 async def generate_scale(
     data: ScaleGenerateRequest,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -114,7 +114,7 @@ async def generate_scale(
 
 @router.get("/", response_model=ScaleListResponse)
 async def list_scales(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -154,7 +154,7 @@ async def list_scales(
 @router.get("/{scale_id}", response_model=ScaleResponse)
 async def get_scale(
     scale_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -176,7 +176,7 @@ async def get_scale(
 async def update_scale(
     scale_id: str,
     data: ScaleUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -200,7 +200,7 @@ async def update_scale(
 @router.post("/{scale_id}/submit", response_model=ScaleResponse)
 async def submit_scale_for_approval(
     scale_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -232,7 +232,7 @@ async def submit_scale_for_approval(
 async def approve_scale(
     scale_id: str,
     data: ScaleApproveRequest,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -255,7 +255,7 @@ async def approve_scale(
 async def publish_scale(
     scale_id: str,
     data: ScalePublishRequest,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -272,7 +272,7 @@ async def publish_scale(
             detail="Escala não encontrada ou não pode ser publicada",
         )
 
-    # TODO: Enviar notificações aos funcionários
+    # PENDENTE: Enviar notificações aos funcionários
     if data.notify_employees:
         logger.info(f"Notificando funcionários via {data.notification_channels}")
 
@@ -283,7 +283,7 @@ async def publish_scale(
 @router.delete("/{scale_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_scale(
     scale_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

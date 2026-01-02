@@ -1,4 +1,7 @@
-"""Services do módulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Contabilidade."""
+"""Services do módulo financeiro.
+
+Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras e Contabilidade.
+"""
 
 # Contas a Pagar
 from modules.financial.services.payable_ai_service import PayableAIService, PayableAnomalyType

@@ -60,7 +60,7 @@ class EventProcessorService:
                     results["processed"] += 1
                 else:
                     results["skipped"] += 1
-            except Exception as e:
+            except (ValueError, KeyError, TypeError, RuntimeError) as e:
                 logger.error(f"Erro ao processar evento {event.id}: {e}")
                 results["errors"] += 1
                 await self.event_repo.mark_as_error(
@@ -158,8 +158,7 @@ class EventProcessorService:
 
         # Verificar duplicado no mesmo dia
         if event.pis_number and event.event_datetime:
-            # TODO: Implementar verificação de duplicados
-
+            # TODO: Implementar verificação de duplicados  # pylint: disable=fixme
             pass
 
         return {
@@ -169,15 +168,15 @@ class EventProcessorService:
 
     async def _identify_employee(
         self,
-        pis_number: str,
-        condominio_id: UUID,
+        pis_number: str,  # pylint: disable=unused-argument
+        condominio_id: UUID,  # pylint: disable=unused-argument
     ) -> Optional[UUID]:
         """Identifica funcionário pelo PIS.
 
         Returns:
             ID do funcionário ou None.
         """
-        # TODO: Implementar busca no cadastro de funcionários
+        # TODO: Implementar busca no cadastro de funcionários  # pylint: disable=fixme
         # Por enquanto, retorna None para marcar como não identificado
         return None
 
@@ -187,7 +186,7 @@ class EventProcessorService:
         Returns:
             ID do TimeEntry criado ou None.
         """
-        # TODO: Integrar com módulo time_tracking
+        # TODO: Integrar com módulo time_tracking  # pylint: disable=fixme
         # Por enquanto, simula criação
         try:
             # Importar TimeEntry do módulo time_tracking
@@ -206,7 +205,7 @@ class EventProcessorService:
             _ = _entry_type  # Usado na integração com time_tracking
             return uuid.uuid4()
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, AttributeError) as e:
             logger.error(f"Erro ao criar TimeEntry: {e}")
             return None
 
@@ -282,7 +281,7 @@ class EventProcessorService:
                     results["success"] += 1
                 else:
                     results["failed"] += 1
-            except Exception:
+            except (ValueError, KeyError, TypeError, RuntimeError):
                 results["failed"] += 1
 
         return results
@@ -294,6 +293,7 @@ class EventProcessorService:
     ) -> Dict[str, int]:
         """Reprocessa eventos que falharam."""
         # Buscar eventos com erro que podem ser reprocessados
+        # pylint: disable=import-outside-toplevel
         from modules.hr.rep_integration.schemas import REPEventFilter
 
         filters = REPEventFilter(
@@ -322,7 +322,7 @@ class EventProcessorService:
                     results["reprocessed"] += 1
                 else:
                     results["failed"] += 1
-            except Exception:
+            except (ValueError, KeyError, TypeError, RuntimeError):
                 results["failed"] += 1
 
         return results

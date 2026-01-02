@@ -8,19 +8,15 @@ Gerencia:
 - Cálculo de SLA e penalidades
 """
 
-from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Optional
 
 from pydantic import BaseModel
 
 from modules.crm.models.contract import (
-    AddendumType,
     AdjustmentIndex,
     Contract,
-    ContractAddendum,
-    ContractSLAReport,
     ContractStatus,
     ContractType,
 )
@@ -204,7 +200,7 @@ class ContractService:
             message=f"Reajuste de {percent}% calculado",
         )
 
-    def calculate_sla(
+    def calculate_sla(  # pylint: disable=too-many-locals
         self,
         contract: Contract,
         indicator_results: list[dict[str, Any]],
@@ -286,9 +282,8 @@ class ContractService:
                 # Penalidade proporcional
                 gap = Decimal("100") - overall_score
                 penalty_percent = min(gap / Decimal("5"), max_penalty)
-                penalty_amount = (contract.monthly_value * penalty_percent / Decimal("100")).quantize(
-                    Decimal("0.01"), rounding=ROUND_HALF_UP
-                )
+                pen_calc = contract.monthly_value * penalty_percent / Decimal("100")
+                penalty_amount = pen_calc.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
         return SLACalculation(
             overall_score=overall_score,

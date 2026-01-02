@@ -96,7 +96,7 @@ class ReportGeneratorService:
                 completed_at=completed_at,
             )
 
-        except Exception as e:
+        except (ValueError, KeyError, TypeError, RuntimeError, IOError) as e:
             logger.error("Erro ao gerar relatório %s: %s", report.id, e)
 
             completed_at = datetime.utcnow()
@@ -135,7 +135,9 @@ class ReportGeneratorService:
         elif report.period_type == "previous_week":
             # Início da semana passada
             days_since_monday = now.weekday()
-            end = now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days_since_monday)
+            end = now.replace(
+                hour=0, minute=0, second=0, microsecond=0
+            ) - timedelta(days=days_since_monday)
             start = end - timedelta(weeks=1)
 
         elif report.period_type == "previous_month":
@@ -227,12 +229,14 @@ class ReportGeneratorService:
             }
             data["violations"] = [
                 {
-                    "type": random.choice(["intervalo_minimo", "jornada_maxima", "descanso_semanal"]),
+                    "type": random.choice([
+                        "intervalo_minimo", "jornada_maxima", "descanso_semanal"]),
                     "employee_id": f"emp_{random.randint(1, 100)}",
-                    "date": (period_start + timedelta(days=random.randint(0, 30))).isoformat(),
-                    "description": "Violação de regra CLT",
-                }
-                for _ in range(random.randint(0, 5))
+                    "date": (
+                        period_start + timedelta(days=random.randint(0, 30))
+                    ).isoformat(),
+                    "description": "Violacao de regra CLT",
+                } for _ in range(random.randint(0, 5))
             ]
 
         else:
@@ -355,7 +359,7 @@ class ReportGeneratorService:
                     "status": result.status,
                 })
 
-            except Exception as e:
+            except (ValueError, KeyError, TypeError, RuntimeError, IOError) as e:
                 logger.error("Erro ao processar relatório %s: %s", report.id, e)
                 results["failed"] += 1
 

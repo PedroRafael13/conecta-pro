@@ -105,8 +105,6 @@ class TimeSheetReview(BaseModel):
 class TimeSheetClose(BaseModel):
     """Schema para fechamento."""
 
-    pass
-
 
 class TimeSheetPayroll(BaseModel):
     """Schema para envio à folha."""

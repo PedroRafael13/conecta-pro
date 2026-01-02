@@ -1,9 +1,9 @@
 """Model para período de folha de pagamento."""
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import (
     Boolean,
@@ -195,8 +195,12 @@ class PayrollPeriod(Base):
 
     def calculate_totals(self, events: List["PayrollEvent"]) -> None:
         """Calcula totalizadores baseado nos eventos."""
-        self.total_earnings = sum(e.value for e in events if e.event_type == "earning" and e.ativo)
-        self.total_deductions = sum(e.value for e in events if e.event_type == "deduction" and e.ativo)
+        self.total_earnings = sum(
+            e.value for e in events if e.event_type == "earning" and e.ativo
+        )
+        self.total_deductions = sum(
+            e.value for e in events if e.event_type == "deduction" and e.ativo
+        )
         self.total_net = self.total_earnings - self.total_deductions
         self.total_employees = len(set(e.employee_id for e in events if e.ativo))
 

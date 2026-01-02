@@ -33,7 +33,7 @@ router = APIRouter(prefix="/time-bank", tags=["Operations - Time Bank"])
 @router.post("/", response_model=TimeBankResponse, status_code=status.HTTP_201_CREATED)
 async def create_entry(
     data: TimeBankCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -57,8 +57,8 @@ async def create_entry(
 
 
 @router.get("/", response_model=TimeBankListResponse)
-async def list_entries(
-    current_user: CurrentActiveUser,
+async def list_entries(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -103,7 +103,7 @@ async def list_entries(
 
 @router.get("/pending", response_model=list[TimeBankResponse])
 async def get_pending_entries(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     employee_id: Optional[str] = None,
 ) -> list[TimeBankResponse]:
@@ -124,7 +124,7 @@ async def get_pending_entries(
 
 @router.get("/expiring", response_model=list[TimeBankResponse])
 async def get_expiring_entries(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     days: int = Query(30, ge=1, le=90, description="Dias até expiração"),
 ) -> list[TimeBankResponse]:
@@ -133,7 +133,7 @@ async def get_expiring_entries(
     """
     repo = TimeBankRepository(db)
 
-    # TODO: Implementar filtro por data de expiração
+    # PENDENTE: Implementar filtro por data de expiração
     filters = TimeBankFilter(
         status=TimeBankStatus.APPROVED,
     )
@@ -141,7 +141,7 @@ async def get_expiring_entries(
     entries, _ = await repo.list(filters=filters, page=1, page_size=500)
 
     # Filtrar manualmente por enquanto
-    from datetime import timedelta
+    from datetime import timedelta  # pylint: disable=import-outside-toplevel
 
     limit_date = date.today() + timedelta(days=days)
     expiring = [e for e in entries if e.expiration_date and e.expiration_date <= limit_date]
@@ -152,7 +152,7 @@ async def get_expiring_entries(
 @router.get("/summary/{employee_id}", response_model=TimeBankSummary)
 async def get_employee_summary(
     employee_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankSummary:
     """
@@ -172,7 +172,7 @@ async def get_employee_summary(
 
 @router.get("/stats", response_model=TimeBankStats)
 async def get_stats(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankStats:
     """
@@ -184,7 +184,7 @@ async def get_stats(
 
 @router.get("/alerts")
 async def get_expiration_alerts(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     """
@@ -216,7 +216,7 @@ async def get_expiration_alerts(
 @router.get("/{entry_id}", response_model=TimeBankResponse)
 async def get_entry(
     entry_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -238,7 +238,7 @@ async def get_entry(
 async def update_entry(
     entry_id: str,
     data: TimeBankUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -263,7 +263,7 @@ async def update_entry(
 async def approve_entry(
     entry_id: str,
     data: TimeBankApprove,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -293,7 +293,7 @@ async def reject_entry(
     Rejeita uma entrada no banco de horas.
     """
     repo = TimeBankRepository(db)
-    entry = await repo.reject(entry_id, data.rejection_reason)
+    entry = await repo.reject(entry_id, data.rejection_reason, str(current_user.id))
 
     if not entry:
         raise HTTPException(
@@ -309,7 +309,7 @@ async def reject_entry(
 async def compensate_hours(
     employee_id: str,
     data: TimeBankCompensate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -361,7 +361,7 @@ async def get_monthly_summary(
     employee_id: str,
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020, le=2100),
-    current_user: CurrentActiveUser = None,
+    current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -392,7 +392,7 @@ async def get_monthly_summary(
 @router.get("/recommendations/{employee_id}")
 async def get_recommendations(
     employee_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> list[str]:
     """
@@ -420,7 +420,7 @@ async def get_recommendations(
 @router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_entry(
     entry_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

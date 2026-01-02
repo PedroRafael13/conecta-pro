@@ -4,7 +4,7 @@ Repository para operações de banco de dados com Checklist.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Dict, List, Optional
 from uuid import uuid4
 
@@ -165,7 +165,7 @@ class ChecklistRepository:
 
         return checklists, total
 
-    def _apply_filters(self, query, filters: ChecklistFilter):
+    def _apply_filters(self, query, filters: ChecklistFilter):  # pylint: disable=too-many-branches
         """Aplica filtros à query."""
         if filters.search:
             search_term = f"%{filters.search}%"
@@ -391,7 +391,7 @@ class ChecklistRepository:
         logger.info(f"Checklist deletado (soft): {checklist.id}")
         return True
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         client_id: Optional[str] = None,
         area_id: Optional[str] = None,
@@ -464,8 +464,6 @@ class ChecklistRepository:
         with_critical = critical_result.scalar() or 0
 
         # Concluídos este mês
-        from datetime import date
-
         today = date.today()
         first_day = today.replace(day=1)
 

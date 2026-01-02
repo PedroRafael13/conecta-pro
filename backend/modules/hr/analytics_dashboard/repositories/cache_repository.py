@@ -32,7 +32,7 @@ class CacheRepository:
         query = select(AnalyticsCache).where(
             AnalyticsCache.cache_key == cache_key,
             AnalyticsCache.condominio_id == condominio_id,
-            AnalyticsCache.is_active == True,  # noqa: E712
+            AnalyticsCache.is_active.is_(True),
         )
         result = await self.db.execute(query)
         cache = result.scalar_one_or_none()
@@ -54,7 +54,7 @@ class CacheRepository:
             AnalyticsCache.condominio_id == condominio_id,
             AnalyticsCache.status == CacheStatus.VALID.value,
             AnalyticsCache.expires_at > datetime.utcnow(),
-            AnalyticsCache.is_active == True,  # noqa: E712
+            AnalyticsCache.is_active.is_(True),
         )
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
@@ -235,7 +235,7 @@ class CacheRepository:
             "cutoff": cutoff.isoformat(),
         }
 
-    async def get_statistics(
+    async def get_statistics(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID = None,
     ) -> dict:
@@ -310,7 +310,7 @@ class CacheRepository:
             select(AnalyticsCache)
             .where(
                 AnalyticsCache.condominio_id == condominio_id,
-                AnalyticsCache.is_active == True,  # noqa: E712
+                AnalyticsCache.is_active.is_(True),
             )
             .order_by(AnalyticsCache.hit_count.desc())
             .limit(limit)

@@ -1,7 +1,9 @@
 """Repository para documentos do funcionário."""
 
 import logging
-from datetime import datetime, date
+import random
+import string
+from datetime import datetime, date, timedelta
 from typing import Optional, List, Tuple
 from uuid import UUID, uuid4
 
@@ -74,8 +76,6 @@ class DocumentRepository:
 
     def _generate_code(self) -> str:
         """Gera código único do documento."""
-        import random
-        import string
         suffix = "".join(random.choices(string.ascii_uppercase + string.digits, k=10))
         return f"DOC{suffix}"
 
@@ -354,7 +354,7 @@ class DocumentRepository:
         days_ahead: int = 30,
     ) -> List[EmployeeDocument]:
         """Busca documentos prestes a expirar."""
-        target_date = date.today() + timedelta(days=days_ahead)
+        target_date = date.today() + timedelta(days_ahead)  # noqa: E501
         result = await self.db.execute(
             select(EmployeeDocument).where(
                 and_(
@@ -367,6 +367,3 @@ class DocumentRepository:
             )
         )
         return list(result.scalars().all())
-
-
-from datetime import timedelta

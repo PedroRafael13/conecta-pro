@@ -40,7 +40,7 @@ router = APIRouter(prefix="/interviews", tags=["Recruitment - Entrevistas"])
 async def create_interview(
     data: InterviewCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Agenda uma nova entrevista."""
     service = InterviewService(db)
@@ -63,7 +63,7 @@ async def create_interview(
     response_model=InterviewListResponse,
     summary="Listar entrevistas",
 )
-async def list_interviews(
+async def list_interviews(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     application_id: Optional[str] = None,
@@ -77,7 +77,7 @@ async def list_interviews(
     order_by: str = "scheduled_date",
     order_desc: bool = False,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
     """Lista entrevistas com filtros e paginação."""
     service = InterviewService(db)
@@ -113,7 +113,7 @@ async def list_interviews(
 async def list_today(
     interviewer_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
     """Lista entrevistas agendadas para hoje."""
     service = InterviewService(db)
@@ -136,7 +136,7 @@ async def list_upcoming(
     days: int = Query(7, ge=1, le=30),
     interviewer_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
     """Lista próximas entrevistas."""
     service = InterviewService(db)
@@ -157,7 +157,7 @@ async def list_upcoming(
 )
 async def list_pending_confirmation(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
     """Lista entrevistas pendentes de confirmação."""
     service = InterviewService(db)
@@ -178,7 +178,7 @@ async def list_pending_confirmation(
 )
 async def list_pending_result(
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
     """Lista entrevistas pendentes de resultado."""
     service = InterviewService(db)
@@ -202,7 +202,7 @@ async def list_by_date_range(
     end_date: date,
     interviewer_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
     """Lista entrevistas em um período."""
     service = InterviewService(db)
@@ -227,7 +227,7 @@ async def get_available_slots(
     end_date: date = Query(...),
     duration_minutes: int = Query(60, ge=15, le=180),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[InterviewSlot]:
     """Retorna horários disponíveis para agendamento."""
     service = InterviewService(db)
@@ -247,7 +247,7 @@ async def get_calendar(
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020, le=2100),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewCalendar:
     """Retorna calendário de entrevistas de um mês."""
     service = InterviewService(db)
@@ -262,7 +262,7 @@ async def get_calendar(
 async def get_interview_stats(
     application_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewStats:
     """Retorna estatísticas das entrevistas."""
     service = InterviewService(db)
@@ -278,7 +278,7 @@ async def get_interview_stats(
 async def get_interview(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Busca entrevista por ID."""
     service = InterviewService(db)
@@ -302,7 +302,7 @@ async def update_interview(
     interview_id: str,
     data: InterviewUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Atualiza uma entrevista."""
     service = InterviewService(db)
@@ -327,7 +327,7 @@ async def update_interview(
 async def delete_interview(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Remove uma entrevista (soft delete)."""
     service = InterviewService(db)
@@ -348,7 +348,7 @@ async def delete_interview(
 async def confirm_candidate(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Confirma presença do candidato."""
     service = InterviewService(db)
@@ -371,7 +371,7 @@ async def confirm_candidate(
 async def confirm_interviewer(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Confirma presença do entrevistador."""
     service = InterviewService(db)
@@ -394,7 +394,7 @@ async def confirm_interviewer(
 async def start_interview(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Inicia a entrevista."""
     service = InterviewService(db)
@@ -420,7 +420,7 @@ async def complete_interview(
     interview_id: str,
     data: InterviewComplete,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Completa a entrevista com resultado."""
     service = InterviewService(db)
@@ -446,7 +446,7 @@ async def cancel_interview(
     interview_id: str,
     data: InterviewCancel,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Cancela a entrevista."""
     service = InterviewService(db)
@@ -470,7 +470,7 @@ async def reschedule_interview(
     interview_id: str,
     data: InterviewReschedule,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Reagenda a entrevista."""
     service = InterviewService(db)
@@ -495,7 +495,7 @@ async def reschedule_interview(
 async def mark_no_show(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Marca que o candidato não compareceu."""
     service = InterviewService(db)
@@ -519,7 +519,7 @@ async def add_evaluation(
     interview_id: str,
     data: InterviewEvaluation,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewResponse:
     """Adiciona avaliação de competência."""
     service = InterviewService(db)
@@ -541,7 +541,7 @@ async def add_evaluation(
 async def get_suggested_questions(
     interview_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[dict]:
     """Retorna sugestões de perguntas para a entrevista."""
     service = InterviewService(db)
@@ -565,7 +565,7 @@ async def list_by_application(
     application_id: str,
     status_filter: Optional[InterviewStatus] = Query(None, alias="status"),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> InterviewListResponse:
     """Lista entrevistas de uma candidatura."""
     service = InterviewService(db)

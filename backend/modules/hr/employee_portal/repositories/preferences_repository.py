@@ -80,6 +80,7 @@ class PreferencesRepository:
         preferences = await self.get_by_employee(employee_id, condominio_id)
 
         if not preferences:
+            # pylint: disable=import-outside-toplevel
             from modules.hr.employee_portal.models import (
                 ThemePreference,
                 LanguagePreference,
@@ -311,6 +312,7 @@ class PreferencesRepository:
         if not preferences:
             return None
 
+        # pylint: disable=import-outside-toplevel
         from modules.hr.employee_portal.models import (
             ThemePreference,
             LanguagePreference,

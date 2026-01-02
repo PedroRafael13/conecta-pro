@@ -1,4 +1,7 @@
-"""Models do modulo financeiro - Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade."""
+"""Models do modulo financeiro.
+
+Contas a Pagar, Contas a Receber, Fluxo de Caixa, Compras, Estoque e Contabilidade.
+"""
 
 # Contas a Pagar
 # Fluxo de Caixa

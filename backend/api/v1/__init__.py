@@ -17,7 +17,7 @@ from modules.crm.controllers import (
 # ===================================================================
 # GUARDIAN UNIFIED v3.0.0 - MÓDULO 9
 # ===================================================================
-from modules.guardian.controllers import (
+from modules.field_service.controllers import (
     # Segurança Física (Legacy)
     sync_router,
     access_log_router,

@@ -1,7 +1,7 @@
 """Schemas Pydantic para TimeEntry."""
 
 from datetime import datetime, date, time
-from decimal import Decimal
+from decimal import Decimal  # pylint: disable=unused-import
 from typing import Optional, List
 from uuid import UUID
 

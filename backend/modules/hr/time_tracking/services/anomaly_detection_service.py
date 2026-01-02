@@ -15,7 +15,7 @@ from modules.hr.time_tracking.models import (
 logger = logging.getLogger(__name__)
 
 
-class AnomalyScore:
+class AnomalyScore:  # pylint: disable=too-few-public-methods
     """Representa um score de anomalia."""
 
     def __init__(
@@ -362,19 +362,28 @@ class AnomalyDetectionService:
 
         if worked_hours > self.MAX_WORK_HOURS:
             excess_hours = worked_hours - self.MAX_WORK_HOURS
-            severity = "medium" if excess_hours <= 2 else "high" if excess_hours <= 4 else "critical"
+            if excess_hours <= 2:
+                severity = "medium"
+            elif excess_hours <= 4:
+                severity = "high"
+            else:
+                severity = "critical"
             score = min(90, 50 + excess_hours * 10)
 
+            description = (
+                f"Jornada de {worked_hours:.1f}h excede "
+                f"limite de {self.MAX_WORK_HOURS}h"
+            )
             anomalies.append(AnomalyScore(
                 anomaly_type=AnomalyType.EXCESSO_JORNADA,
                 score=score,
-                description=f"Jornada de {worked_hours:.1f}h excede limite de {self.MAX_WORK_HOURS}h",
+                description=description,
                 severity=severity,
             ))
 
         return anomalies
 
-    def _detect_irregular_break(
+    def _detect_irregular_break(  # pylint: disable=too-many-locals
         self,
         entries: List[TimeEntry],
     ) -> List[AnomalyScore]:
@@ -419,10 +428,14 @@ class AnomalyDetectionService:
                     break_duration = b_end - b_start
 
                     if break_duration < self.MIN_BREAK_MINUTES:
+                        desc = (
+                            f"Intervalo de {break_duration}min abaixo "
+                            f"do mínimo ({self.MIN_BREAK_MINUTES}min)"
+                        )
                         anomalies.append(AnomalyScore(
                             anomaly_type=AnomalyType.INTERVALO_IRREGULAR,
                             score=35.0,
-                            description=f"Intervalo de {break_duration}min abaixo do mínimo ({self.MIN_BREAK_MINUTES}min)",
+                            description=desc,
                             severity="medium",
                         ))
 
@@ -498,7 +511,7 @@ class AnomalyDetectionService:
 
         return anomalies
 
-    def _detect_pattern_anomalies(
+    def _detect_pattern_anomalies(  # pylint: disable=too-many-locals
         self,
         entries: List[TimeEntry],
         historical_data: List[TimeEntry],

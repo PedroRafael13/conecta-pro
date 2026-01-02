@@ -40,7 +40,7 @@ async def list_afd_records(
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> AFDRecordList:
     """Lista registros AFD."""
     repo = AFDRecordRepository(db)
@@ -70,7 +70,7 @@ async def list_afd_records(
 async def get_afd_record(
     record_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> AFDRecordResponse:
     """Obtém registro AFD por ID."""
     repo = AFDRecordRepository(db)
@@ -92,7 +92,7 @@ async def export_afd(
     company_cei: str = Query(..., min_length=12, max_length=12),
     company_name: str = Query(..., min_length=1, max_length=150),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> AFDExportResponse:
     """Exporta arquivo AFD para um período."""
     afd_service = AFDService(db)
@@ -121,7 +121,7 @@ async def download_afd(
     company_cei: str = Query(..., min_length=12, max_length=12),
     company_name: str = Query(..., min_length=1, max_length=150),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Baixa arquivo AFD."""
     afd_service = AFDService(db)
@@ -156,7 +156,7 @@ async def download_afd(
 async def validate_afd(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> AFDValidationResult:
     """Valida arquivo AFD."""
     content = await file.read()
@@ -173,7 +173,7 @@ async def import_afd(
     validate_only: bool = Query(False),
     skip_duplicates: bool = Query(True),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> AFDImportResponse:
     """Importa arquivo AFD."""
     content = await file.read()
@@ -195,7 +195,7 @@ async def get_afd_statistics(
     device_id: Optional[UUID] = None,
     condominio_id: Optional[UUID] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna estatísticas de registros AFD."""
     afd_service = AFDService(db)

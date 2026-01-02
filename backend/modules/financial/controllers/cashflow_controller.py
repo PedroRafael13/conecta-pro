@@ -18,7 +18,6 @@ from modules.financial.models import (
     ForecastConfidence,
     ForecastPeriodType,
     ForecastStatus,
-    RecurrenceFrequency,
 )
 from modules.financial.repositories import (
     BankAccountRepository,
@@ -48,6 +47,8 @@ from modules.financial.schemas import (
     ForecastRisk,
     OptimizationSuggestion,
 )
+from modules.financial.models import TransactionCategory, TransactionStatus, TransactionType
+from modules.financial.repositories import BankTransactionRepository
 from modules.financial.services.cashflow_ai_service import CashFlowAIService
 from modules.financial.services.cashflow_service import CashFlowService
 from modules.financial.services.payable_ai_service import PayableAIService
@@ -108,7 +109,7 @@ async def get_projection(
     include_scheduled: bool = Query(True, description="Incluir agendados"),
     group_by: str = Query("day", description="Agrupar por: day, week, month"),
     service: CashFlowService = Depends(get_cashflow_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[CashFlowProjection]:
     """Gera projeção de fluxo de caixa."""
     projections = await service.get_projection(
@@ -131,7 +132,7 @@ async def get_summary(
     condominio_id: UUID,
     period_days: int = Query(30, ge=7, le=365, description="Período em dias"),
     service: CashFlowService = Depends(get_cashflow_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CashFlowSummary:
     """Retorna resumo do fluxo de caixa."""
     return await service.get_summary(condominio_id, period_days)
@@ -146,7 +147,7 @@ async def get_trends(
     condominio_id: UUID,
     months: int = Query(12, ge=3, le=24, description="Meses de histórico"),
     service: CashFlowService = Depends(get_cashflow_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[CashFlowTrend]:
     """Retorna tendências mensais de fluxo de caixa."""
     data = await service.get_monthly_trend(condominio_id, months)
@@ -162,7 +163,7 @@ async def get_category_breakdown(
     start_date: Optional[date] = Query(None, description="Data inicial"),
     end_date: Optional[date] = Query(None, description="Data final"),
     service: CashFlowService = Depends(get_cashflow_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna breakdown de despesas por categoria."""
     return await service.get_category_breakdown(condominio_id, start_date, end_date)
@@ -178,7 +179,7 @@ async def get_supplier_breakdown(
     end_date: Optional[date] = Query(None, description="Data final"),
     limit: int = Query(10, ge=1, le=50, description="Quantidade de fornecedores"),
     service: CashFlowService = Depends(get_cashflow_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna breakdown de despesas por fornecedor."""
     return await service.get_supplier_breakdown(condominio_id, start_date, end_date, limit)
@@ -194,7 +195,7 @@ async def get_dashboard(
     cashflow_service: CashFlowService = Depends(get_cashflow_service),
     ai_service: CashFlowAIService = Depends(get_ai_service),
     account_repo: BankAccountRepository = Depends(get_account_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CashFlowDashboard:
     """Retorna dados completos para dashboard financeiro."""
     # Saldo atual
@@ -286,7 +287,7 @@ async def list_entries(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: CashFlowEntryRepository = Depends(get_entry_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[CashFlowEntryResponse]:
     """Lista entradas de fluxo de caixa com filtros."""
     filters = CashFlowEntryFilter(
@@ -311,7 +312,7 @@ async def get_pending_entries(
     condominio_id: UUID,
     days_ahead: int = Query(30, ge=1, le=90),
     repo: CashFlowEntryRepository = Depends(get_entry_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[CashFlowEntryResponse]:
     """Retorna entradas pendentes nos próximos dias."""
     entries = await repo.get_pending(condominio_id, days_ahead)
@@ -327,7 +328,7 @@ async def get_entry_totals(
     start_date: date = Query(...),
     end_date: date = Query(...),
     repo: CashFlowEntryRepository = Depends(get_entry_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna totais de entradas por tipo."""
     return await repo.get_totals_by_type(condominio_id, start_date, end_date)
@@ -341,7 +342,7 @@ async def get_entry_totals(
 async def get_entry(
     entry_id: UUID,
     repo: CashFlowEntryRepository = Depends(get_entry_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CashFlowEntryResponse:
     """Retorna entrada pelo ID."""
     entry = await repo.get_by_id(entry_id)
@@ -450,9 +451,6 @@ async def realize_entry(
 
     # Cria transação bancária se especificado
     if data.bank_account_id:
-        from modules.financial.models import TransactionCategory, TransactionStatus, TransactionType
-        from modules.financial.repositories import BankTransactionRepository
-
         tx_repo = BankTransactionRepository(session)
         await tx_repo.create(
             {
@@ -518,7 +516,7 @@ async def list_forecasts(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: CashFlowForecastRepository = Depends(get_forecast_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[CashFlowForecastResponse]:
     """Lista previsões com filtros."""
     filters = CashFlowForecastFilter(
@@ -541,7 +539,7 @@ async def list_forecasts(
 async def get_active_forecasts(
     condominio_id: UUID,
     repo: CashFlowForecastRepository = Depends(get_forecast_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[CashFlowForecastResponse]:
     """Retorna previsões ativas do condomínio."""
     forecasts = await repo.get_active(condominio_id)
@@ -556,7 +554,7 @@ async def get_active_forecasts(
 async def get_forecast(
     forecast_id: UUID,
     repo: CashFlowForecastRepository = Depends(get_forecast_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> CashFlowForecastResponse:
     """Retorna previsão pelo ID."""
     forecast = await repo.get_by_id(forecast_id)
@@ -748,7 +746,7 @@ async def get_risks(
     condominio_id: UUID,
     period_days: int = Query(90, ge=30, le=365),
     service: CashFlowAIService = Depends(get_ai_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[ForecastRisk]:
     """Retorna riscos identificados pela IA."""
     try:
@@ -775,7 +773,7 @@ async def get_opportunities(
     condominio_id: UUID,
     period_days: int = Query(90, ge=30, le=365),
     service: CashFlowAIService = Depends(get_ai_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> List[ForecastOpportunity]:
     """Retorna oportunidades identificadas pela IA."""
     try:
@@ -805,7 +803,7 @@ async def detect_anomalies_legacy(
     condominio_id: UUID,
     period_months: int = Query(6, ge=3, le=12, description="Meses de histórico"),
     service: PayableAIService = Depends(get_payable_ai_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """[Deprecated] Detecta anomalias em contas a pagar."""
     anomalies = await service.detect_anomalies(
@@ -832,7 +830,7 @@ async def predict_cashflow_legacy(
     condominio_id: UUID,
     months_ahead: int = Query(3, ge=1, le=6, description="Meses para prever"),
     service: PayableAIService = Depends(get_payable_ai_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """[Deprecated] Prevê fluxo de caixa futuro baseado em histórico."""
     predictions = await service.predict_cashflow(condominio_id, months_ahead)
@@ -847,7 +845,7 @@ async def predict_cashflow_legacy(
 async def get_suggestions_legacy(
     condominio_id: UUID,
     service: PayableAIService = Depends(get_payable_ai_service),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """[Deprecated] Retorna sugestões de otimização baseadas em análise de dados."""
     suggestions = await service.suggest_optimizations(condominio_id)

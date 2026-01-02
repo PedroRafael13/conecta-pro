@@ -54,7 +54,7 @@ class DashboardConfigCreate(DashboardConfigBase):
             return v
         name = info.data.get("name", "")
         if name:
-            import re
+            import re  # pylint: disable=import-outside-toplevel
             slug = re.sub(r"[^a-zA-Z0-9]+", "-", name.lower())
             return slug.strip("-")
         return None

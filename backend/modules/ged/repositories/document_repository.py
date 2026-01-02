@@ -1,14 +1,14 @@
 """Repository para Document."""
 
 import logging
+from datetime import date, timedelta
 from typing import Optional, List, Tuple
 from uuid import uuid4
-from datetime import datetime
 
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.ged.models.document import Document, DocumentStatus, DocumentType
+from modules.ged.models.document import Document, DocumentStatus
 from modules.ged.schemas.document import DocumentCreate, DocumentUpdate, DocumentFilter
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class DocumentRepository:
         await self.session.flush()
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[DocumentFilter] = None,
         skip: int = 0,
@@ -197,8 +197,8 @@ class DocumentRepository:
         """Retorna documentos pendentes de assinatura."""
         query = select(Document).where(
             and_(
-                Document.requires_signature == True,
-                Document.is_signed == False,
+                Document.requires_signature.is_(True),
+                Document.is_signed.is_(False),
                 Document.status != DocumentStatus.EXCLUIDO,
             )
         )
@@ -225,14 +225,12 @@ class DocumentRepository:
         self, days: int = 30, condominium_id: str = None
     ) -> List[Document]:
         """Retorna documentos prestes a expirar."""
-        from datetime import date, timedelta
-
         expiry_date = date.today() + timedelta(days=days)
         query = select(Document).where(
             and_(
                 Document.valid_until <= expiry_date,
                 Document.valid_until >= date.today(),
-                Document.is_perpetual == False,
+                Document.is_perpetual.is_(False),
                 Document.status.notin_(
                     [DocumentStatus.EXCLUIDO, DocumentStatus.EXPIRADO]
                 ),

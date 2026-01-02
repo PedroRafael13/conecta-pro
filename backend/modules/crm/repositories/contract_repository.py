@@ -19,7 +19,6 @@ from sqlalchemy.orm import selectinload
 
 from modules.crm.models.contract import (
     AddendumType,
-    AdjustmentIndex,
     Contract,
     ContractAddendum,
     ContractItem,
@@ -147,7 +146,7 @@ class ContractRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list(
+    async def list(  # pylint: disable=too-many-branches
         self,
         filters: Optional[ContractFilter] = None,
         page: int = 1,
@@ -258,7 +257,7 @@ class ContractRepository:
         self,
         contract_id: str,
         new_status: ContractStatus,
-        user_id: Optional[str] = None,
+        user_id: Optional[str] = None,  # pylint: disable=unused-argument
     ) -> Optional[Contract]:
         """Atualiza status do contrato."""
         contract = await self.get_by_id(contract_id)
@@ -313,7 +312,7 @@ class ContractRepository:
         await self.db.commit()
         return True
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         client_id: Optional[str] = None,
         commercial_manager_id: Optional[str] = None,

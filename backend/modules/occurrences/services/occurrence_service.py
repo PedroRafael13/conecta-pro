@@ -311,7 +311,9 @@ class OccurrenceService:
         await self.repository.increment_views(occurrence_id)
         await self.session.commit()
 
-    async def register_first_response(self, occurrence_id: str | UUID) -> Optional[OccurrenceResponse]:
+    async def register_first_response(
+        self, occurrence_id: str | UUID
+    ) -> Optional[OccurrenceResponse]:
         """Registra primeira resposta."""
         occurrence = await self.repository.get_by_id(occurrence_id)
         if not occurrence:

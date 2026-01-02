@@ -1,7 +1,7 @@
 """Controller para períodos de folha de pagamento."""
 
 import logging
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -133,7 +133,7 @@ async def get_current_period(
 async def get_period(
     period_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayrollPeriodResponse:
     """Busca período por ID."""
     try:

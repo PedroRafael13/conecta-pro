@@ -13,7 +13,6 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.crm.models.contract import (
-    AdjustmentIndex,
     ContractStatus,
     ContractType,
     ServiceType,
@@ -36,8 +35,6 @@ from modules.crm.schemas.contract import (
     ContractSLAReportCreate,
     ContractSLAReportResponse,
     ContractStats,
-    ContractStatusUpdate,
-    ContractTemplateApprove,
     ContractTemplateCreate,
     ContractTemplateListResponse,
     ContractTemplateResponse,
@@ -61,7 +58,7 @@ router = APIRouter(prefix="/contracts", tags=["CRM - Contracts"])
 @router.post("/", response_model=ContractDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_contract(
     data: ContractCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractDetailResponse:
     """
@@ -76,8 +73,8 @@ async def create_contract(
 
 
 @router.get("/", response_model=ContractListResponse)
-async def list_contracts(
-    current_user: CurrentActiveUser,
+async def list_contracts(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -122,7 +119,7 @@ async def list_contracts(
 
 @router.get("/stats", response_model=ContractStats)
 async def get_contract_stats(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     client_id: Optional[str] = None,
     commercial_manager_id: Optional[str] = None,
@@ -139,7 +136,7 @@ async def get_contract_stats(
 
 @router.get("/alerts", response_model=List[ContractAlert])
 async def get_contract_alerts(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     days_ahead: int = Query(30, ge=1, le=90),
 ) -> List[ContractAlert]:
@@ -161,7 +158,7 @@ async def get_contract_alerts(
 @router.get("/{contract_id}", response_model=ContractDetailResponse)
 async def get_contract(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractDetailResponse:
     """
@@ -183,7 +180,7 @@ async def get_contract(
 async def update_contract(
     contract_id: str,
     data: ContractUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractDetailResponse:
     """
@@ -207,7 +204,7 @@ async def update_contract(
 @router.post("/{contract_id}/submit", response_model=ContractResponse)
 async def submit_contract_for_signature(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractResponse:
     """
@@ -228,14 +225,16 @@ async def submit_contract_for_signature(
             detail="Contrato não encontrado ou não está em rascunho",
         )
 
-    logger.info(f"Contract enviado para assinatura por {current_user.email}: {contract.contract_number}")
+    logger.info(
+        f"Contract enviado para assinatura por {current_user.email}: {contract.contract_number}"
+    )
     return ContractResponse.model_validate(contract)
 
 
 @router.post("/{contract_id}/activate", response_model=ContractResponse)
 async def activate_contract(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractResponse:
     """
@@ -261,9 +260,9 @@ async def activate_contract(
 @router.post("/{contract_id}/suspend", response_model=ContractResponse)
 async def suspend_contract(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,
+    reason: Optional[str] = None,  # pylint: disable=unused-argument
 ) -> ContractResponse:
     """
     Suspende um contrato ativo.
@@ -288,9 +287,9 @@ async def suspend_contract(
 @router.post("/{contract_id}/terminate", response_model=ContractResponse)
 async def terminate_contract(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = None,
+    reason: Optional[str] = None,  # pylint: disable=unused-argument
 ) -> ContractResponse:
     """
     Encerra um contrato.
@@ -316,7 +315,7 @@ async def terminate_contract(
 async def calculate_renewal(
     contract_id: str,
     data: ContractRenewal,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> RenewalResult:
     """
@@ -345,7 +344,7 @@ async def calculate_renewal(
 @router.post("/{contract_id}/calculate-adjustment", response_model=AdjustmentResult)
 async def calculate_adjustment(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     custom_percent: Optional[float] = None,
     effective_date: Optional[date] = None,
@@ -376,7 +375,7 @@ async def calculate_adjustment(
 @router.delete("/{contract_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_contract(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -403,7 +402,7 @@ async def delete_contract(
 async def add_contract_item(
     contract_id: str,
     data: ContractItemCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractItemResponse:
     """
@@ -427,7 +426,7 @@ async def update_contract_item(
     contract_id: str,
     item_id: str,
     data: ContractItemUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractItemResponse:
     """
@@ -453,7 +452,7 @@ async def update_contract_item(
 async def remove_contract_item(
     contract_id: str,
     item_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -478,7 +477,7 @@ async def remove_contract_item(
 async def create_addendum(
     contract_id: str,
     data: ContractAddendumCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractAddendumResponse:
     """
@@ -502,7 +501,7 @@ async def create_addendum(
 @router.get("/{contract_id}/addendums", response_model=List[ContractAddendumResponse])
 async def list_addendums(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> List[ContractAddendumResponse]:
     """
@@ -517,7 +516,7 @@ async def list_addendums(
 async def sign_addendum(
     addendum_id: str,
     data: ContractAddendumSign,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractAddendumResponse:
     """
@@ -546,7 +545,7 @@ async def sign_addendum(
 )
 async def create_template(
     data: ContractTemplateCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractTemplateResponse:
     """
@@ -560,7 +559,7 @@ async def create_template(
 
 @router.get("/templates", response_model=ContractTemplateListResponse)
 async def list_templates(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     service_type: Optional[ServiceType] = None,
     approved_only: bool = False,
@@ -582,7 +581,7 @@ async def list_templates(
 @router.get("/templates/{template_id}", response_model=ContractTemplateResponse)
 async def get_template(
     template_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractTemplateResponse:
     """
@@ -604,7 +603,7 @@ async def get_template(
 async def update_template(
     template_id: str,
     data: ContractTemplateUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractTemplateResponse:
     """
@@ -626,7 +625,7 @@ async def update_template(
 @router.post("/templates/{template_id}/approve", response_model=ContractTemplateResponse)
 async def approve_template(
     template_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractTemplateResponse:
     """
@@ -648,7 +647,7 @@ async def approve_template(
 @router.delete("/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_template(
     template_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -673,7 +672,7 @@ async def delete_template(
 async def create_sla_report(
     contract_id: str,
     data: ContractSLAReportCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractSLAReportResponse:
     """
@@ -697,7 +696,7 @@ async def create_sla_report(
 @router.get("/{contract_id}/sla-reports", response_model=List[ContractSLAReportResponse])
 async def list_sla_reports(
     contract_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     year: Optional[int] = None,
 ) -> List[ContractSLAReportResponse]:
@@ -713,7 +712,7 @@ async def list_sla_reports(
 async def approve_sla_report(
     report_id: str,
     data: ContractSLAReportApprove,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ContractSLAReportResponse:
     """
@@ -741,7 +740,7 @@ async def approve_sla_report(
 async def calculate_sla(
     contract_id: str,
     indicator_results: list[dict],
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> SLACalculation:
     """

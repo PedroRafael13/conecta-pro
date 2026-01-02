@@ -1,9 +1,8 @@
 """Trial Balance model - Balancete de Verificação."""
 
 import enum
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,

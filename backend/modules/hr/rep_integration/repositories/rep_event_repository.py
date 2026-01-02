@@ -88,7 +88,7 @@ class REPEventRepository:
             try:
                 await self.create(event_data)
                 created += 1
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 errors += 1
 
         return created, duplicates, errors
@@ -132,7 +132,7 @@ class REPEventRepository:
         await self.db.refresh(event)
         return event
 
-    async def list_events(
+    async def list_events(  # pylint: disable=too-many-branches
         self,
         filters: REPEventFilter,
         page: int = 1,

@@ -3,14 +3,12 @@
 import enum
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
     Enum,
-    ForeignKey,
     Integer,
     Numeric,
     String,
@@ -18,7 +16,6 @@ from sqlalchemy import (
     UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.models import Base
 

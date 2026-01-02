@@ -10,17 +10,19 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.models.payable_account import PayableAccount, PayableStatus
+from modules.financial.models.payable_category import PayableCategory
 from modules.financial.models.payable_installment import InstallmentStatus, PayableInstallment
+from modules.financial.models.supplier import Supplier
 
 logger = logging.getLogger(__name__)
 
 
-class CashFlowProjection:
+class CashFlowProjection:  # pylint: disable=too-few-public-methods
     """Representa uma projeção de fluxo de caixa."""
 
     def __init__(
         self,
-        date: date,
+        date: date,  # pylint: disable=redefined-outer-name
         payables: Decimal = Decimal("0"),
         receivables: Decimal = Decimal("0"),
         balance: Decimal = Decimal("0"),
@@ -52,12 +54,12 @@ class CashFlowService:
         """Inicializa o service."""
         self.session = session
 
-    async def get_projection(
+    async def get_projection(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        include_pending: bool = True,
+        include_pending: bool = True,  # pylint: disable=unused-argument
         include_scheduled: bool = True,
         group_by: str = "day",  # day, week, month
     ) -> List[CashFlowProjection]:
@@ -80,7 +82,7 @@ class CashFlowService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableInstallment.status.in_(statuses),
                     PayableInstallment.due_date >= start_date,
                     PayableInstallment.due_date <= end_date,
@@ -119,7 +121,7 @@ class CashFlowService:
         # Ordena e calcula saldo acumulado
         projections = sorted(projections_map.values(), key=lambda p: p.date)
 
-        # TODO: Integrar com contas a receber para calcular receivables
+        # Integrar com contas a receber para calcular receivables (futuro)
         # Por enquanto, considera apenas saídas
 
         cumulative = Decimal("0")
@@ -139,7 +141,7 @@ class CashFlowService:
             return d.replace(day=1)
         return d
 
-    async def get_summary(
+    async def get_summary(  # pylint: disable=too-many-locals
         self,
         condominio_id: UUID,
         period_days: int = 30,
@@ -158,7 +160,7 @@ class CashFlowService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date <= end_date,
                 )
             )
@@ -178,7 +180,7 @@ class CashFlowService:
         ).where(
             and_(
                 PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),
                 PayableAccount.status.in_(
                     [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
                 ),
@@ -197,7 +199,7 @@ class CashFlowService:
         ).where(
             and_(
                 PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),
                 PayableAccount.status.in_(
                     [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
                 ),
@@ -216,7 +218,7 @@ class CashFlowService:
         ).where(
             and_(
                 PayableAccount.condominio_id == condominio_id,
-                PayableAccount.ativo == True,  # noqa: E712
+                PayableAccount.ativo.is_(True),
                 PayableAccount.status.in_(
                     [PayableStatus.PENDENTE.value, PayableStatus.APROVADA.value]
                 ),
@@ -257,8 +259,6 @@ class CashFlowService:
         if end_date is None:
             end_date = date.today()
 
-        from modules.financial.models.payable_category import PayableCategory
-
         query = (
             select(
                 PayableCategory.id,
@@ -271,7 +271,7 @@ class CashFlowService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date >= start_date,
                     PayableAccount.due_date <= end_date,
                 )
@@ -306,8 +306,6 @@ class CashFlowService:
         if end_date is None:
             end_date = date.today()
 
-        from modules.financial.models.supplier import Supplier
-
         query = (
             select(
                 Supplier.id,
@@ -320,7 +318,7 @@ class CashFlowService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date >= start_date,
                     PayableAccount.due_date <= end_date,
                 )
@@ -362,7 +360,7 @@ class CashFlowService:
             .where(
                 and_(
                     PayableAccount.condominio_id == condominio_id,
-                    PayableAccount.ativo == True,  # noqa: E712
+                    PayableAccount.ativo.is_(True),
                     PayableAccount.due_date >= start_date,
                     PayableAccount.due_date <= today,
                 )

@@ -1,8 +1,8 @@
 """Service para validação de check-ins mobile."""
 
 import logging
-from datetime import datetime, timedelta
-from typing import Optional, Tuple, List
+from datetime import datetime
+from typing import Optional, Tuple
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -56,7 +56,7 @@ class CheckInValidationService:
         self.geofence_repo = GeofenceZoneRepository(db)
         self.geofence_service = GeofenceService(db)
 
-    async def validate_checkin(
+    async def validate_checkin(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self,
         data: MobileCheckInCreate,
         device: MobileDevice,
@@ -106,7 +106,6 @@ class CheckInValidationService:
             )
 
         # 4. Validar localização (geofence)
-        geofence_valid = False
         geofence_zone = None
         if data.location:
             geo_valid, zone, geo_details = await self.geofence_service.validate_checkin_location(
@@ -120,7 +119,6 @@ class CheckInValidationService:
             )
 
             if geo_valid:
-                geofence_valid = True
                 geofence_zone = zone
                 validation_methods.append(ValidationMethod.GEOFENCE.value)
                 score += self.VALIDATION_WEIGHTS[ValidationMethod.GEOFENCE.value]
@@ -249,9 +247,12 @@ class CheckInValidationService:
         if last_checkin:
             # 1. Verificar velocidade impossível
             if checkin.latitude and last_checkin.latitude:
-                time_diff = (checkin.checkin_datetime - last_checkin.checkin_datetime).total_seconds()
+                time_diff = (
+                    checkin.checkin_datetime - last_checkin.checkin_datetime
+                ).total_seconds()
                 if time_diff > 0:
                     # Calcular distância aproximada
+                    # pylint: disable=import-outside-toplevel
                     from modules.hr.mobile_time_clock.models import GeofenceZone
                     temp_zone = GeofenceZone(
                         center_latitude=last_checkin.latitude,

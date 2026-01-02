@@ -1,7 +1,7 @@
 """Schemas Pydantic para KPIDefinition."""
 
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator

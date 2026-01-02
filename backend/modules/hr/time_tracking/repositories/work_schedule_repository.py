@@ -1,6 +1,6 @@
 """Repository para WorkSchedule."""
 
-from datetime import date
+from datetime import date as _date  # noqa: F401
 from typing import Optional, List, Tuple
 from uuid import UUID
 
@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.hr.time_tracking.models import (
     WorkSchedule,
-    ScheduleType,
     ScheduleStatus,
 )
 from modules.hr.time_tracking.schemas import (
@@ -46,7 +45,7 @@ class WorkScheduleRepository:
         result = await self.db.execute(
             select(WorkSchedule).where(
                 WorkSchedule.id == schedule_id,
-                WorkSchedule.is_deleted == False,
+                WorkSchedule.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -56,7 +55,7 @@ class WorkScheduleRepository:
         result = await self.db.execute(
             select(WorkSchedule).where(
                 WorkSchedule.code == code,
-                WorkSchedule.is_deleted == False,
+                WorkSchedule.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -67,7 +66,7 @@ class WorkScheduleRepository:
             select(WorkSchedule).where(
                 WorkSchedule.employee_id == employee_id,
                 WorkSchedule.status == ScheduleStatus.ATIVO,
-                WorkSchedule.is_deleted == False,
+                WorkSchedule.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -97,7 +96,7 @@ class WorkScheduleRepository:
         limit: int = 100,
     ) -> Tuple[List[WorkSchedule], int]:
         """Lista jornadas com filtros."""
-        query = select(WorkSchedule).where(WorkSchedule.is_deleted == False)
+        query = select(WorkSchedule).where(WorkSchedule.is_deleted.is_(False))
 
         if filters:
             if filters.employee_id:
@@ -129,9 +128,9 @@ class WorkScheduleRepository:
     ) -> List[WorkSchedule]:
         """Busca templates de jornada."""
         query = select(WorkSchedule).where(
-            WorkSchedule.is_template == True,
+            WorkSchedule.is_template.is_(True),
             WorkSchedule.status == ScheduleStatus.ATIVO,
-            WorkSchedule.is_deleted == False,
+            WorkSchedule.is_deleted.is_(False),
         )
         if condominium_id:
             query = query.where(WorkSchedule.condominium_id == condominium_id)
@@ -144,7 +143,7 @@ class WorkScheduleRepository:
         condominium_id: str = None,
     ) -> dict:
         """Calcula estatísticas de jornadas."""
-        base_where = [WorkSchedule.is_deleted == False]
+        base_where = [WorkSchedule.is_deleted.is_(False)]
         if condominium_id:
             base_where.append(WorkSchedule.condominium_id == condominium_id)
 
@@ -164,7 +163,7 @@ class WorkScheduleRepository:
         template_result = await self.db.execute(
             select(func.count()).where(
                 *base_where,
-                WorkSchedule.is_template == True,
+                WorkSchedule.is_template.is_(True),
             )
         )
         templates = template_result.scalar() or 0

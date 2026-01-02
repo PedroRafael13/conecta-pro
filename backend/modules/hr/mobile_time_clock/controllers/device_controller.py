@@ -11,7 +11,6 @@ from core.database import get_db
 from core.auth.dependencies import get_current_user, require_roles
 from modules.hr.mobile_time_clock.schemas import (
     MobileDeviceRegister,
-    MobileDeviceUpdate,
     MobileDeviceApprove,
     MobileDeviceBlock,
     MobileDeviceResponse,
@@ -19,7 +18,6 @@ from modules.hr.mobile_time_clock.schemas import (
     MobileDeviceFilter,
     MobileDeviceStats,
     DeviceHeartbeat,
-    DeviceLocationUpdate,
 )
 from modules.hr.mobile_time_clock.services import DeviceService
 from modules.hr.mobile_time_clock.repositories import MobileDeviceRepository
@@ -145,7 +143,7 @@ async def update_push_token(
 async def validate_device(
     device_uuid: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Valida se dispositivo pode realizar check-in."""
     service = DeviceService(db)

@@ -114,7 +114,7 @@ class InspectionAnalyzerService:
             "confidence": self._calculate_confidence(checklist_items),
         }
 
-    def compare_inspections(
+    def compare_inspections(  # pylint: disable=too-many-locals
         self,
         inspection1: Dict[str, Any],
         inspection2: Dict[str, Any],
@@ -237,7 +237,7 @@ class InspectionAnalyzerService:
 
         return predictions[:5]  # Top 5 previsões
 
-    def generate_report_summary(
+    def generate_report_summary(  # pylint: disable=too-many-locals
         self,
         inspections: List[Dict[str, Any]],
         period_days: int = 30,

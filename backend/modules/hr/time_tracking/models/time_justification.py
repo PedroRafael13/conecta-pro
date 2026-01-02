@@ -159,8 +159,9 @@ class TimeJustification(Base):
     # Aprovação em níveis
     approval_level: Mapped[int] = mapped_column(Integer, default=1)
     max_approval_level: Mapped[int] = mapped_column(Integer, default=1)
+    # Formato: [{"level": 1, "approver_id": "...", "approver_name": "...",
+    #            "status": "approved", "at": "..."}]
     approval_history: Mapped[Optional[List[dict]]] = mapped_column(JSONB, default=list)
-    # Formato: [{"level": 1, "approver_id": "...", "approver_name": "...", "status": "approved", "at": "..."}]
 
     # Rejeição
     rejected_by_id: Mapped[Optional[str]] = mapped_column(String(50))
@@ -547,7 +548,9 @@ class TimeJustification(Base):
         if self.start_date == self.end_date:
             if self.is_full_day:
                 return self.start_date.strftime("%d/%m/%Y")
-            return f"{self.start_date.strftime('%d/%m/%Y')} {self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+            start_str = self.start_date.strftime('%d/%m/%Y')
+            time_str = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+            return f"{start_str} {time_str}"
         return f"{self.start_date.strftime('%d/%m/%Y')} a {self.end_date.strftime('%d/%m/%Y')}"
 
     @property

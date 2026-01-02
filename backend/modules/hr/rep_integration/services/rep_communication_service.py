@@ -34,12 +34,12 @@ class REPDriverBase(ABC):
     @abstractmethod
     async def test_connection(self) -> Dict[str, Any]:
         """Testa conexão com o dispositivo."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     async def get_device_info(self) -> Dict[str, Any]:
         """Obtém informações do dispositivo."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     async def get_events(
@@ -49,27 +49,27 @@ class REPDriverBase(ABC):
         limit: int = 1000,
     ) -> List[Dict[str, Any]]:
         """Obtém eventos do dispositivo."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     async def get_users(self) -> List[Dict[str, Any]]:
         """Obtém usuários cadastrados."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     async def add_user(self, user_data: Dict[str, Any]) -> bool:
         """Adiciona usuário ao dispositivo."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     async def remove_user(self, user_id: str) -> bool:
         """Remove usuário do dispositivo."""
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     async def sync_time(self, server_time: datetime = None) -> bool:
         """Sincroniza horário do dispositivo."""
-        pass
+        raise NotImplementedError
 
 
 class ControlIDDriver(REPDriverBase):
@@ -120,7 +120,7 @@ class ControlIDDriver(REPDriverBase):
 
         except httpx.TimeoutException:
             return {"success": False, "error_message": "Timeout na conexão"}
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError) as e:
             return {"success": False, "error_message": str(e)}
 
     async def get_device_info(self) -> Dict[str, Any]:
@@ -145,7 +145,7 @@ class ControlIDDriver(REPDriverBase):
                         "events_count": data.get("events", 0),
                     }
 
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
             logger.error(f"Erro ao obter info do Control iD: {e}")
             return {}
 
@@ -184,7 +184,7 @@ class ControlIDDriver(REPDriverBase):
                             "score": event.get("score"),
                         })
 
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
             logger.error(f"Erro ao obter eventos do Control iD: {e}")
 
         return events
@@ -214,7 +214,7 @@ class ControlIDDriver(REPDriverBase):
                             "has_card": user.get("cards", 0) > 0,
                         })
 
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError, KeyError) as e:
             logger.error(f"Erro ao obter usuários do Control iD: {e}")
 
         return users
@@ -238,7 +238,7 @@ class ControlIDDriver(REPDriverBase):
 
                 return response.status_code == 200
 
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError) as e:
             logger.error(f"Erro ao adicionar usuário no Control iD: {e}")
             return False
 
@@ -257,7 +257,7 @@ class ControlIDDriver(REPDriverBase):
 
                 return response.status_code == 200
 
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError) as e:
             logger.error(f"Erro ao remover usuário do Control iD: {e}")
             return False
 
@@ -275,7 +275,7 @@ class ControlIDDriver(REPDriverBase):
 
                 return response.status_code == 200
 
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError) as e:
             logger.error(f"Erro ao sincronizar horário do Control iD: {e}")
             return False
 
@@ -324,7 +324,7 @@ class IntelbrasDriver(REPDriverBase):
                     "error_message": f"HTTP {response.status_code}",
                 }
 
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError) as e:
             return {"success": False, "error_message": str(e)}
 
     def _get_password(self) -> str:
@@ -373,7 +373,7 @@ class GenericDriver(REPDriverBase):
                     "success": response.status_code < 400,
                     "latency_ms": int(response.elapsed.total_seconds() * 1000),
                 }
-        except Exception as e:
+        except (httpx.HTTPError, OSError, ValueError) as e:
             return {"success": False, "error_message": str(e)}
 
     async def get_device_info(self) -> Dict[str, Any]:

@@ -38,6 +38,7 @@ from modules.equipment_management.schemas import (
 
 def get_routers():
     """Retorna os routers do módulo (lazy import para evitar dependências circulares)."""
+    # pylint: disable=import-outside-toplevel
     from modules.equipment_management.controllers import (
         comodato_router,
         equipment_router,
@@ -54,6 +55,7 @@ def get_routers():
 
 def get_services():
     """Retorna os services do módulo (lazy import)."""
+    # pylint: disable=import-outside-toplevel
     from modules.equipment_management.services import (
         ComodatoService,
         EquipmentService,

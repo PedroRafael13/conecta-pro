@@ -267,7 +267,7 @@ class REPSyncRepository:
         await self.db.commit()
         return result.rowcount
 
-    async def get_statistics(
+    async def get_statistics(  # pylint: disable=too-many-locals
         self,
         device_id: UUID = None,
         condominio_id: UUID = None,

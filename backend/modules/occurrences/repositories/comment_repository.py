@@ -6,7 +6,6 @@ from uuid import UUID
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from modules.occurrences.models.comment import CommentVisibility, OccurrenceComment
 from modules.occurrences.schemas.comment import CommentCreate, CommentUpdate

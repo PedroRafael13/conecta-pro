@@ -76,8 +76,8 @@ async def create_opportunity_from_lead(
 
 
 @router.get("/", response_model=OpportunityListResponse)
-async def list_opportunities(
-    current_user: CurrentActiveUser,
+async def list_opportunities(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
@@ -125,7 +125,7 @@ async def list_opportunities(
 
 @router.get("/pipeline/stats", response_model=PipelineStats)
 async def get_pipeline_stats(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     owner_id: Optional[str] = None,
 ) -> PipelineStats:
@@ -141,7 +141,7 @@ async def get_pipeline_stats(
 @router.get("/{opportunity_id}", response_model=OpportunityResponse)
 async def get_opportunity(
     opportunity_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> OpportunityResponse:
     """

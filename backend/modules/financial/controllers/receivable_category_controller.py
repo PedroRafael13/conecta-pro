@@ -67,7 +67,7 @@ async def list_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Lista categorias com filtros."""
     categories = await repo.list(
@@ -89,7 +89,7 @@ async def list_categories(
 async def get_category_tree(
     condominio_id: UUID,
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna categorias em estrutura de arvore (apenas raiz)."""
     categories = await repo.get_root_categories(condominio_id)
@@ -104,7 +104,7 @@ async def get_category_tree(
 async def get_category(
     category_id: UUID,
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ReceivableCategoryResponse:
     """Busca categoria por ID."""
     category = await repo.get_by_id(category_id)
@@ -124,7 +124,7 @@ async def get_category(
 async def get_children(
     category_id: UUID,
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna subcategorias de uma categoria."""
     category = await repo.get_by_id(category_id)
@@ -147,7 +147,7 @@ async def update_category(
     category_id: UUID,
     data: ReceivableCategoryUpdate,
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ReceivableCategoryResponse:
     """Atualiza uma categoria."""
     try:
@@ -172,7 +172,7 @@ async def update_category(
 async def delete_category(
     category_id: UUID,
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Exclui uma categoria (soft delete)."""
     category = await repo.get_by_id(category_id)
@@ -201,7 +201,7 @@ async def delete_category(
 async def activate_category(
     category_id: UUID,
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ReceivableCategoryResponse:
     """Ativa uma categoria."""
     category = await repo.get_by_id(category_id)
@@ -224,7 +224,7 @@ async def activate_category(
 async def deactivate_category(
     category_id: UUID,
     repo: ReceivableCategoryRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ReceivableCategoryResponse:
     """Desativa uma categoria."""
     category = await repo.get_by_id(category_id)

@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import (
-    Column,
     String,
     Text,
     Boolean,

@@ -155,7 +155,7 @@ class ShiftRepository:
 
         return shifts, total
 
-    def _apply_filters(self, query, filters: ShiftFilter):
+    def _apply_filters(self, query, filters: ShiftFilter):  # pylint: disable=too-many-branches
         """Aplica filtros à query."""
         if filters.scale_id:
             query = query.where(Shift.scale_id == filters.scale_id)

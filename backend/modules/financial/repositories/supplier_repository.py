@@ -9,9 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.financial.models.supplier import (
     Supplier,
-    SupplierCategory,
     SupplierStatus,
-    SupplierType,
 )
 from modules.financial.schemas.supplier import (
     SupplierCreate,
@@ -45,7 +43,7 @@ class SupplierRepository:
             select(Supplier).where(
                 and_(
                     Supplier.id == supplier_id,
-                    Supplier.ativo == True,  # noqa: E712
+                    Supplier.ativo.is_(True),
                 )
             )
         )
@@ -62,7 +60,7 @@ class SupplierRepository:
                 and_(
                     Supplier.cpf_cnpj == cpf_cnpj,
                     Supplier.condominio_id == condominio_id,
-                    Supplier.ativo == True,  # noqa: E712
+                    Supplier.ativo.is_(True),
                 )
             )
         )
@@ -79,7 +77,7 @@ class SupplierRepository:
         query = select(Supplier).where(
             and_(
                 Supplier.condominio_id == condominio_id,
-                Supplier.ativo == True,  # noqa: E712
+                Supplier.ativo.is_(True),
             )
         )
 
@@ -133,7 +131,7 @@ class SupplierRepository:
         query = select(func.count(Supplier.id)).where(
             and_(
                 Supplier.condominio_id == condominio_id,
-                Supplier.ativo == True,  # noqa: E712
+                Supplier.ativo.is_(True),
             )
         )
 
@@ -224,7 +222,7 @@ class SupplierRepository:
             .where(
                 and_(
                     Supplier.condominio_id == condominio_id,
-                    Supplier.ativo == True,  # noqa: E712
+                    Supplier.ativo.is_(True),
                 )
             )
             .group_by(Supplier.status)
@@ -242,7 +240,7 @@ class SupplierRepository:
             .where(
                 and_(
                     Supplier.condominio_id == condominio_id,
-                    Supplier.ativo == True,  # noqa: E712
+                    Supplier.ativo.is_(True),
                 )
             )
             .group_by(Supplier.supplier_type)
@@ -260,7 +258,7 @@ class SupplierRepository:
             .where(
                 and_(
                     Supplier.condominio_id == condominio_id,
-                    Supplier.ativo == True,  # noqa: E712
+                    Supplier.ativo.is_(True),
                     Supplier.category.isnot(None),
                 )
             )
@@ -274,8 +272,8 @@ class SupplierRepository:
         qualified_query = select(func.count(Supplier.id)).where(
             and_(
                 Supplier.condominio_id == condominio_id,
-                Supplier.ativo == True,  # noqa: E712
-                Supplier.is_qualified == True,  # noqa: E712
+                Supplier.ativo.is_(True),
+                Supplier.is_qualified.is_(True),
             )
         )
         qualified_result = await self.session.execute(qualified_query)
@@ -306,7 +304,7 @@ class SupplierRepository:
             .where(
                 and_(
                     Supplier.condominio_id == condominio_id,
-                    Supplier.ativo == True,  # noqa: E712
+                    Supplier.ativo.is_(True),
                     Supplier.status == SupplierStatus.ATIVO.value,
                     or_(
                         Supplier.name.ilike(search_term),

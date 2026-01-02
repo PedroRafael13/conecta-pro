@@ -132,7 +132,8 @@ class ESocialService:
         rubrica_mapping = integration.rubrica_mapping or {}
         if len(rubrica_mapping) < 5:
             result["warnings"].append(
-                f"Apenas {len(rubrica_mapping)} rubricas mapeadas. " "Recomenda-se mapear todas as rubricas utilizadas."
+                f"Apenas {len(rubrica_mapping)} rubricas mapeadas. "
+                "Recomenda-se mapear todas as rubricas utilizadas."
             )
 
         return result
@@ -159,7 +160,8 @@ class ESocialService:
         if not period:
             raise ValueError("Período não encontrado")
 
-        # Criar exportação
+        # Criar exportacao
+        # pylint: disable=import-outside-toplevel
         from modules.hr.payroll_integration.schemas import PayrollExportCreate
 
         export_data = PayrollExportCreate(
@@ -241,20 +243,20 @@ class ESocialService:
         ambiente = "2" if test_mode or config.get("ambiente") == "producao_restrita" else "1"
         nr_inscricao = config.get("nr_inscricao", "00000000000000")
 
-        # XML simplificado - em produção usaria biblioteca especializada
+        # XML simplificado - em producao usaria biblioteca especializada
         xml_lines = [
             '<?xml version="1.0" encoding="UTF-8"?>',
-            f'<eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1">',
-            f"  <envioLoteEventos>",
-            f"    <ideEmpregador>",
-            f"      <tpInsc>1</tpInsc>",
+            '<eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/v1_1_1">',
+            "  <envioLoteEventos>",
+            "    <ideEmpregador>",
+            "      <tpInsc>1</tpInsc>",
             f"      <nrInsc>{nr_inscricao[:8]}</nrInsc>",
-            f"    </ideEmpregador>",
-            f"    <ideTransmissor>",
-            f"      <tpInsc>1</tpInsc>",
+            "    </ideEmpregador>",
+            "    <ideTransmissor>",
+            "      <tpInsc>1</tpInsc>",
             f"      <nrInsc>{nr_inscricao}</nrInsc>",
-            f"    </ideTransmissor>",
-            f"    <eventos>",
+            "    </ideTransmissor>",
+            "    <eventos>",
         ]
 
         # Gerar eventos baseado no tipo
@@ -267,9 +269,9 @@ class ESocialService:
 
         xml_lines.extend(
             [
-                f"    </eventos>",
-                f"  </envioLoteEventos>",
-                f"</eSocial>",
+                "    </eventos>",
+                "  </envioLoteEventos>",
+                "</eSocial>",
             ]
         )
 
@@ -294,75 +296,75 @@ class ESocialService:
 
         for emp_id, emp_events in by_employee.items():
             lines.append(f'      <evento Id="ID{emp_id[:30]}">')
-            lines.append(f"        <evtRemun>")
-            lines.append(f"          <ideEvento>")
-            lines.append(f"            <indRetif>1</indRetif>")
+            lines.append("        <evtRemun>")
+            lines.append("          <ideEvento>")
+            lines.append("            <indRetif>1</indRetif>")
             lines.append(f"            <tpAmb>{ambiente}</tpAmb>")
-            lines.append(f"            <procEmi>1</procEmi>")
-            lines.append(f"            <verProc>1.0</verProc>")
-            lines.append(f"          </ideEvento>")
-            lines.append(f"          <dmDev>")
+            lines.append("            <procEmi>1</procEmi>")
+            lines.append("            <verProc>1.0</verProc>")
+            lines.append("          </ideEvento>")
+            lines.append("          <dmDev>")
 
             for event in emp_events:
                 esocial_code = event.esocial_code or event.event_code
                 valor = int(float(event.value) * 100)  # Em centavos
 
-                lines.append(f"            <ideEstabLot>")
-                lines.append(f"              <tpInsc>1</tpInsc>")
+                lines.append("            <ideEstabLot>")
+                lines.append("              <tpInsc>1</tpInsc>")
                 lines.append(f'              <nrInsc>{config.get("nr_inscricao", "")}</nrInsc>')
-                lines.append(f"              <remunPerApur>")
-                lines.append(f"                <itensRemun>")
+                lines.append("              <remunPerApur>")
+                lines.append("                <itensRemun>")
                 lines.append(f"                  <codRubr>{esocial_code}</codRubr>")
                 lines.append(f"                  <vrRubr>{valor}</vrRubr>")
-                lines.append(f"                </itensRemun>")
-                lines.append(f"              </remunPerApur>")
-                lines.append(f"            </ideEstabLot>")
+                lines.append("                </itensRemun>")
+                lines.append("              </remunPerApur>")
+                lines.append("            </ideEstabLot>")
 
-            lines.append(f"          </dmDev>")
-            lines.append(f"        </evtRemun>")
-            lines.append(f"      </evento>")
+            lines.append("          </dmDev>")
+            lines.append("        </evtRemun>")
+            lines.append("      </evento>")
 
         return lines
 
     def _generate_s1210_events(
         self,
-        events: list,
-        config: dict,
+        events: list,  # pylint: disable=unused-argument
+        config: dict,  # pylint: disable=unused-argument
         ambiente: str,
     ) -> List[str]:
         """Gera eventos S-1210."""
         lines = []
-        # Implementação simplificada
-        lines.append(f'      <evento Id="ID_S1210">')
-        lines.append(f"        <evtPgtos>")
-        lines.append(f"          <ideEvento>")
-        lines.append(f"            <indRetif>1</indRetif>")
+        # Implementacao simplificada
+        lines.append('      <evento Id="ID_S1210">')
+        lines.append("        <evtPgtos>")
+        lines.append("          <ideEvento>")
+        lines.append("            <indRetif>1</indRetif>")
         lines.append(f"            <tpAmb>{ambiente}</tpAmb>")
-        lines.append(f"            <procEmi>1</procEmi>")
-        lines.append(f"            <verProc>1.0</verProc>")
-        lines.append(f"          </ideEvento>")
-        lines.append(f"        </evtPgtos>")
-        lines.append(f"      </evento>")
+        lines.append("            <procEmi>1</procEmi>")
+        lines.append("            <verProc>1.0</verProc>")
+        lines.append("          </ideEvento>")
+        lines.append("        </evtPgtos>")
+        lines.append("      </evento>")
         return lines
 
     def _generate_s1299_event(
         self,
-        events: list,
-        config: dict,
+        events: list,  # pylint: disable=unused-argument
+        config: dict,  # pylint: disable=unused-argument
         ambiente: str,
     ) -> List[str]:
         """Gera evento S-1299 (fechamento)."""
         lines = []
-        lines.append(f'      <evento Id="ID_S1299">')
-        lines.append(f"        <evtFechaEvPer>")
-        lines.append(f"          <ideEvento>")
-        lines.append(f"            <indRetif>1</indRetif>")
+        lines.append('      <evento Id="ID_S1299">')
+        lines.append("        <evtFechaEvPer>")
+        lines.append("          <ideEvento>")
+        lines.append("            <indRetif>1</indRetif>")
         lines.append(f"            <tpAmb>{ambiente}</tpAmb>")
-        lines.append(f"            <procEmi>1</procEmi>")
-        lines.append(f"            <verProc>1.0</verProc>")
-        lines.append(f"          </ideEvento>")
-        lines.append(f"          <ideRespInf>")
-        lines.append(f"            <nmResp>Responsavel</nmResp>")
+        lines.append("            <procEmi>1</procEmi>")
+        lines.append("            <verProc>1.0</verProc>")
+        lines.append("          </ideEvento>")
+        lines.append("          <ideRespInf>")
+        lines.append("            <nmResp>Responsavel</nmResp>")
         lines.append("            <cpfResp>00000000000</cpfResp>")
         lines.append("            <telefone>0000000000</telefone>")
         lines.append("            <email>resp@email.com</email>")
@@ -430,7 +432,7 @@ class ESocialService:
     async def check_receipt(
         self,
         export_id: UUID,
-        condominio_id: UUID,
+        condominio_id: UUID,  # pylint: disable=unused-argument
     ) -> Dict[str, Any]:
         """Consulta recibo de transmissão."""
         export = await self.export_repo.get_by_id(export_id)

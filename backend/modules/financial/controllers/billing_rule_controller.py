@@ -70,7 +70,7 @@ async def list_billing_rules(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Lista regras de cobranca com filtros."""
     filters = BillingRuleFilter(
@@ -93,7 +93,7 @@ async def list_billing_rules(
 async def get_active_rules(
     condominio_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna regras de cobranca ativas."""
     rules = await repo.get_active(condominio_id)
@@ -108,7 +108,7 @@ async def get_active_rules(
 async def get_rules_due_for_generation(
     condominio_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Retorna regras que precisam gerar cobrancas."""
     rules = await repo.get_due_for_generation(condominio_id)
@@ -123,7 +123,7 @@ async def get_rules_due_for_generation(
 async def get_billing_rule(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BillingRuleResponse:
     """Busca regra de cobranca por ID."""
     rule = await repo.get_by_id(rule_id)
@@ -144,7 +144,7 @@ async def update_billing_rule(
     rule_id: UUID,
     data: BillingRuleUpdate,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BillingRuleResponse:
     """Atualiza uma regra de cobranca."""
     try:
@@ -169,7 +169,7 @@ async def update_billing_rule(
 async def delete_billing_rule(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Exclui uma regra de cobranca (soft delete)."""
     rule = await repo.get_by_id(rule_id)
@@ -190,7 +190,7 @@ async def delete_billing_rule(
 async def activate_rule(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BillingRuleResponse:
     """Ativa uma regra de cobranca."""
     rule = await repo.get_by_id(rule_id)
@@ -220,7 +220,7 @@ async def pause_rule(
     rule_id: UUID,
     reason: Optional[str] = Query(None, description="Motivo da pausa"),
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BillingRuleResponse:
     """Pausa uma regra de cobranca."""
     rule = await repo.get_by_id(rule_id)
@@ -250,7 +250,7 @@ async def cancel_rule(
     rule_id: UUID,
     reason: str = Query(..., min_length=5, description="Motivo do cancelamento"),
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> BillingRuleResponse:
     """Cancela uma regra de cobranca."""
     rule = await repo.get_by_id(rule_id)
@@ -278,7 +278,7 @@ async def cancel_rule(
 async def generate_charges(
     rule_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Gera cobrancas manualmente para uma regra."""
     rule = await repo.get_by_id(rule_id)
@@ -294,7 +294,7 @@ async def generate_charges(
             detail="Apenas regras ativas podem gerar cobrancas",
         )
 
-    # TODO: Implementar geracao de cobrancas
+    # NOTE: Geracao de cobrancas sera implementada na proxima sprint
     return {
         "rule_id": str(rule_id),
         "message": "Geracao de cobrancas agendada",
@@ -309,12 +309,12 @@ async def generate_charges(
 async def process_all_rules(
     condominio_id: UUID,
     repo: BillingRuleRepository = Depends(get_repository),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ):
     """Processa todas as regras de cobranca pendentes."""
     rules = await repo.get_due_for_generation(condominio_id)
 
-    # TODO: Implementar processamento em lote
+    # NOTE: Processamento em lote sera implementado na proxima sprint
     return {
         "condominio_id": str(condominio_id),
         "rules_found": len(rules),

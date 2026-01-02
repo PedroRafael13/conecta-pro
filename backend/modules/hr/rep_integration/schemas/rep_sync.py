@@ -75,12 +75,14 @@ class REPSyncResponse(REPSyncBase):
 
     @property
     def progress_percent(self) -> float:
+        """Calcula percentual de progresso."""
         if self.total_items == 0:
             return 0.0
         return round((self.processed_items / self.total_items) * 100, 2)
 
     @property
     def success_rate(self) -> float:
+        """Calcula taxa de sucesso."""
         if self.processed_items == 0:
             return 0.0
         return round((self.success_items / self.processed_items) * 100, 2)

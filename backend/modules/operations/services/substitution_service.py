@@ -9,7 +9,7 @@ Este serviço implementa algoritmos inteligentes para:
 """
 
 from datetime import date, time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from core.logging import logger
 from modules.operations.schemas.substitution import SubstituteSuggestion
@@ -34,19 +34,18 @@ class SubstitutionService:
 
     def __init__(self) -> None:
         """Inicializa o serviço."""
-        pass
 
-    def suggest_substitutes(
+    def suggest_substitutes(  # pylint: disable=too-many-locals
         self,
         shift_date: date,
         post_id: str,
         shift_start: time,
         shift_end: time,
-        available_employees: List[Dict[str, Any]],
+        available_employees: list[dict[str, Any]],
         post_location: Optional[Tuple[float, float]] = None,
         max_suggestions: int = 5,
-        config: Optional[Dict[str, Any]] = None,
-    ) -> List[SubstituteSuggestion]:
+        config: Optional[dict[str, Any]] = None,
+    ) -> list[SubstituteSuggestion]:
         """
         Sugere substitutos para um turno.
 
@@ -113,7 +112,7 @@ class SubstitutionService:
                 )
                 suggestions.append(suggestion)
 
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error(f"Erro ao avaliar funcionário {employee.get('id')}: {e}")
                 continue
 
@@ -126,15 +125,15 @@ class SubstitutionService:
         logger.info(f"Encontradas {len(suggestions)} sugestões de substitutos")
         return suggestions
 
-    def _calculate_score(
+    def _calculate_score(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self,
-        employee: Dict[str, Any],
-        post_id: str,
-        shift_date: date,
+        employee: dict[str, Any],
+        post_id: str,  # pylint: disable=unused-argument
+        shift_date: date,  # pylint: disable=unused-argument
         is_night_shift: bool,
         post_location: Optional[Tuple[float, float]],
-        config: Optional[Dict[str, Any]],
-    ) -> Tuple[float, List[str]]:
+        config: Optional[dict[str, Any]],  # pylint: disable=unused-argument
+    ) -> Tuple[float, list[str]]:
         """
         Calcula score de adequação do funcionário.
 
@@ -221,7 +220,9 @@ class SubstitutionService:
 
         return round(normalized_score, 1), reasons
 
-    def _evaluate_availability(self, employee: Dict[str, Any], shift_date: date) -> float:
+    def _evaluate_availability(
+        self, employee: dict[str, Any], shift_date: date  # pylint: disable=unused-argument
+    ) -> float:
         """Avalia disponibilidade do funcionário."""
         # Verificar se já tem turno no dia
         shifts_on_date = employee.get("shifts_on_date", 0)
@@ -250,13 +251,13 @@ class SubstitutionService:
         """
         Calcula distância entre dois pontos em km (fórmula de Haversine).
         """
-        import math
+        import math  # pylint: disable=import-outside-toplevel
 
         try:
             lat1, lon1 = location1
             lat2, lon2 = location2
 
-            R = 6371  # Raio da Terra em km
+            earth_radius = 6371  # Raio da Terra em km
 
             dlat = math.radians(lat2 - lat1)
             dlon = math.radians(lon2 - lon1)
@@ -269,8 +270,8 @@ class SubstitutionService:
             )
             c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-            return round(R * c, 2)
-        except Exception:
+            return round(earth_radius * c, 2)
+        except Exception:  # pylint: disable=broad-exception-caught
             return None
 
     def _calculate_shift_hours(self, start: time, end: time) -> float:
@@ -283,7 +284,9 @@ class SubstitutionService:
 
         return (end_minutes - start_minutes) / 60
 
-    def _check_overtime(self, employee: Dict[str, Any], shift_date: date) -> bool:
+    def _check_overtime(
+        self, employee: dict[str, Any], shift_date: date  # pylint: disable=unused-argument
+    ) -> bool:
         """Verifica se será hora extra."""
         weekly_hours = employee.get("weekly_hours_worked", 0)
         return weekly_hours >= 44  # Limite CLT
@@ -302,7 +305,9 @@ class SubstitutionService:
             return shift_hours * hourly_rate * 1.5
         return shift_hours * hourly_rate
 
-    def _get_availability_status(self, employee: Dict[str, Any], shift_date: date) -> str:
+    def _get_availability_status(
+        self, employee: dict[str, Any], shift_date: date  # pylint: disable=unused-argument
+    ) -> str:
         """Retorna status de disponibilidade."""
         shifts_on_date = employee.get("shifts_on_date", 0)
 

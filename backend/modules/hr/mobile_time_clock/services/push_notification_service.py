@@ -72,7 +72,7 @@ class PushNotificationService:
             else:
                 logger.error(f"Provider desconhecido: {device.push_provider}")
                 return False
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError) as e:
             logger.error(f"Erro ao enviar push para {device.id}: {e}")
             return False
 
@@ -107,6 +107,7 @@ class PushNotificationService:
         employee_ids: List[UUID] = None,
     ) -> int:
         """Envia notificação para dispositivos do condomínio."""
+        # pylint: disable=import-outside-toplevel
         from modules.hr.mobile_time_clock.schemas import MobileDeviceFilter
 
         filters = MobileDeviceFilter(
@@ -124,7 +125,10 @@ class PushNotificationService:
             if await self.send_to_device(device, notification_type, title, body, data):
                 sent_count += 1
 
-        logger.info(f"Enviadas {sent_count}/{len(devices)} notificações para condomínio {condominio_id}")
+        logger.info(
+            f"Enviadas {sent_count}/{len(devices)} "
+            f"notificações para condomínio {condominio_id}"
+        )
         return sent_count
 
     async def notify_checkin_confirmed(
@@ -276,7 +280,7 @@ class PushNotificationService:
     async def _send_fcm(
         self,
         token: str,
-        payload: dict,
+        payload: dict,  # pylint: disable=unused-argument
     ) -> bool:
         """Envia via Firebase Cloud Messaging."""
         if not self._fcm_enabled:
@@ -303,7 +307,7 @@ class PushNotificationService:
     async def _send_apns(
         self,
         token: str,
-        payload: dict,
+        payload: dict,  # pylint: disable=unused-argument
     ) -> bool:
         """Envia via Apple Push Notification Service."""
         if not self._apns_enabled:

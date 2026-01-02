@@ -180,7 +180,9 @@ class KPIDefinition(Base):
         Index("ix_kpi_definitions_code", "code"),
     )
 
-    def evaluate_status(self, value: float) -> str:
+    def evaluate_status(  # pylint: disable=too-many-return-statements,too-many-branches
+        self, value: float
+    ) -> str:
         """Avalia status do KPI baseado nos thresholds."""
         if self.direction == KPIDirection.UP.value:
             if self.threshold_excellent and value >= self.threshold_excellent:

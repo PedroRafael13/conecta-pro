@@ -11,14 +11,13 @@ from typing import Optional
 from core.logging import logger
 from modules.crm.models.commission import (
     Commission,
-    CommissionPayment,
     CommissionRule,
     CommissionStatus,
     CommissionSummary,
     CommissionTrigger,
     CommissionType,
 )
-from modules.crm.models.proposal import Proposal, ProposalStatus
+from modules.crm.models.proposal import Proposal
 from modules.crm.schemas.commission import (
     CommissionRanking,
     CommissionStats,
@@ -47,7 +46,7 @@ class CommissionService:
             sequence=sequence,
         )
 
-    def find_applicable_rule(
+    def find_applicable_rule(  # pylint: disable=too-many-branches
         self,
         rules: list[CommissionRule],
         sale_value: float,
@@ -282,7 +281,7 @@ class CommissionService:
 
         return max(0.0, new_final)  # Não permite comissão negativa
 
-    def calculate_stats(
+    def calculate_stats(  # pylint: disable=too-many-locals
         self,
         commissions: list[Commission],
         date_from: Optional[date] = None,
@@ -313,13 +312,18 @@ class CommissionService:
         cancelled_count = sum(1 for c in filtered if c.status == CommissionStatus.CANCELLED.value)
 
         # Valores por status
-        pending_value = sum(c.final_commission for c in filtered if c.status == CommissionStatus.PENDING.value)
-        approved_value = sum(c.final_commission for c in filtered if c.status == CommissionStatus.APPROVED.value)
-        paid_value = sum(c.final_commission for c in filtered if c.status == CommissionStatus.PAID.value)
+        pending_value = sum(
+            c.final_commission for c in filtered if c.status == CommissionStatus.PENDING.value
+        )
+        approved_value = sum(
+            c.final_commission for c in filtered if c.status == CommissionStatus.APPROVED.value
+        )
+        paid_value = sum(
+            c.final_commission for c in filtered if c.status == CommissionStatus.PAID.value
+        )
         total_value = sum(c.final_commission for c in filtered)
 
         # Comissões atrasadas
-        today = date.today()
         overdue = [c for c in filtered if c.is_overdue]
         overdue_count = len(overdue)
         overdue_value = sum(c.pending_amount for c in overdue)
@@ -370,7 +374,7 @@ class CommissionService:
             by_month=by_month,
         )
 
-    def calculate_seller_stats(
+    def calculate_seller_stats(  # pylint: disable=too-many-locals
         self,
         commissions: list[Commission],
         seller_id: str,
@@ -528,7 +532,7 @@ class CommissionService:
         self,
         commission: Commission,
         event: str,
-        event_date: Optional[date] = None,
+        event_date: Optional[date] = None,  # pylint: disable=unused-argument
     ) -> bool:
         """
         Verifica se o gatilho da comissão deve ser processado.

@@ -29,7 +29,7 @@ router = APIRouter(prefix="/shifts", tags=["Operations - Shifts"])
 @router.post("/", response_model=ShiftResponse, status_code=status.HTTP_201_CREATED)
 async def create_shift(
     data: ShiftCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -43,8 +43,8 @@ async def create_shift(
 
 
 @router.get("/", response_model=ShiftListResponse)
-async def list_shifts(
-    current_user: CurrentActiveUser,
+async def list_shifts(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(50, ge=1, le=200, description="Itens por página"),
@@ -93,7 +93,7 @@ async def list_shifts(
 
 @router.get("/today")
 async def get_today_shifts(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> ShiftListResponse:
@@ -123,7 +123,7 @@ async def get_today_shifts(
 @router.get("/scale/{scale_id}", response_model=list[ShiftResponse])
 async def get_shifts_by_scale(
     scale_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> list[ShiftResponse]:
     """
@@ -138,7 +138,7 @@ async def get_shifts_by_scale(
 @router.get("/{shift_id}", response_model=ShiftResponse)
 async def get_shift(
     shift_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -160,7 +160,7 @@ async def get_shift(
 async def update_shift(
     shift_id: str,
     data: ShiftUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -183,7 +183,7 @@ async def update_shift(
 async def check_in(
     shift_id: str,
     data: ShiftCheckIn,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -206,7 +206,7 @@ async def check_in(
 async def check_out(
     shift_id: str,
     data: ShiftCheckOut,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -233,7 +233,7 @@ async def check_out(
 @router.post("/{shift_id}/mark-missed", response_model=ShiftResponse)
 async def mark_as_missed(
     shift_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     reason: Optional[str] = Query(None, description="Motivo da falta"),
 ) -> ShiftResponse:
@@ -256,7 +256,7 @@ async def mark_as_missed(
 @router.delete("/{shift_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_shift(
     shift_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

@@ -74,9 +74,10 @@ async def validate_integration(
     summary="Eventos suportados",
 )
 async def get_supported_events(
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
     """Retorna lista de eventos eSocial suportados."""
+    # pylint: disable=import-outside-toplevel
     from modules.hr.payroll_integration.services.esocial_service import ESOCIAL_EVENTS
 
     return {
@@ -234,7 +235,7 @@ async def generate_batch(
                         "export_code": export.export_code,
                     }
                 )
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 results["failed"].append(
                     {
                         "event_type": event_type,
@@ -292,7 +293,7 @@ async def transmit_batch(
                         "status": result.status,
                     }
                 )
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 results["failed"].append(
                     {
                         "export_id": export_id,
@@ -365,7 +366,10 @@ async def get_esocial_status(
             "valid": validation["valid"],
             "errors": validation["errors"],
             "warnings": validation["warnings"],
-            "last_sync": integration.last_sync_at.isoformat() if integration and integration.last_sync_at else None,
+            "last_sync": (
+                integration.last_sync_at.isoformat()
+                if integration and integration.last_sync_at else None
+            ),
             "sync_status": integration.sync_status if integration else None,
             "ambiente": (integration.esocial_config or {}).get("ambiente") if integration else None,
         }

@@ -30,7 +30,7 @@ class TimeCalculationService:
     MAX_WEEKLY_HOURS = 44  # Jornada semanal CLT
     MIN_REST_BETWEEN_SHIFTS = 11  # Horas mínimas de descanso
 
-    def calculate_worked_hours(
+    def calculate_worked_hours(  # pylint: disable=too-many-locals
         self,
         entries: List[TimeEntry],
         schedule: WorkSchedule = None,
@@ -213,7 +213,7 @@ class TimeCalculationService:
         if absence_count > 0:
             return (False, f"Falta(s) injustificada(s): {absence_count}")
 
-        if max_late_for_dsr > 0 and late_count > max_late_for_dsr:
+        if max_late_for_dsr > 0 and late_count > max_late_for_dsr:  # pylint: disable=chained-comparison
             return (False, f"Atrasos ({late_count}) excedem limite ({max_late_for_dsr})")
 
         if worked_days < expected_days:
@@ -354,7 +354,7 @@ class TimeCalculationService:
 
         return total
 
-    def _calculate_night_minutes(
+    def _calculate_night_minutes(  # pylint: disable=too-many-locals
         self,
         first_in: time,
         last_out: time,

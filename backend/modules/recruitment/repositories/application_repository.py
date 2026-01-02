@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from typing import Optional, List, Tuple
 
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -109,7 +109,7 @@ class ApplicationRepository:
         await self.session.flush()
         return True
 
-    async def list_with_filters(
+    async def list_with_filters(  # pylint: disable=too-many-branches
         self,
         filters: Optional[ApplicationFilter] = None,
         skip: int = 0,
@@ -249,7 +249,7 @@ class ApplicationRepository:
             .where(
                 and_(
                     Application.job_position_id == position_id,
-                    Application.is_shortlisted == True,
+                    Application.is_shortlisted.is_(True),
                     Application.deleted_at.is_(None),
                 )
             )
@@ -267,7 +267,7 @@ class ApplicationRepository:
         """Retorna candidaturas favoritas."""
         query = select(Application).where(
             and_(
-                Application.is_favorite == True,
+                Application.is_favorite.is_(True),
                 Application.deleted_at.is_(None),
             )
         )
@@ -333,7 +333,9 @@ class ApplicationRepository:
 
         await self.session.flush()
 
-    async def get_stats(self, position_id: str = None) -> dict:
+    async def get_stats(  # pylint: disable=too-many-locals
+        self, position_id: str = None
+    ) -> dict:
         """Retorna estatísticas."""
         query = select(Application).where(Application.deleted_at.is_(None))
         if position_id:

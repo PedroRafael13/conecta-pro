@@ -6,7 +6,9 @@ from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
+from sqlalchemy import (
+    Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, Numeric, String, Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 

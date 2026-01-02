@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
-from core.auth.dependencies import get_current_user, require_permissions
+from core.auth.dependencies import get_current_user
 from modules.recruitment.schemas.job_position import (
     JobPositionCreate,
     JobPositionUpdate,
@@ -40,7 +40,7 @@ router = APIRouter(prefix="/job-positions", tags=["Recruitment - Vagas"])
 async def create_position(
     data: JobPositionCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Cria uma nova vaga de emprego."""
     service = JobPositionService(db)
@@ -63,7 +63,7 @@ async def create_position(
     response_model=JobPositionListResponse,
     summary="Listar vagas",
 )
-async def list_positions(
+async def list_positions(  # pylint: disable=too-many-locals
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     status_filter: Optional[PositionStatus] = Query(None, alias="status"),
@@ -79,7 +79,7 @@ async def list_positions(
     order_by: str = "created_at",
     order_desc: bool = True,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionListResponse:
     """Lista vagas com filtros e paginação."""
     service = JobPositionService(db)
@@ -119,7 +119,7 @@ async def list_open_positions(
     limit: int = Query(20, ge=1, le=100),
     condominium_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionListResponse:
     """Lista vagas abertas para candidaturas."""
     service = JobPositionService(db)
@@ -141,7 +141,7 @@ async def list_open_positions(
 async def list_expiring_positions(
     days: int = Query(7, ge=1, le=30),
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionListResponse:
     """Lista vagas próximas da data limite."""
     service = JobPositionService(db)
@@ -163,7 +163,7 @@ async def list_expiring_positions(
 async def get_position_stats(
     condominium_id: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionStats:
     """Retorna estatísticas das vagas."""
     service = JobPositionService(db)
@@ -179,7 +179,7 @@ async def get_position_stats(
 async def get_position(
     position_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Busca vaga por ID."""
     service = JobPositionService(db)
@@ -205,7 +205,7 @@ async def get_position(
 async def get_position_by_code(
     code: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Busca vaga por código."""
     service = JobPositionService(db)
@@ -229,7 +229,7 @@ async def update_position(
     position_id: str,
     data: JobPositionUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Atualiza uma vaga existente."""
     service = JobPositionService(db)
@@ -254,7 +254,7 @@ async def update_position(
 async def delete_position(
     position_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> None:
     """Remove uma vaga (soft delete)."""
     service = JobPositionService(db)
@@ -276,7 +276,7 @@ async def publish_position(
     position_id: str,
     data: JobPositionPublish,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Publica uma vaga em rascunho."""
     service = JobPositionService(db)
@@ -302,7 +302,7 @@ async def pause_position(
     position_id: str,
     reason: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Pausa uma vaga aberta."""
     service = JobPositionService(db)
@@ -327,7 +327,7 @@ async def pause_position(
 async def reopen_position(
     position_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Reabre uma vaga pausada."""
     service = JobPositionService(db)
@@ -353,7 +353,7 @@ async def close_position(
     position_id: str,
     reason: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Fecha uma vaga."""
     service = JobPositionService(db)
@@ -379,7 +379,7 @@ async def close_position(
 async def duplicate_position(
     position_id: str,
     db: AsyncSession = Depends(get_db),
-    current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> JobPositionResponse:
     """Duplica uma vaga existente."""
     service = JobPositionService(db)

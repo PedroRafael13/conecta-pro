@@ -3,11 +3,9 @@ Service para Pipeline de Vendas com metricas e previsoes.
 """
 
 from datetime import date, datetime, timedelta
-from typing import Optional
 
-from core.logging import logger
 from modules.crm.models.opportunity import Opportunity, OpportunityStage
-from modules.crm.schemas.opportunity import PipelineForecast, PipelineStats
+from modules.crm.schemas.opportunity import PipelineForecast
 
 
 class PipelineService:
@@ -353,7 +351,9 @@ class PipelineService:
             ],
         }
 
-    def get_health_score(self, opportunities: list[Opportunity]) -> dict:
+    def get_health_score(  # pylint: disable=too-many-branches
+        self, opportunities: list[Opportunity]
+    ) -> dict:
         """
         Calcula score de saude do pipeline.
 

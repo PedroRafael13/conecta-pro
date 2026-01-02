@@ -70,7 +70,7 @@ class TimeEntryRepository:
         result = await self.db.execute(
             select(TimeEntry).where(
                 TimeEntry.id == entry_id,
-                TimeEntry.is_deleted == False,
+                TimeEntry.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -87,7 +87,7 @@ class TimeEntryRepository:
         result = await self.db.execute(
             select(TimeEntry).where(
                 TimeEntry.code == code,
-                TimeEntry.is_deleted == False,
+                TimeEntry.is_deleted.is_(False),
             )
         )
         return result.scalar_one_or_none()
@@ -126,7 +126,7 @@ class TimeEntryRepository:
         entry.soft_delete()
         await self.db.flush()
 
-    async def list(
+    async def list(  # pylint: disable=too-many-branches
         self,
         filters: TimeEntryFilter = None,
         skip: int = 0,
@@ -142,7 +142,7 @@ class TimeEntryRepository:
         Returns:
             Tuple: (registros, total)
         """
-        query = select(TimeEntry).where(TimeEntry.is_deleted == False)
+        query = select(TimeEntry).where(TimeEntry.is_deleted.is_(False))
 
         if filters:
             if filters.employee_id:
@@ -169,13 +169,13 @@ class TimeEntryRepository:
                 if filters.has_anomaly:
                     query = query.where(
                         TimeEntry.anomaly_type != AnomalyType.SEM_ANOMALIA,
-                        TimeEntry.anomaly_resolved == False,
+                        TimeEntry.anomaly_resolved.is_(False),
                     )
                 else:
                     query = query.where(
                         or_(
                             TimeEntry.anomaly_type == AnomalyType.SEM_ANOMALIA,
-                            TimeEntry.anomaly_resolved == True,
+                            TimeEntry.anomaly_resolved.is_(True),
                         )
                     )
             if filters.requires_approval is not None:
@@ -221,7 +221,7 @@ class TimeEntryRepository:
             select(TimeEntry).where(
                 TimeEntry.employee_id == employee_id,
                 TimeEntry.entry_date == entry_date,
-                TimeEntry.is_deleted == False,
+                TimeEntry.is_deleted.is_(False),
             ).order_by(TimeEntry.entry_time)
         )
         return list(result.scalars().all())
@@ -247,7 +247,7 @@ class TimeEntryRepository:
                 TimeEntry.employee_id == employee_id,
                 TimeEntry.entry_date >= start_date,
                 TimeEntry.entry_date <= end_date,
-                TimeEntry.is_deleted == False,
+                TimeEntry.is_deleted.is_(False),
             ).order_by(TimeEntry.entry_date, TimeEntry.entry_time)
         )
         return list(result.scalars().all())
@@ -269,9 +269,9 @@ class TimeEntryRepository:
             Lista de registros
         """
         query = select(TimeEntry).where(
-            TimeEntry.requires_approval == True,
+            TimeEntry.requires_approval.is_(True),
             TimeEntry.status == EntryStatus.PENDENTE,
-            TimeEntry.is_deleted == False,
+            TimeEntry.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -304,8 +304,8 @@ class TimeEntryRepository:
         """
         query = select(TimeEntry).where(
             TimeEntry.anomaly_type != AnomalyType.SEM_ANOMALIA,
-            TimeEntry.anomaly_resolved == False,
-            TimeEntry.is_deleted == False,
+            TimeEntry.anomaly_resolved.is_(False),
+            TimeEntry.is_deleted.is_(False),
         )
 
         if condominium_id:
@@ -320,7 +320,7 @@ class TimeEntryRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_stats(
+    async def get_stats(  # pylint: disable=too-many-locals
         self,
         condominium_id: str = None,
         employee_id: str = None,
@@ -338,7 +338,7 @@ class TimeEntryRepository:
         Returns:
             Estatísticas
         """
-        base_where = [TimeEntry.is_deleted == False]
+        base_where = [TimeEntry.is_deleted.is_(False)]
 
         if condominium_id:
             base_where.append(TimeEntry.condominium_id == condominium_id)
@@ -395,7 +395,7 @@ class TimeEntryRepository:
         pending_result = await self.db.execute(
             select(func.count()).where(
                 *base_where,
-                TimeEntry.requires_approval == True,
+                TimeEntry.requires_approval.is_(True),
                 TimeEntry.status == EntryStatus.PENDENTE,
             )
         )
@@ -405,7 +405,7 @@ class TimeEntryRepository:
         manual_result = await self.db.execute(
             select(func.count()).where(
                 *base_where,
-                TimeEntry.is_manual_entry == True,
+                TimeEntry.is_manual_entry.is_(True),
             )
         )
         manual_count = manual_result.scalar() or 0
@@ -430,7 +430,7 @@ class TimeEntryRepository:
             "late_count": late_count,
         }
 
-    async def check_duplicate(
+    async def check_duplicate(  # pylint: disable=unused-argument
         self,
         employee_id: str,
         entry_date: date,
@@ -443,7 +443,7 @@ class TimeEntryRepository:
             employee_id: ID do funcionário
             entry_date: Data
             entry_type: Tipo de registro
-            tolerance_minutes: Tolerância em minutos
+            tolerance_minutes: Tolerância em minutos (reservado para uso futuro)
 
         Returns:
             Registro duplicado ou None

@@ -1,4 +1,5 @@
 """Controller para Overtime (Horas Extras)."""
+# pylint: disable=unused-argument
 
 from datetime import date
 from typing import Optional
@@ -61,7 +62,7 @@ async def create_overtime(
     response_model=list[OvertimeListResponse],
     summary="Listar horas extras",
 )
-async def list_overtime(
+async def list_overtime(  # pylint: disable=too-many-locals
     employee_id: Optional[str] = None,
     overtime_type: Optional[OvertimeType] = None,
     overtime_status: Optional[OvertimeStatus] = Query(None, alias="status"),
@@ -95,7 +96,7 @@ async def list_overtime(
         requires_pre_approval=requires_pre_approval,
     )
 
-    overtimes, total = await repo.list(filters, skip, limit)
+    overtimes, _total = await repo.list(filters, skip, limit)
 
     return overtimes
 

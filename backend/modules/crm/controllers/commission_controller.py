@@ -24,7 +24,6 @@ from modules.crm.schemas.commission import (
     CommissionPaymentConfirm,
     CommissionPaymentCreate,
     CommissionPaymentResponse,
-    CommissionRanking,
     CommissionResponse,
     CommissionRuleCreate,
     CommissionRuleListResponse,
@@ -69,7 +68,7 @@ async def create_commission_rule(
 
 @router.get("/rules", response_model=CommissionRuleListResponse)
 async def list_commission_rules(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -96,7 +95,7 @@ async def list_commission_rules(
 @router.get("/rules/{rule_id}", response_model=CommissionRuleResponse)
 async def get_commission_rule(
     rule_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> CommissionRuleResponse:
     """Busca regra por ID."""
@@ -250,8 +249,8 @@ async def calculate_commission(
 
 
 @router.get("/", response_model=CommissionListResponse)
-async def list_commissions(
-    current_user: CurrentActiveUser,
+async def list_commissions(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -298,7 +297,7 @@ async def list_commissions(
 
 @router.get("/stats", response_model=CommissionStats)
 async def get_commission_stats(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     date_from: Optional[date] = None,
     date_to: Optional[date] = None,
@@ -316,7 +315,7 @@ async def get_commission_stats(
 @router.get("/seller/{seller_id}/stats", response_model=SellerCommissionStats)
 async def get_seller_commission_stats(
     seller_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     target: Optional[float] = None,
 ) -> SellerCommissionStats:
@@ -339,7 +338,7 @@ async def get_seller_commission_stats(
 @router.get("/{commission_id}", response_model=CommissionDetailResponse)
 async def get_commission(
     commission_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> CommissionDetailResponse:
     """Busca comissão por ID com detalhes de pagamentos."""
@@ -518,7 +517,7 @@ async def confirm_commission_payment(
 
 @router.get("/summaries", response_model=list[CommissionSummaryResponse])
 async def list_commission_summaries(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     seller_id: Optional[str] = None,
     year: Optional[int] = None,
@@ -547,7 +546,7 @@ async def get_commission_summary(
     seller_id: str,
     year: int,
     month: int,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> CommissionSummaryResponse:
     """Busca ou cria resumo mensal de um vendedor."""

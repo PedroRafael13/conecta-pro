@@ -1501,7 +1501,7 @@ async def get_balance_items(
 
 
 @router.post("/trial-balances/{balance_id}/generate")
-async def generate_trial_balance(
+async def generate_trial_balance(  # pylint: disable=too-many-locals
     balance_id: uuid.UUID,
     db: Session = Depends(get_db),
     _current_user: dict = Depends(get_current_user),

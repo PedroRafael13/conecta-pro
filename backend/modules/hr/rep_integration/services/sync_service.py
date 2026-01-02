@@ -38,7 +38,7 @@ class SyncService:
         self.sync_repo = REPSyncRepository(db)
         self.comm_service = REPCommunicationService()
 
-    async def sync_device_events(
+    async def sync_device_events(  # pylint: disable=too-many-locals
         self,
         device_id: UUID,
         trigger: str = SyncTrigger.MANUAL.value,
@@ -140,7 +140,7 @@ class SyncService:
             logger.info(f"Sync concluída para dispositivo {device_id}: {result}")
             return True, result
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error(f"Erro na sync do dispositivo {device_id}: {e}")
 
             await self.sync_repo.fail_sync(
@@ -208,7 +208,7 @@ class SyncService:
                 await self.event_repo.create(event_create)
                 created += 1
 
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error(f"Erro ao processar evento: {e}")
                 errors += 1
 
@@ -266,7 +266,7 @@ class SyncService:
 
         # Validar signature se configurado
         if device.webhook_secret and signature:
-            # TODO: Implementar validação HMAC
+            # TODO: Implementar validação HMAC  # pylint: disable=fixme
             pass
 
         # Criar registro de sync
@@ -302,7 +302,7 @@ class SyncService:
                 "errors": errors,
             }
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error(f"Erro no webhook do dispositivo {device_serial}: {e}")
 
             await self.sync_repo.fail_sync(sync.id, str(e))

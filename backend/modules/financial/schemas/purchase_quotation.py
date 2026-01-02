@@ -36,9 +36,7 @@ class QuotationItemBase(BaseModel):
 
 
 class QuotationItemCreate(QuotationItemBase):
-    """Schema para criar item de cotação."""
-
-    pass
+    """Schema para criar item de cotacao."""
 
 
 class QuotationItemUpdate(BaseModel):
@@ -73,7 +71,9 @@ class QuotationItemResponse(QuotationItemBase):
     evaluation_notes: Optional[str] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 
@@ -162,7 +162,9 @@ class PurchaseQuotationResponse(PurchaseQuotationBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
+        """Configuracao do schema."""
+
         from_attributes = True
 
 

@@ -88,7 +88,7 @@ class ChartOfAccountsResponse(ChartOfAccountsBase):
     updated_at: datetime
     created_by: Optional[UUID] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -185,7 +185,7 @@ class AccountingAccountResponse(AccountingAccountBase):
     updated_at: datetime
     created_by: Optional[UUID] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -214,7 +214,7 @@ class AccountTreeResponse(BaseModel):
     current_balance: Decimal = Decimal("0")
     children: list["AccountTreeResponse"] = []
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -299,7 +299,7 @@ class CostCenterResponse(CostCenterBase):
     updated_at: datetime
     created_by: Optional[UUID] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -386,7 +386,7 @@ class AccountingPeriodResponse(AccountingPeriodBase):
     updated_at: datetime
     created_by: Optional[UUID] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -463,7 +463,7 @@ class JournalEntryLineResponse(JournalEntryLineBase):
     reconciliation_date: Optional[datetime] = None
     created_at: datetime
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -539,7 +539,7 @@ class JournalEntryResponse(JournalEntryBase):
     created_by: Optional[UUID] = None
     lines: list[JournalEntryLineResponse] = []
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -641,7 +641,7 @@ class TrialBalanceResponse(TrialBalanceBase):
     updated_at: datetime
     created_by: Optional[UUID] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True
@@ -674,7 +674,7 @@ class TrialBalanceItemResponse(BaseModel):
     variation_percentage: Optional[Decimal] = None
     display_order: Optional[int] = None
 
-    class Config:
+    class Config:  # pylint: disable=too-few-public-methods
         """Configuração do schema."""
 
         from_attributes = True

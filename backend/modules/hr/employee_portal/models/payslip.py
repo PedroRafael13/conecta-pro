@@ -1,7 +1,6 @@
 """Model para contracheques/holerites."""
 
-from datetime import datetime, date
-from decimal import Decimal
+from datetime import datetime
 from enum import Enum
 import uuid
 

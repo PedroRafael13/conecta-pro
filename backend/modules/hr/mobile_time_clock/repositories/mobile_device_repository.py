@@ -78,7 +78,7 @@ class MobileDeviceRepository:
         query = select(MobileDevice).where(MobileDevice.employee_id == employee_id)
 
         if active_only:
-            query = query.where(MobileDevice.is_active == True)
+            query = query.where(MobileDevice.is_active.is_(True))
 
         result = await self.db.execute(query.order_by(MobileDevice.last_seen_at.desc()))
         return list(result.scalars().all())

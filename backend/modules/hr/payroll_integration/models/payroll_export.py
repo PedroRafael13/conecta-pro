@@ -3,11 +3,9 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import relationship
 
 from core.models import Base
 

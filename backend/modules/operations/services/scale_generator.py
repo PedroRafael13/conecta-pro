@@ -11,7 +11,7 @@ Este serviço implementa algoritmos inteligentes para:
 
 import calendar
 from datetime import date, datetime, time, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 try:
     import holidays
@@ -22,7 +22,6 @@ except ImportError:
 
 from core.logging import logger
 from modules.operations.models.scale import ScaleType
-from modules.operations.models.shift import ShiftStatus
 from modules.operations.schemas.shift import ShiftCreate
 
 
@@ -160,15 +159,15 @@ class ScaleGenerator:
         logger.info(f"Gerados {len(shifts)} turnos para escala {scale_id}")
         return shifts
 
-    def _generate_12x36(
+    def _generate_12x36(  # pylint: disable=too-many-locals
         self,
         scale_id: str,
         post_id: str,
         start_date: date,
         days_in_month: int,
-        employee_ids: List[str],
-        config: Dict[str, Any],
-    ) -> List[ShiftCreate]:
+        employee_ids: list[str],
+        config: dict[str, Any],
+    ) -> list[ShiftCreate]:
         """
         Gera escala 12x36.
 
@@ -246,7 +245,7 @@ class ScaleGenerator:
 
         return shifts
 
-    def _generate_6x1(
+    def _generate_6x1(  # pylint: disable=too-many-locals
         self,
         scale_id: str,
         post_id: str,
@@ -331,7 +330,7 @@ class ScaleGenerator:
 
         return pattern
 
-    def _generate_5x2(
+    def _generate_5x2(  # pylint: disable=too-many-locals
         self,
         scale_id: str,
         post_id: str,
@@ -378,15 +377,15 @@ class ScaleGenerator:
 
         return shifts
 
-    def _generate_turno_revezamento(
+    def _generate_turno_revezamento(  # pylint: disable=too-many-locals
         self,
         scale_id: str,
         post_id: str,
         start_date: date,
         days_in_month: int,
-        employee_ids: List[str],
-        config: Dict[str, Any],
-    ) -> List[ShiftCreate]:
+        employee_ids: list[str],
+        config: dict[str, Any],
+    ) -> list[ShiftCreate]:
         """
         Gera escala de turno de revezamento.
 
@@ -445,15 +444,15 @@ class ScaleGenerator:
 
         return shifts
 
-    def _generate_generic(
+    def _generate_generic(  # pylint: disable=too-many-locals
         self,
         scale_id: str,
         post_id: str,
         start_date: date,
         days_in_month: int,
-        employee_ids: List[str],
-        config: Dict[str, Any],
-    ) -> List[ShiftCreate]:
+        employee_ids: list[str],
+        config: dict[str, Any],
+    ) -> list[ShiftCreate]:
         """
         Gera escala genérica.
 
@@ -523,7 +522,7 @@ class ScaleGenerator:
             config = {}
 
         balance_night = config.get("balance_night_shifts", True)
-        max_consecutive = config.get("max_consecutive_days", 6)
+        _max_consecutive = config.get("max_consecutive_days", 6)  # reservado para uso futuro
 
         if balance_night:
             shifts = self._balance_night_shifts(shifts)

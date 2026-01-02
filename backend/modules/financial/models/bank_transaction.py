@@ -1,7 +1,7 @@
 """Model para movimentacoes bancarias."""
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
@@ -13,7 +13,6 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
-    Integer,
     Numeric,
     String,
     Text,

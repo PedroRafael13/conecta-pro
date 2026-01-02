@@ -659,7 +659,7 @@ Até a próxima! 👋
 
 ### Validar Qualidade
 ```
-"Rode todos os testes e validações"
+"Rode todos os testes e validações não aceitando códigos coma qualidade inferior a 99% ou seja 99/100, faça os comitê"
 ```
 
 ---

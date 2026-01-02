@@ -82,15 +82,16 @@ class TimeSheetService:
         # Busca jornada do funcionário
         schedule = await self.schedule_repo.get_by_employee(employee_id)
 
-        # Calcula período
-        first_day = date(reference_year, reference_month, 1)
-        last_day = date(
+        # Calcula período (variáveis usadas para referência futura)
+        _ = date(reference_year, reference_month, 1)  # first_day
+        _ = date(  # last_day
             reference_year,
             reference_month,
             monthrange(reference_year, reference_month)[1]
         )
 
         # Cria a folha
+        # pylint: disable=import-outside-toplevel
         from modules.hr.time_tracking.schemas import TimeSheetCreate
 
         sheet_data = TimeSheetCreate(
@@ -108,7 +109,7 @@ class TimeSheetService:
         # Calcula totais
         return await self.recalculate_time_sheet(sheet)
 
-    async def recalculate_time_sheet(
+    async def recalculate_time_sheet(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self,
         sheet: TimeSheet,
         force: bool = False,
@@ -136,7 +137,7 @@ class TimeSheetService:
         # Busca jornada
         schedule = None
         if sheet.work_schedule_id:
-            from uuid import UUID
+            from uuid import UUID  # pylint: disable=import-outside-toplevel
             schedule = await self.schedule_repo.get_by_id(
                 UUID(sheet.work_schedule_id)
             )
@@ -351,7 +352,7 @@ class TimeSheetService:
 
         return sheet
 
-    async def _process_day(
+    async def _process_day(  # pylint: disable=too-many-branches
         self,
         work_date: date,
         entries: List[TimeEntry],
@@ -570,7 +571,7 @@ class TimeSheetService:
 
         return sheet
 
-    async def reopen_time_sheet(
+    async def reopen_time_sheet(  # pylint: disable=unused-argument
         self,
         sheet: TimeSheet,
         reason: str,

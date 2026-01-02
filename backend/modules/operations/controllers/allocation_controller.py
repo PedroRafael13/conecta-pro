@@ -28,7 +28,7 @@ router = APIRouter(prefix="/allocations", tags=["Operations - Allocations"])
 @router.post("/", response_model=AllocationResponse, status_code=status.HTTP_201_CREATED)
 async def create_allocation(
     data: AllocationCreate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -47,8 +47,8 @@ async def create_allocation(
 
 
 @router.get("/", response_model=AllocationListResponse)
-async def list_allocations(
-    current_user: CurrentActiveUser,
+async def list_allocations(  # pylint: disable=too-many-locals
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -91,7 +91,7 @@ async def list_allocations(
 
 @router.get("/current", response_model=list[AllocationResponse])
 async def get_current_allocations(
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> list[AllocationResponse]:
@@ -115,7 +115,7 @@ async def get_current_allocations(
 async def get_available_employees(
     post_id: str,
     target_date: date,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     """
@@ -130,7 +130,7 @@ async def get_available_employees(
 @router.get("/post/{post_id}", response_model=list[AllocationResponse])
 async def get_allocations_by_post(
     post_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     include_inactive: bool = Query(False, description="Incluir inativos"),
 ) -> list[AllocationResponse]:
@@ -152,7 +152,7 @@ async def get_allocations_by_post(
 @router.get("/employee/{employee_id}", response_model=list[AllocationResponse])
 async def get_allocations_by_employee(
     employee_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
     include_inactive: bool = Query(False, description="Incluir inativos"),
 ) -> list[AllocationResponse]:
@@ -174,7 +174,7 @@ async def get_allocations_by_employee(
 @router.get("/{allocation_id}", response_model=AllocationResponse)
 async def get_allocation(
     allocation_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -196,7 +196,7 @@ async def get_allocation(
 async def update_allocation(
     allocation_id: str,
     data: AllocationUpdate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -219,7 +219,7 @@ async def update_allocation(
 async def terminate_allocation(
     allocation_id: str,
     data: AllocationTerminate,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -246,7 +246,7 @@ async def terminate_allocation(
 @router.delete("/{allocation_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_allocation(
     allocation_id: str,
-    current_user: CurrentActiveUser,
+    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

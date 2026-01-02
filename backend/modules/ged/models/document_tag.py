@@ -1,5 +1,6 @@
 """Model de Tag de Documento para GED."""
 
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List, TYPE_CHECKING
@@ -186,8 +187,6 @@ class DocumentTag(Base):
     @staticmethod
     def generate_slug(name: str) -> str:
         """Gera slug a partir do nome."""
-        import re
-
         slug = name.lower()
         slug = re.sub(r"[àáâãäå]", "a", slug)
         slug = re.sub(r"[èéêë]", "e", slug)

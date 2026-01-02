@@ -3,7 +3,7 @@
 import enum
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
