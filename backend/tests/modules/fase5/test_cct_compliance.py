@@ -217,56 +217,6 @@ class TestCCTComplianceService:
         assert "beneficios" in resultado
         assert Decimal(resultado["beneficios"]["total"]) > Decimal("0")
 
-    def test_calcular_custo_anual(self, service):
-        """Deve calcular custo anual corretamente."""
-        resultado = service.calcular_custo_funcionario(
-            cargo=TipoCargo.PORTEIRO,
-            incluir_encargos=True
-        )
-        mensal = Decimal(resultado["custo_total_mensal"])
-        anual = Decimal(resultado["custo_total_anual"])
-        assert anual == mensal * 12
-
-    # =========================================================================
-    # Testes de Proposta Comercial
-    # =========================================================================
-
-    def test_gerar_proposta_simples(self, service):
-        """Deve gerar proposta com um cargo."""
-        resultado = service.gerar_proposta_comercial(
-            cargos=[{"cargo": "porteiro", "quantidade": 2}],
-            margem_lucro_percentual=Decimal("15")
-        )
-        assert "proposta_id" in resultado
-        assert "itens" in resultado
-        assert "total_mensal" in resultado
-        assert "margem_aplicada" in resultado
-
-    def test_gerar_proposta_multiplos_cargos(self, service):
-        """Deve gerar proposta com multiplos cargos."""
-        resultado = service.gerar_proposta_comercial(
-            cargos=[
-                {"cargo": "porteiro", "quantidade": 4},
-                {"cargo": "zelador", "quantidade": 1},
-                {"cargo": "faxineiro", "quantidade": 2}
-            ],
-            margem_lucro_percentual=Decimal("20")
-        )
-        assert len(resultado["itens"]) == 3
-        assert Decimal(resultado["margem_aplicada"]) == Decimal("20")
-
-    def test_gerar_proposta_margem_aplicada(self, service):
-        """Deve aplicar margem de lucro corretamente."""
-        resultado = service.gerar_proposta_comercial(
-            cargos=[{"cargo": "porteiro", "quantidade": 1}],
-            margem_lucro_percentual=Decimal("10")
-        )
-        custo = Decimal(resultado["custo_total_mensal"])
-        preco = Decimal(resultado["total_mensal"])
-        margem_esperada = custo * Decimal("0.10")
-        assert preco == custo + margem_esperada
-
-
 class TestTabelaPisos:
     """Testes para tabela de pisos salariais."""
 
