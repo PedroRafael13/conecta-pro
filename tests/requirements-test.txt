@@ -1,0 +1,33 @@
+# Test dependencies for FASE 3
+
+# Core testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+pytest-timeout>=2.1.0
+pytest-xdist>=3.3.0  # Parallel test execution
+
+# Async support
+anyio>=3.7.0
+
+# Mocking
+mock>=5.1.0
+responses>=0.23.0  # HTTP mocking
+aioresponses>=0.7.4  # Async HTTP mocking
+
+# Factories
+factory-boy>=3.3.0
+faker>=19.0.0
+
+# Code quality
+mypy>=1.4.0
+black>=23.7.0
+isort>=5.12.0
+flake8>=6.1.0
+
+# Type stubs
+types-mock>=5.1.0
+
+# Optional: Property-based testing
+hypothesis>=6.82.0
