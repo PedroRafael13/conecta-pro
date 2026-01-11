@@ -1,0 +1,389 @@
+"""
+Service PPRA/PGR (NR-9) - Programa de Prevencao de Riscos Ambientais
+====================================================================
+
+Logica de negocio para mapeamento de riscos ocupacionais.
+"""
+
+import logging
+from datetime import date
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from modules.health_occupational.models.ppra import (
+    RiskMapping,
+    OccupationalRisk,
+    ControlMeasure,
+    RiskCategory,
+    RiskLevel,
+)
+from modules.health_occupational.schemas.ppra import (
+    RiskMappingRequest,
+    RiskMappingUpdateRequest,
+    OccupationalRiskRequest,
+    ControlMeasureRequest,
+    ControlMeasureUpdateRequest,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# Mapeamento de EPIs recomendados por categoria de risco
+EPI_RECOMMENDATIONS = {
+    "ruido": ["protetor_auricular", "abafador"],
+    "poeiras": ["mascara_pff2", "respirador"],
+    "produtos_quimicos": ["luvas_nitrila", "oculos", "avental"],
+    "quedas": ["cinturao_seguranca", "trava_quedas", "capacete"],
+    "eletricidade": ["luvas_isolantes", "calcado_seguranca"],
+    "temperaturas_extremas": ["luvas_termicas", "avental_termico"],
+    "radiacao": ["oculos_protecao", "avental_chumbo"],
+}
+
+
+class PPRAService:
+    """Service para gerenciamento de riscos ocupacionais (PPRA/PGR - NR-9)."""
+
+    def __init__(self, db: Optional[Session] = None):
+        self.db = db
+
+    # ==========================================================================
+    # Risk Mapping Operations
+    # ==========================================================================
+
+    def create_mapping(
+        self,
+        request: RiskMappingRequest,
+        created_by: Optional[UUID] = None,
+    ) -> RiskMapping:
+        """
+        Cria mapeamento de riscos para um setor.
+
+        Args:
+            request: Dados do mapeamento.
+            created_by: UUID do usuario que criou.
+
+        Returns:
+            RiskMapping: Mapeamento criado.
+        """
+        mapping = RiskMapping(
+            setor=request.setor,
+            descricao_setor=request.descricao_setor,
+            localizacao=request.localizacao,
+            funcoes=request.funcoes,
+            numero_trabalhadores=request.numero_trabalhadores,
+            avaliador=request.avaliador,
+            cargo_avaliador=request.cargo_avaliador,
+            data_proxima_revisao=request.data_proxima_revisao,
+            created_by=created_by,
+        )
+
+        self.db.add(mapping)
+        self.db.flush()  # Para obter o ID
+
+        # Adicionar riscos
+        for risk_data in request.riscos:
+            risk = self._create_risk(mapping.id, risk_data)
+            mapping.riscos.append(risk)
+
+        # Calcular nivel de risco geral
+        mapping.nivel_risco_geral = self._calculate_general_risk_level(mapping.riscos)
+
+        self.db.commit()
+        self.db.refresh(mapping)
+
+        logger.info(
+            "Mapeamento criado: setor=%s, riscos=%d, nivel=%s",
+            request.setor,
+            len(request.riscos),
+            mapping.nivel_risco_geral,
+        )
+
+        return mapping
+
+    def _create_risk(self, mapping_id: UUID, data: OccupationalRiskRequest) -> OccupationalRisk:
+        """Cria risco ocupacional."""
+        risk = OccupationalRisk(
+            mapeamento_id=mapping_id,
+            categoria=data.categoria,
+            agente=data.agente,
+            descricao=data.descricao,
+            fonte_geradora=data.fonte_geradora,
+            meio_propagacao=data.meio_propagacao,
+            funcoes_expostas=data.funcoes_expostas,
+            numero_expostos=data.numero_expostos,
+            tempo_exposicao=data.tempo_exposicao,
+            probabilidade=data.probabilidade,
+            severidade=data.severidade,
+            valor_medido=data.valor_medido,
+            unidade_medida=data.unidade_medida,
+            limite_tolerancia=data.limite_tolerancia,
+            medidas_existentes=data.medidas_existentes,
+            epis_recomendados=data.epis_recomendados or self._get_recommended_epis(data.agente),
+            exames_requeridos=data.exames_requeridos,
+            prioridade=data.prioridade,
+        )
+
+        # Calcular nivel de risco
+        risk.nivel_risco = risk.calcular_nivel_risco()
+
+        self.db.add(risk)
+        return risk
+
+    def _calculate_general_risk_level(self, risks: List[OccupationalRisk]) -> str:
+        """Calcula nivel de risco geral baseado nos riscos individuais."""
+        if not risks:
+            return RiskLevel.TRIVIAL.value
+
+        level_order = {
+            RiskLevel.TRIVIAL.value: 1,
+            RiskLevel.TOLERAVEL.value: 2,
+            RiskLevel.MODERADO.value: 3,
+            RiskLevel.SUBSTANCIAL.value: 4,
+            RiskLevel.INTOLERAVEL.value: 5,
+        }
+
+        max_level = max(
+            level_order.get(r.nivel_risco, 3) for r in risks
+        )
+
+        for level, order in level_order.items():
+            if order == max_level:
+                return level
+
+        return RiskLevel.MODERADO.value
+
+    def _get_recommended_epis(self, agente: str) -> List[str]:
+        """Retorna EPIs recomendados para um agente de risco."""
+        return EPI_RECOMMENDATIONS.get(agente.lower(), [])
+
+    def get_mapping(self, mapping_id: UUID) -> Optional[RiskMapping]:
+        """Busca mapeamento por ID."""
+        return self.db.query(RiskMapping).filter(RiskMapping.id == mapping_id).first()
+
+    def update_mapping(
+        self,
+        mapping_id: UUID,
+        request: RiskMappingUpdateRequest,
+    ) -> Optional[RiskMapping]:
+        """Atualiza mapeamento de riscos."""
+        mapping = self.get_mapping(mapping_id)
+        if not mapping:
+            return None
+
+        update_data = request.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(mapping, field, value)
+
+        # Incrementar versao
+        mapping.versao += 1
+
+        self.db.commit()
+        self.db.refresh(mapping)
+        return mapping
+
+    def list_mappings(
+        self,
+        setor: Optional[str] = None,
+        ativo: Optional[bool] = True,
+        page: int = 1,
+        size: int = 20,
+    ) -> Dict[str, Any]:
+        """Lista mapeamentos de risco."""
+        query = self.db.query(RiskMapping)
+
+        if setor:
+            query = query.filter(RiskMapping.setor.ilike(f"%{setor}%"))
+
+        if ativo is not None:
+            query = query.filter(RiskMapping.ativo == ativo)
+
+        total = query.count()
+        mappings = query.order_by(RiskMapping.data_avaliacao.desc()).offset(
+            (page - 1) * size
+        ).limit(size).all()
+
+        return {
+            "items": mappings,
+            "total": total,
+            "page": page,
+            "size": size,
+        }
+
+    def get_sector_risks(self, setor: str) -> List[OccupationalRisk]:
+        """Retorna riscos de um setor."""
+        mapping = self.db.query(RiskMapping).filter(
+            RiskMapping.setor == setor,
+            RiskMapping.ativo == True,
+        ).order_by(RiskMapping.data_avaliacao.desc()).first()
+
+        if not mapping:
+            return []
+
+        return mapping.riscos
+
+    def get_function_risks(self, funcao: str) -> List[OccupationalRisk]:
+        """Retorna riscos associados a uma funcao."""
+        risks = self.db.query(OccupationalRisk).filter(
+            OccupationalRisk.funcoes_expostas.contains([funcao])
+        ).all()
+
+        return risks
+
+    def calculate_sector_risk(self, setor: str) -> str:
+        """Calcula nivel de risco de um setor."""
+        risks = self.get_sector_risks(setor)
+        return self._calculate_general_risk_level(risks)
+
+    def get_recommended_epis(self, funcao: str) -> List[str]:
+        """Retorna EPIs recomendados para uma funcao."""
+        risks = self.get_function_risks(funcao)
+        epis = set()
+
+        for risk in risks:
+            epis.update(risk.epis_recomendados or [])
+
+        return list(epis)
+
+    # ==========================================================================
+    # Control Measure Operations
+    # ==========================================================================
+
+    def add_control_measure(self, request: ControlMeasureRequest) -> ControlMeasure:
+        """Adiciona medida de controle."""
+        measure = ControlMeasure(
+            mapeamento_id=request.mapeamento_id,
+            tipo=request.tipo,
+            descricao=request.descricao,
+            riscos_controlados=[str(r) for r in request.riscos_controlados],
+            responsavel=request.responsavel,
+            data_prevista=request.data_prevista,
+            custo_estimado=request.custo_estimado,
+        )
+
+        self.db.add(measure)
+        self.db.commit()
+        self.db.refresh(measure)
+
+        logger.info(
+            "Medida de controle adicionada: tipo=%s, mapeamento=%s",
+            request.tipo,
+            request.mapeamento_id,
+        )
+
+        return measure
+
+    def update_control_measure(
+        self,
+        measure_id: UUID,
+        request: ControlMeasureUpdateRequest,
+    ) -> Optional[ControlMeasure]:
+        """Atualiza medida de controle."""
+        measure = self.db.query(ControlMeasure).filter(
+            ControlMeasure.id == measure_id
+        ).first()
+
+        if not measure:
+            return None
+
+        update_data = request.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(measure, field, value)
+
+        self.db.commit()
+        self.db.refresh(measure)
+        return measure
+
+    def list_control_measures(
+        self,
+        mapeamento_id: UUID,
+        status: Optional[str] = None,
+    ) -> List[ControlMeasure]:
+        """Lista medidas de controle de um mapeamento."""
+        query = self.db.query(ControlMeasure).filter(
+            ControlMeasure.mapeamento_id == mapeamento_id
+        )
+
+        if status:
+            query = query.filter(ControlMeasure.status == status)
+
+        return query.all()
+
+    # ==========================================================================
+    # Risk Categories Info
+    # ==========================================================================
+
+    def get_risk_categories(self) -> Dict[str, Any]:
+        """Retorna informacoes sobre categorias de risco."""
+        return {
+            "categorias": [
+                {
+                    "id": "fisico",
+                    "nome": "Riscos Fisicos",
+                    "exemplos": ["ruido", "vibracoes", "temperaturas_extremas", "radiacao"],
+                    "cor_mapa": "verde",
+                },
+                {
+                    "id": "quimico",
+                    "nome": "Riscos Quimicos",
+                    "exemplos": ["poeiras", "fumos", "gases", "vapores", "produtos_quimicos"],
+                    "cor_mapa": "vermelho",
+                },
+                {
+                    "id": "biologico",
+                    "nome": "Riscos Biologicos",
+                    "exemplos": ["virus", "bacterias", "fungos", "parasitas"],
+                    "cor_mapa": "marrom",
+                },
+                {
+                    "id": "ergonomico",
+                    "nome": "Riscos Ergonomicos",
+                    "exemplos": ["postura_inadequada", "movimentos_repetitivos", "esforco_fisico"],
+                    "cor_mapa": "amarelo",
+                },
+                {
+                    "id": "acidente",
+                    "nome": "Riscos de Acidentes",
+                    "exemplos": ["maquinas", "eletricidade", "quedas", "incendio"],
+                    "cor_mapa": "azul",
+                },
+            ],
+            "niveis_risco": [
+                RiskLevel.TRIVIAL.value,
+                RiskLevel.TOLERAVEL.value,
+                RiskLevel.MODERADO.value,
+                RiskLevel.SUBSTANCIAL.value,
+                RiskLevel.INTOLERAVEL.value,
+            ],
+        }
+
+    # ==========================================================================
+    # Statistics
+    # ==========================================================================
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """Retorna estatisticas do PPRA."""
+        total_mappings = self.db.query(RiskMapping).filter(
+            RiskMapping.ativo == True
+        ).count()
+
+        total_risks = self.db.query(OccupationalRisk).count()
+
+        high_risks = self.db.query(OccupationalRisk).filter(
+            OccupationalRisk.nivel_risco.in_([
+                RiskLevel.SUBSTANCIAL.value,
+                RiskLevel.INTOLERAVEL.value,
+            ])
+        ).count()
+
+        pending_measures = self.db.query(ControlMeasure).filter(
+            ControlMeasure.status == "pendente"
+        ).count()
+
+        return {
+            "total_mapeamentos_ativos": total_mappings,
+            "total_riscos_identificados": total_risks,
+            "riscos_alto_nivel": high_risks,
+            "medidas_pendentes": pending_measures,
+        }
