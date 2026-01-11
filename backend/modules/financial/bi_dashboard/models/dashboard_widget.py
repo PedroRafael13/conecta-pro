@@ -12,6 +12,7 @@ from sqlalchemy import (
     Enum as SQLEnum,
     ForeignKey,
     Integer,
+    Numeric,
     String,
     Text,
 )
