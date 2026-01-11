@@ -137,13 +137,12 @@ from modules.document_kits.controllers import router as document_kit_router
 # ===================================================================
 # MÓDULO EQUIPMENT_MANAGEMENT - Gestão de Equipamentos
 # ===================================================================
-# TODO: Módulo equipment_management não implementado ainda
-# from modules.equipment_management.controllers import (
-#     equipment_router,
-#     installation_router,
-#     maintenance_router as equipment_maintenance_router,
-#     comodato_router,
-# )
+from modules.equipment_management.controllers import (
+    equipment_router,
+    installation_router,
+    maintenance_router as equipment_maintenance_router,
+    comodato_router,
+)
 
 # ===================================================================
 # MÓDULO FACILITIES - Gestão de Facilities
@@ -306,11 +305,10 @@ router.include_router(document_kit_router, prefix="/document-kits", tags=["Docum
 # ===================================================================
 # EQUIPMENT MANAGEMENT - GESTÃO DE EQUIPAMENTOS
 # ===================================================================
-# TODO: Módulo equipment_management não implementado ainda
-# router.include_router(equipment_router, prefix="/equipment", tags=["Equipment - Equipamentos"])
-# router.include_router(installation_router, prefix="/equipment/installations", tags=["Equipment - Instalações"])
-# router.include_router(equipment_maintenance_router, prefix="/equipment/maintenance", tags=["Equipment - Manutenção"])
-# router.include_router(comodato_router, prefix="/equipment/comodato", tags=["Equipment - Comodato"])
+router.include_router(equipment_router, prefix="/equipment", tags=["Equipment - Equipamentos"])
+router.include_router(installation_router, prefix="/equipment/installations", tags=["Equipment - Instalações"])
+router.include_router(equipment_maintenance_router, prefix="/equipment/maintenance", tags=["Equipment - Manutenção"])
+router.include_router(comodato_router, prefix="/equipment/comodato", tags=["Equipment - Comodato"])
 
 # ===================================================================
 # FACILITIES - GESTÃO DE FACILITIES
@@ -403,3 +401,37 @@ router.include_router(workflow_router, prefix="/workflows", tags=["Automation - 
 # ===================================================================
 from modules.fase5.controllers import fase5_router
 router.include_router(fase5_router, tags=["Fase 5 - Grand Finale"])
+
+# ===================================================================
+# FASE 3 - SECURITY LGPD (Seguranca e Compliance LGPD)
+# ===================================================================
+from modules.security_lgpd import security_lgpd_router
+router.include_router(security_lgpd_router, prefix="/security", tags=["Security - LGPD Compliance"])
+
+# ===================================================================
+# FASE 3 - HEALTH OCCUPATIONAL (Saude Ocupacional NR-4/6/7/9)
+# ===================================================================
+from modules.health_occupational import health_occupational_router
+router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
+
+# ===================================================================
+# FASE 3 - GOVERNMENT INTEGRATIONS (eSocial, SEFAZ, FGTS/INSS)
+# ===================================================================
+from modules.government_integrations import government_integrations_router
+router.include_router(government_integrations_router, tags=["Government - Integracoes Governamentais"])
+
+# ===================================================================
+# BIDDING - MÓDULO DE LICITAÇÕES PÚBLICAS
+# ===================================================================
+from modules.bidding import (
+    tender_router,
+    document_router as bidding_document_router,
+    proposal_router as bidding_proposal_router,
+    contract_router as bidding_contract_router,
+    certificate_router,
+)
+router.include_router(tender_router, prefix="/bidding", tags=["Bidding - Editais"])
+router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
+router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
+router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
+router.include_router(certificate_router, prefix="/bidding", tags=["Bidding - Certidoes"])
