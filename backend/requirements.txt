@@ -18,6 +18,7 @@ redis==5.2.1
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
+pyotp==2.9.0
 
 # Validation
 pydantic==2.10.4
@@ -27,6 +28,11 @@ email-validator==2.2.0
 # Utils
 python-dotenv==1.0.1
 httpx==0.28.1
+python-dateutil==2.9.0
+psutil==5.9.8
+
+# AI/Data Science
+numpy==1.26.4
 
 # Dev & Testing
 pytest==8.3.4
@@ -39,3 +45,19 @@ mypy==1.14.0
 
 # Logging
 loguru==0.7.3
+slowapi>=0.1.9
+
+# Security & Cryptography
+cryptography>=42.0.0
+pyOpenSSL>=24.0.0
+
+# XML Processing (Government Integrations - eSocial, SEFAZ)
+lxml>=5.0.0
+defusedxml>=0.7.1
+
+# Central de IA - Machine Learning Dependencies
+pandas==2.2.3
+scikit-learn==1.6.0
+scipy==1.14.1
+aiohttp==3.11.11
+Pillow==11.0.0
