@@ -1,6 +1,6 @@
 """
 Module: integrations
-Description: Modulo de Integracoes - API Gateway, Webhooks, Banking, Email, WhatsApp
+Description: Modulo de Integracoes - API Gateway, Webhooks, Banking, Email, WhatsApp, Conectores
 Author: Conecta PRO Team
 Date: 2026-01-10
 Quality Score Target: 99+/100
@@ -10,6 +10,7 @@ Este modulo fornece:
 - Configuracao e disparo de Webhooks
 - Fila de sincronizacao com sistemas externos
 - Logs de integracao
+- Conectores externos (Bling, Solides, etc.) - Sprint 33
 - Submodulos: Banking (Open Banking), Email (Campanhas), WhatsApp (Chatbot)
 
 Estrutura modular:
@@ -18,6 +19,8 @@ Estrutura modular:
 - services/: Logica de negocio
 - controllers/: Endpoints FastAPI
 - repositories/: Acesso a dados
+- connectors/: Conectores para sistemas externos (Sprint 33)
+- sync/: Engine de sincronizacao (Sprint 33)
 - banking/: Integracao Open Banking (BB, Itau, Bradesco)
 - email/: Automacoes e campanhas de email
 - whatsapp/: Automacoes e chatbot WhatsApp
@@ -25,14 +28,14 @@ Estrutura modular:
 
 from fastapi import APIRouter
 
-# Importa router do controller principal
-from modules.integrations.controllers import router as integrations_controller_router
+# Importa routers dos controllers
+from modules.integrations.controllers import integration_router, connector_router
 
 # Cria router principal que agrega todos os sub-routers
 integrations_router = APIRouter(prefix="/integrations", tags=["Integrations"])
 
-# O controller ja possui prefix="/integrations", entao usamos o router diretamente
-router = integrations_controller_router
+# Router padrão (backward compatibility)
+router = integration_router
 
 # Re-export models
 from modules.integrations.models import (
@@ -114,11 +117,13 @@ from modules.integrations.schemas import (
 from modules.integrations.services import (
     IntegrationService,
     WebhookService,
+    ConnectorService,
 )
 
 # Re-export repositories
 from modules.integrations.repositories import (
     IntegrationRepository,
+    ConnectorRepository,
 )
 
 # Re-export submodulos - Banking (Open Banking)
@@ -208,9 +213,11 @@ from modules.integrations.whatsapp import (
 )
 
 __all__ = [
-    # Router principal
+    # Routers
     "integrations_router",
     "router",
+    "integration_router",
+    "connector_router",
 
     # ==================== Core Models ====================
     # API Endpoint
@@ -287,9 +294,11 @@ __all__ = [
     # ==================== Core Services ====================
     "IntegrationService",
     "WebhookService",
+    "ConnectorService",
 
     # ==================== Core Repositories ====================
     "IntegrationRepository",
+    "ConnectorRepository",
 
     # ==================== Banking Submodule ====================
     "BankingService",

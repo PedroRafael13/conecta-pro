@@ -1,6 +1,7 @@
 """
 Schemas do módulo de Integrações
 Sprint 32: API Gateway / Integrações
+Sprint 33: Integration Framework
 """
 
 from modules.integrations.schemas.integration_schemas import (
@@ -44,6 +45,34 @@ from modules.integrations.schemas.integration_schemas import (
     IntegrationHealthCheck,
 )
 
+from modules.integrations.schemas.connector_schemas import (
+    # Connector Info
+    ConnectorInfo,
+    ConnectorListResponse,
+    # Integration Account
+    IntegrationAccountBase,
+    IntegrationAccountCreate,
+    IntegrationAccountUpdate,
+    IntegrationAccountResponse,
+    IntegrationAccountList,
+    # Sync Run
+    SyncRunCreate,
+    SyncRunResponse,
+    SyncRunList,
+    SyncRunDetailResponse,
+    # Health Check
+    HealthCheckResponse,
+    # Sync State
+    SyncStateResponse,
+    SyncStateList,
+    # ID Map
+    IDMapResponse,
+    IDMapList,
+    # Statistics
+    ConnectorStats,
+    IntegrationStats,
+)
+
 __all__ = [
     # API Endpoint
     "APIEndpointBase",
@@ -83,4 +112,23 @@ __all__ = [
     # Dashboard
     "IntegrationDashboard",
     "IntegrationHealthCheck",
+    # Sprint 33: Conectores
+    "ConnectorInfo",
+    "ConnectorListResponse",
+    "IntegrationAccountBase",
+    "IntegrationAccountCreate",
+    "IntegrationAccountUpdate",
+    "IntegrationAccountResponse",
+    "IntegrationAccountList",
+    "SyncRunCreate",
+    "SyncRunResponse",
+    "SyncRunList",
+    "SyncRunDetailResponse",
+    "HealthCheckResponse",
+    "SyncStateResponse",
+    "SyncStateList",
+    "IDMapResponse",
+    "IDMapList",
+    "ConnectorStats",
+    "IntegrationStats",
 ]

@@ -1,6 +1,7 @@
 """
 Services do módulo de Integrações
 Sprint 32: API Gateway / Integrações
+Sprint 33: Integration Framework
 """
 
 from modules.integrations.services.integration_service import (
@@ -9,8 +10,12 @@ from modules.integrations.services.integration_service import (
 from modules.integrations.services.webhook_service import (
     WebhookService,
 )
+from modules.integrations.services.connector_service import (
+    ConnectorService,
+)
 
 __all__ = [
     "IntegrationService",
     "WebhookService",
+    "ConnectorService",
 ]
