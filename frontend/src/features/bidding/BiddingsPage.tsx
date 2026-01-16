@@ -342,6 +342,8 @@ export function BiddingsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBidding, setSelectedBidding] = useState<Bidding | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const openCount = biddings.filter(b =>
@@ -500,7 +502,7 @@ export function BiddingsPage() {
                 columns={columns}
                 data={filteredBiddings}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Bidding clicked:', row)}
+                onRowClick={(row) => { setSelectedBidding(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -581,6 +583,112 @@ export function BiddingsPage() {
               placeholder="Selecione..."
             />
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes da Licitação"
+          description={selectedBidding ? selectedBidding.number : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              <Button variant="outline" leftIcon={<ExternalLink className="w-4 h-4" />}>
+                Abrir Portal
+              </Button>
+              <Button variant="primary">Elaborar Proposta</Button>
+            </>
+          }
+        >
+          {selectedBidding && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className="p-3 rounded-lg bg-bg-primary">
+                  <Gavel className="w-6 h-6 text-text-muted" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-mono text-lg font-bold text-accent-primary">{selectedBidding.number}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={modalityConfig[selectedBidding.modality].color}>{modalityConfig[selectedBidding.modality].label}</Badge>
+                    <Badge variant={agencyTypeConfig[selectedBidding.agencyType].color}>{agencyTypeConfig[selectedBidding.agencyType].label}</Badge>
+                    <Badge variant={statusConfig[selectedBidding.status].color}>{statusConfig[selectedBidding.status].label}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-text-muted mb-2">Objeto</p>
+                <p className="font-medium text-text-primary">{selectedBidding.title}</p>
+                <p className="text-sm text-text-secondary mt-1">{selectedBidding.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Órgão/Entidade</p>
+                  <p className="font-medium text-text-primary">{selectedBidding.agency}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Responsável</p>
+                  <p className="font-medium text-text-primary">{selectedBidding.responsible}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Valor Estimado</p>
+                  <p className="text-xl font-bold text-text-primary">{formatCurrency(selectedBidding.estimatedValue)}</p>
+                </div>
+                {selectedBidding.ourProposal && (
+                  <div className="p-4 bg-bg-tertiary rounded-lg">
+                    <p className="text-sm text-text-muted mb-1">Nossa Proposta</p>
+                    <p className="text-xl font-bold text-accent-primary">{formatCurrency(selectedBidding.ourProposal)}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Publicação</p>
+                  <p className="font-medium text-text-primary">{selectedBidding.publicationDate}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Prazo de Proposta</p>
+                  <p className="font-medium text-text-primary">{selectedBidding.deadline}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Data de Abertura</p>
+                  <p className="font-medium text-text-primary">{selectedBidding.openingDate}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Portal</p>
+                  <p className="font-medium text-text-primary">{selectedBidding.portal}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Documentos</p>
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-text-muted" />
+                    <p className="font-medium text-text-primary">{selectedBidding.documentsCount} documento(s)</p>
+                  </div>
+                </div>
+              </div>
+
+              {selectedBidding.hasAlert && selectedBidding.alertMessage && (
+                <div className="p-4 bg-accent-warning/10 border border-accent-warning/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-accent-warning" />
+                    <p className="font-medium text-accent-warning">{selectedBidding.alertMessage}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

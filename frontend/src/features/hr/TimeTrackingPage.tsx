@@ -247,6 +247,8 @@ export function TimeTrackingPage() {
   const [selectedTab, setSelectedTab] = useState('all');
   const [selectedDate, setSelectedDate] = useState('2026-01-15');
   const [selectedClient, setSelectedClient] = useState('all');
+  const [selectedRecord, setSelectedRecord] = useState<TimeRecord | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const filteredRecords = timeRecords.filter((record) => {
     const matchesSearch =
@@ -434,7 +436,7 @@ export function TimeTrackingPage() {
                 columns={columns}
                 data={filteredRecords}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Record clicked:', row)}
+                onRowClick={(row) => { setSelectedRecord(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -463,6 +465,96 @@ export function TimeTrackingPage() {
             </CardBody>
           </Card>
         )}
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes do Ponto"
+          description={selectedRecord ? `${selectedRecord.employee} - ${selectedRecord.date}` : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              {selectedRecord?.status === 'incomplete' && (
+                <Button variant="primary">Ajustar Ponto</Button>
+              )}
+            </>
+          }
+        >
+          {selectedRecord && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <Avatar name={selectedRecord.employee} size="lg" />
+                <div>
+                  <p className="text-lg font-medium text-text-primary">{selectedRecord.employee}</p>
+                  <p className="text-sm text-text-muted">{selectedRecord.employeeId}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={statusConfig[selectedRecord.status].color}>
+                      {statusConfig[selectedRecord.status].label}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Cliente</p>
+                  <p className="font-medium text-text-primary">{selectedRecord.client}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Departamento</p>
+                  <p className="font-medium text-text-primary">{selectedRecord.department}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-medium text-text-primary mb-3">Registros do Dia</h4>
+                <div className="space-y-2">
+                  {selectedRecord.entries.length > 0 ? (
+                    selectedRecord.entries.map((entry, idx) => {
+                      const MethodIcon = methodConfig[entry.method].icon;
+                      return (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-bg-primary rounded-lg">
+                              <MethodIcon className="w-4 h-4 text-text-muted" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-text-primary">
+                                {entry.type === 'entry' ? 'Entrada' : entry.type === 'exit' ? 'Saída' : entry.type === 'break_start' ? 'Início Intervalo' : 'Fim Intervalo'}
+                              </p>
+                              <p className="text-xs text-text-muted">{entry.location}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-mono font-bold text-text-primary">{entry.time}</p>
+                            <p className="text-xs text-text-muted">{methodConfig[entry.method].label}</p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-center text-text-muted py-4">Sem registros</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 p-4 bg-bg-tertiary rounded-lg">
+                <div>
+                  <p className="text-sm text-text-muted">Total de Horas</p>
+                  <p className="text-2xl font-bold text-text-primary">{selectedRecord.totalHours}h</p>
+                </div>
+                <div>
+                  <p className="text-sm text-text-muted">Horas Extras</p>
+                  <p className="text-2xl font-bold text-success">{selectedRecord.overtime}h</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
       </div>
     </MainLayout>
   );

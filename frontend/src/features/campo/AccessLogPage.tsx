@@ -39,6 +39,7 @@ import {
   type Column,
   SimpleTabBar,
   Select,
+  Modal,
 } from '@/design-system/components';
 import {
   AreaChart,
@@ -329,6 +330,8 @@ export function AccessLogPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isLive, setIsLive] = useState(true);
+  const [selectedLog, setSelectedLog] = useState<AccessLog | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const totalToday = accessLogs.length;
@@ -519,11 +522,106 @@ export function AccessLogPage() {
                 columns={columns}
                 data={filteredLogs}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Access log clicked:', row)}
+                onRowClick={(row) => { setSelectedLog(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
         </motion.div>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes do Acesso"
+          description={selectedLog ? `${selectedLog.timestamp}` : ''}
+          size="lg"
+          footer={
+            <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+              Fechar
+            </Button>
+          }
+        >
+          {selectedLog && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className={`p-3 rounded-lg ${
+                  selectedLog.status === 'granted' ? 'bg-accent-success/20' :
+                  selectedLog.status === 'denied' ? 'bg-accent-danger/20' : 'bg-accent-warning/20'
+                }`}>
+                  {selectedLog.type === 'entry' ? (
+                    <DoorOpen className={`w-6 h-6 ${
+                      selectedLog.status === 'granted' ? 'text-accent-success' : 'text-accent-danger'
+                    }`} />
+                  ) : (
+                    <DoorClosed className="w-6 h-6 text-accent-info" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-text-primary">{selectedLog.person}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={personTypeConfig[selectedLog.personType].color}>
+                      {personTypeConfig[selectedLog.personType].label}
+                    </Badge>
+                    <Badge variant={statusConfig[selectedLog.status].color}>
+                      {statusConfig[selectedLog.status].label}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Tipo de Acesso</p>
+                  <p className="font-medium text-text-primary">{selectedLog.type === 'entry' ? 'Entrada' : 'Saída'}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Método</p>
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const config = methodConfig[selectedLog.method];
+                      const MethodIcon = config.icon;
+                      return (
+                        <>
+                          <MethodIcon className="w-4 h-4 text-text-muted" />
+                          <span className="font-medium text-text-primary">{config.label}</span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Cliente</p>
+                  <p className="font-medium text-text-primary">{selectedLog.client}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Local</p>
+                  <p className="font-medium text-text-primary">{selectedLog.location}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Credencial</p>
+                  <p className="font-mono font-medium text-text-primary">{selectedLog.credential}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Dispositivo</p>
+                  <p className="font-mono font-medium text-text-primary">{selectedLog.device}</p>
+                </div>
+              </div>
+
+              {selectedLog.notes && (
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Observações</p>
+                  <p className="text-text-primary">{selectedLog.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </Modal>
       </div>
     </MainLayout>
   );

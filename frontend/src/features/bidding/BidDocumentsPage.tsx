@@ -330,6 +330,8 @@ export function BidDocumentsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<BidDocument | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const validCount = documents.filter(d => d.status === 'valid').length;
@@ -494,7 +496,7 @@ export function BidDocumentsPage() {
                 columns={columns}
                 data={filteredDocuments}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Document clicked:', row)}
+                onRowClick={(row) => { setSelectedDocument(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -566,6 +568,138 @@ export function BidDocumentsPage() {
             </div>
             <Input label="Observações" placeholder="Notas sobre o documento" />
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes do Documento"
+          description={selectedDocument ? selectedDocument.name : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              {selectedDocument?.fileName && (
+                <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
+                  Download
+                </Button>
+              )}
+              {selectedDocument?.status === 'expired' && (
+                <Button variant="danger" leftIcon={<RefreshCw className="w-4 h-4" />}>
+                  Renovar
+                </Button>
+              )}
+            </>
+          }
+        >
+          {selectedDocument && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className={`p-3 rounded-lg ${
+                  selectedDocument.status === 'valid' ? 'bg-accent-success/20' :
+                  selectedDocument.status === 'expiring' ? 'bg-accent-warning/20' :
+                  selectedDocument.status === 'expired' ? 'bg-accent-danger/20' : 'bg-bg-primary'
+                }`}>
+                  {(() => {
+                    const StatusIcon = statusConfig[selectedDocument.status].icon;
+                    return <StatusIcon className={`w-6 h-6 ${
+                      selectedDocument.status === 'valid' ? 'text-accent-success' :
+                      selectedDocument.status === 'expiring' ? 'text-accent-warning' :
+                      selectedDocument.status === 'expired' ? 'text-accent-danger' : 'text-text-muted'
+                    }`} />;
+                  })()}
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-text-primary">{selectedDocument.name}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={typeConfig[selectedDocument.type].color}>{typeConfig[selectedDocument.type].label}</Badge>
+                    <Badge variant={statusConfig[selectedDocument.status].color}>{statusConfig[selectedDocument.status].label}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Categoria</p>
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const config = categoryConfig[selectedDocument.category];
+                      const CategoryIcon = config.icon;
+                      return (
+                        <>
+                          <CategoryIcon className="w-4 h-4 text-text-muted" />
+                          <span className="font-medium text-text-primary">{config.label}</span>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Órgão Emissor</p>
+                  <p className="font-medium text-text-primary">{selectedDocument.issuingAuthority}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Data de Emissão</p>
+                  <p className="font-medium text-text-primary">{selectedDocument.issueDate}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Validade</p>
+                  <p className={`font-medium ${
+                    selectedDocument.status === 'expired' ? 'text-accent-danger' :
+                    selectedDocument.status === 'expiring' ? 'text-accent-warning' : 'text-text-primary'
+                  }`}>{selectedDocument.expirationDate || 'Sem validade'}</p>
+                </div>
+              </div>
+
+              {selectedDocument.fileName && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-bg-tertiary rounded-lg">
+                    <p className="text-sm text-text-muted mb-1">Arquivo</p>
+                    <p className="font-mono text-sm font-medium text-text-primary">{selectedDocument.fileName}</p>
+                  </div>
+                  <div className="p-4 bg-bg-tertiary rounded-lg">
+                    <p className="text-sm text-text-muted mb-1">Tamanho</p>
+                    <p className="font-medium text-text-primary">{selectedDocument.fileSize}</p>
+                  </div>
+                </div>
+              )}
+
+              {selectedDocument.usedIn.length > 0 && (
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-2">Usado em Licitações</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedDocument.usedIn.map((bid, idx) => (
+                      <Badge key={idx} variant="primary">{bid}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Enviado por</p>
+                  <p className="font-medium text-text-primary">{selectedDocument.uploadedBy || '-'}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Data do Upload</p>
+                  <p className="font-medium text-text-primary">{selectedDocument.uploadedAt || '-'}</p>
+                </div>
+              </div>
+
+              {selectedDocument.notes && (
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Observações</p>
+                  <p className="text-text-primary">{selectedDocument.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

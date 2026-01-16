@@ -251,6 +251,8 @@ export function VisitsPage() {
   const [selectedTab, setSelectedTab] = useState('all');
   const [selectedDate, setSelectedDate] = useState('2026-01-15');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const filteredVisits = visits.filter((visit) => {
     const matchesSearch =
@@ -397,7 +399,7 @@ export function VisitsPage() {
                 columns={columns}
                 data={filteredVisits}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Visit clicked:', row)}
+                onRowClick={(row) => { setSelectedVisit(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -471,6 +473,86 @@ export function VisitsPage() {
             />
             <Input label="Observações" placeholder="Notas sobre a visita" />
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes da Visita"
+          description={selectedVisit ? `${selectedVisit.client} - ${selectedVisit.scheduledTime}` : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              {selectedVisit?.status === 'scheduled' && (
+                <Button variant="primary">Iniciar Visita</Button>
+              )}
+              {selectedVisit?.status === 'in_progress' && (
+                <Button variant="success">Finalizar Visita</Button>
+              )}
+            </>
+          }
+        >
+          {selectedVisit && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className="p-3 rounded-lg bg-bg-primary">
+                  <Calendar className="w-6 h-6 text-text-muted" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-text-primary">{selectedVisit.client}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={typeConfig[selectedVisit.type].color}>{typeConfig[selectedVisit.type].label}</Badge>
+                    <Badge variant={statusConfig[selectedVisit.status].color}>{statusConfig[selectedVisit.status].label}</Badge>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-text-primary">{selectedVisit.scheduledTime}</p>
+                  <p className="text-sm text-text-muted">{selectedVisit.duration} min</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-1">Endereço</p>
+                <p className="font-medium text-text-primary">{selectedVisit.clientAddress}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Contato</p>
+                  <p className="font-medium text-text-primary">{selectedVisit.contactName}</p>
+                  <p className="text-sm text-text-muted">{selectedVisit.contactPhone}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Responsável</p>
+                  <p className="font-medium text-text-primary">{selectedVisit.responsible}</p>
+                </div>
+              </div>
+
+              {(selectedVisit.actualStart || selectedVisit.actualEnd) && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 bg-bg-tertiary rounded-lg">
+                    <p className="text-sm text-text-muted mb-1">Início Real</p>
+                    <p className="font-medium text-text-primary">{selectedVisit.actualStart || '-'}</p>
+                  </div>
+                  <div className="p-4 bg-bg-tertiary rounded-lg">
+                    <p className="text-sm text-text-muted mb-1">Término Real</p>
+                    <p className="font-medium text-text-primary">{selectedVisit.actualEnd || '-'}</p>
+                  </div>
+                </div>
+              )}
+
+              {selectedVisit.notes && (
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Observações</p>
+                  <p className="text-text-primary">{selectedVisit.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

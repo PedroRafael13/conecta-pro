@@ -295,6 +295,8 @@ export function BidProposalsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState<BidProposal | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const draftCount = proposals.filter(p => p.status === 'draft').length;
@@ -436,7 +438,7 @@ export function BidProposalsPage() {
                 columns={columns}
                 data={filteredProposals}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Proposal clicked:', row)}
+                onRowClick={(row) => { setSelectedProposal(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -486,6 +488,133 @@ export function BidProposalsPage() {
             </div>
             <Input label="Observações" placeholder="Notas sobre a proposta" />
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes da Proposta"
+          description={selectedProposal ? `${selectedProposal.biddingNumber} - v${selectedProposal.version}` : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>
+                Download PDF
+              </Button>
+              {selectedProposal?.status === 'approved' && (
+                <Button variant="primary" leftIcon={<Send className="w-4 h-4" />}>
+                  Enviar Proposta
+                </Button>
+              )}
+            </>
+          }
+        >
+          {selectedProposal && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className="p-3 rounded-lg bg-bg-primary">
+                  <FileText className="w-6 h-6 text-text-muted" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-mono text-lg font-bold text-accent-primary">{selectedProposal.biddingNumber}</p>
+                  <p className="text-sm text-text-muted">{selectedProposal.biddingTitle}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={statusConfig[selectedProposal.status].color}>{statusConfig[selectedProposal.status].label}</Badge>
+                    <Badge variant="neutral">v{selectedProposal.version}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-1">Órgão/Entidade</p>
+                <p className="font-medium text-text-primary">{selectedProposal.agency}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Valor Estimado</p>
+                  <p className="text-xl font-bold text-text-secondary">{formatCurrency(selectedProposal.estimatedValue)}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Valor Proposto</p>
+                  <p className="text-xl font-bold text-accent-primary">{formatCurrency(selectedProposal.proposedValue)}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <TrendingDown className="w-6 h-6 mx-auto mb-2 text-accent-success" />
+                  <p className="text-2xl font-bold text-accent-success">{selectedProposal.discount.toFixed(1)}%</p>
+                  <p className="text-sm text-text-muted">Desconto</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <Percent className={`w-6 h-6 mx-auto mb-2 ${
+                    selectedProposal.margin >= 18 ? 'text-accent-success' :
+                    selectedProposal.margin >= 12 ? 'text-accent-warning' : 'text-accent-danger'
+                  }`} />
+                  <p className={`text-2xl font-bold ${
+                    selectedProposal.margin >= 18 ? 'text-accent-success' :
+                    selectedProposal.margin >= 12 ? 'text-accent-warning' : 'text-accent-danger'
+                  }`}>{selectedProposal.margin}%</p>
+                  <p className="text-sm text-text-muted">Margem</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-3">Composição de Custos</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-text-muted">Mão de Obra</p>
+                    <p className="font-medium text-text-primary">{formatCurrency(selectedProposal.costs.labor)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-muted">Materiais</p>
+                    <p className="font-medium text-text-primary">{formatCurrency(selectedProposal.costs.materials)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-muted">Despesas Indiretas</p>
+                    <p className="font-medium text-text-primary">{formatCurrency(selectedProposal.costs.overhead)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-muted">Impostos</p>
+                    <p className="font-medium text-text-primary">{formatCurrency(selectedProposal.costs.taxes)}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Criado por</p>
+                  <div className="flex items-center gap-2">
+                    <Avatar name={selectedProposal.createdBy} size="sm" />
+                    <span className="font-medium text-text-primary">{selectedProposal.createdBy}</span>
+                  </div>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Prazo</p>
+                  <p className="font-medium text-text-primary">{selectedProposal.deadline}</p>
+                </div>
+              </div>
+
+              {selectedProposal.sentAt && (
+                <div className="p-4 bg-accent-success/10 border border-accent-success/30 rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Enviada em</p>
+                  <p className="font-medium text-accent-success">{selectedProposal.sentAt}</p>
+                </div>
+              )}
+
+              {selectedProposal.notes && (
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Observações</p>
+                  <p className="text-text-primary">{selectedProposal.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

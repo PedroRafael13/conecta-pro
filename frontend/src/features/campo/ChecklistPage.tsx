@@ -368,6 +368,9 @@ export function ChecklistPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('executions');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedExecution, setSelectedExecution] = useState<ChecklistExecution | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<ChecklistTemplate | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const totalTemplates = templates.filter(t => t.isActive).length;
@@ -496,14 +499,14 @@ export function ChecklistPage() {
                   columns={executionColumns}
                   data={filteredExecutions}
                   keyExtractor={(row) => row.id}
-                  onRowClick={(row) => console.log('Execution clicked:', row)}
+                  onRowClick={(row) => { setSelectedExecution(row); setSelectedTemplate(null); setShowDetailModal(true); }}
                 />
               ) : (
                 <DataTable
                   columns={templateColumns}
                   data={filteredTemplates}
                   keyExtractor={(row) => row.id}
-                  onRowClick={(row) => console.log('Template clicked:', row)}
+                  onRowClick={(row) => { setSelectedTemplate(row); setSelectedExecution(null); setShowDetailModal(true); }}
                 />
               )}
             </CardBody>
@@ -556,6 +559,131 @@ export function ChecklistPage() {
               </p>
             </div>
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title={selectedExecution ? 'Detalhes da Execução' : 'Detalhes do Template'}
+          description={selectedExecution ? selectedExecution.templateName : selectedTemplate?.name || ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              {selectedExecution && selectedExecution.status === 'in_progress' && (
+                <Button variant="success">Continuar Checklist</Button>
+              )}
+              {selectedTemplate && (
+                <Button variant="primary">Editar Template</Button>
+              )}
+            </>
+          }
+        >
+          {selectedExecution && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className="p-3 rounded-lg bg-bg-primary">
+                  <ClipboardList className="w-6 h-6 text-text-muted" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-text-primary">{selectedExecution.templateName}</p>
+                  <p className="text-sm text-text-muted">{selectedExecution.serviceOrderId}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={statusConfig[selectedExecution.status].color}>
+                      {statusConfig[selectedExecution.status].label}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Cliente</p>
+                  <p className="font-medium text-text-primary">{selectedExecution.client}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Executor</p>
+                  <p className="font-medium text-text-primary">{selectedExecution.executor}</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-2">Progresso</p>
+                <div className="flex justify-between text-sm mb-2">
+                  <span>{selectedExecution.completedItems}/{selectedExecution.totalItems} itens</span>
+                  <span>{Math.round((selectedExecution.completedItems / selectedExecution.totalItems) * 100)}%</span>
+                </div>
+                <div className="h-3 bg-bg-primary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent-primary rounded-full transition-all"
+                    style={{ width: `${(selectedExecution.completedItems / selectedExecution.totalItems) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              {selectedExecution.score !== null && (
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <p className="text-sm text-text-muted mb-2">Score Final</p>
+                  <p className={`text-4xl font-bold ${
+                    selectedExecution.score >= 90 ? 'text-accent-success' :
+                    selectedExecution.score >= 70 ? 'text-accent-warning' : 'text-accent-danger'
+                  }`}>{selectedExecution.score}%</p>
+                </div>
+              )}
+
+              {selectedExecution.notes && (
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Observações</p>
+                  <p className="text-text-primary">{selectedExecution.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {selectedTemplate && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className="p-3 rounded-lg bg-bg-primary">
+                  <ClipboardList className="w-6 h-6 text-text-muted" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-text-primary">{selectedTemplate.name}</p>
+                  <p className="text-sm text-text-muted">{selectedTemplate.description}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={categoryConfig[selectedTemplate.category].color}>
+                      {categoryConfig[selectedTemplate.category].label}
+                    </Badge>
+                    <Badge variant={selectedTemplate.isActive ? 'success' : 'neutral'}>
+                      {selectedTemplate.isActive ? 'Ativo' : 'Inativo'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <p className="text-2xl font-bold text-text-primary">{selectedTemplate.itemsCount}</p>
+                  <p className="text-sm text-text-muted">Itens</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <p className="text-2xl font-bold text-text-primary">{selectedTemplate.usageCount}</p>
+                  <p className="text-sm text-text-muted">Execuções</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <p className="text-2xl font-bold text-text-primary">{selectedTemplate.createdAt}</p>
+                  <p className="text-sm text-text-muted">Criado em</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-1">Criado por</p>
+                <p className="font-medium text-text-primary">{selectedTemplate.createdBy}</p>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

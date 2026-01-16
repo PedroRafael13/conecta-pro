@@ -294,6 +294,8 @@ export function ServiceOrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const filteredOrders = serviceOrders.filter((order) => {
     const matchesSearch =
@@ -412,7 +414,7 @@ export function ServiceOrdersPage() {
                 columns={columns}
                 data={filteredOrders}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Order clicked:', row)}
+                onRowClick={(row) => { setSelectedOrder(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -495,6 +497,92 @@ export function ServiceOrdersPage() {
             />
             <Input label="Equipamentos" placeholder="Liste os equipamentos necessários" />
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes da Ordem de Serviço"
+          description={selectedOrder ? `${selectedOrder.number}` : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              {selectedOrder?.status === 'pending' && (
+                <Button variant="primary">Atribuir Técnico</Button>
+              )}
+              {selectedOrder?.status === 'in_progress' && (
+                <Button variant="success">Finalizar OS</Button>
+              )}
+            </>
+          }
+        >
+          {selectedOrder && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className={`p-3 rounded-lg bg-bg-primary`}>
+                  {(() => {
+                    const TypeIcon = typeConfig[selectedOrder.type].icon;
+                    return <TypeIcon className="w-6 h-6 text-text-muted" />;
+                  })()}
+                </div>
+                <div className="flex-1">
+                  <p className="font-mono text-lg font-bold text-accent-primary">{selectedOrder.number}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={typeConfig[selectedOrder.type].color}>{typeConfig[selectedOrder.type].label}</Badge>
+                    <Badge variant={priorityConfig[selectedOrder.priority].color}>{priorityConfig[selectedOrder.priority].label}</Badge>
+                    <Badge variant={statusConfig[selectedOrder.status].color}>{statusConfig[selectedOrder.status].label}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-text-muted mb-2">Descrição</p>
+                <p className="text-text-primary">{selectedOrder.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Cliente</p>
+                  <p className="font-medium text-text-primary">{selectedOrder.client}</p>
+                  <p className="text-xs text-text-muted mt-1">{selectedOrder.clientAddress}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Técnico Responsável</p>
+                  <p className="font-medium text-text-primary">{selectedOrder.technician || 'Não atribuído'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Data Agendada</p>
+                  <p className="font-medium text-text-primary">{selectedOrder.scheduledDate}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Início</p>
+                  <p className="font-medium text-text-primary">{selectedOrder.startTime || '-'}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Término</p>
+                  <p className="font-medium text-text-primary">{selectedOrder.endTime || '-'}</p>
+                </div>
+              </div>
+
+              {selectedOrder.equipment.length > 0 && (
+                <div>
+                  <p className="text-sm text-text-muted mb-2">Equipamentos</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedOrder.equipment.map((eq, idx) => (
+                      <Badge key={idx} variant="info">{eq}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

@@ -327,6 +327,8 @@ export function OccurrencesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const openCount = occurrences.filter(o => o.status === 'open').length;
@@ -473,7 +475,7 @@ export function OccurrencesPage() {
                 columns={columns}
                 data={filteredOccurrences}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Occurrence clicked:', row)}
+                onRowClick={(row) => { setSelectedOccurrence(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -567,6 +569,99 @@ export function OccurrencesPage() {
               </p>
             </div>
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes da Ocorrência"
+          description={selectedOccurrence ? `#${selectedOccurrence.id} - ${selectedOccurrence.title}` : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              {selectedOccurrence && (selectedOccurrence.status === 'open' || selectedOccurrence.status === 'in_progress') && (
+                <Button variant="primary">Atualizar Status</Button>
+              )}
+            </>
+          }
+        >
+          {selectedOccurrence && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className={`p-3 rounded-lg ${
+                  selectedOccurrence.severity === 'critical' ? 'bg-accent-danger/20' :
+                  selectedOccurrence.severity === 'high' ? 'bg-accent-danger/10' : 'bg-bg-primary'
+                }`}>
+                  {(() => {
+                    const TypeIcon = typeConfig[selectedOccurrence.type].icon;
+                    return <TypeIcon className={`w-6 h-6 ${
+                      selectedOccurrence.severity === 'critical' || selectedOccurrence.severity === 'high' ? 'text-accent-danger' : 'text-text-muted'
+                    }`} />;
+                  })()}
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-text-primary">{selectedOccurrence.title}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={typeConfig[selectedOccurrence.type].color}>{typeConfig[selectedOccurrence.type].label}</Badge>
+                    <Badge variant={severityConfig[selectedOccurrence.severity].color}>{severityConfig[selectedOccurrence.severity].label}</Badge>
+                    <Badge variant={statusConfig[selectedOccurrence.status].color}>{statusConfig[selectedOccurrence.status].label}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-sm text-text-muted mb-2">Descrição</p>
+                <p className="text-text-primary">{selectedOccurrence.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Cliente</p>
+                  <p className="font-medium text-text-primary">{selectedOccurrence.client}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Local</p>
+                  <p className="font-medium text-text-primary">{selectedOccurrence.location}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Reportado por</p>
+                  <p className="font-medium text-text-primary">{selectedOccurrence.reportedBy}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Atribuído para</p>
+                  <p className="font-medium text-text-primary">{selectedOccurrence.assignedTo || 'Não atribuído'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Data/Hora do Registro</p>
+                  <p className="font-medium text-text-primary">{selectedOccurrence.reportedAt}</p>
+                </div>
+                {selectedOccurrence.resolvedAt && (
+                  <div className="p-4 bg-bg-tertiary rounded-lg">
+                    <p className="text-sm text-text-muted mb-1">Data/Hora da Resolução</p>
+                    <p className="font-medium text-text-primary">{selectedOccurrence.resolvedAt}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Camera className="w-5 h-5 text-text-muted" />
+                  <span className="text-text-primary">{selectedOccurrence.evidenceCount} evidências</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-text-muted" />
+                  <span className="text-text-primary">{selectedOccurrence.commentsCount} comentários</span>
+                </div>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

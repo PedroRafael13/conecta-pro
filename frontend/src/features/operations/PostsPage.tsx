@@ -273,6 +273,8 @@ export function PostsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const filteredPosts = posts.filter((post) => {
     const matchesSearch =
@@ -426,7 +428,7 @@ export function PostsPage() {
                 columns={columns}
                 data={filteredPosts}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Post clicked:', row)}
+                onRowClick={(row) => { setSelectedPost(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -533,6 +535,85 @@ export function PostsPage() {
               />
             </div>
           </div>
+        </Modal>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes do Posto"
+          description={selectedPost ? `${selectedPost.code} - ${selectedPost.name}` : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              <Button variant="primary">Gerenciar Alocações</Button>
+            </>
+          }
+        >
+          {selectedPost && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className="p-3 rounded-lg bg-bg-primary">
+                  {(() => {
+                    const TypeIcon = typeConfig[selectedPost.type].icon;
+                    return <TypeIcon className="w-6 h-6 text-text-muted" />;
+                  })()}
+                </div>
+                <div className="flex-1">
+                  <p className="font-mono text-sm text-accent-primary">{selectedPost.code}</p>
+                  <p className="text-lg font-medium text-text-primary">{selectedPost.name}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={typeConfig[selectedPost.type].color}>{typeConfig[selectedPost.type].label}</Badge>
+                    <Badge variant={statusConfig[selectedPost.status].color}>{statusConfig[selectedPost.status].label}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Cliente</p>
+                  <p className="font-medium text-text-primary">{selectedPost.client}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Endereço</p>
+                  <p className="font-medium text-text-primary">{selectedPost.address}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Escala</p>
+                  <p className="font-medium text-text-primary">{selectedPost.shift}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Efetivo Necessário</p>
+                  <p className="font-medium text-text-primary">{selectedPost.requiredStaff}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Efetivo Alocado</p>
+                  <p className={`font-medium ${selectedPost.allocatedStaff >= selectedPost.requiredStaff ? 'text-accent-success' : 'text-accent-warning'}`}>
+                    {selectedPost.allocatedStaff}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-1">Coordenador</p>
+                <div className="flex items-center gap-2">
+                  <Avatar name={selectedPost.coordinator} size="sm" />
+                  <p className="font-medium text-text-primary">{selectedPost.coordinator}</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-1">Criado em</p>
+                <p className="font-medium text-text-primary">{selectedPost.createdAt}</p>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

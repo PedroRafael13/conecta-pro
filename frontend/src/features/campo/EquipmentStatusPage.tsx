@@ -42,6 +42,7 @@ import {
   type Column,
   SimpleTabBar,
   Select,
+  Modal,
 } from '@/design-system/components';
 import {
   PieChart,
@@ -378,6 +379,8 @@ export function EquipmentStatusPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const totalEquipment = equipment.length;
@@ -608,11 +611,136 @@ export function EquipmentStatusPage() {
                 columns={columns}
                 data={filteredEquipment}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Equipment clicked:', row)}
+                onRowClick={(row) => { setSelectedEquipment(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
         </motion.div>
+
+        {/* Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title="Detalhes do Equipamento"
+          description={selectedEquipment ? selectedEquipment.name : ''}
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setShowDetailModal(false)}>
+                Fechar
+              </Button>
+              <Button variant="primary">Configurar</Button>
+            </>
+          }
+        >
+          {selectedEquipment && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-xl">
+                <div className="p-3 rounded-lg bg-bg-primary">
+                  {(() => {
+                    const TypeIcon = typeConfig[selectedEquipment.type].icon;
+                    return <TypeIcon className="w-6 h-6 text-text-muted" />;
+                  })()}
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-text-primary">{selectedEquipment.name}</p>
+                  <p className="text-sm text-text-muted">{selectedEquipment.model}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Badge variant={typeConfig[selectedEquipment.type].color}>{typeConfig[selectedEquipment.type].label}</Badge>
+                    <Badge variant={statusConfig[selectedEquipment.status].color}>{statusConfig[selectedEquipment.status].label}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Número de Série</p>
+                  <p className="font-mono font-medium text-text-primary">{selectedEquipment.serialNumber}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Endereço IP</p>
+                  <p className="font-mono font-medium text-text-primary">{selectedEquipment.ipAddress}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Cliente</p>
+                  <p className="font-medium text-text-primary">{selectedEquipment.client}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Localização</p>
+                  <p className="font-medium text-text-primary">{selectedEquipment.location}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Uptime</p>
+                  <p className="font-medium text-text-primary">{selectedEquipment.uptime}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Última Comunicação</p>
+                  <p className="font-medium text-text-primary">{selectedEquipment.lastSeen}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                {selectedEquipment.temperature !== null && (
+                  <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                    <ThermometerSun className={`w-6 h-6 mx-auto mb-2 ${
+                      selectedEquipment.temperature > 50 ? 'text-accent-danger' :
+                      selectedEquipment.temperature > 40 ? 'text-accent-warning' : 'text-accent-success'
+                    }`} />
+                    <p className="text-lg font-bold text-text-primary">{selectedEquipment.temperature}°C</p>
+                    <p className="text-xs text-text-muted">Temperatura</p>
+                  </div>
+                )}
+                {selectedEquipment.storageUsed !== null && (
+                  <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                    <HardDrive className={`w-6 h-6 mx-auto mb-2 ${
+                      selectedEquipment.storageUsed > 90 ? 'text-accent-danger' :
+                      selectedEquipment.storageUsed > 75 ? 'text-accent-warning' : 'text-accent-success'
+                    }`} />
+                    <p className="text-lg font-bold text-text-primary">{selectedEquipment.storageUsed}%</p>
+                    <p className="text-xs text-text-muted">Armazenamento</p>
+                  </div>
+                )}
+                {selectedEquipment.signalStrength !== null && (
+                  <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                    <Signal className={`w-6 h-6 mx-auto mb-2 ${
+                      selectedEquipment.signalStrength >= 80 ? 'text-accent-success' :
+                      selectedEquipment.signalStrength >= 50 ? 'text-accent-warning' : 'text-accent-danger'
+                    }`} />
+                    <p className="text-lg font-bold text-text-primary">{selectedEquipment.signalStrength}%</p>
+                    <p className="text-xs text-text-muted">Sinal</p>
+                  </div>
+                )}
+                {selectedEquipment.batteryLevel !== null && (
+                  <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                    <Battery className={`w-6 h-6 mx-auto mb-2 ${
+                      selectedEquipment.batteryLevel < 20 ? 'text-accent-danger' :
+                      selectedEquipment.batteryLevel < 50 ? 'text-accent-warning' : 'text-accent-success'
+                    }`} />
+                    <p className="text-lg font-bold text-text-primary">{selectedEquipment.batteryLevel}%</p>
+                    <p className="text-xs text-text-muted">Bateria</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Última Manutenção</p>
+                  <p className="font-medium text-text-primary">{selectedEquipment.lastMaintenance}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Próxima Manutenção</p>
+                  <p className="font-medium text-text-primary">{selectedEquipment.nextMaintenance}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal>
       </div>
     </MainLayout>
   );
