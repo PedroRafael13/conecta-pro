@@ -1,0 +1,154 @@
+# Docker Compose - Celery Workers
+# Conecta Plus - Integrações Governamentais
+#
+# Uso: docker compose -f docker-compose.yml -f docker-compose.celery.yml up -d
+
+services:
+  # ==========================================================================
+  # Celery Worker - Alta Prioridade (eSocial, FGTS)
+  # ==========================================================================
+  celery-priority:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-celery-priority
+    restart: unless-stopped
+    command: celery -A celery_app worker --hostname=priority@%h --queues=gov.esocial,gov.fgts --concurrency=2 --loglevel=INFO
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://redis:6379/1
+      LOG_LEVEL: INFO
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+    volumes:
+      - ./logs/celery:/app/logs
+      - ./credentials:/opt/conecta-pro/credentials:ro
+
+  # ==========================================================================
+  # Celery Worker - SEFAZ (NF-e, CT-e, MDF-e)
+  # ==========================================================================
+  celery-sefaz:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-celery-sefaz
+    restart: unless-stopped
+    command: celery -A celery_app worker --hostname=sefaz@%h --queues=gov.sefaz.nfe,gov.sefaz.cte,gov.sefaz.mdfe --concurrency=3 --loglevel=INFO
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://redis:6379/1
+      LOG_LEVEL: INFO
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+    volumes:
+      - ./logs/celery:/app/logs
+      - ./credentials:/opt/conecta-pro/credentials:ro
+
+  # ==========================================================================
+  # Celery Worker - NFS-e
+  # ==========================================================================
+  celery-nfse:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-celery-nfse
+    restart: unless-stopped
+    command: celery -A celery_app worker --hostname=nfse@%h --queues=gov.nfse --concurrency=2 --loglevel=INFO
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://redis:6379/1
+      LOG_LEVEL: INFO
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+    volumes:
+      - ./logs/celery:/app/logs
+      - ./credentials:/opt/conecta-pro/credentials:ro
+
+  # ==========================================================================
+  # Celery Worker - Batch/Sync/Monitoramento
+  # ==========================================================================
+  celery-batch:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-celery-batch
+    restart: unless-stopped
+    command: celery -A celery_app worker --hostname=batch@%h --queues=gov.batch --concurrency=2 --loglevel=INFO
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://redis:6379/1
+      LOG_LEVEL: INFO
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+    volumes:
+      - ./logs/celery:/app/logs
+      - ./credentials:/opt/conecta-pro/credentials:ro
+
+  # ==========================================================================
+  # Celery Beat - Scheduler
+  # ==========================================================================
+  celery-beat:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-celery-beat
+    restart: unless-stopped
+    command: celery -A celery_app beat --loglevel=INFO --schedule=/var/run/celery/celerybeat-schedule
+    user: root
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://redis:6379/1
+      LOG_LEVEL: INFO
+      C_FORCE_ROOT: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery-batch:
+        condition: service_started
+    networks:
+      - conecta-pro-network
+    volumes:
+      - ./logs/celery:/app/logs
+      - celerybeat-data:/var/run/celery
+
+  # ==========================================================================
+  # Flower - Celery Monitoring (Opcional)
+  # ==========================================================================
+  flower:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-flower
+    restart: unless-stopped
+    command: celery -A celery_app flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+
+volumes:
+  celerybeat-data:

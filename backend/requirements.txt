@@ -14,6 +14,10 @@ psycopg2-binary==2.9.10
 # Redis
 redis==5.2.1
 
+# Celery (Task Queue)
+celery[redis]==5.4.0
+kombu==5.4.2
+
 # Auth
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
@@ -50,6 +54,7 @@ slowapi>=0.1.9
 # Security & Cryptography
 cryptography>=42.0.0
 pyOpenSSL>=24.0.0
+hvac>=2.1.0
 
 # XML Processing (Government Integrations - eSocial, SEFAZ)
 lxml>=5.0.0
