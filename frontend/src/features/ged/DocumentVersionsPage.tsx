@@ -298,6 +298,8 @@ export function DocumentVersionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [compareVersionOriginal, setCompareVersionOriginal] = useState('');
+  const [compareVersionNew, setCompareVersionNew] = useState('');
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -576,8 +578,8 @@ export function DocumentVersionsPage() {
                   value: v.id,
                   label: `v${v.version} - ${new Date(v.createdAt).toLocaleDateString('pt-BR')}`
                 }))}
-                value=""
-                onChange={() => {}}
+                value={compareVersionOriginal}
+                onChange={(value) => setCompareVersionOriginal(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -586,8 +588,8 @@ export function DocumentVersionsPage() {
                   value: v.id,
                   label: `v${v.version} - ${new Date(v.createdAt).toLocaleDateString('pt-BR')}`
                 }))}
-                value=""
-                onChange={() => {}}
+                value={compareVersionNew}
+                onChange={(value) => setCompareVersionNew(value)}
                 placeholder="Selecione..."
               />
             </div>

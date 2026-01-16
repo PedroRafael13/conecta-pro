@@ -330,6 +330,7 @@ export function DocumentTagsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState('#3B82F6');
+  const [newTagCategory, setNewTagCategory] = useState('');
 
   const filteredTags = tags.filter((tag) => {
     const matchesSearch = tag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -662,8 +663,8 @@ export function DocumentTagsPage() {
             <Select
               label="Categoria"
               options={categories.map(c => ({ value: c.id, label: c.name }))}
-              value=""
-              onChange={() => {}}
+              value={newTagCategory}
+              onChange={(value) => setNewTagCategory(value)}
               placeholder="Selecione uma categoria"
             />
 

@@ -228,6 +228,9 @@ export function BillingRulesPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showNewRuleModal, setShowNewRuleModal] = useState(false);
   const [selectedRule, setSelectedRule] = useState<BillingRule | null>(null);
+  const [newRuleType, setNewRuleType] = useState('');
+  const [newRuleFrequency, setNewRuleFrequency] = useState('');
+  const [newRuleApplyTo, setNewRuleApplyTo] = useState('');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <Settings className="h-4 w-4" /> },
@@ -788,8 +791,8 @@ export function BillingRulesPage() {
             <Input label="Descrição" placeholder="Descreva o propósito desta regra" />
             <div className="grid grid-cols-2 gap-4">
               <Select
-                value=""
-                onChange={() => {}}
+                value={newRuleType}
+                onChange={(value) => setNewRuleType(value)}
                 options={[
                   { value: '', label: 'Selecione o tipo' },
                   { value: 'recurring', label: 'Recorrente' },
@@ -800,8 +803,8 @@ export function BillingRulesPage() {
                 className="w-full"
               />
               <Select
-                value=""
-                onChange={() => {}}
+                value={newRuleFrequency}
+                onChange={(value) => setNewRuleFrequency(value)}
                 options={[
                   { value: '', label: 'Selecione a frequência' },
                   { value: 'daily', label: 'Diária' },
@@ -820,8 +823,8 @@ export function BillingRulesPage() {
             <div className="p-4 bg-bg-tertiary rounded-lg">
               <h4 className="font-medium text-text-primary mb-3">Aplicar a</h4>
               <Select
-                value=""
-                onChange={() => {}}
+                value={newRuleApplyTo}
+                onChange={(value) => setNewRuleApplyTo(value)}
                 options={[
                   { value: '', label: 'Selecione os clientes' },
                   { value: 'all', label: 'Todos os clientes ativos' },

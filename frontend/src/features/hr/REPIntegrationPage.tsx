@@ -373,6 +373,8 @@ export function REPIntegrationPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [devices, setDevices] = useState<REPDevice[]>(mockDevices);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [newManufacturer, setNewManufacturer] = useState('control_id');
+  const [newModel, setNewModel] = useState('idclass');
 
   // Handler para sincronizar todos os dispositivos
   const handleSyncAll = async () => {
@@ -1190,8 +1192,8 @@ export function REPIntegrationPage() {
                   { value: 'topdata', label: 'Topdata' },
                   { value: 'dimep', label: 'Dimep' }
                 ]}
-                value="control_id"
-                onChange={() => {}}
+                value={newManufacturer}
+                onChange={(value) => setNewManufacturer(value)}
               />
             </div>
             <div>
@@ -1205,8 +1207,8 @@ export function REPIntegrationPage() {
                   { value: 'inner', label: 'REP Topdata Inner Rep Plus' },
                   { value: 'printpoint', label: 'REP Dimep Printpoint III' }
                 ]}
-                value="idclass"
-                onChange={() => {}}
+                value={newModel}
+                onChange={(value) => setNewModel(value)}
               />
             </div>
           </div>

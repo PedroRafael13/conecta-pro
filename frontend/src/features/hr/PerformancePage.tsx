@@ -231,6 +231,7 @@ export function PerformancePage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewCycleModalOpen, setIsNewCycleModalOpen] = useState(false);
+  const [newEvaluationModel, setNewEvaluationModel] = useState('');
 
   const filteredReviews = reviews.filter((review) => {
     const matchesSearch = review.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -377,7 +378,7 @@ export function PerformancePage() {
               <Input label="Data Início" type="date" />
               <Input label="Data Fim" type="date" />
             </div>
-            <Select label="Modelo de Avaliação" options={[{ value: '360', label: 'Avaliação 360°' }, { value: 'top-down', label: 'Top-Down' }, { value: 'self', label: 'Autoavaliação' }]} value="" onChange={() => {}} placeholder="Selecione..." />
+            <Select label="Modelo de Avaliação" options={[{ value: '360', label: 'Avaliação 360°' }, { value: 'top-down', label: 'Top-Down' }, { value: 'self', label: 'Autoavaliação' }]} value={newEvaluationModel} onChange={(value) => setNewEvaluationModel(value)} placeholder="Selecione..." />
             <Textarea label="Descrição" placeholder="Objetivos e instruções do ciclo..." rows={3} />
           </div>
         </Modal>

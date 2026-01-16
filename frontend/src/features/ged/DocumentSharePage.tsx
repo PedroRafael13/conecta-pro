@@ -332,6 +332,8 @@ export function DocumentSharePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [selectedShare, setSelectedShare] = useState<SharedDocument | null>(null);
+  const [shareDocument, setShareDocument] = useState('');
+  const [sharePermission, setSharePermission] = useState('view');
 
   const filteredShares = sharedDocuments.filter((share) => {
     const matchesSearch = share.documentName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -504,8 +506,8 @@ export function DocumentSharePage() {
             <Select
               label="Documento"
               options={sharedDocuments.map(d => ({ value: d.id, label: d.documentName }))}
-              value=""
-              onChange={() => {}}
+              value={shareDocument}
+              onChange={(value) => setShareDocument(value)}
               placeholder="Selecione o documento..."
             />
 
@@ -546,8 +548,8 @@ export function DocumentSharePage() {
                   { value: 'download', label: 'Visualizar e Download' },
                   { value: 'edit', label: 'Editar' },
                 ]}
-                value="view"
-                onChange={() => {}}
+                value={sharePermission}
+                onChange={(value) => setSharePermission(value)}
               />
               <Input
                 label="Data de Expiração"

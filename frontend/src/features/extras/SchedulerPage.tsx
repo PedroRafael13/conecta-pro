@@ -677,6 +677,14 @@ export function SchedulerPage() {
   const [selectedTask, setSelectedTask] = useState<ScheduledTask | null>(null);
   const [selectedExecution, setSelectedExecution] = useState<TaskExecution | null>(null);
 
+  // Estados dos filtros
+  const [executionStatusFilter, setExecutionStatusFilter] = useState('all');
+  const [logLevelFilter, setLogLevelFilter] = useState('all');
+
+  // Estados do formulário de nova tarefa
+  const [newTaskCategory, setNewTaskCategory] = useState('report');
+  const [newTaskTriggerType, setNewTaskTriggerType] = useState('cron');
+
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <Calendar className="h-4 w-4" /> },
     { value: 'tasks', label: 'Tarefas', icon: <Clock className="h-4 w-4" /> },
@@ -1285,8 +1293,8 @@ export function SchedulerPage() {
                     { value: 'success', label: 'Sucesso' },
                     { value: 'failed', label: 'Falhou' }
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={executionStatusFilter}
+                  onChange={(value) => setExecutionStatusFilter(value)}
                 />
               </div>
               <Button variant="outline">
@@ -1321,8 +1329,8 @@ export function SchedulerPage() {
                     { value: 'info', label: 'Info' },
                     { value: 'debug', label: 'Debug' }
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={logLevelFilter}
+                  onChange={(value) => setLogLevelFilter(value)}
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -1662,8 +1670,8 @@ export function SchedulerPage() {
                     value: key,
                     label: val.label
                   }))}
-                  value="report"
-                  onChange={() => {}}
+                  value={newTaskCategory}
+                  onChange={(value) => setNewTaskCategory(value)}
                 />
               </div>
 
@@ -1676,8 +1684,8 @@ export function SchedulerPage() {
                     value: key,
                     label: val.label
                   }))}
-                  value="cron"
-                  onChange={() => {}}
+                  value={newTaskTriggerType}
+                  onChange={(value) => setNewTaskTriggerType(value)}
                 />
               </div>
 

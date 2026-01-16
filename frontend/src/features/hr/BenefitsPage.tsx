@@ -244,6 +244,7 @@ export function BenefitsPage() {
   const [activeTab, setActiveTab] = useState('catalog');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newBenefitType, setNewBenefitType] = useState('');
 
   const filteredBenefits = benefits.filter((benefit) =>
     benefit.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -410,7 +411,7 @@ export function BenefitsPage() {
         <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Novo Benefício" size="md" footer={<><Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Cancelar</Button><Button variant="primary">Criar</Button></>}>
           <div className="space-y-4">
             <Input label="Nome do Benefício" placeholder="Ex: Plano de Saúde" required />
-            <Select label="Tipo" options={Object.entries(typeLabels).map(([k, v]) => ({ value: k, label: v }))} value="" onChange={() => {}} placeholder="Selecione..." />
+            <Select label="Tipo" options={Object.entries(typeLabels).map(([k, v]) => ({ value: k, label: v }))} value={newBenefitType} onChange={(value) => setNewBenefitType(value)} placeholder="Selecione..." />
             <Input label="Fornecedor" placeholder="Nome do fornecedor" />
             <div className="grid grid-cols-2 gap-4">
               <Input label="Valor Mensal" type="number" placeholder="0.00" />

@@ -608,8 +608,8 @@ export function InventoryPage() {
                         { value: 'epis', label: 'EPIs' },
                         { value: 'limpeza', label: 'Mat. Limpeza' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterCategory}
+                      onChange={(value) => setFilterCategory(value)}
                       className="w-48"
                     />
                     <Select
@@ -620,8 +620,8 @@ export function InventoryPage() {
                         { value: 'critical', label: 'Crítico' },
                         { value: 'overstock', label: 'Excesso' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterProductStatus}
+                      onChange={(value) => setFilterProductStatus(value)}
                       className="w-40"
                     />
                   </>
@@ -635,8 +635,8 @@ export function InventoryPage() {
                       { value: 'transfer', label: 'Transferências' },
                       { value: 'adjustment', label: 'Ajustes' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterMovementType}
+                    onChange={(value) => setFilterMovementType(value)}
                     className="w-48"
                   />
                 )}
@@ -704,8 +704,8 @@ export function InventoryPage() {
                   { value: 'limpeza', label: 'Material de Limpeza' },
                   { value: 'outros', label: 'Outros' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newCategory}
+                onChange={(value) => setNewCategory(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -717,8 +717,8 @@ export function InventoryPage() {
                   { value: 'lt', label: 'Litro (LT)' },
                   { value: 'mt', label: 'Metro (MT)' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newUnit}
+                onChange={(value) => setNewUnit(value)}
                 placeholder="Selecione..."
               />
             </div>

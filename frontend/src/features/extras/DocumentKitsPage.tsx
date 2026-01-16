@@ -561,6 +561,13 @@ export function DocumentKitsPage() {
   const [selectedGeneration, setSelectedGeneration] = useState<KitGeneration | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<KitTemplate | null>(null);
 
+  // Form states for modals
+  const [generateTargetType, setGenerateTargetType] = useState('employee');
+  const [generateTarget, setGenerateTarget] = useState('');
+  const [newKitCategory, setNewKitCategory] = useState('admissao');
+  const [newKitTemplate, setNewKitTemplate] = useState('');
+  const [newDocumentType, setNewDocumentType] = useState('template');
+
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <Package className="h-4 w-4" /> },
     { value: 'kits', label: 'Kits', icon: <FolderOpen className="h-4 w-4" /> },
@@ -1506,8 +1513,8 @@ export function DocumentKitsPage() {
                       { value: 'supplier', label: 'Fornecedor' },
                       { value: 'contract', label: 'Contrato' }
                     ]}
-                    value="employee"
-                    onChange={() => {}}
+                    value={generateTargetType}
+                    onChange={(value) => setGenerateTargetType(value)}
                   />
                 </div>
 
@@ -1521,8 +1528,8 @@ export function DocumentKitsPage() {
                       { value: 'emp2', label: 'Carlos Mendes' },
                       { value: 'emp3', label: 'Maria Santos' }
                     ]}
-                    value=""
-                    onChange={() => {}}
+                    value={generateTarget}
+                    onChange={(value) => setGenerateTarget(value)}
                   />
                 </div>
 
@@ -1583,8 +1590,8 @@ export function DocumentKitsPage() {
                     value: key,
                     label: val.label
                   }))}
-                  value="admissao"
-                  onChange={() => {}}
+                  value={newKitCategory}
+                  onChange={(value) => setNewKitCategory(value)}
                 />
               </div>
 
@@ -1597,8 +1604,8 @@ export function DocumentKitsPage() {
                     { value: '', label: 'Nenhum (criar do zero)' },
                     ...mockTemplates.map(t => ({ value: t.id, label: t.name }))
                   ]}
-                  value=""
-                  onChange={() => {}}
+                  value={newKitTemplate}
+                  onChange={(value) => setNewKitTemplate(value)}
                 />
               </div>
 
@@ -1675,8 +1682,8 @@ export function DocumentKitsPage() {
                     { value: 'docx', label: 'Documento Word' },
                     { value: 'xlsx', label: 'Planilha Excel' }
                   ]}
-                  value="template"
-                  onChange={() => {}}
+                  value={newDocumentType}
+                  onChange={(value) => setNewDocumentType(value)}
                 />
               </div>
 

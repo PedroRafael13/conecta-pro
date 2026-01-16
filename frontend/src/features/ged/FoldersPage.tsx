@@ -306,6 +306,8 @@ export function FoldersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<string[]>(['1']);
+  const [newParentFolder, setNewParentFolder] = useState('');
+  const [newPermission, setNewPermission] = useState('restricted');
 
   const toggleFolder = (folderId: string) => {
     setExpandedFolders(prev =>
@@ -602,8 +604,8 @@ export function FoldersPage() {
                 { value: '', label: '/ (Raiz)' },
                 ...folderData.map(f => ({ value: f.id, label: f.path }))
               ]}
-              value=""
-              onChange={() => {}}
+              value={newParentFolder}
+              onChange={(value) => setNewParentFolder(value)}
               placeholder="Selecione a pasta pai"
             />
             <Textarea
@@ -618,8 +620,8 @@ export function FoldersPage() {
                 { value: 'restricted', label: 'Restrito - Apenas usuários autorizados' },
                 { value: 'private', label: 'Privado - Apenas o proprietário' },
               ]}
-              value="restricted"
-              onChange={() => {}}
+              value={newPermission}
+              onChange={(value) => setNewPermission(value)}
             />
             <div className="flex items-center gap-2 p-3 rounded-lg bg-info/10 border border-info/20">
               <Shield className="w-5 h-5 text-info" />

@@ -451,8 +451,8 @@ export function PCMSOPage() {
                         { value: 'mudanca_funcao', label: 'Mudança de Função' },
                         { value: 'demissional', label: 'Demissional' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterExamType}
+                      onChange={(value) => setFilterExamType(value)}
                       className="w-48"
                     />
                     <Select
@@ -462,8 +462,8 @@ export function PCMSOPage() {
                         { value: 'completed', label: 'Realizados' },
                         { value: 'missed', label: 'Não Compareceram' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterExamStatus}
+                      onChange={(value) => setFilterExamStatus(value)}
                       className="w-44"
                     />
                   </>
@@ -520,8 +520,8 @@ export function PCMSOPage() {
                 { value: '2', label: 'Maria Santos - Vigilante' },
                 { value: '3', label: 'Carlos Eduardo - Supervisor' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newEmployee}
+              onChange={(value) => setNewEmployee(value)}
               placeholder="Selecione o funcionário..."
             />
             <Select
@@ -533,8 +533,8 @@ export function PCMSOPage() {
                 { value: 'mudanca_funcao', label: 'Mudança de Função' },
                 { value: 'demissional', label: 'Demissional' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newExamType}
+              onChange={(value) => setNewExamType(value)}
               placeholder="Selecione..."
             />
             <div className="grid grid-cols-2 gap-4">
@@ -548,8 +548,8 @@ export function PCMSOPage() {
                 { value: '2', label: 'Clínica Saúde Total' },
                 { value: '3', label: 'Centro Médico Ocupacional' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newClinic}
+              onChange={(value) => setNewClinic(value)}
               placeholder="Selecione a clínica..."
             />
             <div className="space-y-2">

@@ -258,6 +258,12 @@ export function ScalesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedScale, setSelectedScale] = useState<Scale | null>(null);
 
+  // Estados do formulário de nova escala
+  const [newScaleClient, setNewScaleClient] = useState('');
+  const [newScalePost, setNewScalePost] = useState('');
+  const [newScaleType, setNewScaleType] = useState('');
+  const [newScalePeriod, setNewScalePeriod] = useState('');
+
   const filteredScales = scales.filter((scale) => {
     const matchesSearch =
       scale.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -489,8 +495,8 @@ export function ScalesPage() {
                   { value: '2', label: 'Hospital São Lucas' },
                   { value: '3', label: 'Condomínio Aurora' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newScaleClient}
+                onChange={(value) => setNewScaleClient(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -500,8 +506,8 @@ export function ScalesPage() {
                   { value: '2', label: 'UTI Adulto' },
                   { value: '3', label: 'Guarita' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newScalePost}
+                onChange={(value) => setNewScalePost(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -515,8 +521,8 @@ export function ScalesPage() {
                   { value: '5x2', label: '5x2' },
                   { value: 'custom', label: 'Personalizada' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newScaleType}
+                onChange={(value) => setNewScaleType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -526,8 +532,8 @@ export function ScalesPage() {
                   { value: '2026-02', label: 'Fevereiro 2026' },
                   { value: '2026-03', label: 'Março 2026' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newScalePeriod}
+                onChange={(value) => setNewScalePeriod(value)}
                 placeholder="Selecione..."
               />
             </div>

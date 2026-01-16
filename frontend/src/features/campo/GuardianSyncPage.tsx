@@ -346,6 +346,7 @@ export function GuardianSyncPage() {
   const [activeTab, setActiveTab] = useState('connections');
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newSystemType, setNewSystemType] = useState('');
 
   // Stats
   const activeConnections = connections.filter((c) => c.status === 'connected' || c.status === 'syncing').length;
@@ -564,8 +565,8 @@ export function GuardianSyncPage() {
                 { value: 'controlid', label: 'Control iD' },
                 { value: 'custom', label: 'Personalizado' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newSystemType}
+              onChange={(value) => setNewSystemType(value)}
               placeholder="Selecione..."
             />
             <div className="grid grid-cols-2 gap-4">

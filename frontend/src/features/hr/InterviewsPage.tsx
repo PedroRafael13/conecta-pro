@@ -343,6 +343,9 @@ export function InterviewsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState<Interview | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [newCandidate, setNewCandidate] = useState('');
+  const [newInterviewType, setNewInterviewType] = useState('');
+  const [newStage, setNewStage] = useState('');
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -578,8 +581,8 @@ export function InterviewsPage() {
                 { value: '2', label: 'Amanda Costa - Analista Comercial' },
                 { value: '4', label: 'Juliana Santos - Estagiário Financeiro' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newCandidate}
+              onChange={(value) => setNewCandidate(value)}
               placeholder="Selecione o candidato..."
               required
             />
@@ -591,8 +594,8 @@ export function InterviewsPage() {
                   { value: 'video', label: 'Videoconferência' },
                   { value: 'phone', label: 'Telefone' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newInterviewType}
+                onChange={(value) => setNewInterviewType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -603,8 +606,8 @@ export function InterviewsPage() {
                   { value: 'manager', label: 'Gestor' },
                   { value: 'final', label: 'Final' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newStage}
+                onChange={(value) => setNewStage(value)}
                 placeholder="Selecione..."
               />
             </div>

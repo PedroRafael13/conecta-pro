@@ -699,8 +699,8 @@ export function ProcurementPage() {
                         { value: 'sent', label: 'Enviadas' },
                         { value: 'completed', label: 'Concluídas' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterOrderStatus}
+                      onChange={(value) => setFilterOrderStatus(value)}
                       className="w-48"
                     />
                     <Select
@@ -711,8 +711,8 @@ export function ProcurementPage() {
                         { value: 'medium', label: 'Média' },
                         { value: 'low', label: 'Baixa' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterPriority}
+                      onChange={(value) => setFilterPriority(value)}
                       className="w-44"
                     />
                   </>
@@ -726,8 +726,8 @@ export function ProcurementPage() {
                       { value: 'epis', label: 'EPIs' },
                       { value: 'limpeza', label: 'Limpeza' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterSupplierCategory}
+                    onChange={(value) => setFilterSupplierCategory(value)}
                     className="w-48"
                   />
                 )}
@@ -779,8 +779,8 @@ export function ProcurementPage() {
             <Select
               label="Fornecedor"
               options={suppliers.map(s => ({ value: s.id, label: s.name }))}
-              value=""
-              onChange={() => {}}
+              value={newSupplier}
+              onChange={(value) => setNewSupplier(value)}
               placeholder="Selecione o fornecedor..."
             />
             <div className="grid grid-cols-2 gap-4">
@@ -792,8 +792,8 @@ export function ProcurementPage() {
                   { value: 'high', label: 'Alta' },
                   { value: 'urgent', label: 'Urgente' },
                 ]}
-                value="medium"
-                onChange={() => {}}
+                value={newOrderPriority}
+                onChange={(value) => setNewOrderPriority(value)}
               />
               <Input label="Previsão de Entrega" type="date" />
             </div>

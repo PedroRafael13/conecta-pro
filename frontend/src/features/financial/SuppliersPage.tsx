@@ -237,6 +237,9 @@ export function SuppliersPage() {
   const [showNewSupplierModal, setShowNewSupplierModal] = useState(false);
   const [showNewOrderModal, setShowNewOrderModal] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [newSupplierCategory, setNewSupplierCategory] = useState('');
+  const [newPaymentTerms, setNewPaymentTerms] = useState('');
+  const [newOrderSupplier, setNewOrderSupplier] = useState('');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <Truck className="h-4 w-4" /> },
@@ -796,8 +799,8 @@ export function SuppliersPage() {
             <div className="grid grid-cols-2 gap-4">
               <Input label="CNPJ" placeholder="00.000.000/0000-00" />
               <Select
-                value=""
-                onChange={() => {}}
+                value={newSupplierCategory}
+                onChange={(value) => setNewSupplierCategory(value)}
                 options={[
                   { value: '', label: 'Selecione uma categoria' },
                   { value: 'Tecnologia', label: 'Tecnologia' },
@@ -819,8 +822,8 @@ export function SuppliersPage() {
               <Input label="CEP" placeholder="00000-000" />
             </div>
             <Select
-              value=""
-              onChange={() => {}}
+              value={newPaymentTerms}
+              onChange={(value) => setNewPaymentTerms(value)}
               options={[
                 { value: '', label: 'Selecione o prazo de pagamento' },
                 { value: '7', label: '7 dias' },
@@ -852,8 +855,8 @@ export function SuppliersPage() {
         >
           <div className="space-y-4">
             <Select
-              value=""
-              onChange={() => {}}
+              value={newOrderSupplier}
+              onChange={(value) => setNewOrderSupplier(value)}
               options={[
                 { value: '', label: 'Selecione o fornecedor' },
                 ...mockSuppliers.map(s => ({ value: s.id, label: s.tradeName }))

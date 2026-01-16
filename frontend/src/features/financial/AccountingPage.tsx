@@ -171,6 +171,14 @@ export function AccountingPage() {
   const [filterType, setFilterType] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('month');
 
+  // Estados do formulário de novo lançamento
+  const [newEntryDebitAccount, setNewEntryDebitAccount] = useState('');
+  const [newEntryCreditAccount, setNewEntryCreditAccount] = useState('');
+
+  // Estados do formulário de nova conta
+  const [newAccountType, setNewAccountType] = useState('');
+  const [newAccountParent, setNewAccountParent] = useState('');
+
   const tabs = [
     { value: 'accounts', label: 'Plano de Contas', icon: <BookOpen className="h-4 w-4" /> },
     { value: 'entries', label: 'Lançamentos', icon: <ArrowRightLeft className="h-4 w-4" /> },
@@ -613,8 +621,8 @@ export function AccountingPage() {
                   Conta Débito
                 </label>
                 <Select
-                  value=""
-                  onChange={() => {}}
+                  value={newEntryDebitAccount}
+                  onChange={(value) => setNewEntryDebitAccount(value)}
                   placeholder="Selecione..."
                   options={mockAccounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
                 />
@@ -624,8 +632,8 @@ export function AccountingPage() {
                   Conta Crédito
                 </label>
                 <Select
-                  value=""
-                  onChange={() => {}}
+                  value={newEntryCreditAccount}
+                  onChange={(value) => setNewEntryCreditAccount(value)}
                   placeholder="Selecione..."
                   options={mockAccounts.map(a => ({ value: a.code, label: `${a.code} - ${a.name}` }))}
                 />
@@ -672,8 +680,8 @@ export function AccountingPage() {
                   Tipo
                 </label>
                 <Select
-                  value=""
-                  onChange={() => {}}
+                  value={newAccountType}
+                  onChange={(value) => setNewAccountType(value)}
                   placeholder="Selecione..."
                   options={[
                     { value: 'asset', label: 'Ativo' },
@@ -696,8 +704,8 @@ export function AccountingPage() {
                 Conta Pai (opcional)
               </label>
               <Select
-                value=""
-                onChange={() => {}}
+                value={newAccountParent}
+                onChange={(value) => setNewAccountParent(value)}
                 placeholder="Selecione..."
                 options={mockAccounts.filter(a => a.level < 3).map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }))}
               />

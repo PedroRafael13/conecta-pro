@@ -212,6 +212,8 @@ export function JobPositionsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newDepartment, setNewDepartment] = useState('');
+  const [newLevel, setNewLevel] = useState('');
 
   const filteredPositions = positions.filter((position) => {
     const matchesSearch = position.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -343,8 +345,8 @@ export function JobPositionsPage() {
           <div className="space-y-4">
             <Input label="Título do Cargo" placeholder="Ex: Desenvolvedor Full Stack" required />
             <div className="grid grid-cols-2 gap-4">
-              <Select label="Departamento" options={departmentDistribution.map(d => ({ value: d.name, label: d.name }))} value="" onChange={() => {}} placeholder="Selecione..." />
-              <Select label="Nível" options={Object.entries(levelLabels).map(([k, v]) => ({ value: k, label: v }))} value="" onChange={() => {}} placeholder="Selecione..." />
+              <Select label="Departamento" options={departmentDistribution.map(d => ({ value: d.name, label: d.name }))} value={newDepartment} onChange={(value) => setNewDepartment(value)} placeholder="Selecione..." />
+              <Select label="Nível" options={Object.entries(levelLabels).map(([k, v]) => ({ value: k, label: v }))} value={newLevel} onChange={(value) => setNewLevel(value)} placeholder="Selecione..." />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <Input label="Headcount" type="number" placeholder="1" />

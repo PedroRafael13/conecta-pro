@@ -216,6 +216,8 @@ export function OvertimePage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newEmployee, setNewEmployee] = useState('');
+  const [newOvertimeType, setNewOvertimeType] = useState('');
 
   const filteredRecords = overtimeRecords.filter((record) => {
     const matchesSearch = record.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -335,13 +337,13 @@ export function OvertimePage() {
         {/* Create Modal */}
         <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Registrar Hora Extra" size="md" footer={<><Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Cancelar</Button><Button variant="primary">Registrar</Button></>}>
           <div className="space-y-4">
-            <Select label="Colaborador" options={[{ value: '1', label: 'Ana Costa' }, { value: '2', label: 'Roberto Silva' }]} value="" onChange={() => {}} placeholder="Selecione..." />
+            <Select label="Colaborador" options={[{ value: '1', label: 'Ana Costa' }, { value: '2', label: 'Roberto Silva' }]} value={newEmployee} onChange={(value) => setNewEmployee(value)} placeholder="Selecione..." />
             <Input label="Data" type="date" />
             <div className="grid grid-cols-2 gap-4">
               <Input label="Hora Início" type="time" />
               <Input label="Hora Fim" type="time" />
             </div>
-            <Select label="Tipo" options={Object.entries(typeConfig).map(([k, v]) => ({ value: k, label: `${v.label} (+${v.multiplier})` }))} value="" onChange={() => {}} placeholder="Selecione..." />
+            <Select label="Tipo" options={Object.entries(typeConfig).map(([k, v]) => ({ value: k, label: `${v.label} (+${v.multiplier})` }))} value={newOvertimeType} onChange={(value) => setNewOvertimeType(value)} placeholder="Selecione..." />
             <Textarea label="Justificativa" placeholder="Descreva o motivo da hora extra..." rows={3} required />
           </div>
         </Modal>

@@ -342,6 +342,7 @@ export function MobileTimeClockPage() {
   const [showZoneModal, setShowZoneModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [newZoneType, setNewZoneType] = useState('client');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <Smartphone className="h-4 w-4" /> },
@@ -1273,8 +1274,8 @@ export function MobileTimeClockPage() {
                 { value: 'client', label: 'Cliente' },
                 { value: 'field', label: 'Campo' }
               ]}
-              value="client"
-              onChange={() => {}}
+              value={newZoneType}
+              onChange={(value) => setNewZoneType(value)}
             />
           </div>
           <div>

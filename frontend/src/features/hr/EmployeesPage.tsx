@@ -305,6 +305,9 @@ export function EmployeesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [newPosition, setNewPosition] = useState('');
+  const [newDepartment, setNewDepartment] = useState('');
+  const [newType, setNewType] = useState('');
 
   // Stats
   const totalEmployees = employees.length;
@@ -482,8 +485,8 @@ export function EmployeesPage() {
                   { value: 'tecnico', label: 'Técnico' },
                   { value: 'analista', label: 'Analista' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newPosition}
+                onChange={(value) => setNewPosition(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -496,8 +499,8 @@ export function EmployeesPage() {
                   { value: 'financial', label: 'Financeiro' },
                   { value: 'ti', label: 'TI' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newDepartment}
+                onChange={(value) => setNewDepartment(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -510,8 +513,8 @@ export function EmployeesPage() {
                   { value: 'temporary', label: 'Temporário' },
                   { value: 'intern', label: 'Estagiário' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newType}
+                onChange={(value) => setNewType(value)}
                 placeholder="Selecione..."
               />
               <Input label="Data de Admissão" type="date" required />

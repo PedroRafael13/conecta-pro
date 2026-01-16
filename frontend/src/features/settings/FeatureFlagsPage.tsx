@@ -209,6 +209,9 @@ export default function FeatureFlagsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [newFlagType, setNewFlagType] = useState('');
+  const [newFlagCategory, setNewFlagCategory] = useState('');
+  const [newFlagEnvironment, setNewFlagEnvironment] = useState('');
 
   // Stats
   const stats = {
@@ -640,8 +643,8 @@ export default function FeatureFlagsPage() {
                   { value: 'user_list', label: 'Lista de Usuários' },
                   { value: 'tenant_list', label: 'Lista de Tenants' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newFlagType}
+                onChange={(value) => setNewFlagType(value)}
                 required
               />
               <Select
@@ -652,8 +655,8 @@ export default function FeatureFlagsPage() {
                   { value: 'ops', label: 'Operacional' },
                   { value: 'release', label: 'Release' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newFlagCategory}
+                onChange={(value) => setNewFlagCategory(value)}
                 required
               />
             </div>
@@ -665,8 +668,8 @@ export default function FeatureFlagsPage() {
                 { value: 'production', label: 'Produção' },
                 { value: 'all', label: 'Todos' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newFlagEnvironment}
+              onChange={(value) => setNewFlagEnvironment(value)}
               required
             />
             <Input

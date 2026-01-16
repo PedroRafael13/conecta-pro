@@ -307,6 +307,8 @@ export function DocumentSignaturesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewRequestModalOpen, setIsNewRequestModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<SignatureRequest | null>(null);
+  const [newSignatureType, setNewSignatureType] = useState('');
+  const [newPriority, setNewPriority] = useState('medium');
 
   const filteredRequests = signatureRequests.filter((request) => {
     const matchesSearch = request.documentName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -522,8 +524,8 @@ export function DocumentSignaturesPage() {
                   { value: 'advanced', label: 'Avançada - Verificação de Identidade' },
                   { value: 'qualified', label: 'Qualificada - Certificado ICP-Brasil' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newSignatureType}
+                onChange={(value) => setNewSignatureType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -534,8 +536,8 @@ export function DocumentSignaturesPage() {
                   { value: 'high', label: 'Alta' },
                   { value: 'urgent', label: 'Urgente' },
                 ]}
-                value="medium"
-                onChange={() => {}}
+                value={newPriority}
+                onChange={(value) => setNewPriority(value)}
               />
             </div>
 

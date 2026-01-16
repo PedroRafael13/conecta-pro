@@ -224,6 +224,8 @@ export function LeaveRequestsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newEmployee, setNewEmployee] = useState('');
+  const [newLeaveType, setNewLeaveType] = useState('');
 
   const filteredRequests = leaveRequests.filter((request) => {
     const matchesSearch = request.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
@@ -355,8 +357,8 @@ export function LeaveRequestsPage() {
         {/* Create Modal */}
         <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Nova Solicitação de Ausência" size="md" footer={<><Button variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Cancelar</Button><Button variant="primary">Solicitar</Button></>}>
           <div className="space-y-4">
-            <Select label="Colaborador" options={[{ value: '1', label: 'Ana Costa' }, { value: '2', label: 'Roberto Silva' }]} value="" onChange={() => {}} placeholder="Selecione..." />
-            <Select label="Tipo de Ausência" options={Object.entries(typeConfig).map(([k, v]) => ({ value: k, label: v.label }))} value="" onChange={() => {}} placeholder="Selecione..." />
+            <Select label="Colaborador" options={[{ value: '1', label: 'Ana Costa' }, { value: '2', label: 'Roberto Silva' }]} value={newEmployee} onChange={(value) => setNewEmployee(value)} placeholder="Selecione..." />
+            <Select label="Tipo de Ausência" options={Object.entries(typeConfig).map(([k, v]) => ({ value: k, label: v.label }))} value={newLeaveType} onChange={(value) => setNewLeaveType(value)} placeholder="Selecione..." />
             <div className="grid grid-cols-2 gap-4">
               <Input label="Data Início" type="date" />
               <Input label="Data Fim" type="date" />

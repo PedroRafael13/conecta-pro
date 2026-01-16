@@ -245,6 +245,7 @@ export function GEDPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [uploadFolder, setUploadFolder] = useState('');
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
@@ -497,8 +498,8 @@ export function GEDPage() {
               <Select
                 label="Pasta"
                 options={folders.map((f) => ({ value: f.name, label: f.name }))}
-                value=""
-                onChange={() => {}}
+                value={uploadFolder}
+                onChange={(value) => setUploadFolder(value)}
                 placeholder="Selecione..."
               />
               <Input label="Tags" placeholder="Separadas por vírgula" />

@@ -231,6 +231,8 @@ export function TrainingPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
+  const [newFormat, setNewFormat] = useState('');
 
   const filteredTrainings = trainings.filter((training) => {
     const matchesSearch = training.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -356,8 +358,8 @@ export function TrainingPage() {
           <div className="space-y-4">
             <Input label="Título do Treinamento" placeholder="Ex: Liderança e Gestão" required />
             <div className="grid grid-cols-2 gap-4">
-              <Select label="Categoria" options={Object.entries(categoryConfig).map(([k, v]) => ({ value: k, label: v.label }))} value="" onChange={() => {}} placeholder="Selecione..." />
-              <Select label="Formato" options={Object.entries(formatLabels).map(([k, v]) => ({ value: k, label: v }))} value="" onChange={() => {}} placeholder="Selecione..." />
+              <Select label="Categoria" options={Object.entries(categoryConfig).map(([k, v]) => ({ value: k, label: v.label }))} value={newCategory} onChange={(value) => setNewCategory(value)} placeholder="Selecione..." />
+              <Select label="Formato" options={Object.entries(formatLabels).map(([k, v]) => ({ value: k, label: v }))} value={newFormat} onChange={(value) => setNewFormat(value)} placeholder="Selecione..." />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Input label="Instrutor" placeholder="Nome do instrutor" />

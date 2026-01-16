@@ -348,6 +348,8 @@ export function CandidatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
+  const [newEducation, setNewEducation] = useState('');
+  const [newSource, setNewSource] = useState('');
 
   const filteredCandidates = candidates.filter((candidate) => {
     const matchesSearch =
@@ -529,8 +531,8 @@ export function CandidatesPage() {
                   { value: 'mestrado', label: 'Mestrado' },
                   { value: 'doutorado', label: 'Doutorado' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newEducation}
+                onChange={(value) => setNewEducation(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -543,8 +545,8 @@ export function CandidatesPage() {
                   { value: 'agency', label: 'Agência' },
                   { value: 'other', label: 'Outro' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newSource}
+                onChange={(value) => setNewSource(value)}
                 placeholder="Selecione..."
               />
             </div>

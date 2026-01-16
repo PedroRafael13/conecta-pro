@@ -264,6 +264,7 @@ export function BankReconciliationPage() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showMatchModal, setShowMatchModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<BankTransaction | null>(null);
+  const [uploadAccount, setUploadAccount] = useState('');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <GitCompare className="h-4 w-4" /> },
@@ -757,8 +758,8 @@ export function BankReconciliationPage() {
         >
           <div className="space-y-4">
             <Select
-              value=""
-              onChange={() => {}}
+              value={uploadAccount}
+              onChange={(value) => setUploadAccount(value)}
               options={[
                 { value: '', label: 'Selecione a conta' },
                 ...mockAccounts.map(a => ({ value: a.id, label: `${a.name} - ${a.bank}` }))
