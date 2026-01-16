@@ -69,6 +69,17 @@ from modules.integrations.models import (
     SyncEntityType,
     SyncOperationType,
     ExternalSystem,
+    # Sprint 33: Integration Framework
+    IntegrationAccount,
+    ConnectorType,
+    AuthType,
+    AccountStatus,
+    SyncRun,
+    SyncRunStatus,
+    SyncRunMode,
+    SyncRunTrigger,
+    SyncState,
+    IDMap,
 )
 
 # Re-export schemas
@@ -250,6 +261,17 @@ __all__ = [
     "SyncEntityType",
     "SyncOperationType",
     "ExternalSystem",
+    # Sprint 33: Integration Framework Models
+    "IntegrationAccount",
+    "ConnectorType",
+    "AuthType",
+    "AccountStatus",
+    "SyncRun",
+    "SyncRunStatus",
+    "SyncRunMode",
+    "SyncRunTrigger",
+    "SyncState",
+    "IDMap",
 
     # ==================== Core Schemas ====================
     # API Endpoint
