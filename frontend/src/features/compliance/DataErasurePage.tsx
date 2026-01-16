@@ -330,6 +330,7 @@ export function DataErasurePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewRequestModalOpen, setIsNewRequestModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<ErasureRequest | null>(null);
+  const [newErasureType, setNewErasureType] = useState('');
 
   const filteredRequests = erasureRequests.filter((request) => {
     const matchesSearch =
@@ -562,8 +563,8 @@ export function DataErasurePage() {
                 { value: 'partial', label: 'Exclusão Parcial - Dados específicos' },
                 { value: 'anonymization', label: 'Anonimização - Manter dados estatísticos' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newErasureType}
+              onChange={(value) => setNewErasureType(value)}
               placeholder="Selecione..."
             />
 

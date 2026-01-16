@@ -287,6 +287,9 @@ export function DataEncryptionPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateKeyModalOpen, setIsCreateKeyModalOpen] = useState(false);
+  const [newKeyAlgorithm, setNewKeyAlgorithm] = useState('AES-256-GCM');
+  const [newKeyUsage, setNewKeyUsage] = useState('');
+  const [newKeyRotation, setNewKeyRotation] = useState('90');
 
   const filteredKeys = encryptionKeys.filter((key) =>
     key.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -615,8 +618,8 @@ export function DataEncryptionPage() {
                 { value: 'RSA-2048', label: 'RSA-2048' },
                 { value: 'RSA-4096', label: 'RSA-4096' },
               ]}
-              value="AES-256-GCM"
-              onChange={() => {}}
+              value={newKeyAlgorithm}
+              onChange={(value) => setNewKeyAlgorithm(value)}
             />
 
             <Select
@@ -628,8 +631,8 @@ export function DataEncryptionPage() {
                 { value: 'api', label: 'Tokens de API' },
                 { value: 'backup', label: 'Backups' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newKeyUsage}
+              onChange={(value) => setNewKeyUsage(value)}
               placeholder="Selecione o uso..."
             />
 
@@ -641,8 +644,8 @@ export function DataEncryptionPage() {
                 { value: '180', label: '180 dias' },
                 { value: '365', label: '365 dias' },
               ]}
-              value="90"
-              onChange={() => {}}
+              value={newKeyRotation}
+              onChange={(value) => setNewKeyRotation(value)}
             />
 
             <div className="p-3 rounded-lg bg-info/10 border border-info/20">

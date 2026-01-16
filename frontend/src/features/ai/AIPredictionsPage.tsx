@@ -192,6 +192,7 @@ export function AIPredictionsPage() {
   const [selectedPrediction, setSelectedPrediction] = useState<Prediction | null>(null);
   const [filterPeriod, setFilterPeriod] = useState('month');
   const [showTrainModal, setShowTrainModal] = useState(false);
+  const [trainingDataPeriod, setTrainingDataPeriod] = useState('6months');
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -661,8 +662,8 @@ export function AIPredictionsPage() {
                   Período de Dados
                 </label>
                 <Select
-                  value="6months"
-                  onChange={() => {}}
+                  value={trainingDataPeriod}
+                  onChange={(value) => setTrainingDataPeriod(value)}
                   options={[
                     { value: '3months', label: 'Últimos 3 meses' },
                     { value: '6months', label: 'Últimos 6 meses' },

@@ -371,6 +371,9 @@ export function ClientsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [filterSegment, setFilterSegment] = useState('all');
+  const [newSegment, setNewSegment] = useState('');
+  const [newState, setNewState] = useState('');
 
   // Stats
   const activeCount = clients.filter(c => c.status === 'active').length;
@@ -519,8 +522,8 @@ export function ClientsPage() {
                     { value: 'industrial', label: 'Industrial' },
                     { value: 'governo', label: 'Governo' },
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={filterSegment}
+                  onChange={(value) => setFilterSegment(value)}
                   className="w-48"
                 />
                 <Button variant="secondary" leftIcon={<Filter className="w-4 h-4" />}>
@@ -590,8 +593,8 @@ export function ClientsPage() {
                   { value: 'residencial', label: 'Residencial' },
                   { value: 'eventos', label: 'Eventos' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newSegment}
+                onChange={(value) => setNewSegment(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -612,8 +615,8 @@ export function ClientsPage() {
                     { value: 'RJ', label: 'Rio de Janeiro' },
                     { value: 'MG', label: 'Minas Gerais' },
                   ]}
-                  value=""
-                  onChange={() => {}}
+                  value={newState}
+                  onChange={(value) => setNewState(value)}
                   placeholder="UF"
                 />
               </div>

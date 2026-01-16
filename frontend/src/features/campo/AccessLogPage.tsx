@@ -332,6 +332,8 @@ export function AccessLogPage() {
   const [isLive, setIsLive] = useState(true);
   const [selectedLog, setSelectedLog] = useState<AccessLog | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [chartPeriod, setChartPeriod] = useState('today');
+  const [filterClient, setFilterClient] = useState('all');
 
   // Stats
   const totalToday = accessLogs.length;
@@ -429,8 +431,8 @@ export function AccessLogPage() {
                     { value: 'yesterday', label: 'Ontem' },
                     { value: 'week', label: 'Esta Semana' },
                   ]}
-                  value="today"
-                  onChange={() => {}}
+                  value={chartPeriod}
+                  onChange={(value) => setChartPeriod(value)}
                   className="w-36"
                 />
               }
@@ -502,8 +504,8 @@ export function AccessLogPage() {
                     { value: '2', label: 'Tech Park Empresarial' },
                     { value: '3', label: 'Hospital São Lucas' },
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={filterClient}
+                  onChange={(value) => setFilterClient(value)}
                   className="w-48"
                 />
                 <Button variant="secondary" leftIcon={<Filter className="w-4 h-4" />}>

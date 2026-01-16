@@ -310,6 +310,7 @@ export function ConsentManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [selectedConsent, setSelectedConsent] = useState<Consent | null>(null);
+  const [newSubjectType, setNewSubjectType] = useState('');
 
   const filteredConsents = consents.filter((consent) => {
     const matchesSearch =
@@ -590,8 +591,8 @@ export function ConsentManagementPage() {
                 { value: 'supplier', label: 'Fornecedor' },
                 { value: 'visitor', label: 'Visitante' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newSubjectType}
+              onChange={(value) => setNewSubjectType(value)}
               placeholder="Selecione..."
             />
 

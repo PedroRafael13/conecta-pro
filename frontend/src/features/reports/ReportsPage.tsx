@@ -317,6 +317,9 @@ const executionColumns: Column<ReportExecution>[] = [
 export function ReportsPage() {
   const [selectedTab, setSelectedTab] = useState('templates');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [selectedFormat, setSelectedFormat] = useState('');
+  const [selectedClient, setSelectedClient] = useState('all');
 
   // Stats
   const totalReports = reports.length;
@@ -445,8 +448,8 @@ export function ReportsPage() {
             <Select
               label="Template"
               options={reports.map(r => ({ value: r.id, label: r.name }))}
-              value=""
-              onChange={() => {}}
+              value={selectedTemplate}
+              onChange={(value) => setSelectedTemplate(value)}
               placeholder="Selecione o relatório..."
             />
             <div className="grid grid-cols-2 gap-4">
@@ -460,8 +463,8 @@ export function ReportsPage() {
                 { value: 'excel', label: 'Excel' },
                 { value: 'csv', label: 'CSV' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={selectedFormat}
+              onChange={(value) => setSelectedFormat(value)}
               placeholder="Selecione..."
             />
             <Select
@@ -472,8 +475,8 @@ export function ReportsPage() {
                 { value: '2', label: 'Hospital São Lucas' },
                 { value: '3', label: 'Tech Park Empresarial' },
               ]}
-              value="all"
-              onChange={() => {}}
+              value={selectedClient}
+              onChange={(value) => setSelectedClient(value)}
             />
             <div className="flex items-center gap-2">
               <input type="checkbox" id="sendEmail" className="rounded" />

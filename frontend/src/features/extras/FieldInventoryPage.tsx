@@ -1893,8 +1893,8 @@ export function FieldInventoryPage() {
                     value: key,
                     label: val.label
                   }))}
-                  value="saida"
-                  onChange={() => {}}
+                  value={newMovementType}
+                  onChange={(value) => setNewMovementType(value)}
                 />
               </div>
 
@@ -1907,8 +1907,8 @@ export function FieldInventoryPage() {
                     value: item.id,
                     label: `${item.code} - ${item.name}`
                   }))}
-                  value={selectedItem?.id || ''}
-                  onChange={() => {}}
+                  value={newMovementItem}
+                  onChange={(value) => setNewMovementItem(value)}
                 />
               </div>
 

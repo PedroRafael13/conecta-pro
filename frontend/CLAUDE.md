@@ -389,13 +389,56 @@ npx tsc --noEmit
 | OperationsDashboard | Tab Substituições | Tabela completa com mock data |
 | ProposalsPage | Tab Atividades | Timeline com histórico |
 
+## Correção de Selects com onChange vazio (16/01/2026)
+
+### Progresso
+- **Inicial:** 209 ocorrências de `onChange={() => {}}`
+- **Commit 88c71c7:** 29 arquivos corrigidos
+- **Status final:** ✅ TODOS OS SELECTS CORRIGIDOS
+
+### Última Ocorrência (não é Select)
+
+| Arquivo | Linha | Tipo | Status |
+|---------|-------|------|--------|
+| `features/ai/MeetingAssistantPage.tsx` | 444 | **checkbox** (input) | Ignorado - não é Select |
+
+**Nota:** O checkbox em MeetingAssistantPage.tsx é para marcar action items como concluídos. Deve ser implementado com lógica de toggle real quando a API estiver pronta.
+
+### Padrão de Correção Aplicado
+
+1. Adicionar useState no início do componente:
+```typescript
+const [newFieldName, setNewFieldName] = useState('');
+```
+
+2. Atualizar o Select:
+```typescript
+<Select
+  value={newFieldName}
+  onChange={(value) => setNewFieldName(value)}
+/>
+```
+
+### Arquivos Corrigidos Nesta Sessão (11 Selects)
+- NotificationTemplatesPage.tsx (2 Selects)
+- NotificationChannelsPage.tsx (2 Selects)
+- PushNotificationsPage.tsx (1 Select)
+- AntiProcrastinationPage.tsx (3 Selects)
+- IntelligentNotificationsPage.tsx (3 Selects)
+
+### Para Continuar
+Execute `grep -rn "onChange={() => {}}" src/` para verificar as ocorrências restantes e aplicar o padrão acima.
+
+---
+
 ## Próximos Passos
 
-1. [ ] Integrar APIs reais nos módulos CRM e Financeiro
-2. [ ] Implementar autenticação real com JWT
-3. [ ] Adicionar testes unitários com Vitest
-4. [ ] Implementar PWA (offline support)
-5. [ ] Adicionar i18n para internacionalização
+1. [x] ~~Corrigir Selects com onChange vazio~~ ✅ CONCLUÍDO
+2. [ ] Integrar APIs reais nos módulos CRM e Financeiro
+3. [ ] Implementar autenticação real com JWT
+4. [ ] Adicionar testes unitários com Vitest
+5. [ ] Implementar PWA (offline support)
+6. [ ] Adicionar i18n para internacionalização
 
 ---
 *Última atualização: 16/01/2026*

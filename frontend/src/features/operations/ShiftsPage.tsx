@@ -164,6 +164,7 @@ export function ShiftsPage() {
   const [filterType, setFilterType] = useState('all');
   const [showNewShiftModal, setShowNewShiftModal] = useState(false);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [newShiftType, setNewShiftType] = useState('');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <Clock className="h-4 w-4" /> },
@@ -622,8 +623,8 @@ export function ShiftsPage() {
               <Input label="Código" placeholder="Ex: TM-01" />
             </div>
             <Select
-              value=""
-              onChange={() => {}}
+              value={newShiftType}
+              onChange={(value) => setNewShiftType(value)}
               options={[
                 { value: '', label: 'Selecione o tipo' },
                 { value: 'morning', label: 'Matutino' },

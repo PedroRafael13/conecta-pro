@@ -386,6 +386,10 @@ export function GovernmentPage() {
   const [selectedTab, setSelectedTab] = useState('events');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStatusEvents, setFilterStatusEvents] = useState('all');
+  const [modalEventType, setModalEventType] = useState('periodic');
+  const [modalReference, setModalReference] = useState('2026-01');
 
   // Stats
   const pendingEvents = esocialEvents.filter(e => e.status === 'pending' || e.status === 'processing').length;
@@ -577,8 +581,8 @@ export function GovernmentPage() {
                           { value: 'periodic', label: 'Periódico' },
                           { value: 'non_periodic', label: 'Não Periódico' },
                         ]}
-                        value="all"
-                        onChange={() => {}}
+                        value={filterCategory}
+                        onChange={(value) => setFilterCategory(value)}
                         className="w-44"
                       />
                       <Select
@@ -589,8 +593,8 @@ export function GovernmentPage() {
                           { value: 'accepted', label: 'Aceitos' },
                           { value: 'rejected', label: 'Rejeitados' },
                         ]}
-                        value="all"
-                        onChange={() => {}}
+                        value={filterStatusEvents}
+                        onChange={(value) => setFilterStatusEvents(value)}
                         className="w-40"
                       />
                     </>
@@ -662,8 +666,8 @@ export function GovernmentPage() {
                 { value: 'periodic', label: 'Eventos Periódicos' },
                 { value: 'non_periodic', label: 'Eventos Não Periódicos' },
               ]}
-              value="periodic"
-              onChange={() => {}}
+              value={modalEventType}
+              onChange={(value) => setModalEventType(value)}
             />
             <Select
               label="Referência"
@@ -671,8 +675,8 @@ export function GovernmentPage() {
                 { value: '2026-01', label: 'Janeiro/2026' },
                 { value: '2025-12', label: 'Dezembro/2025' },
               ]}
-              value="2026-01"
-              onChange={() => {}}
+              value={modalReference}
+              onChange={(value) => setModalReference(value)}
             />
             <div className="p-4 bg-bg-tertiary rounded-lg">
               <h4 className="text-sm font-medium text-text-primary mb-3">Eventos Disponíveis</h4>

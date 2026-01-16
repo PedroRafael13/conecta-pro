@@ -459,6 +459,9 @@ export function AntiProcrastinationPage() {
   const [activeTab, setActiveTab] = useState('rules');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newTriggerType, setNewTriggerType] = useState('');
+  const [newRuleCategory, setNewRuleCategory] = useState('');
+  const [newChannels, setNewChannels] = useState('');
 
   // Stats
   const activeRules = escalationRules.filter((r) => r.status === 'active').length;
@@ -679,8 +682,8 @@ export function AntiProcrastinationPage() {
                   { value: 'approval_pending', label: 'Aprovação Pendente' },
                   { value: 'custom', label: 'Personalizado' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newTriggerType}
+                onChange={(value) => setNewTriggerType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -692,8 +695,8 @@ export function AntiProcrastinationPage() {
                   { value: 'client', label: 'Cliente' },
                   { value: 'system', label: 'Sistema' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newRuleCategory}
+                onChange={(value) => setNewRuleCategory(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -717,8 +720,8 @@ export function AntiProcrastinationPage() {
                         { value: 'push', label: 'Push' },
                         { value: 'sms', label: 'SMS' },
                       ]}
-                      value=""
-                      onChange={() => {}}
+                      value={newChannels}
+                      onChange={(value) => setNewChannels(value)}
                       placeholder="Selecione..."
                     />
                   </div>

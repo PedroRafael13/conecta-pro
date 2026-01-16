@@ -338,6 +338,7 @@ export function PIAPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedPIA, setSelectedPIA] = useState<PIA | null>(null);
+  const [newPIAResponsible, setNewPIAResponsible] = useState('');
 
   const filteredPIAs = piaList.filter((pia) => {
     const matchesSearch =
@@ -606,8 +607,8 @@ export function PIAPage() {
                   { value: 'carlos', label: 'Carlos Lima' },
                   { value: 'roberto', label: 'Roberto Silva' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newPIAResponsible}
+                onChange={(value) => setNewPIAResponsible(value)}
                 placeholder="Selecione..."
               />
               <Input

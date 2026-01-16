@@ -381,6 +381,7 @@ export function EquipmentStatusPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [filterClient, setFilterClient] = useState('all');
 
   // Stats
   const totalEquipment = equipment.length;
@@ -591,8 +592,8 @@ export function EquipmentStatusPage() {
                     { value: '2', label: 'Tech Park Empresarial' },
                     { value: '3', label: 'Hospital São Lucas' },
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={filterClient}
+                  onChange={(value) => setFilterClient(value)}
                   className="w-48"
                 />
                 <Button variant="secondary" leftIcon={<Filter className="w-4 h-4" />}>

@@ -371,6 +371,7 @@ export function ChecklistPage() {
   const [selectedExecution, setSelectedExecution] = useState<ChecklistExecution | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<ChecklistTemplate | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
 
   // Stats
   const totalTemplates = templates.filter(t => t.isActive).length;
@@ -543,8 +544,8 @@ export function ChecklistPage() {
                 { value: 'security', label: 'Segurança' },
                 { value: 'cleaning', label: 'Limpeza' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newCategory}
+              onChange={(value) => setNewCategory(value)}
               placeholder="Selecione..."
             />
             <div className="pt-4 border-t border-border-subtle">

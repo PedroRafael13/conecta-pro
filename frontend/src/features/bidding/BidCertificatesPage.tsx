@@ -288,6 +288,7 @@ export function BidCertificatesPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newCertType, setNewCertType] = useState('');
 
   const filteredCertificates = certificates.filter((cert) => {
     const matchesSearch = cert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -469,8 +470,8 @@ export function BidCertificatesPage() {
                 { value: 'iso', label: 'Certificação ISO' },
                 { value: 'outros', label: 'Outros' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newCertType}
+              onChange={(value) => setNewCertType(value)}
               placeholder="Selecione..."
             />
             <Input label="Órgão Emissor" placeholder="Ex: Tribunal Superior do Trabalho" />

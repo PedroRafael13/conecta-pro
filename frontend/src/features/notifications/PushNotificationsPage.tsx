@@ -342,6 +342,7 @@ export function PushNotificationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<PushCampaign | null>(null);
+  const [newAudience, setNewAudience] = useState('');
 
   // Stats
   const totalSubscribers = subscriptions.filter((s) => s.status === 'active').length;
@@ -552,8 +553,8 @@ export function PushNotificationsPage() {
                 { value: 'clients', label: 'Clientes' },
                 { value: 'new', label: 'Novos Usuários' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newAudience}
+              onChange={(value) => setNewAudience(value)}
               placeholder="Selecione..."
             />
             <div className="grid grid-cols-2 gap-4">

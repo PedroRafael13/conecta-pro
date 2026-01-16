@@ -169,6 +169,10 @@ export function ProposalsPage() {
   const [detailTab, setDetailTab] = useState('overview');
   const [filterAssignee, setFilterAssignee] = useState('');
   const [formData, setFormData] = useState<ProposalCreate>(initialFormState);
+  const [newProposalClient, setNewProposalClient] = useState('');
+  const [newOpportunity, setNewOpportunity] = useState('');
+  const [newTemplate, setNewTemplate] = useState('standard');
+  const [newResponsible, setNewResponsible] = useState('');
 
   // Handle tab change and update filters
   const handleTabChange = useCallback((tab: string) => {
@@ -1306,8 +1310,8 @@ export function ProposalsPage() {
                   { value: '3', label: 'Hospital São Lucas' },
                   { value: '4', label: 'Tech Park' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newProposalClient}
+                onChange={(value) => setNewProposalClient(value)}
               />
               <Select
                 label="Oportunidade"
@@ -1315,8 +1319,8 @@ export function ProposalsPage() {
                   { value: '1', label: 'Segurança 24h - Aurora' },
                   { value: '2', label: 'Facilities - SCN' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newOpportunity}
+                onChange={(value) => setNewOpportunity(value)}
               />
             </div>
 
@@ -1340,15 +1344,15 @@ export function ProposalsPage() {
                 value: key,
                 label: config.label,
               }))}
-              value="standard"
-              onChange={() => {}}
+              value={newTemplate}
+              onChange={(value) => setNewTemplate(value)}
             />
 
             <Select
               label="Responsável"
               options={assignees}
-              value=""
-              onChange={() => {}}
+              value={newResponsible}
+              onChange={(value) => setNewResponsible(value)}
             />
 
             <div className="flex justify-end gap-3">

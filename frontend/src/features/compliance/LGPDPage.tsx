@@ -455,6 +455,10 @@ export function LGPDPage() {
   const [selectedTab, setSelectedTab] = useState('subjects');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterSubjectType, setFilterSubjectType] = useState('all');
+  const [filterConsentStatus, setFilterConsentStatus] = useState('all');
+  const [filterRequestStatus, setFilterRequestStatus] = useState('all');
+  const [newRequestType, setNewRequestType] = useState('');
 
   // Stats
   const totalSubjects = dataSubjects.length;
@@ -686,8 +690,8 @@ export function LGPDPage() {
                         { value: 'client', label: 'Clientes' },
                         { value: 'supplier', label: 'Fornecedores' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterSubjectType}
+                      onChange={(value) => setFilterSubjectType(value)}
                       className="w-44"
                     />
                     <Select
@@ -697,8 +701,8 @@ export function LGPDPage() {
                         { value: 'revoked', label: 'Revogados' },
                         { value: 'pending', label: 'Pendentes' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterConsentStatus}
+                      onChange={(value) => setFilterConsentStatus(value)}
                       className="w-40"
                     />
                   </>
@@ -711,8 +715,8 @@ export function LGPDPage() {
                       { value: 'in_progress', label: 'Em Andamento' },
                       { value: 'completed', label: 'Concluídas' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterRequestStatus}
+                    onChange={(value) => setFilterRequestStatus(value)}
                     className="w-44"
                   />
                 )}
@@ -772,8 +776,8 @@ export function LGPDPage() {
                 { value: 'portability', label: 'Portabilidade' },
                 { value: 'objection', label: 'Oposição ao Tratamento' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newRequestType}
+              onChange={(value) => setNewRequestType(value)}
               placeholder="Selecione o tipo..."
             />
             <div className="space-y-2">

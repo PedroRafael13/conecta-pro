@@ -420,6 +420,10 @@ export function SEFAZPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showCorrectionModal, setShowCorrectionModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterEventType, setFilterEventType] = useState('all');
+  const [configAmbiente, setConfigAmbiente] = useState('production');
+  const [newNFeRecipient, setNewNFeRecipient] = useState('');
+  const [newNFeNature, setNewNFeNature] = useState('venda');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <FileText className="h-4 w-4" /> },
@@ -1096,8 +1100,8 @@ export function SEFAZPage() {
                   { value: 'cancellation', label: 'Cancelamento' },
                   { value: 'correction', label: 'Carta de Correção' }
                 ]}
-                value="all"
-                onChange={() => {}}
+                value={filterEventType}
+                onChange={(value) => setFilterEventType(value)}
                 className="w-48"
               />
             </div>
@@ -1202,8 +1206,8 @@ export function SEFAZPage() {
                       { value: 'production', label: 'Produção' },
                       { value: 'homologation', label: 'Homologação' }
                     ]}
-                    value="production"
-                    onChange={() => {}}
+                    value={configAmbiente}
+                    onChange={(value) => setConfigAmbiente(value)}
                   />
                 </div>
                 <Button>Salvar Configurações</Button>
@@ -1486,8 +1490,8 @@ export function SEFAZPage() {
                   value: r.id,
                   label: `${r.name} - ${r.document}`
                 }))}
-                value=""
-                onChange={() => {}}
+                value={newNFeRecipient}
+                onChange={(value) => setNewNFeRecipient(value)}
               />
             </div>
             <div>
@@ -1501,8 +1505,8 @@ export function SEFAZPage() {
                   { value: 'devolucao', label: 'Devolução de mercadoria' },
                   { value: 'remessa', label: 'Remessa para demonstração' }
                 ]}
-                value="venda"
-                onChange={() => {}}
+                value={newNFeNature}
+                onChange={(value) => setNewNFeNature(value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

@@ -275,6 +275,8 @@ export function BidContractsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newContractClient, setNewContractClient] = useState('');
+  const [newContractCategory, setNewContractCategory] = useState('');
 
   const filteredContracts = contracts.filter((contract) => {
     const matchesSearch =
@@ -434,8 +436,8 @@ export function BidContractsPage() {
                 { value: '2', label: 'Hospital Municipal' },
                 { value: '3', label: 'Secretaria de Educação' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newContractClient}
+              onChange={(value) => setNewContractClient(value)}
               placeholder="Selecione..."
             />
             <Input label="Descrição do Objeto" placeholder="Descrição detalhada do serviço" />
@@ -449,8 +451,8 @@ export function BidContractsPage() {
                   { value: 'facilities', label: 'Facilities' },
                   { value: 'outros', label: 'Outros' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newContractCategory}
+                onChange={(value) => setNewContractCategory(value)}
                 placeholder="Selecione..."
               />
               <Input label="Valor do Contrato" type="number" placeholder="0,00" leftIcon={<DollarSign className="w-4 h-4" />} />

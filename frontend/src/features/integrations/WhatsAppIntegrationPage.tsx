@@ -523,6 +523,10 @@ export function WhatsAppIntegrationPage() {
   const [showAddContactModal, setShowAddContactModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [messageInput, setMessageInput] = useState('');
+  const [newTemplateCategory, setNewTemplateCategory] = useState('utility');
+  const [newTemplateLanguage, setNewTemplateLanguage] = useState('pt_BR');
+  const [newCampaignTemplate, setNewCampaignTemplate] = useState('');
+  const [newCampaignAudience, setNewCampaignAudience] = useState('all');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <MessageCircle className="h-4 w-4" /> },
@@ -1873,8 +1877,8 @@ export function WhatsAppIntegrationPage() {
                     { value: 'marketing', label: 'Marketing' },
                     { value: 'authentication', label: 'Autenticação' }
                   ]}
-                  value="utility"
-                  onChange={() => {}}
+                  value={newTemplateCategory}
+                  onChange={(value) => setNewTemplateCategory(value)}
                 />
               </div>
               <div>
@@ -1887,8 +1891,8 @@ export function WhatsAppIntegrationPage() {
                     { value: 'en', label: 'English' },
                     { value: 'es', label: 'Español' }
                   ]}
-                  value="pt_BR"
-                  onChange={() => {}}
+                  value={newTemplateLanguage}
+                  onChange={(value) => setNewTemplateLanguage(value)}
                 />
               </div>
             </div>
@@ -1935,8 +1939,8 @@ export function WhatsAppIntegrationPage() {
                   value: t.id,
                   label: t.name
                 }))}
-                value=""
-                onChange={() => {}}
+                value={newCampaignTemplate}
+                onChange={(value) => setNewCampaignTemplate(value)}
               />
             </div>
             <div>
@@ -1950,8 +1954,8 @@ export function WhatsAppIntegrationPage() {
                   { value: 'active', label: 'Contatos ativos' },
                   { value: 'custom', label: 'Seleção personalizada' }
                 ]}
-                value="all"
-                onChange={() => {}}
+                value={newCampaignAudience}
+                onChange={(value) => setNewCampaignAudience(value)}
               />
             </div>
             <div>

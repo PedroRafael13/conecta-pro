@@ -318,6 +318,9 @@ export function SSHGatewayPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [terminalInput, setTerminalInput] = useState('');
+  const [selectedConnection, setSelectedConnection] = useState('');
+  const [newDeviceType, setNewDeviceType] = useState('');
+  const [newAuthMethod, setNewAuthMethod] = useState('');
 
   // Stats
   const activeConnections = connections.filter((c) => c.status === 'connected' || c.status === 'busy').length;
@@ -473,8 +476,8 @@ export function SSHGatewayPage() {
                 </div>
                 <Select
                   options={connections.filter((c) => c.status === 'connected').map((c) => ({ value: c.id, label: c.name }))}
-                  value=""
-                  onChange={() => {}}
+                  value={selectedConnection}
+                  onChange={(value) => setSelectedConnection(value)}
                   placeholder="Selecione uma conexão..."
                   className="w-64"
                 />
@@ -533,8 +536,8 @@ export function SSHGatewayPage() {
                 { value: 'server', label: 'Servidor' },
                 { value: 'other', label: 'Outro' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newDeviceType}
+              onChange={(value) => setNewDeviceType(value)}
               placeholder="Selecione..."
             />
             <div className="grid grid-cols-2 gap-4">
@@ -548,8 +551,8 @@ export function SSHGatewayPage() {
                 { value: 'key', label: 'Chave SSH (Recomendado)' },
                 { value: 'password', label: 'Senha' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newAuthMethod}
+              onChange={(value) => setNewAuthMethod(value)}
               placeholder="Selecione..."
             />
             <Textarea label="Chave SSH Privada" placeholder="-----BEGIN RSA PRIVATE KEY-----" rows={4} />

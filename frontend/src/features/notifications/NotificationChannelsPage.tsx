@@ -193,6 +193,8 @@ const statusConfig = {
 export function NotificationChannelsPage() {
   const [selectedChannel, setSelectedChannel] = useState<NotificationChannel | null>(null);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [newChannelType, setNewChannelType] = useState('');
+  const [newProvider, setNewProvider] = useState('');
 
   // Stats
   const totalSent = channels.reduce((acc, c) => acc + c.stats.sent, 0);
@@ -397,8 +399,8 @@ export function NotificationChannelsPage() {
                   { value: 'whatsapp', label: 'WhatsApp' },
                   { value: 'push', label: 'Push Notification' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newChannelType}
+                onChange={(value) => setNewChannelType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -411,8 +413,8 @@ export function NotificationChannelsPage() {
                   { value: 'meta', label: 'Meta Business API' },
                   { value: 'firebase', label: 'Firebase Cloud Messaging' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newProvider}
+                onChange={(value) => setNewProvider(value)}
                 placeholder="Selecione..."
               />
             </div>

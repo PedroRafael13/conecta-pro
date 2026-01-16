@@ -201,6 +201,8 @@ export function TimeBankPage() {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [showCompensationModal, setShowCompensationModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeTimeBank | null>(null);
+  const [newEmployeeId, setNewEmployeeId] = useState('');
+  const [newTransactionType, setNewTransactionType] = useState('');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <Clock className="h-4 w-4" /> },
@@ -654,8 +656,8 @@ export function TimeBankPage() {
           <div className="space-y-4">
             {!selectedEmployee && (
               <Select
-                value=""
-                onChange={() => {}}
+                value={newEmployeeId}
+                onChange={(value) => setNewEmployeeId(value)}
                 options={[
                   { value: '', label: 'Selecione o colaborador' },
                   ...mockEmployees.map(e => ({ value: e.id, label: e.employeeName }))
@@ -680,8 +682,8 @@ export function TimeBankPage() {
               </div>
             )}
             <Select
-              value=""
-              onChange={() => {}}
+              value={newTransactionType}
+              onChange={(value) => setNewTransactionType(value)}
               options={[
                 { value: '', label: 'Tipo de movimentação' },
                 { value: 'credit', label: 'Crédito (hora extra)' },

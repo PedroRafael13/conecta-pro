@@ -444,6 +444,10 @@ export function ServicesPage() {
   const [selectedTab, setSelectedTab] = useState('services');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [newCategory, setNewCategory] = useState('');
+  const [newUnit, setNewUnit] = useState('');
 
   // Stats
   const totalServices = services.filter(s => s.status === 'active').length;
@@ -583,8 +587,8 @@ export function ServicesPage() {
                         { value: 'facilities', label: 'Facilities' },
                         { value: 'consulting', label: 'Consultoria' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterCategory}
+                      onChange={(value) => setFilterCategory(value)}
                       className="w-44"
                     />
                     <Select
@@ -594,8 +598,8 @@ export function ServicesPage() {
                         { value: 'inactive', label: 'Inativos' },
                         { value: 'draft', label: 'Rascunho' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterStatus}
+                      onChange={(value) => setFilterStatus(value)}
                       className="w-40"
                     />
                   </>
@@ -661,8 +665,8 @@ export function ServicesPage() {
                   { value: 'facilities', label: 'Facilities' },
                   { value: 'consulting', label: 'Consultoria' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newCategory}
+                onChange={(value) => setNewCategory(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -674,8 +678,8 @@ export function ServicesPage() {
                   { value: 'event', label: 'Por Evento' },
                   { value: 'project', label: 'Por Projeto' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newUnit}
+                onChange={(value) => setNewUnit(value)}
                 placeholder="Selecione..."
               />
             </div>

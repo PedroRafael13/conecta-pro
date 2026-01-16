@@ -311,6 +311,9 @@ export function SecurityAuditPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedAudit, setSelectedAudit] = useState<SecurityAudit | null>(null);
+  const [newClient, setNewClient] = useState('');
+  const [newAuditType, setNewAuditType] = useState('');
+  const [newAuditor, setNewAuditor] = useState('');
 
   const filteredAudits = audits.filter((audit) => {
     const matchesSearch = audit.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -495,8 +498,8 @@ export function SecurityAuditPage() {
                   { value: '3', label: 'Hospital São Lucas' },
                   { value: '4', label: 'Edifício Corporate Tower' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newClient}
+                onChange={(value) => setNewClient(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -507,8 +510,8 @@ export function SecurityAuditPage() {
                   { value: 'incident', label: 'Incidente' },
                   { value: 'compliance', label: 'Compliance' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newAuditType}
+                onChange={(value) => setNewAuditType(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -521,8 +524,8 @@ export function SecurityAuditPage() {
                   { value: '3', label: 'Ana Paula' },
                   { value: '4', label: 'Pedro Lima' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newAuditor}
+                onChange={(value) => setNewAuditor(value)}
                 placeholder="Selecione..."
               />
               <Input label="Data Agendada" type="date" required />

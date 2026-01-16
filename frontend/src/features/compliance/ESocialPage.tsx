@@ -412,6 +412,9 @@ export function ESocialPage() {
   const [showNewBatchModal, setShowNewBatchModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterEventCode, setFilterEventCode] = useState('all');
+  const [newEventType, setNewEventType] = useState('');
+  const [newEventEmployee, setNewEventEmployee] = useState('');
+  const [newBatchType, setNewBatchType] = useState('periodic');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <FileCheck className="h-4 w-4" /> },
@@ -1536,8 +1539,8 @@ export function ESocialPage() {
                   value: code,
                   label: `${code} - ${info.name}`
                 }))}
-                value=""
-                onChange={() => {}}
+                value={newEventType}
+                onChange={(value) => setNewEventType(value)}
               />
             </div>
             <div>
@@ -1552,8 +1555,8 @@ export function ESocialPage() {
                     label: `${e.name} - ${e.cpf}`
                   }))
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newEventEmployee}
+                onChange={(value) => setNewEventEmployee(value)}
               />
             </div>
             <div>
@@ -1596,8 +1599,8 @@ export function ESocialPage() {
                   { value: 'non_periodic', label: 'Eventos Não Periódicos' },
                   { value: 'table', label: 'Eventos de Tabelas' }
                 ]}
-                value="periodic"
-                onChange={() => {}}
+                value={newBatchType}
+                onChange={(value) => setNewBatchType(value)}
               />
             </div>
             <div>

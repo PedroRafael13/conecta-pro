@@ -289,6 +289,8 @@ export function RoutesPage() {
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<PlannedRoute | null>(null);
+  const [newVehicle, setNewVehicle] = useState('');
+  const [newResponsible, setNewResponsible] = useState('');
 
   // Stats
   const todayRoutes = routes.filter(r => r.date === '2026-01-15').length;
@@ -534,8 +536,8 @@ export function RoutesPage() {
                   { value: 'van', label: 'Van' },
                   { value: 'truck', label: 'Caminhão' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newVehicle}
+                onChange={(value) => setNewVehicle(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -547,8 +549,8 @@ export function RoutesPage() {
                 { value: '3', label: 'Roberto Silva' },
                 { value: '4', label: 'Pedro Santos' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newResponsible}
+              onChange={(value) => setNewResponsible(value)}
               placeholder="Selecione..."
             />
             <div className="pt-4 border-t border-border-subtle">

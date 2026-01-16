@@ -316,6 +316,9 @@ export default function IntelligentNotificationsPage() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [newCampaignType, setNewCampaignType] = useState('');
+  const [newChannel, setNewChannel] = useState('');
+  const [newSegments, setNewSegments] = useState('');
 
   // Stats
   const stats = {
@@ -796,8 +799,8 @@ export default function IntelligentNotificationsPage() {
                   { value: 'personalized', label: 'Personalizado' },
                   { value: 'timing', label: 'Horário Ótimo' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newCampaignType}
+                onChange={(value) => setNewCampaignType(value)}
                 required
               />
               <Select
@@ -809,8 +812,8 @@ export default function IntelligentNotificationsPage() {
                   { value: 'whatsapp', label: 'WhatsApp' },
                   { value: 'multi', label: 'Multicanal' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newChannel}
+                onChange={(value) => setNewChannel(value)}
                 required
               />
             </div>
@@ -823,8 +826,8 @@ export default function IntelligentNotificationsPage() {
                 { value: 'high_value', label: 'Alto Valor' },
                 { value: 'churn_risk_high', label: 'Risco de Churn' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newSegments}
+              onChange={(value) => setNewSegments(value)}
               placeholder="Selecione os segmentos"
             />
             <div className="p-4 bg-accent-primary/10 border border-accent-primary/30 rounded-lg">

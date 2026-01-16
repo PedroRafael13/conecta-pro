@@ -206,6 +206,9 @@ export function DailyWorkersPage() {
   const [showNewWorkerModal, setShowNewWorkerModal] = useState(false);
   const [showAllocateModal, setShowAllocateModal] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<DailyWorker | null>(null);
+  const [filterAllocationStatus, setFilterAllocationStatus] = useState('');
+  const [newShift, setNewShift] = useState('');
+  const [newClient, setNewClient] = useState('');
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <UserPlus className="h-4 w-4" /> },
@@ -632,8 +635,8 @@ export function DailyWorkersPage() {
               </div>
               <Input type="date" className="w-40" />
               <Select
-                value=""
-                onChange={() => {}}
+                value={filterAllocationStatus}
+                onChange={(value) => setFilterAllocationStatus(value)}
                 options={[
                   { value: '', label: 'Todos os status' },
                   { value: 'scheduled', label: 'Agendados' },
@@ -758,8 +761,8 @@ export function DailyWorkersPage() {
             <div className="grid grid-cols-2 gap-4">
               <Input label="Data" type="date" />
               <Select
-                value=""
-                onChange={() => {}}
+                value={newShift}
+                onChange={(value) => setNewShift(value)}
                 options={[
                   { value: '', label: 'Selecione o turno' },
                   { value: 'morning', label: 'Matutino' },
@@ -770,8 +773,8 @@ export function DailyWorkersPage() {
               />
             </div>
             <Select
-              value=""
-              onChange={() => {}}
+              value={newClient}
+              onChange={(value) => setNewClient(value)}
               options={[
                 { value: '', label: 'Selecione o cliente' },
                 { value: '1', label: 'Condomínio Verde' },

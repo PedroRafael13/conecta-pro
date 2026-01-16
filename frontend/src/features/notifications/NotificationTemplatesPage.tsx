@@ -296,6 +296,8 @@ export function NotificationTemplatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<NotificationTemplate | null>(null);
+  const [newChannel, setNewChannel] = useState('');
+  const [newCategory, setNewCategory] = useState('');
 
   const filteredTemplates = templates.filter((template) => {
     const matchesSearch =
@@ -462,8 +464,8 @@ export function NotificationTemplatesPage() {
                   { value: 'push', label: 'Push Notification' },
                   { value: 'all', label: 'Todos os Canais' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newChannel}
+                onChange={(value) => setNewChannel(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -476,8 +478,8 @@ export function NotificationTemplatesPage() {
                   { value: 'marketing', label: 'Marketing' },
                   { value: 'system', label: 'Sistema' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newCategory}
+                onChange={(value) => setNewCategory(value)}
                 placeholder="Selecione..."
               />
             </div>

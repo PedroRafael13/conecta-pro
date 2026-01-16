@@ -321,6 +321,7 @@ export function DataMaskingPage() {
     email: '',
     phone: '',
   });
+  const [newFieldType, setNewFieldType] = useState('');
 
   const filteredRules = maskingRules.filter((rule) =>
     rule.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -588,8 +589,8 @@ export function DataMaskingPage() {
                 { value: 'address', label: 'Endereço' },
                 { value: 'custom', label: 'Personalizado' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newFieldType}
+              onChange={(value) => setNewFieldType(value)}
               placeholder="Selecione..."
             />
 
