@@ -254,6 +254,11 @@ export function VisitsPage() {
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Form state for new visit modal
+  const [newVisitType, setNewVisitType] = useState('');
+  const [newVisitClient, setNewVisitClient] = useState('');
+  const [newVisitResponsible, setNewVisitResponsible] = useState('');
+
   const filteredVisits = visits.filter((visit) => {
     const matchesSearch =
       visit.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -433,8 +438,8 @@ export function VisitsPage() {
                   { value: '3', label: 'Tech Park Empresarial' },
                   { value: '4', label: 'Condomínio Aurora' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newVisitClient}
+                onChange={(value) => setNewVisitClient(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -445,8 +450,8 @@ export function VisitsPage() {
                   { value: 'commercial', label: 'Comercial' },
                   { value: 'emergency', label: 'Emergência' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newVisitType}
+                onChange={(value) => setNewVisitType(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -467,8 +472,8 @@ export function VisitsPage() {
                 { value: '3', label: 'Roberto Silva' },
                 { value: '4', label: 'Pedro Santos' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newVisitResponsible}
+              onChange={(value) => setNewVisitResponsible(value)}
               placeholder="Selecione..."
             />
             <Input label="Observações" placeholder="Notas sobre a visita" />

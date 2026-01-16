@@ -333,6 +333,11 @@ export function BidDocumentsPage() {
   const [selectedDocument, setSelectedDocument] = useState<BidDocument | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Form state for upload modal
+  const [newDocType, setNewDocType] = useState('');
+  const [newDocCategory, setNewDocCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+
   // Stats
   const validCount = documents.filter(d => d.status === 'valid').length;
   const expiringCount = documents.filter(d => d.status === 'expiring').length;
@@ -479,8 +484,8 @@ export function BidDocumentsPage() {
                     { value: 'qualificacao_tecnica', label: 'Qualificação Técnica' },
                     { value: 'qualificacao_economica', label: 'Qualificação Econômica' },
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={filterCategory}
+                  onChange={(value) => setFilterCategory(value)}
                   className="w-48"
                 />
               </div>
@@ -534,8 +539,8 @@ export function BidDocumentsPage() {
                   { value: 'procuracao', label: 'Procuração' },
                   { value: 'outros', label: 'Outros' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newDocType}
+                onChange={(value) => setNewDocType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -547,8 +552,8 @@ export function BidDocumentsPage() {
                   { value: 'qualificacao_economica', label: 'Qualificação Econômica' },
                   { value: 'outros', label: 'Outros' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newDocCategory}
+                onChange={(value) => setNewDocCategory(value)}
                 placeholder="Selecione..."
               />
             </div>

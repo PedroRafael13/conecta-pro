@@ -303,6 +303,8 @@ export function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const totalEmployees = employees.length;
@@ -436,7 +438,7 @@ export function EmployeesPage() {
                 columns={columns}
                 data={filteredEmployees}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Employee clicked:', row)}
+                onRowClick={(row) => { setSelectedEmployee(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -516,6 +518,83 @@ export function EmployeesPage() {
               <Input label="Salário" type="number" placeholder="0,00" />
             </div>
           </div>
+        </Modal>
+
+        {/* Employee Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title={selectedEmployee?.name || 'Detalhes do Funcionário'}
+          size="lg"
+        >
+          {selectedEmployee && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <Avatar
+                  src={selectedEmployee.photo || undefined}
+                  name={selectedEmployee.name}
+                  size="xl"
+                />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{selectedEmployee.name}</h3>
+                  <p className="text-text-secondary">{selectedEmployee.position}</p>
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant={selectedEmployee.status === 'active' ? 'success' : selectedEmployee.status === 'vacation' ? 'warning' : 'secondary'}>
+                      {selectedEmployee.status === 'active' ? 'Ativo' : selectedEmployee.status === 'vacation' ? 'Férias' : selectedEmployee.status === 'leave' ? 'Afastado' : 'Inativo'}
+                    </Badge>
+                    <Badge variant="info">{selectedEmployee.type.toUpperCase()}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">E-mail</p>
+                  <p className="font-semibold flex items-center gap-2"><Mail className="w-4 h-4" /> {selectedEmployee.email}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Telefone</p>
+                  <p className="font-semibold flex items-center gap-2"><Phone className="w-4 h-4" /> {selectedEmployee.phone}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">CPF</p>
+                  <p className="font-semibold">{selectedEmployee.cpf}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Departamento</p>
+                  <p className="font-semibold capitalize">{selectedEmployee.department}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Data de Admissão</p>
+                  <p className="font-semibold">{new Date(selectedEmployee.hireDate).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Salário</p>
+                  <p className="font-semibold">R$ {selectedEmployee.salary.toLocaleString('pt-BR')}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Jornada</p>
+                  <p className="font-semibold">{selectedEmployee.workSchedule}</p>
+                </div>
+              </div>
+
+              {selectedEmployee.allocatedTo && (
+                <div className="p-4 bg-accent-primary/10 border border-accent-primary/30 rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Alocado em</p>
+                  <p className="font-semibold flex items-center gap-2"><Building2 className="w-4 h-4" /> {selectedEmployee.allocatedTo}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border-subtle">
+                <Button variant="outline" onClick={() => setShowDetailModal(false)}>Fechar</Button>
+                <Button variant="outline" leftIcon={<Download className="w-4 h-4" />}>Exportar</Button>
+                <Button variant="primary" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

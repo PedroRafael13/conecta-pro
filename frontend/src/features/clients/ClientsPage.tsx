@@ -369,6 +369,8 @@ export function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   // Stats
   const activeCount = clients.filter(c => c.status === 'active').length;
@@ -537,7 +539,7 @@ export function ClientsPage() {
                 columns={columns}
                 data={filteredClients}
                 keyExtractor={(row) => row.id}
-                onRowClick={(row) => console.log('Client clicked:', row)}
+                onRowClick={(row) => { setSelectedClient(row); setShowDetailModal(true); }}
               />
             </CardBody>
           </Card>
@@ -628,6 +630,98 @@ export function ClientsPage() {
               </div>
             </div>
           </div>
+        </Modal>
+
+        {/* Client Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title={selectedClient?.name || 'Detalhes do Cliente'}
+          size="lg"
+        >
+          {selectedClient && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-xl bg-accent-primary/20 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-accent-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{selectedClient.name}</h3>
+                  {selectedClient.tradeName && <p className="text-text-secondary">{selectedClient.tradeName}</p>}
+                  <div className="flex gap-2 mt-2">
+                    <Badge variant={selectedClient.status === 'active' ? 'success' : selectedClient.status === 'prospect' ? 'info' : 'secondary'}>
+                      {selectedClient.status === 'active' ? 'Ativo' : selectedClient.status === 'prospect' ? 'Prospect' : 'Inativo'}
+                    </Badge>
+                    <Badge variant="secondary">{selectedClient.segment}</Badge>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-text-muted">Health Score</p>
+                  <p className={`text-2xl font-bold ${selectedClient.healthScore >= 80 ? 'text-success' : selectedClient.healthScore >= 60 ? 'text-warning' : 'text-danger'}`}>
+                    {selectedClient.healthScore}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">{selectedClient.type === 'pj' ? 'CNPJ' : 'CPF'}</p>
+                  <p className="font-semibold">{selectedClient.document}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Valor do Contrato</p>
+                  <p className="font-semibold text-success">R$ {selectedClient.contractValue.toLocaleString('pt-BR')}/mês</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-2">Endereço</p>
+                <p className="font-semibold flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {selectedClient.address.street}, {selectedClient.address.number} - {selectedClient.address.city}/{selectedClient.address.state}
+                </p>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-3">Contatos</p>
+                <div className="space-y-3">
+                  {selectedClient.contacts.map((contact, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-bg-elevated rounded-lg">
+                      <div>
+                        <p className="font-medium">{contact.name}</p>
+                        <p className="text-sm text-text-secondary">{contact.role}</p>
+                      </div>
+                      <div className="text-right text-sm">
+                        <p className="flex items-center gap-1"><Mail className="w-3 h-3" /> {contact.email}</p>
+                        <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {contact.phone}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <p className="text-2xl font-bold">{selectedClient.servicesCount}</p>
+                  <p className="text-sm text-text-muted">Serviços Ativos</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <p className="text-sm font-medium">{new Date(selectedClient.contractStart).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-sm text-text-muted">Início Contrato</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg text-center">
+                  <p className="text-sm font-medium">{new Date(selectedClient.contractEnd).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-sm text-text-muted">Fim Contrato</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-border-subtle">
+                <Button variant="outline" onClick={() => setShowDetailModal(false)}>Fechar</Button>
+                <Button variant="outline" leftIcon={<FileText className="w-4 h-4" />}>Ver Contrato</Button>
+                <Button variant="primary" leftIcon={<Edit className="w-4 h-4" />}>Editar</Button>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

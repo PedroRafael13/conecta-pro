@@ -330,6 +330,12 @@ export function OccurrencesPage() {
   const [selectedOccurrence, setSelectedOccurrence] = useState<Occurrence | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Form state for new occurrence modal
+  const [newOccurrenceType, setNewOccurrenceType] = useState('');
+  const [newOccurrenceSeverity, setNewOccurrenceSeverity] = useState('');
+  const [newOccurrenceClient, setNewOccurrenceClient] = useState('');
+  const [newOccurrenceAssignee, setNewOccurrenceAssignee] = useState('');
+
   // Stats
   const openCount = occurrences.filter(o => o.status === 'open').length;
   const inProgressCount = occurrences.filter(o => o.status === 'in_progress').length;
@@ -514,8 +520,8 @@ export function OccurrencesPage() {
                   { value: 'maintenance', label: 'Manutenção' },
                   { value: 'other', label: 'Outro' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newOccurrenceType}
+                onChange={(value) => setNewOccurrenceType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -526,8 +532,8 @@ export function OccurrencesPage() {
                   { value: 'high', label: 'Alta' },
                   { value: 'critical', label: 'Crítica' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newOccurrenceSeverity}
+                onChange={(value) => setNewOccurrenceSeverity(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -542,8 +548,8 @@ export function OccurrencesPage() {
                   { value: '3', label: 'Tech Park Empresarial' },
                   { value: '4', label: 'Condomínio Aurora' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newOccurrenceClient}
+                onChange={(value) => setNewOccurrenceClient(value)}
                 placeholder="Selecione..."
               />
               <Input label="Local Específico" placeholder="Ex: Portaria Principal" />
@@ -556,8 +562,8 @@ export function OccurrencesPage() {
                 { value: '3', label: 'Roberto Silva' },
                 { value: '4', label: 'Pedro Santos' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newOccurrenceAssignee}
+              onChange={(value) => setNewOccurrenceAssignee(value)}
               placeholder="Selecione um responsável (opcional)"
             />
             <div className="pt-4 border-t border-border-subtle">

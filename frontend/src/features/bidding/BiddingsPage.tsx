@@ -345,6 +345,11 @@ export function BiddingsPage() {
   const [selectedBidding, setSelectedBidding] = useState<Bidding | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Form state for new bidding modal
+  const [newBiddingModality, setNewBiddingModality] = useState('');
+  const [newBiddingSphere, setNewBiddingSphere] = useState('');
+  const [newBiddingResponsible, setNewBiddingResponsible] = useState('');
+
   // Stats
   const openCount = biddings.filter(b =>
     ['identificado', 'em_analise', 'proposta_elaboracao'].includes(b.status)
@@ -540,8 +545,8 @@ export function BiddingsPage() {
                   { value: 'dispensa', label: 'Dispensa' },
                   { value: 'inexigibilidade', label: 'Inexigibilidade' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newBiddingModality}
+                onChange={(value) => setNewBiddingModality(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -556,8 +561,8 @@ export function BiddingsPage() {
                   { value: 'municipal', label: 'Municipal' },
                   { value: 'autarquia', label: 'Autarquia' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newBiddingSphere}
+                onChange={(value) => setNewBiddingSphere(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -578,8 +583,8 @@ export function BiddingsPage() {
                 { value: '3', label: 'Roberto Silva' },
                 { value: '4', label: 'Pedro Santos' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newBiddingResponsible}
+              onChange={(value) => setNewBiddingResponsible(value)}
               placeholder="Selecione..."
             />
           </div>

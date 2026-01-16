@@ -243,6 +243,8 @@ export function GEDPage() {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [selectedFolder, setSelectedFolder] = useState('all');
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
@@ -427,7 +429,7 @@ export function GEDPage() {
                   columns={columns}
                   data={filteredDocuments}
                   keyExtractor={(row) => row.id}
-                  onRowClick={(row) => console.log('Document clicked:', row)}
+                  onRowClick={(row) => { setSelectedDocument(row); setShowDetailModal(true); }}
                 />
               </CardBody>
             </Card>
@@ -502,6 +504,73 @@ export function GEDPage() {
               <Input label="Tags" placeholder="Separadas por vírgula" />
             </div>
           </div>
+        </Modal>
+
+        {/* Document Detail Modal */}
+        <Modal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          title={selectedDocument?.name || 'Detalhes do Documento'}
+          size="lg"
+        >
+          {selectedDocument && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-xl bg-accent-primary/20 flex items-center justify-center">
+                  {selectedDocument.type === 'pdf' && <FileText className="w-8 h-8 text-danger" />}
+                  {selectedDocument.type === 'doc' && <FileText className="w-8 h-8 text-info" />}
+                  {selectedDocument.type === 'xls' && <FileSpreadsheet className="w-8 h-8 text-success" />}
+                  {selectedDocument.type === 'img' && <Image className="w-8 h-8 text-warning" />}
+                  {selectedDocument.type === 'zip' && <FileArchive className="w-8 h-8 text-secondary" />}
+                  {selectedDocument.type === 'folder' && <Folder className="w-8 h-8 text-accent-primary" />}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold">{selectedDocument.name}</h3>
+                  <p className="text-text-secondary">{selectedDocument.folder}</p>
+                  <div className="flex gap-2 mt-2">
+                    {selectedDocument.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" size="sm">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Tamanho</p>
+                  <p className="font-semibold">{(selectedDocument.size / 1024 / 1024).toFixed(2)} MB</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Categoria</p>
+                  <p className="font-semibold">{selectedDocument.category}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Enviado por</p>
+                  <p className="font-semibold">{selectedDocument.uploadedBy}</p>
+                </div>
+                <div className="p-4 bg-bg-tertiary rounded-lg">
+                  <p className="text-sm text-text-muted mb-1">Data de Upload</p>
+                  <p className="font-semibold">{new Date(selectedDocument.uploadedAt).toLocaleDateString('pt-BR')}</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-bg-tertiary rounded-lg">
+                <p className="text-sm text-text-muted mb-1">Última Modificação</p>
+                <p className="font-semibold">{new Date(selectedDocument.lastModified).toLocaleDateString('pt-BR')}</p>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-border-subtle">
+                <Badge variant={selectedDocument.shared ? 'success' : 'secondary'}>
+                  {selectedDocument.shared ? 'Compartilhado' : 'Privado'}
+                </Badge>
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setShowDetailModal(false)}>Fechar</Button>
+                  <Button variant="outline" leftIcon={<Share2 className="w-4 h-4" />}>Compartilhar</Button>
+                  <Button variant="primary" leftIcon={<Download className="w-4 h-4" />}>Download</Button>
+                </div>
+              </div>
+            </div>
+          )}
         </Modal>
       </div>
     </MainLayout>

@@ -297,6 +297,12 @@ export function ServiceOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Form state for new order modal
+  const [newOrderType, setNewOrderType] = useState('');
+  const [newOrderPriority, setNewOrderPriority] = useState('');
+  const [newOrderClient, setNewOrderClient] = useState('');
+  const [newOrderTechnician, setNewOrderTechnician] = useState('');
+
   const filteredOrders = serviceOrders.filter((order) => {
     const matchesSearch =
       order.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -448,8 +454,8 @@ export function ServiceOrdersPage() {
                   { value: '3', label: 'Tech Park Empresarial' },
                   { value: '4', label: 'Condomínio Aurora' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newOrderClient}
+                onChange={(value) => setNewOrderClient(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -461,8 +467,8 @@ export function ServiceOrdersPage() {
                   { value: 'inspection', label: 'Vistoria' },
                   { value: 'removal', label: 'Remoção' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newOrderType}
+                onChange={(value) => setNewOrderType(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -476,8 +482,8 @@ export function ServiceOrdersPage() {
                   { value: 'high', label: 'Alta' },
                   { value: 'urgent', label: 'Urgente' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newOrderPriority}
+                onChange={(value) => setNewOrderPriority(value)}
                 placeholder="Selecione..."
               />
               <Input label="Data" type="date" />
@@ -491,8 +497,8 @@ export function ServiceOrdersPage() {
                 { value: '3', label: 'Ana Paula' },
                 { value: '4', label: 'Pedro Santos' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newOrderTechnician}
+              onChange={(value) => setNewOrderTechnician(value)}
               placeholder="Selecione (opcional)"
             />
             <Input label="Equipamentos" placeholder="Liste os equipamentos necessários" />

@@ -53,7 +53,7 @@ export const FINANCIAL_QUERY_KEYS = {
   receivables: {
     all: ['financial', 'receivables'] as const,
     lists: () => [...FINANCIAL_QUERY_KEYS.receivables.all, 'list'] as const,
-    list: (filters: any) => [...FINANCIAL_QUERY_KEYS.receivables.lists(), filters] as const,
+    list: (filters?: any) => [...FINANCIAL_QUERY_KEYS.receivables.lists(), filters] as const,
     details: () => [...FINANCIAL_QUERY_KEYS.receivables.all, 'detail'] as const,
     detail: (id: string) => [...FINANCIAL_QUERY_KEYS.receivables.details(), id] as const,
     stats: () => [...FINANCIAL_QUERY_KEYS.receivables.all, 'stats'] as const,
@@ -63,7 +63,7 @@ export const FINANCIAL_QUERY_KEYS = {
   payables: {
     all: ['financial', 'payables'] as const,
     lists: () => [...FINANCIAL_QUERY_KEYS.payables.all, 'list'] as const,
-    list: (filters: any) => [...FINANCIAL_QUERY_KEYS.payables.lists(), filters] as const,
+    list: (filters?: any) => [...FINANCIAL_QUERY_KEYS.payables.lists(), filters] as const,
     details: () => [...FINANCIAL_QUERY_KEYS.payables.all, 'detail'] as const,
     detail: (id: string) => [...FINANCIAL_QUERY_KEYS.payables.details(), id] as const,
     stats: () => [...FINANCIAL_QUERY_KEYS.payables.all, 'stats'] as const,
@@ -73,7 +73,7 @@ export const FINANCIAL_QUERY_KEYS = {
   suppliers: {
     all: ['financial', 'suppliers'] as const,
     lists: () => [...FINANCIAL_QUERY_KEYS.suppliers.all, 'list'] as const,
-    list: (filters: any) => [...FINANCIAL_QUERY_KEYS.suppliers.lists(), filters] as const,
+    list: (filters?: any) => [...FINANCIAL_QUERY_KEYS.suppliers.lists(), filters] as const,
     details: () => [...FINANCIAL_QUERY_KEYS.suppliers.all, 'detail'] as const,
     detail: (id: string) => [...FINANCIAL_QUERY_KEYS.suppliers.details(), id] as const,
     stats: () => [...FINANCIAL_QUERY_KEYS.suppliers.all, 'stats'] as const,
@@ -81,14 +81,14 @@ export const FINANCIAL_QUERY_KEYS = {
   customers: {
     all: ['financial', 'customers'] as const,
     lists: () => [...FINANCIAL_QUERY_KEYS.customers.all, 'list'] as const,
-    list: (filters: any) => [...FINANCIAL_QUERY_KEYS.customers.lists(), filters] as const,
+    list: (filters?: any) => [...FINANCIAL_QUERY_KEYS.customers.lists(), filters] as const,
     details: () => [...FINANCIAL_QUERY_KEYS.customers.all, 'detail'] as const,
     detail: (id: string) => [...FINANCIAL_QUERY_KEYS.customers.details(), id] as const,
   },
   billingRules: {
     all: ['financial', 'billing-rules'] as const,
     lists: () => [...FINANCIAL_QUERY_KEYS.billingRules.all, 'list'] as const,
-    list: (filters: any) => [...FINANCIAL_QUERY_KEYS.billingRules.lists(), filters] as const,
+    list: (filters?: any) => [...FINANCIAL_QUERY_KEYS.billingRules.lists(), filters] as const,
     details: () => [...FINANCIAL_QUERY_KEYS.billingRules.all, 'detail'] as const,
     detail: (id: string) => [...FINANCIAL_QUERY_KEYS.billingRules.details(), id] as const,
   },
@@ -102,7 +102,7 @@ export const FINANCIAL_QUERY_KEYS = {
   bankAccounts: {
     all: ['financial', 'bank-accounts'] as const,
     lists: () => [...FINANCIAL_QUERY_KEYS.bankAccounts.all, 'list'] as const,
-    list: (filters: any) => [...FINANCIAL_QUERY_KEYS.bankAccounts.lists(), filters] as const,
+    list: (filters?: any) => [...FINANCIAL_QUERY_KEYS.bankAccounts.lists(), filters] as const,
     details: () => [...FINANCIAL_QUERY_KEYS.bankAccounts.all, 'detail'] as const,
     detail: (id: string) => [...FINANCIAL_QUERY_KEYS.bankAccounts.details(), id] as const,
     stats: () => [...FINANCIAL_QUERY_KEYS.bankAccounts.all, 'stats'] as const,
@@ -111,7 +111,7 @@ export const FINANCIAL_QUERY_KEYS = {
   bankTransactions: {
     all: ['financial', 'bank-transactions'] as const,
     lists: () => [...FINANCIAL_QUERY_KEYS.bankTransactions.all, 'list'] as const,
-    list: (filters: any) => [...FINANCIAL_QUERY_KEYS.bankTransactions.lists(), filters] as const,
+    list: (filters?: any) => [...FINANCIAL_QUERY_KEYS.bankTransactions.lists(), filters] as const,
     details: () => [...FINANCIAL_QUERY_KEYS.bankTransactions.all, 'detail'] as const,
     detail: (id: string) => [...FINANCIAL_QUERY_KEYS.bankTransactions.details(), id] as const,
     summary: () => [...FINANCIAL_QUERY_KEYS.bankTransactions.all, 'summary'] as const,

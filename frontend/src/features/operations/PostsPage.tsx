@@ -276,6 +276,12 @@ export function PostsPage() {
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Form state for new post modal
+  const [newPostClient, setNewPostClient] = useState('');
+  const [newPostType, setNewPostType] = useState('');
+  const [newPostScale, setNewPostScale] = useState('');
+  const [newPostCoordinator, setNewPostCoordinator] = useState('');
+
   const filteredPosts = posts.filter((post) => {
     const matchesSearch =
       post.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -490,8 +496,8 @@ export function PostsPage() {
                   { value: '3', label: 'Condomínio Aurora' },
                   { value: '4', label: 'Tech Park' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newPostClient}
+                onChange={(value) => setNewPostClient(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -502,8 +508,8 @@ export function PostsPage() {
                   { value: 'maintenance', label: 'Manutenção' },
                   { value: 'reception', label: 'Recepção' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newPostType}
+                onChange={(value) => setNewPostType(value)}
                 placeholder="Selecione..."
               />
             </div>
@@ -517,8 +523,8 @@ export function PostsPage() {
                   { value: '6x1', label: '6x1' },
                   { value: 'comercial', label: 'Comercial' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newPostScale}
+                onChange={(value) => setNewPostScale(value)}
                 placeholder="Selecione..."
               />
               <Input label="Efetivo Necessário" type="number" placeholder="0" />
@@ -529,8 +535,8 @@ export function PostsPage() {
                   { value: '2', label: 'Maria Costa' },
                   { value: '3', label: 'Ana Oliveira' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newPostCoordinator}
+                onChange={(value) => setNewPostCoordinator(value)}
                 placeholder="Selecione..."
               />
             </div>

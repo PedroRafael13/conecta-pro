@@ -298,6 +298,9 @@ export function BidProposalsPage() {
   const [selectedProposal, setSelectedProposal] = useState<BidProposal | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
+  // Form state for new proposal modal
+  const [newProposalBidding, setNewProposalBidding] = useState('');
+
   // Stats
   const draftCount = proposals.filter(p => p.status === 'draft').length;
   const reviewCount = proposals.filter(p => p.status === 'review').length;
@@ -469,8 +472,8 @@ export function BidProposalsPage() {
                 { value: '1', label: 'PE-001/2026 - Vigilância Patrimonial' },
                 { value: '2', label: 'PE-020/2025 - Central de Monitoramento' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newProposalBidding}
+              onChange={(value) => setNewProposalBidding(value)}
               placeholder="Selecione a licitação..."
             />
             <div className="grid grid-cols-2 gap-4">
