@@ -116,6 +116,146 @@ from .fgts_inss_manager import (
     calcular_aliquota_efetiva_inss,
 )
 
+# NFS-e Manaus
+from .nfse_manaus import (
+    NFSeManausManager,
+    NFSeManaus,
+    Tomador,
+    Servico,
+    NFSeStatus,
+    TipoTributacao,
+    NaturezaOperacao,
+)
+
+# EFD-Reinf
+from .efd_reinf import (
+    EFDReinfManager,
+    InfoContribuinte,
+    RetencaoServico,
+    PagamentoBeneficiarioPF,
+    PagamentoBeneficiarioPJ,
+    TipoAmbiente as TipoAmbienteReinf,
+    TipoInscricao,
+    ClassificacaoTributaria,
+)
+
+# DCTFWeb
+from .dctfweb import (
+    DCTFWebManager,
+    DCTFWebDeclaracao,
+    DebitoContribuicao,
+    CreditoVinculavel,
+    DARF,
+    TipoDeclaracao,
+    SituacaoDeclaracao,
+    TipoCredito,
+)
+
+# FGTS Digital
+from .fgts_digital import (
+    FGTSDigitalManager,
+    TrabalhadorFGTS,
+    DebitoFGTS,
+    GRFGTS,
+    GuiaRescisoria,
+    RecolhimentoRescisorio,
+    TipoRecolhimento as TipoRecolhimentoFGTS,
+    ModalidadeSaque as ModalidadeSaqueFGTS,
+    SituacaoGuia,
+)
+
+# Simples Nacional
+from .simples_nacional import (
+    SimplesNacionalManager,
+    PGDASD,
+    DAS,
+    DEFIS,
+    ReceitaCompetencia,
+    FaixaAliquota,
+    AnexoSimples,
+    SituacaoOpcao,
+    TipoReceita,
+)
+
+# SPED Fiscal
+from .sped_fiscal import (
+    SPEDFiscalManager,
+    Participante as ParticipanteFiscal,
+    Produto as ProdutoFiscal,
+    DocumentoFiscal,
+    ApuracaoICMS,
+    Inventario,
+    FinalidadeArquivo,
+    PerfilArquivo,
+)
+
+# SPED Contábil
+from .sped_contabil import (
+    SPEDContabilManager,
+    ContaContabil,
+    LancamentoContabil,
+    SaldoPeriodico,
+    DemonstrativoBalancoPatrimonial,
+    DemonstrativoDRE,
+    TipoECD,
+    NaturezaConta,
+    TipoConta,
+)
+
+# CT-e
+from .cte import (
+    CTeManager,
+    CTe,
+    Participante as ParticipanteCTe,
+    NFReferenciada,
+    Carga,
+    ComponenteValor,
+    ModalTransporte,
+    TipoServico,
+    TomadorServico,
+    SituacaoCTe,
+)
+
+# MDF-e
+from .mdfe import (
+    MDFeManager,
+    MDFe,
+    Condutor,
+    Veiculo,
+    Reboque,
+    DocumentoVinculado,
+    Municipio,
+    Percurso,
+    ModalTransporteMDFe,
+    TipoEmitente,
+    TipoCarroceria,
+    TipoRodado,
+    SituacaoMDFe,
+)
+
+# Gov.br
+from .govbr import (
+    GovBrManager,
+    UsuarioGovBr,
+    TokenGovBr,
+    NivelAutenticacao,
+    TipoDocumento,
+)
+
+# e-CAC
+from .ecac import (
+    EcacManager,
+    ResultadoSituacaoFiscal,
+    PendenciaFiscal,
+    DebitoFiscal as DebitoFiscalEcac,
+    Certidao as CertidaoEcac,
+    DeclaracaoConsultada,
+    TipoCertidao as TipoCertidaoEcac,
+    SituacaoFiscal,
+    TipoPendencia,
+    TipoDeclaracaoConsulta,
+)
+
 __all__ = [
     # eSocial
     "EventType",
@@ -186,6 +326,126 @@ __all__ = [
     "validar_pis_pasep",
     "formatar_pis_pasep",
     "calcular_aliquota_efetiva_inss",
+
+    # ===== NOVAS INTEGRAÇÕES (Sprint 33) =====
+
+    # NFS-e Manaus
+    "NFSeManausManager",
+    "NFSeManaus",
+    "Tomador",
+    "Servico",
+    "NFSeStatus",
+    "TipoTributacao",
+    "NaturezaOperacao",
+
+    # EFD-Reinf
+    "EFDReinfManager",
+    "InfoContribuinte",
+    "RetencaoServico",
+    "PagamentoBeneficiarioPF",
+    "PagamentoBeneficiarioPJ",
+    "TipoAmbienteReinf",
+    "TipoInscricao",
+    "ClassificacaoTributaria",
+
+    # DCTFWeb
+    "DCTFWebManager",
+    "DCTFWebDeclaracao",
+    "DebitoContribuicao",
+    "CreditoVinculavel",
+    "DARF",
+    "TipoDeclaracao",
+    "SituacaoDeclaracao",
+    "TipoCredito",
+
+    # FGTS Digital
+    "FGTSDigitalManager",
+    "TrabalhadorFGTS",
+    "DebitoFGTS",
+    "GRFGTS",
+    "GuiaRescisoria",
+    "RecolhimentoRescisorio",
+    "TipoRecolhimentoFGTS",
+    "ModalidadeSaqueFGTS",
+    "SituacaoGuia",
+
+    # Simples Nacional
+    "SimplesNacionalManager",
+    "PGDASD",
+    "DAS",
+    "DEFIS",
+    "ReceitaCompetencia",
+    "FaixaAliquota",
+    "AnexoSimples",
+    "SituacaoOpcao",
+    "TipoReceita",
+
+    # SPED Fiscal
+    "SPEDFiscalManager",
+    "ParticipanteFiscal",
+    "ProdutoFiscal",
+    "DocumentoFiscal",
+    "ApuracaoICMS",
+    "Inventario",
+    "FinalidadeArquivo",
+    "PerfilArquivo",
+
+    # SPED Contábil
+    "SPEDContabilManager",
+    "ContaContabil",
+    "LancamentoContabil",
+    "SaldoPeriodico",
+    "DemonstrativoBalancoPatrimonial",
+    "DemonstrativoDRE",
+    "TipoECD",
+    "NaturezaConta",
+    "TipoConta",
+
+    # CT-e
+    "CTeManager",
+    "CTe",
+    "ParticipanteCTe",
+    "NFReferenciada",
+    "Carga",
+    "ComponenteValor",
+    "ModalTransporte",
+    "TipoServico",
+    "TomadorServico",
+    "SituacaoCTe",
+
+    # MDF-e
+    "MDFeManager",
+    "MDFe",
+    "Condutor",
+    "Veiculo",
+    "Reboque",
+    "DocumentoVinculado",
+    "Municipio",
+    "Percurso",
+    "ModalTransporteMDFe",
+    "TipoEmitente",
+    "TipoCarroceria",
+    "TipoRodado",
+    "SituacaoMDFe",
+
+    # Gov.br
+    "GovBrManager",
+    "UsuarioGovBr",
+    "TokenGovBr",
+    "NivelAutenticacao",
+    "TipoDocumento",
+
+    # e-CAC
+    "EcacManager",
+    "ResultadoSituacaoFiscal",
+    "PendenciaFiscal",
+    "DebitoFiscalEcac",
+    "CertidaoEcac",
+    "DeclaracaoConsultada",
+    "TipoCertidaoEcac",
+    "SituacaoFiscal",
+    "TipoPendencia",
+    "TipoDeclaracaoConsulta",
 ]
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
