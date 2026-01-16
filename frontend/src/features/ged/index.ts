@@ -1,0 +1,1 @@
+export { GEDPage } from './GEDPage';
