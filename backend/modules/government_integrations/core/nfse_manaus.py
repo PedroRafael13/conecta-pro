@@ -212,7 +212,11 @@ class NFSeManausManager:
         self.cnpj = cnpj
         self.usuario = usuario or cnpj
         self.senha = senha
-        self.xml_signer = XMLSigner(certificate_manager)
+
+        # XMLSigner é opcional (só necessário para operações que exigem assinatura)
+        self.xml_signer = None
+        if certificate_manager is not None:
+            self.xml_signer = XMLSigner(certificate_manager)
 
         # URLs
         self.url_base = (
@@ -351,9 +355,12 @@ class NFSeManausManager:
             rps_element = ET.fromstring(rps_xml)
             lista_rps.append(rps_element)
 
-        # Assina o lote
+        # Assina o lote se certificado configurado
         xml_str = ET.tostring(lote, encoding="unicode")
-        xml_assinado = self.xml_signer.assinar_xml(xml_str, "LoteRps")
+        if self.xml_signer:
+            xml_assinado = self.xml_signer.sign(xml_str, reference_uri="")
+        else:
+            xml_assinado = xml_str
 
         logger.info(f"Enviando lote com {len(lista_nfse)} RPS")
 
@@ -455,7 +462,10 @@ class NFSeManausManager:
         ET.SubElement(inf_pedido, "CodigoCancelamento").text = codigo_cancelamento
 
         xml_str = ET.tostring(cancelamento, encoding="unicode")
-        xml_assinado = self.xml_signer.assinar_xml(xml_str, "InfPedidoCancelamento")
+        if self.xml_signer:
+            xml_assinado = self.xml_signer.sign(xml_str, reference_uri="")
+        else:
+            xml_assinado = xml_str
 
         logger.info(f"Cancelando NFS-e {numero_nfse}")
 
@@ -494,7 +504,10 @@ class NFSeManausManager:
         pedido.append(rps_element)
 
         xml_str = ET.tostring(substituicao, encoding="unicode")
-        xml_assinado = self.xml_signer.assinar_xml(xml_str, "SubstituicaoNfse")
+        if self.xml_signer:
+            xml_assinado = self.xml_signer.sign(xml_str, reference_uri="")
+        else:
+            xml_assinado = xml_str
 
         logger.info(f"Substituindo NFS-e {numero_nfse_substituida}")
 

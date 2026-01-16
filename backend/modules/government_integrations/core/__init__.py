@@ -127,6 +127,18 @@ from .nfse_manaus import (
     NaturezaOperacao,
 )
 
+# NFS-e Padrão Nacional (Preparação para migração 2026)
+from .nfse_nacional import (
+    NFSeNacionalManager,
+    DPSNacional,
+    PrestadorNacional,
+    TomadorNacional,
+    ServicoNacional,
+    AmbienteNacional,
+    RegimeEspecial,
+    MAPEAMENTO_SERVICOS_VIGILANCIA,
+)
+
 # EFD-Reinf
 from .efd_reinf import (
     EFDReinfManager,
@@ -337,6 +349,16 @@ __all__ = [
     "NFSeStatus",
     "TipoTributacao",
     "NaturezaOperacao",
+
+    # NFS-e Padrão Nacional (Preparação 2026)
+    "NFSeNacionalManager",
+    "DPSNacional",
+    "PrestadorNacional",
+    "TomadorNacional",
+    "ServicoNacional",
+    "AmbienteNacional",
+    "RegimeEspecial",
+    "MAPEAMENTO_SERVICOS_VIGILANCIA",
 
     # EFD-Reinf
     "EFDReinfManager",

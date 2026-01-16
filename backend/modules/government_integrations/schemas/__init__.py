@@ -11,6 +11,18 @@ from .receita_federal import (
 from .fgts_inss import CalculoFGTSRequest, CalculoINSSRequest
 from .esocial import ESocialEventRequest
 from .sefaz import NFERequest
+from .nfse_manaus import (
+    EmitirNFSeRequest,
+    EmitirNFSeResponse,
+    ConsultarNFSeRpsRequest,
+    ConsultarNFSeResponse,
+    CancelarNFSeRequest,
+    CancelarNFSeResponse,
+    SubstituirNFSeRequest,
+    ValidarConexaoResponse,
+    TomadorRequest,
+    ServicoRequest,
+)
 
 __all__ = [
     # Common
@@ -26,4 +38,15 @@ __all__ = [
     "ESocialEventRequest",
     # SEFAZ
     "NFERequest",
+    # NFS-e Manaus
+    "EmitirNFSeRequest",
+    "EmitirNFSeResponse",
+    "ConsultarNFSeRpsRequest",
+    "ConsultarNFSeResponse",
+    "CancelarNFSeRequest",
+    "CancelarNFSeResponse",
+    "SubstituirNFSeRequest",
+    "ValidarConexaoResponse",
+    "TomadorRequest",
+    "ServicoRequest",
 ]
