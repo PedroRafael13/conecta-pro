@@ -308,8 +308,8 @@ const accessMethodIcons: Record<string, typeof Fingerprint> = {
 };
 
 export default function UnitsResidentsPage() {
-  const [units] = useState<Unit[]>(mockUnits);
-  const [residents] = useState<Resident[]>(mockResidents);
+  const [units, setUnits] = useState<Unit[]>(mockUnits);
+  const [residents, setResidents] = useState<Resident[]>(mockResidents);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('units');
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
@@ -318,6 +318,109 @@ export default function UnitsResidentsPage() {
   const [showResidentModal, setShowResidentModal] = useState(false);
   const [showNewUnitModal, setShowNewUnitModal] = useState(false);
   const [showNewResidentModal, setShowNewResidentModal] = useState(false);
+  const [showEditUnitModal, setShowEditUnitModal] = useState(false);
+  const [showEditResidentModal, setShowEditResidentModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteType, setDeleteType] = useState<'unit' | 'resident'>('unit');
+
+  // Form state
+  const [unitForm, setUnitForm] = useState({ number: '', block: '', type: '', area: '', bedrooms: '' });
+  const [residentForm, setResidentForm] = useState({ name: '', cpf: '', phone: '', email: '', unit: '', type: '' });
+
+  // Unit handlers
+  const handleEditUnit = (unit: Unit) => {
+    setSelectedUnit(unit);
+    setUnitForm({ number: unit.number, block: unit.block, type: unit.type, area: String(unit.area), bedrooms: String(unit.bedrooms || '') });
+    setShowEditUnitModal(true);
+  };
+
+  const handleAddResidentToUnit = (unit: Unit) => {
+    setResidentForm(prev => ({ ...prev, unit: unit.id }));
+    setShowNewResidentModal(true);
+  };
+
+  const handleDeleteUnit = (unit: Unit) => {
+    setSelectedUnit(unit);
+    setDeleteType('unit');
+    setShowDeleteModal(true);
+  };
+
+  // Resident handlers
+  const handleEditResident = (resident: Resident) => {
+    setSelectedResident(resident);
+    setResidentForm({ name: resident.name, cpf: resident.cpf, phone: resident.phone, email: resident.email, unit: resident.unit.id, type: resident.type });
+    setShowEditResidentModal(true);
+  };
+
+  const handleGenerateQRCode = (resident: Resident) => {
+    alert(`QR Code gerado para ${resident.name}`);
+  };
+
+  const handleToggleResidentStatus = (resident: Resident) => {
+    const newStatus = resident.status === 'active' ? 'inactive' : 'active';
+    setResidents(prev => prev.map(r => r.id === resident.id ? { ...r, status: newStatus } : r));
+  };
+
+  const handleDeleteResident = (resident: Resident) => {
+    setSelectedResident(resident);
+    setDeleteType('resident');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (deleteType === 'unit' && selectedUnit) {
+      setUnits(prev => prev.filter(u => u.id !== selectedUnit.id));
+    } else if (deleteType === 'resident' && selectedResident) {
+      setResidents(prev => prev.filter(r => r.id !== selectedResident.id));
+    }
+    setShowDeleteModal(false);
+  };
+
+  const handleCreateUnit = () => {
+    if (!unitForm.number || !unitForm.block || !unitForm.type || !unitForm.area) return;
+    const newUnit: Unit = {
+      id: String(units.length + 1),
+      number: unitForm.number,
+      block: unitForm.block,
+      floor: parseInt(unitForm.number.charAt(0)) || 1,
+      type: unitForm.type as Unit['type'],
+      area: parseInt(unitForm.area),
+      bedrooms: unitForm.bedrooms ? parseInt(unitForm.bedrooms) : undefined,
+      status: 'vacant',
+      owner: null,
+      tenant: null,
+      residents: 0,
+      vehicles: 0,
+      pets: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setUnits(prev => [...prev, newUnit]);
+    setShowNewUnitModal(false);
+    setUnitForm({ number: '', block: '', type: '', area: '', bedrooms: '' });
+  };
+
+  const handleCreateResident = () => {
+    if (!residentForm.name || !residentForm.cpf || !residentForm.unit || !residentForm.type) return;
+    const unit = units.find(u => u.id === residentForm.unit);
+    const newResident: Resident = {
+      id: String(residents.length + 1),
+      name: residentForm.name,
+      cpf: residentForm.cpf,
+      email: residentForm.email,
+      phone: residentForm.phone,
+      type: residentForm.type as Resident['type'],
+      unit: { id: residentForm.unit, number: unit?.number || '', block: unit?.block || '' },
+      status: 'pending',
+      accessMethods: ['card'],
+      vehicles: [],
+      emergencyContact: null,
+      createdAt: new Date().toISOString().split('T')[0],
+      lastAccess: null,
+    };
+    setResidents(prev => [...prev, newResident]);
+    setShowNewResidentModal(false);
+    setResidentForm({ name: '', cpf: '', phone: '', email: '', unit: '', type: '' });
+  };
 
   // Stats
   const unitStats = {
@@ -428,9 +531,9 @@ export default function UnitsResidentsPage() {
           }
           items={[
             { label: 'Ver Detalhes', icon: <Eye className="w-4 h-4" />, onClick: () => { setSelectedUnit(row); setShowUnitModal(true); } },
-            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Adicionar Morador', icon: <UserPlus className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => {} },
+            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditUnit(row) },
+            { label: 'Adicionar Morador', icon: <UserPlus className="w-4 h-4" />, onClick: () => handleAddResidentToUnit(row) },
+            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => handleDeleteUnit(row) },
           ]}
         />
       ),
@@ -519,10 +622,10 @@ export default function UnitsResidentsPage() {
           }
           items={[
             { label: 'Ver Detalhes', icon: <Eye className="w-4 h-4" />, onClick: () => { setSelectedResident(row); setShowResidentModal(true); } },
-            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Gerar QR Code', icon: <QrCode className="w-4 h-4" />, onClick: () => {} },
-            { label: row.status === 'active' ? 'Desativar' : 'Ativar', icon: row.status === 'active' ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => {} },
+            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditResident(row) },
+            { label: 'Gerar QR Code', icon: <QrCode className="w-4 h-4" />, onClick: () => handleGenerateQRCode(row) },
+            { label: row.status === 'active' ? 'Desativar' : 'Ativar', icon: row.status === 'active' ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />, onClick: () => handleToggleResidentStatus(row) },
+            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => handleDeleteResident(row) },
           ]}
         />
       ),
@@ -840,8 +943,8 @@ export default function UnitsResidentsPage() {
         <Modal isOpen={showNewUnitModal} onClose={() => setShowNewUnitModal(false)} title="Nova Unidade">
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Número" placeholder="Ex: 101" required />
-              <Input label="Bloco" placeholder="Ex: A" required />
+              <Input label="Número" placeholder="Ex: 101" value={unitForm.number} onChange={(e) => setUnitForm(prev => ({ ...prev, number: e.target.value }))} required />
+              <Input label="Bloco" placeholder="Ex: A" value={unitForm.block} onChange={(e) => setUnitForm(prev => ({ ...prev, block: e.target.value }))} required />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <Select
@@ -852,16 +955,16 @@ export default function UnitsResidentsPage() {
                   { value: 'commercial', label: 'Comercial' },
                   { value: 'storage', label: 'Depósito' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={unitForm.type}
+                onChange={(value) => setUnitForm(prev => ({ ...prev, type: value }))}
                 required
               />
-              <Input label="Área (m²)" type="number" placeholder="Ex: 85" required />
+              <Input label="Área (m²)" type="number" placeholder="Ex: 85" value={unitForm.area} onChange={(e) => setUnitForm(prev => ({ ...prev, area: e.target.value }))} required />
             </div>
-            <Input label="Quartos" type="number" placeholder="Ex: 3" />
+            <Input label="Quartos" type="number" placeholder="Ex: 3" value={unitForm.bedrooms} onChange={(e) => setUnitForm(prev => ({ ...prev, bedrooms: e.target.value }))} />
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={() => setShowNewUnitModal(false)}>Cancelar</Button>
-              <Button variant="primary">Criar Unidade</Button>
+              <Button variant="primary" onClick={handleCreateUnit}>Criar Unidade</Button>
             </div>
           </div>
         </Modal>
@@ -869,18 +972,18 @@ export default function UnitsResidentsPage() {
         {/* New Resident Modal */}
         <Modal isOpen={showNewResidentModal} onClose={() => setShowNewResidentModal(false)} title="Novo Morador">
           <div className="space-y-4">
-            <Input label="Nome Completo" placeholder="Nome do morador" required />
+            <Input label="Nome Completo" placeholder="Nome do morador" value={residentForm.name} onChange={(e) => setResidentForm(prev => ({ ...prev, name: e.target.value }))} required />
             <div className="grid grid-cols-2 gap-4">
-              <Input label="CPF" placeholder="000.000.000-00" required />
-              <Input label="Telefone" placeholder="(11) 99999-9999" required />
+              <Input label="CPF" placeholder="000.000.000-00" value={residentForm.cpf} onChange={(e) => setResidentForm(prev => ({ ...prev, cpf: e.target.value }))} required />
+              <Input label="Telefone" placeholder="(11) 99999-9999" value={residentForm.phone} onChange={(e) => setResidentForm(prev => ({ ...prev, phone: e.target.value }))} required />
             </div>
-            <Input label="Email" type="email" placeholder="email@exemplo.com" required />
+            <Input label="Email" type="email" placeholder="email@exemplo.com" value={residentForm.email} onChange={(e) => setResidentForm(prev => ({ ...prev, email: e.target.value }))} required />
             <div className="grid grid-cols-2 gap-4">
               <Select
                 label="Unidade"
                 options={units.map(u => ({ value: u.id, label: `Bloco ${u.block} - ${u.number}` }))}
-                value=""
-                onChange={() => {}}
+                value={residentForm.unit}
+                onChange={(value) => setResidentForm(prev => ({ ...prev, unit: value }))}
                 required
               />
               <Select
@@ -891,14 +994,30 @@ export default function UnitsResidentsPage() {
                   { value: 'dependent', label: 'Dependente' },
                   { value: 'employee', label: 'Funcionário' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={residentForm.type}
+                onChange={(value) => setResidentForm(prev => ({ ...prev, type: value }))}
                 required
               />
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={() => setShowNewResidentModal(false)}>Cancelar</Button>
-              <Button variant="primary">Criar Morador</Button>
+              <Button variant="primary" onClick={handleCreateResident}>Criar Morador</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Confirmar Exclusão" size="sm">
+          <div className="space-y-4">
+            <div className="p-4 bg-danger/10 border border-danger/30 rounded-lg">
+              <p className="text-sm text-text-secondary">
+                Você está prestes a excluir {deleteType === 'unit' ? `a unidade Bloco ${selectedUnit?.block} - ${selectedUnit?.number}` : `o morador ${selectedResident?.name}`}.
+                Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
+              <Button variant="danger" onClick={confirmDelete}>Excluir</Button>
             </div>
           </div>
         </Modal>

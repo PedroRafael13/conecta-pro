@@ -264,13 +264,140 @@ const featureLabels: Record<string, string> = {
 };
 
 export default function TenantsPage() {
-  const [tenants] = useState<Tenant[]>(mockTenants);
+  const [tenants, setTenants] = useState<Tenant[]>(mockTenants);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showFeaturesModal, setShowFeaturesModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+
+  // Form state for new/edit tenant
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    plan: '' as Tenant['plan'] | '',
+    billingCycle: '' as Tenant['billingCycle'] | '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    location: '',
+  });
+
+  // Handlers
+  const handleEditTenant = (tenant: Tenant) => {
+    setSelectedTenant(tenant);
+    setFormData({
+      name: tenant.name,
+      slug: tenant.slug,
+      plan: tenant.plan,
+      billingCycle: tenant.billingCycle,
+      contactName: tenant.contact.name,
+      contactEmail: tenant.contact.email,
+      contactPhone: tenant.contact.phone,
+      location: `${tenant.address.city}, ${tenant.address.state}`,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleManageFeatures = (tenant: Tenant) => {
+    setSelectedTenant(tenant);
+    setShowFeaturesModal(true);
+  };
+
+  const handleToggleStatus = (tenant: Tenant) => {
+    const newStatus = tenant.status === 'active' ? 'suspended' : 'active';
+    setTenants(prev => prev.map(t =>
+      t.id === tenant.id ? { ...t, status: newStatus } : t
+    ));
+  };
+
+  const handleDeleteTenant = (tenant: Tenant) => {
+    setSelectedTenant(tenant);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedTenant) {
+      setTenants(prev => prev.filter(t => t.id !== selectedTenant.id));
+      setShowDeleteModal(false);
+      setSelectedTenant(null);
+    }
+  };
+
+  const handleToggleFeature = (feature: string) => {
+    if (selectedTenant) {
+      const hasFeature = selectedTenant.features.includes(feature);
+      const newFeatures = hasFeature
+        ? selectedTenant.features.filter(f => f !== feature)
+        : [...selectedTenant.features, feature];
+
+      setTenants(prev => prev.map(t =>
+        t.id === selectedTenant.id ? { ...t, features: newFeatures } : t
+      ));
+      setSelectedTenant(prev => prev ? { ...prev, features: newFeatures } : null);
+    }
+  };
+
+  const handleCreateTenant = () => {
+    if (!formData.name || !formData.slug || !formData.plan || !formData.billingCycle) return;
+
+    const newTenant: Tenant = {
+      id: String(tenants.length + 1),
+      name: formData.name,
+      slug: formData.slug,
+      plan: formData.plan as Tenant['plan'],
+      status: 'trial',
+      contact: {
+        name: formData.contactName,
+        email: formData.contactEmail,
+        phone: formData.contactPhone,
+      },
+      address: {
+        city: formData.location.split(',')[0]?.trim() || '',
+        state: formData.location.split(',')[1]?.trim() || '',
+      },
+      metrics: { users: 0, maxUsers: 20, storage: 0, maxStorage: 10, apiCalls: 0, maxApiCalls: 20000 },
+      features: ['crm', 'financial'],
+      createdAt: new Date().toISOString().split('T')[0],
+      trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      billingCycle: formData.billingCycle as Tenant['billingCycle'],
+      mrr: 0,
+    };
+
+    setTenants(prev => [...prev, newTenant]);
+    setShowNewModal(false);
+    setFormData({ name: '', slug: '', plan: '', billingCycle: '', contactName: '', contactEmail: '', contactPhone: '', location: '' });
+  };
+
+  const handleUpdateTenant = () => {
+    if (!selectedTenant) return;
+
+    setTenants(prev => prev.map(t =>
+      t.id === selectedTenant.id
+        ? {
+            ...t,
+            name: formData.name,
+            slug: formData.slug,
+            plan: formData.plan as Tenant['plan'],
+            billingCycle: formData.billingCycle as Tenant['billingCycle'],
+            contact: {
+              name: formData.contactName,
+              email: formData.contactEmail,
+              phone: formData.contactPhone,
+            },
+            address: {
+              city: formData.location.split(',')[0]?.trim() || '',
+              state: formData.location.split(',')[1]?.trim() || '',
+            },
+          }
+        : t
+    ));
+    setShowEditModal(false);
+  };
 
   // Stats
   const stats = {
@@ -371,10 +498,10 @@ export default function TenantsPage() {
           }
           items={[
             { label: 'Ver Detalhes', icon: <Eye className="w-4 h-4" />, onClick: () => { setSelectedTenant(row); setShowDetailModal(true); } },
-            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Gerenciar Features', icon: <Zap className="w-4 h-4" />, onClick: () => {} },
-            { label: row.status === 'active' ? 'Suspender' : 'Reativar', icon: row.status === 'active' ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => {} },
+            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditTenant(row) },
+            { label: 'Gerenciar Features', icon: <Zap className="w-4 h-4" />, onClick: () => handleManageFeatures(row) },
+            { label: row.status === 'active' ? 'Suspender' : 'Reativar', icon: row.status === 'active' ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />, onClick: () => handleToggleStatus(row) },
+            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => handleDeleteTenant(row) },
           ]}
         />
       ),
@@ -635,11 +762,15 @@ export default function TenantsPage() {
               <Input
                 label="Nome da Organização"
                 placeholder="Ex: Condomínio Solar"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 required
               />
               <Input
                 label="Slug"
                 placeholder="Ex: cond-solar"
+                value={formData.slug}
+                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
                 required
               />
             </div>
@@ -652,8 +783,8 @@ export default function TenantsPage() {
                   { value: 'enterprise', label: 'Enterprise' },
                   { value: 'custom', label: 'Custom' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={formData.plan}
+                onChange={(value) => setFormData(prev => ({ ...prev, plan: value as Tenant['plan'] }))}
                 required
               />
               <Select
@@ -662,8 +793,8 @@ export default function TenantsPage() {
                   { value: 'monthly', label: 'Mensal' },
                   { value: 'yearly', label: 'Anual' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={formData.billingCycle}
+                onChange={(value) => setFormData(prev => ({ ...prev, billingCycle: value as Tenant['billingCycle'] }))}
                 required
               />
             </div>
@@ -671,12 +802,16 @@ export default function TenantsPage() {
               <Input
                 label="Nome do Contato"
                 placeholder="Nome do responsável"
+                value={formData.contactName}
+                onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
                 required
               />
               <Input
                 label="Email"
                 type="email"
                 placeholder="email@empresa.com.br"
+                value={formData.contactEmail}
+                onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
                 required
               />
             </div>
@@ -684,18 +819,184 @@ export default function TenantsPage() {
               <Input
                 label="Telefone"
                 placeholder="(11) 99999-9999"
+                value={formData.contactPhone}
+                onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
               />
               <Input
                 label="Cidade/Estado"
                 placeholder="São Paulo, SP"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
               />
             </div>
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={() => setShowNewModal(false)}>
                 Cancelar
               </Button>
-              <Button variant="primary">
+              <Button variant="primary" onClick={handleCreateTenant}>
                 Criar Tenant
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Edit Tenant Modal */}
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Editar Tenant"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Nome da Organização"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                required
+              />
+              <Input
+                label="Slug"
+                value={formData.slug}
+                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Plano"
+                options={[
+                  { value: 'starter', label: 'Starter' },
+                  { value: 'professional', label: 'Professional' },
+                  { value: 'enterprise', label: 'Enterprise' },
+                  { value: 'custom', label: 'Custom' },
+                ]}
+                value={formData.plan}
+                onChange={(value) => setFormData(prev => ({ ...prev, plan: value as Tenant['plan'] }))}
+                required
+              />
+              <Select
+                label="Ciclo de Cobrança"
+                options={[
+                  { value: 'monthly', label: 'Mensal' },
+                  { value: 'yearly', label: 'Anual' },
+                ]}
+                value={formData.billingCycle}
+                onChange={(value) => setFormData(prev => ({ ...prev, billingCycle: value as Tenant['billingCycle'] }))}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Nome do Contato"
+                value={formData.contactName}
+                onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                required
+              />
+              <Input
+                label="Email"
+                type="email"
+                value={formData.contactEmail}
+                onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Telefone"
+                value={formData.contactPhone}
+                onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
+              />
+              <Input
+                label="Cidade/Estado"
+                value={formData.location}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={handleUpdateTenant}>
+                Salvar Alterações
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Manage Features Modal */}
+        <Modal
+          isOpen={showFeaturesModal}
+          onClose={() => setShowFeaturesModal(false)}
+          title={`Gerenciar Features - ${selectedTenant?.name || ''}`}
+          size="md"
+        >
+          {selectedTenant && (
+            <div className="space-y-4">
+              <p className="text-text-secondary text-sm">
+                Selecione as features disponíveis para este tenant:
+              </p>
+              <div className="space-y-3">
+                {Object.entries(featureLabels).map(([key, label]) => {
+                  const isEnabled = selectedTenant.features.includes(key);
+                  return (
+                    <div
+                      key={key}
+                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${
+                        isEnabled
+                          ? 'bg-accent-primary/10 border-accent-primary'
+                          : 'bg-bg-tertiary border-border-subtle hover:border-border-default'
+                      }`}
+                      onClick={() => handleToggleFeature(key)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Zap className={`w-4 h-4 ${isEnabled ? 'text-accent-primary' : 'text-text-muted'}`} />
+                        <span className={isEnabled ? 'font-medium' : ''}>{label}</span>
+                      </div>
+                      {isEnabled ? (
+                        <ToggleRight className="w-6 h-6 text-accent-primary" />
+                      ) : (
+                        <ToggleLeft className="w-6 h-6 text-text-muted" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex justify-end gap-3 pt-4 border-t border-border-subtle">
+                <Button variant="outline" onClick={() => setShowFeaturesModal(false)}>
+                  Fechar
+                </Button>
+              </div>
+            </div>
+          )}
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Confirmar Exclusão"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-danger/10 border border-danger/30 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-danger mt-0.5" />
+                <div>
+                  <p className="font-medium text-danger">Atenção!</p>
+                  <p className="text-sm text-text-secondary mt-1">
+                    Você está prestes a excluir o tenant <strong>{selectedTenant?.name}</strong>.
+                    Esta ação não pode ser desfeita e todos os dados serão perdidos.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="danger" onClick={confirmDelete}>
+                Excluir Tenant
               </Button>
             </div>
           </div>

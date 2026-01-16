@@ -206,13 +206,133 @@ const statusConfig: Record<ConfigTemplate['status'], { label: string; variant: '
 };
 
 export default function ConfigTemplatesPage() {
-  const [templates] = useState<ConfigTemplate[]>(mockTemplates);
+  const [templates, setTemplates] = useState<ConfigTemplate[]>(mockTemplates);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<ConfigTemplate | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    category: '' as ConfigTemplate['category'] | '',
+    version: '',
+    schema: '',
+    tags: '',
+  });
+
+  // Handlers
+  const handleEditTemplate = (template: ConfigTemplate) => {
+    setSelectedTemplate(template);
+    setFormData({
+      name: template.name,
+      description: template.description,
+      category: template.category,
+      version: template.version,
+      schema: JSON.stringify(template.schema, null, 2),
+      tags: template.tags.join(', '),
+    });
+    setShowEditModal(true);
+  };
+
+  const handleDuplicateTemplate = (template: ConfigTemplate) => {
+    const newTemplate: ConfigTemplate = {
+      ...template,
+      id: String(templates.length + 1),
+      name: `${template.name} (Cópia)`,
+      status: 'draft',
+      appliedTo: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0],
+    };
+    setTemplates(prev => [...prev, newTemplate]);
+  };
+
+  const handleExportTemplate = (template: ConfigTemplate) => {
+    const data = JSON.stringify(template, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${template.name.toLowerCase().replace(/\s+/g, '-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleApplyTemplate = (template: ConfigTemplate) => {
+    setSelectedTemplate(template);
+    setShowApplyModal(true);
+  };
+
+  const handleToggleStatus = (template: ConfigTemplate) => {
+    const newStatus = template.status === 'active' ? 'deprecated' : 'active';
+    setTemplates(prev => prev.map(t =>
+      t.id === template.id ? { ...t, status: newStatus, updatedAt: new Date().toISOString().split('T')[0] } : t
+    ));
+  };
+
+  const handleDeleteTemplate = (template: ConfigTemplate) => {
+    setSelectedTemplate(template);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedTemplate) {
+      setTemplates(prev => prev.filter(t => t.id !== selectedTemplate.id));
+      setShowDeleteModal(false);
+      setSelectedTemplate(null);
+    }
+  };
+
+  const handleCreateTemplate = () => {
+    if (!formData.name || !formData.category || !formData.version) return;
+
+    const newTemplate: ConfigTemplate = {
+      id: String(templates.length + 1),
+      name: formData.name,
+      description: formData.description,
+      category: formData.category as ConfigTemplate['category'],
+      status: 'draft',
+      version: formData.version,
+      schema: formData.schema ? JSON.parse(formData.schema) : {},
+      defaults: {},
+      appliedTo: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0],
+      createdBy: 'admin@conectaplus.com.br',
+      tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+    };
+
+    setTemplates(prev => [...prev, newTemplate]);
+    setShowNewModal(false);
+    setFormData({ name: '', description: '', category: '', version: '', schema: '', tags: '' });
+  };
+
+  const handleUpdateTemplate = () => {
+    if (!selectedTemplate) return;
+
+    setTemplates(prev => prev.map(t =>
+      t.id === selectedTemplate.id
+        ? {
+            ...t,
+            name: formData.name,
+            description: formData.description,
+            category: formData.category as ConfigTemplate['category'],
+            version: formData.version,
+            schema: formData.schema ? JSON.parse(formData.schema) : {},
+            tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+            updatedAt: new Date().toISOString().split('T')[0],
+          }
+        : t
+    ));
+    setShowEditModal(false);
+  };
 
   // Stats
   const stats = {
@@ -307,12 +427,12 @@ export default function ConfigTemplatesPage() {
           }
           items={[
             { label: 'Ver Detalhes', icon: <Eye className="w-4 h-4" />, onClick: () => { setSelectedTemplate(row); setShowDetailModal(true); } },
-            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Exportar JSON', icon: <Download className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Aplicar a Tenant', icon: <Play className="w-4 h-4" />, onClick: () => {} },
-            { label: row.status === 'active' ? 'Descontinuar' : 'Ativar', icon: row.status === 'active' ? <Pause className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => {} },
+            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditTemplate(row) },
+            { label: 'Duplicar', icon: <Copy className="w-4 h-4" />, onClick: () => handleDuplicateTemplate(row) },
+            { label: 'Exportar JSON', icon: <Download className="w-4 h-4" />, onClick: () => handleExportTemplate(row) },
+            { label: 'Aplicar a Tenant', icon: <Play className="w-4 h-4" />, onClick: () => handleApplyTemplate(row) },
+            { label: row.status === 'active' ? 'Descontinuar' : 'Ativar', icon: row.status === 'active' ? <Pause className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />, onClick: () => handleToggleStatus(row) },
+            { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => handleDeleteTemplate(row) },
           ]}
         />
       ),
@@ -542,11 +662,15 @@ export default function ConfigTemplatesPage() {
             <Input
               label="Nome do Template"
               placeholder="Ex: Tenant Padrão - Premium"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               required
             />
             <Textarea
               label="Descrição"
               placeholder="Descreva o propósito deste template..."
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={2}
             />
             <div className="grid grid-cols-2 gap-4">
@@ -559,31 +683,161 @@ export default function ConfigTemplatesPage() {
                   { value: 'security', label: 'Segurança' },
                   { value: 'notification', label: 'Notificação' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={formData.category}
+                onChange={(value) => setFormData(prev => ({ ...prev, category: value as ConfigTemplate['category'] }))}
                 required
               />
               <Input
                 label="Versão"
                 placeholder="Ex: 1.0.0"
+                value={formData.version}
+                onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
                 required
               />
             </div>
             <Textarea
               label="Schema JSON"
               placeholder='{"key": "value"}'
+              value={formData.schema}
+              onChange={(e) => setFormData(prev => ({ ...prev, schema: e.target.value }))}
               rows={6}
             />
             <Input
               label="Tags"
               placeholder="Separe por vírgulas: premium, tenant, full"
+              value={formData.tags}
+              onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
             />
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={() => setShowNewModal(false)}>
                 Cancelar
               </Button>
-              <Button variant="primary">
+              <Button variant="primary" onClick={handleCreateTemplate}>
                 Criar Template
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Edit Template Modal */}
+        <Modal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          title="Editar Template"
+          size="lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Nome do Template"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
+            <Textarea
+              label="Descrição"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              rows={2}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Categoria"
+                options={[
+                  { value: 'tenant', label: 'Tenant' },
+                  { value: 'system', label: 'Sistema' },
+                  { value: 'integration', label: 'Integração' },
+                  { value: 'security', label: 'Segurança' },
+                  { value: 'notification', label: 'Notificação' },
+                ]}
+                value={formData.category}
+                onChange={(value) => setFormData(prev => ({ ...prev, category: value as ConfigTemplate['category'] }))}
+                required
+              />
+              <Input
+                label="Versão"
+                value={formData.version}
+                onChange={(e) => setFormData(prev => ({ ...prev, version: e.target.value }))}
+                required
+              />
+            </div>
+            <Textarea
+              label="Schema JSON"
+              value={formData.schema}
+              onChange={(e) => setFormData(prev => ({ ...prev, schema: e.target.value }))}
+              rows={6}
+            />
+            <Input
+              label="Tags"
+              value={formData.tags}
+              onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
+            />
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={handleUpdateTemplate}>
+                Salvar Alterações
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Confirmar Exclusão"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-danger/10 border border-danger/30 rounded-lg">
+              <div className="flex items-start gap-3">
+                <XCircle className="w-5 h-5 text-danger mt-0.5" />
+                <div>
+                  <p className="font-medium text-danger">Atenção!</p>
+                  <p className="text-sm text-text-secondary mt-1">
+                    Você está prestes a excluir o template <strong>{selectedTemplate?.name}</strong>.
+                    Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="danger" onClick={confirmDelete}>
+                Excluir Template
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Apply Template Modal */}
+        <Modal
+          isOpen={showApplyModal}
+          onClose={() => setShowApplyModal(false)}
+          title="Aplicar Template a Tenant"
+          size="md"
+        >
+          <div className="space-y-4">
+            <p className="text-text-secondary">
+              Selecione os tenants para aplicar o template <strong>{selectedTemplate?.name}</strong>:
+            </p>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {['Condomínio Solar das Flores', 'Edifício Corporate Tower', 'Shopping Center Norte', 'Residencial Primavera'].map((tenant) => (
+                <label key={tenant} className="flex items-center gap-3 p-3 bg-bg-tertiary rounded-lg cursor-pointer hover:bg-bg-elevated transition-colors">
+                  <input type="checkbox" className="rounded border-border-default" />
+                  <span>{tenant}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-border-subtle">
+              <Button variant="outline" onClick={() => setShowApplyModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" leftIcon={<Play className="w-4 h-4" />} onClick={() => setShowApplyModal(false)}>
+                Aplicar Template
               </Button>
             </div>
           </div>

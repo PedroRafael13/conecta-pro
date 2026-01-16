@@ -314,6 +314,8 @@ export default function IntelligentNotificationsPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<IntelligentCampaign | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Stats
   const stats = {
@@ -346,6 +348,37 @@ export default function IntelligentNotificationsPage() {
           : exp
       )
     );
+  };
+
+  const handleEditCampaign = (campaign: IntelligentCampaign) => {
+    setSelectedCampaign(campaign);
+    setShowEditModal(true);
+  };
+
+  const handleDuplicateCampaign = (campaign: IntelligentCampaign) => {
+    const newCampaign: IntelligentCampaign = {
+      ...campaign,
+      id: String(campaigns.length + 1),
+      name: `${campaign.name} (Cópia)`,
+      status: 'draft',
+      metrics: { sent: 0, delivered: 0, opened: 0, clicked: 0, converted: 0 },
+      createdAt: new Date().toISOString().split('T')[0],
+      lastRun: null,
+    };
+    setCampaigns(prev => [...prev, newCampaign]);
+  };
+
+  const handleDeleteCampaign = (campaign: IntelligentCampaign) => {
+    setSelectedCampaign(campaign);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteCampaign = () => {
+    if (selectedCampaign) {
+      setCampaigns(prev => prev.filter(c => c.id !== selectedCampaign.id));
+      setShowDeleteModal(false);
+      setSelectedCampaign(null);
+    }
   };
 
   // Filter
@@ -436,9 +469,9 @@ export default function IntelligentNotificationsPage() {
             }
             items={[
               { label: 'Ver Detalhes', icon: <Eye className="w-4 h-4" />, onClick: () => { setSelectedCampaign(row); setShowDetailModal(true); } },
-              { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => {} },
-              { label: 'Duplicar', icon: <Plus className="w-4 h-4" />, onClick: () => {} },
-              { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => {} },
+              { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditCampaign(row) },
+              { label: 'Duplicar', icon: <Plus className="w-4 h-4" />, onClick: () => handleDuplicateCampaign(row) },
+              { label: 'Excluir', icon: <Trash2 className="w-4 h-4" />, danger: true, onClick: () => handleDeleteCampaign(row) },
             ]}
           />
         </div>
@@ -806,6 +839,27 @@ export default function IntelligentNotificationsPage() {
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={() => setShowNewModal(false)}>Cancelar</Button>
               <Button variant="primary" leftIcon={<Sparkles className="w-4 h-4" />}>Criar com IA</Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          title="Confirmar Exclusão"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-danger/10 border border-danger/30 rounded-lg">
+              <p className="text-sm text-text-secondary">
+                Você está prestes a excluir a campanha <strong>{selectedCampaign?.name}</strong>.
+                Esta ação não pode ser desfeita e todos os dados de métricas serão perdidos.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
+              <Button variant="danger" onClick={confirmDeleteCampaign}>Excluir Campanha</Button>
             </div>
           </div>
         </Modal>

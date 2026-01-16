@@ -284,13 +284,115 @@ const typeLabels: Record<Installation['type'], string> = {
 };
 
 export default function InstallationPage() {
-  const [installations] = useState<Installation[]>(mockInstallations);
+  const [installations, setInstallations] = useState<Installation[]>(mockInstallations);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedInstallation, setSelectedInstallation] = useState<Installation | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+
+  // Form state
+  const [formData, setFormData] = useState({
+    equipment: '',
+    client: '',
+    type: '' as Installation['type'] | '',
+    priority: '' as Installation['priority'] | '',
+    scheduledDate: '',
+    scheduledTime: '',
+    technician: '',
+    notes: '',
+  });
+
+  // Handlers
+  const handleEditInstallation = (inst: Installation) => {
+    setSelectedInstallation(inst);
+    setFormData({
+      equipment: inst.equipment.id,
+      client: inst.client.id,
+      type: inst.type,
+      priority: inst.priority,
+      scheduledDate: inst.scheduledDate,
+      scheduledTime: inst.scheduledTime,
+      technician: inst.technician?.id || '',
+      notes: inst.notes,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleAssignTechnician = (inst: Installation) => {
+    setSelectedInstallation(inst);
+    setFormData(prev => ({ ...prev, technician: inst.technician?.id || '' }));
+    setShowAssignModal(true);
+  };
+
+  const handleReschedule = (inst: Installation) => {
+    setSelectedInstallation(inst);
+    setFormData(prev => ({
+      ...prev,
+      scheduledDate: inst.scheduledDate,
+      scheduledTime: inst.scheduledTime,
+    }));
+    setShowRescheduleModal(true);
+  };
+
+  const handleCancelInstallation = (inst: Installation) => {
+    setInstallations(prev => prev.map(i =>
+      i.id === inst.id ? { ...i, status: 'cancelled' as const } : i
+    ));
+  };
+
+  const confirmAssignTechnician = () => {
+    if (!selectedInstallation || !formData.technician) return;
+    const tech = mockTechnicians.find(t => t.value === formData.technician);
+    setInstallations(prev => prev.map(i =>
+      i.id === selectedInstallation.id
+        ? { ...i, technician: tech ? { id: tech.value, name: tech.label, phone: '(11) 99999-0000' } : null, status: 'scheduled' as const }
+        : i
+    ));
+    setShowAssignModal(false);
+  };
+
+  const confirmReschedule = () => {
+    if (!selectedInstallation) return;
+    setInstallations(prev => prev.map(i =>
+      i.id === selectedInstallation.id
+        ? { ...i, scheduledDate: formData.scheduledDate, scheduledTime: formData.scheduledTime, status: 'rescheduled' as const }
+        : i
+    ));
+    setShowRescheduleModal(false);
+  };
+
+  const handleCreateInstallation = () => {
+    if (!formData.equipment || !formData.client || !formData.type || !formData.priority) return;
+
+    const newInstallation: Installation = {
+      id: String(installations.length + 1),
+      code: `INST-2026-${String(installations.length + 1).padStart(4, '0')}`,
+      equipment: { id: formData.equipment, name: 'Equipamento', model: 'Modelo', serialNumber: 'SN-0000' },
+      client: { id: formData.client, name: 'Cliente', address: 'Endereço', contact: 'Contato', phone: '(11) 99999-0000' },
+      technician: formData.technician ? { id: formData.technician, name: mockTechnicians.find(t => t.value === formData.technician)?.label || '', phone: '(11) 99999-0000' } : null,
+      scheduledDate: formData.scheduledDate,
+      scheduledTime: formData.scheduledTime,
+      status: formData.technician ? 'scheduled' : 'pending',
+      priority: formData.priority as Installation['priority'],
+      type: formData.type as Installation['type'],
+      notes: formData.notes,
+      completedAt: null,
+      acceptedAt: null,
+      acceptedBy: null,
+      photos: [],
+      checklist: [],
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    setInstallations(prev => [...prev, newInstallation]);
+    setShowNewModal(false);
+    setFormData({ equipment: '', client: '', type: '', priority: '', scheduledDate: '', scheduledTime: '', technician: '', notes: '' });
+  };
 
   // Stats
   const stats = {
@@ -401,10 +503,10 @@ export default function InstallationPage() {
           }
           items={[
             { label: 'Ver Detalhes', icon: <Eye className="w-4 h-4" />, onClick: () => { setSelectedInstallation(row); setShowDetailModal(true); } },
-            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Atribuir Técnico', icon: <UserCheck className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Reagendar', icon: <Calendar className="w-4 h-4" />, onClick: () => {} },
-            { label: 'Cancelar', icon: <XCircle className="w-4 h-4" />, danger: true, onClick: () => {} },
+            { label: 'Editar', icon: <Edit className="w-4 h-4" />, onClick: () => handleEditInstallation(row) },
+            { label: 'Atribuir Técnico', icon: <UserCheck className="w-4 h-4" />, onClick: () => handleAssignTechnician(row) },
+            { label: 'Reagendar', icon: <Calendar className="w-4 h-4" />, onClick: () => handleReschedule(row) },
+            { label: 'Cancelar', icon: <XCircle className="w-4 h-4" />, danger: true, onClick: () => handleCancelInstallation(row) },
           ]}
         />
       ),
@@ -687,8 +789,8 @@ export default function InstallationPage() {
                   { value: 'eq2', label: 'Controlador de Acesso - CTRL-BIO-500' },
                   { value: 'eq3', label: 'DVR 16 Canais - DVR-16CH-4K' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={formData.equipment}
+                onChange={(value) => setFormData(prev => ({ ...prev, equipment: value }))}
                 placeholder="Selecione o equipamento"
                 required
               />
@@ -699,8 +801,8 @@ export default function InstallationPage() {
                   { value: 'c2', label: 'Edifício Corporate Tower' },
                   { value: 'c3', label: 'Shopping Center Norte' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={formData.client}
+                onChange={(value) => setFormData(prev => ({ ...prev, client: value }))}
                 placeholder="Selecione o cliente"
                 required
               />
@@ -714,8 +816,8 @@ export default function InstallationPage() {
                   { value: 'upgrade', label: 'Upgrade' },
                   { value: 'relocation', label: 'Relocação' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={formData.type}
+                onChange={(value) => setFormData(prev => ({ ...prev, type: value as Installation['type'] }))}
                 required
               />
               <Select
@@ -726,8 +828,8 @@ export default function InstallationPage() {
                   { value: 'high', label: 'Alta' },
                   { value: 'urgent', label: 'Urgente' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={formData.priority}
+                onChange={(value) => setFormData(prev => ({ ...prev, priority: value as Installation['priority'] }))}
                 required
               />
             </div>
@@ -735,32 +837,104 @@ export default function InstallationPage() {
               <Input
                 label="Data Agendada"
                 type="date"
+                value={formData.scheduledDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
                 required
               />
               <Input
                 label="Horário"
                 type="time"
+                value={formData.scheduledTime}
+                onChange={(e) => setFormData(prev => ({ ...prev, scheduledTime: e.target.value }))}
                 required
               />
             </div>
             <Select
               label="Técnico Responsável"
               options={mockTechnicians}
-              value=""
-              onChange={() => {}}
+              value={formData.technician}
+              onChange={(value) => setFormData(prev => ({ ...prev, technician: value }))}
               placeholder="Selecione o técnico (opcional)"
             />
             <Textarea
               label="Observações"
               placeholder="Informações adicionais sobre a instalação..."
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               rows={3}
             />
             <div className="flex justify-end gap-3 pt-4">
               <Button variant="outline" onClick={() => setShowNewModal(false)}>
                 Cancelar
               </Button>
-              <Button variant="primary">
+              <Button variant="primary" onClick={handleCreateInstallation}>
                 Criar Instalação
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Assign Technician Modal */}
+        <Modal
+          isOpen={showAssignModal}
+          onClose={() => setShowAssignModal(false)}
+          title="Atribuir Técnico"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-text-secondary">
+              Selecione o técnico para a instalação <strong>{selectedInstallation?.code}</strong>:
+            </p>
+            <Select
+              label="Técnico"
+              options={mockTechnicians}
+              value={formData.technician}
+              onChange={(value) => setFormData(prev => ({ ...prev, technician: value }))}
+              placeholder="Selecione o técnico"
+              required
+            />
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setShowAssignModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={confirmAssignTechnician}>
+                Atribuir
+              </Button>
+            </div>
+          </div>
+        </Modal>
+
+        {/* Reschedule Modal */}
+        <Modal
+          isOpen={showRescheduleModal}
+          onClose={() => setShowRescheduleModal(false)}
+          title="Reagendar Instalação"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-text-secondary">
+              Reagendar instalação <strong>{selectedInstallation?.code}</strong>:
+            </p>
+            <Input
+              label="Nova Data"
+              type="date"
+              value={formData.scheduledDate}
+              onChange={(e) => setFormData(prev => ({ ...prev, scheduledDate: e.target.value }))}
+              required
+            />
+            <Input
+              label="Novo Horário"
+              type="time"
+              value={formData.scheduledTime}
+              onChange={(e) => setFormData(prev => ({ ...prev, scheduledTime: e.target.value }))}
+              required
+            />
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={() => setShowRescheduleModal(false)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={confirmReschedule}>
+                Reagendar
               </Button>
             </div>
           </div>
