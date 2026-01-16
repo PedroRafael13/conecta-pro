@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   DollarSign,
@@ -18,17 +18,27 @@ import {
   PieChart,
   CheckCircle,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
-import { Card, CardHeader, CardBody } from '../../design-system/components/Card';
-import { Button } from '../../design-system/components/Button';
-import { Input } from '../../design-system/components/Input';
-import { Badge } from '../../design-system/components/Badge';
-import { StatCard, StatGrid } from '../../design-system/components/StatCard';
-import { DataTable, Column } from '../../design-system/components/Table';
-import { SimpleTabBar } from '../../design-system/components/Tabs';
-import { Modal } from '../../design-system/components/Modal';
-import { MainLayout } from '../../layouts/MainLayout';
+import { MainLayout } from '@/layouts';
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Button,
+  Input,
+  Badge,
+  StatCard,
+  StatGrid,
+  DataTable,
+  type Column,
+  SimpleTabBar,
+  Modal,
+  Skeleton,
+  Avatar,
+} from '@/design-system/components';
 import {
   AreaChart,
   Area,
@@ -39,143 +49,119 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Cell
+  Cell,
 } from 'recharts';
 
-interface Commission {
-  id: string;
-  salesperson: string;
-  salesPersonId: string;
-  period: string;
-  totalSales: number;
-  commissionRate: number;
-  commissionValue: number;
-  bonuses: number;
-  deductions: number;
-  netCommission: number;
-  status: 'pending' | 'approved' | 'paid' | 'disputed';
-  contractsCount: number;
-  avgTicket: number;
-}
+// Importações do módulo CRM
+import {
+  useCommissions,
+  useCommissionStats,
+  useCommissionRanking,
+  useCreateCommission,
+  useApproveCommission,
+  usePayCommission,
+} from './hooks';
+import type {
+  Commission,
+  CommissionFilter,
+  CommissionStatus,
+} from './types';
+import { CommissionStatus as CommissionStatusEnum } from './types';
 
-interface SalespersonRanking {
-  id: string;
-  name: string;
-  totalSales: number;
-  totalCommission: number;
-  contractsCount: number;
-  conversionRate: number;
-  avgTicket: number;
-  trend: number;
-}
+// ==================== CONSTANTS ====================
 
-const mockCommissions: Commission[] = [
-  {
-    id: '1',
-    salesperson: 'Carlos Silva',
-    salesPersonId: 'SP001',
-    period: 'Janeiro/2026',
-    totalSales: 450000,
-    commissionRate: 5,
-    commissionValue: 22500,
-    bonuses: 3500,
-    deductions: 0,
-    netCommission: 26000,
-    status: 'paid',
-    contractsCount: 12,
-    avgTicket: 37500
-  },
-  {
-    id: '2',
-    salesperson: 'Ana Rodrigues',
-    salesPersonId: 'SP002',
-    period: 'Janeiro/2026',
-    totalSales: 380000,
-    commissionRate: 5,
-    commissionValue: 19000,
-    bonuses: 2000,
-    deductions: 500,
-    netCommission: 20500,
-    status: 'approved',
-    contractsCount: 8,
-    avgTicket: 47500
-  },
-  {
-    id: '3',
-    salesperson: 'Roberto Santos',
-    salesPersonId: 'SP003',
-    period: 'Janeiro/2026',
-    totalSales: 520000,
-    commissionRate: 6,
-    commissionValue: 31200,
-    bonuses: 5000,
-    deductions: 0,
-    netCommission: 36200,
-    status: 'pending',
-    contractsCount: 15,
-    avgTicket: 34666
-  },
-  {
-    id: '4',
-    salesperson: 'Mariana Costa',
-    salesPersonId: 'SP004',
-    period: 'Janeiro/2026',
-    totalSales: 290000,
-    commissionRate: 4.5,
-    commissionValue: 13050,
-    bonuses: 0,
-    deductions: 1200,
-    netCommission: 11850,
-    status: 'disputed',
-    contractsCount: 6,
-    avgTicket: 48333
-  }
-];
+const STATUS_CONFIG: Record<string, { label: string; color: 'neutral' | 'warning' | 'success' | 'danger' | 'info'; icon: React.ElementType }> = {
+  pending: { label: 'Pendente', color: 'warning', icon: Clock },
+  approved: { label: 'Aprovada', color: 'info', icon: CheckCircle },
+  paid: { label: 'Paga', color: 'success', icon: CheckCircle },
+  disputed: { label: 'Contestada', color: 'danger', icon: AlertTriangle },
+  cancelled: { label: 'Cancelada', color: 'neutral', icon: AlertTriangle },
+};
 
-const rankingData: SalespersonRanking[] = [
-  { id: '1', name: 'Roberto Santos', totalSales: 520000, totalCommission: 36200, contractsCount: 15, conversionRate: 45, avgTicket: 34666, trend: 15 },
-  { id: '2', name: 'Carlos Silva', totalSales: 450000, totalCommission: 26000, contractsCount: 12, conversionRate: 38, avgTicket: 37500, trend: 8 },
-  { id: '3', name: 'Ana Rodrigues', totalSales: 380000, totalCommission: 20500, contractsCount: 8, conversionRate: 42, avgTicket: 47500, trend: -3 },
-  { id: '4', name: 'Mariana Costa', totalSales: 290000, totalCommission: 11850, contractsCount: 6, conversionRate: 30, avgTicket: 48333, trend: -10 }
-];
-
-const commissionTrendData = [
-  { month: 'Ago', total: 85000, meta: 100000 },
-  { month: 'Set', total: 92000, meta: 100000 },
-  { month: 'Out', total: 78000, meta: 100000 },
-  { month: 'Nov', total: 105000, meta: 100000 },
-  { month: 'Dez', total: 125000, meta: 120000 },
-  { month: 'Jan', total: 94550, meta: 100000 }
-];
-
-const tabs = [
+const TABS = [
   { value: 'commissions', label: 'Comissões', icon: <DollarSign className="h-4 w-4" /> },
   { value: 'ranking', label: 'Ranking', icon: <Award className="h-4 w-4" /> },
-  { value: 'simulation', label: 'Simulador', icon: <Calculator className="h-4 w-4" /> }
+  { value: 'simulation', label: 'Simulador', icon: <Calculator className="h-4 w-4" /> },
 ];
 
+// ==================== HELPERS ====================
+
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const formatDate = (date: string | null) => {
+  if (!date) return '-';
+  return new Date(date).toLocaleDateString('pt-BR');
+};
+
+// ==================== COMPONENT ====================
+
 export function CommissionsPage() {
+  // State
   const [activeTab, setActiveTab] = useState('commissions');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPeriod, setSelectedPeriod] = useState('2026-01');
+  const [statusFilter, setStatusFilter] = useState<CommissionStatus | ''>('');
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedCommission, setSelectedCommission] = useState<Commission | null>(null);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+
+  // Simulation state
   const [simulationValues, setSimulationValues] = useState({
     sales: 100000,
     rate: 5,
-    bonus: 0
+    bonus: 0,
   });
 
-  const getStatusInfo = (status: Commission['status']) => {
-    const statuses = {
-      pending: { label: 'Pendente', color: 'warning' as const, icon: Clock },
-      approved: { label: 'Aprovada', color: 'info' as const, icon: CheckCircle },
-      paid: { label: 'Paga', color: 'success' as const, icon: CheckCircle },
-      disputed: { label: 'Contestada', color: 'danger' as const, icon: AlertTriangle }
-    };
-    return statuses[status];
+  // Construir filtros
+  const filters: CommissionFilter & { page: number; page_size: number } = useMemo(() => ({
+    page,
+    page_size: pageSize,
+    status: statusFilter || undefined,
+    period: selectedPeriod || undefined,
+    search: searchTerm || undefined,
+  }), [page, statusFilter, selectedPeriod, searchTerm]);
+
+  // Hooks de dados
+  const { data: commissionsData, isLoading, isError, error, refetch } = useCommissions(filters);
+  const { data: stats, isLoading: isLoadingStats } = useCommissionStats({ period: selectedPeriod });
+  const { data: rankingData, isLoading: isLoadingRanking } = useCommissionRanking({ period: selectedPeriod, limit: 10 });
+  const approveMutation = useApproveCommission();
+  const payMutation = usePayCommission();
+
+  // Dados processados
+  const commissions = commissionsData?.items || [];
+  const totalCommissions = commissionsData?.total || 0;
+
+  // Handlers
+  const handleApprove = useCallback(async (id: string) => {
+    try {
+      await approveMutation.mutateAsync(id);
+      setShowDetailModal(false);
+      setSelectedCommission(null);
+    } catch (err) {
+      console.error('Erro ao aprovar comissão:', err);
+    }
+  }, [approveMutation]);
+
+  const handlePay = useCallback(async (id: string) => {
+    try {
+      await payMutation.mutateAsync(id);
+      setShowDetailModal(false);
+      setSelectedCommission(null);
+    } catch (err) {
+      console.error('Erro ao pagar comissão:', err);
+    }
+  }, [payMutation]);
+
+  const openCommissionDetail = (commission: Commission) => {
+    setSelectedCommission(commission);
+    setShowDetailModal(true);
   };
 
+  // Colunas da tabela
   const columns: Column<Commission>[] = [
     {
       key: 'salesperson',
@@ -183,84 +169,135 @@ export function CommissionsPage() {
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center text-white font-bold">
-            {row.salesperson.split(' ').map(n => n[0]).slice(0, 2).join('')}
-          </div>
+          <Avatar name={row.salesperson_name} size="sm" />
           <div>
-            <p className="font-medium text-text-primary">{row.salesperson}</p>
-            <p className="text-xs text-text-secondary">{row.salesPersonId}</p>
+            <p className="font-medium text-text-primary">{row.salesperson_name}</p>
+            <p className="text-xs text-text-secondary">{row.salesperson_code}</p>
           </div>
         </div>
-      )
+      ),
     },
     {
       key: 'period',
       header: 'Período',
       sortable: true,
-      render: (row) => <span className="text-text-primary">{row.period}</span>
+      render: (row) => <span className="text-text-primary">{row.period}</span>,
     },
     {
-      key: 'totalSales',
+      key: 'total_sales',
       header: 'Vendas',
       sortable: true,
       render: (row) => (
         <span className="font-medium text-text-primary">
-          {row.totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          {formatCurrency(row.total_sales)}
         </span>
-      )
+      ),
     },
     {
-      key: 'commissionRate',
+      key: 'commission_rate',
       header: 'Taxa',
       sortable: true,
-      render: (row) => <Badge variant="info">{row.commissionRate}%</Badge>
+      render: (row) => <Badge variant="info">{row.commission_rate}%</Badge>,
     },
     {
-      key: 'netCommission',
+      key: 'net_commission',
       header: 'Comissão Líquida',
       sortable: true,
       render: (row) => (
         <span className="font-semibold text-accent-success">
-          {row.netCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          {formatCurrency(row.net_commission)}
         </span>
-      )
+      ),
     },
     {
-      key: 'contractsCount',
+      key: 'contracts_count',
       header: 'Contratos',
       sortable: true,
-      render: (row) => <span className="text-text-primary">{row.contractsCount}</span>
+      render: (row) => <span className="text-text-primary">{row.contracts_count}</span>,
     },
     {
       key: 'status',
       header: 'Status',
       sortable: true,
       render: (row) => {
-        const info = getStatusInfo(row.status);
-        return <Badge variant={info.color}>{info.label}</Badge>;
-      }
+        const config = STATUS_CONFIG[row.status] || STATUS_CONFIG.pending;
+        const Icon = config.icon;
+        return (
+          <Badge variant={config.color} leftIcon={<Icon className="w-3 h-3" />}>
+            {config.label}
+          </Badge>
+        );
+      },
     },
     {
       key: 'actions',
-      header: 'Ações',
+      header: '',
       render: (row) => (
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => { setSelectedCommission(row); setShowDetailModal(true); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openCommissionDetail(row);
+          }}
         >
           <Eye className="h-4 w-4" />
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
-  const totalCommissions = mockCommissions.reduce((sum, c) => sum + c.netCommission, 0);
-  const totalSales = mockCommissions.reduce((sum, c) => sum + c.totalSales, 0);
-  const avgRate = mockCommissions.reduce((sum, c) => sum + c.commissionRate, 0) / mockCommissions.length;
-  const pendingCount = mockCommissions.filter(c => c.status === 'pending').length;
+  // Estatísticas calculadas
+  const displayStats = useMemo(() => {
+    return {
+      totalCommissions: stats?.total_commissions || 0,
+      totalSales: stats?.total_sales || 0,
+      avgRate: stats?.avg_rate || 0,
+      salespeoplCount: stats?.salespeople_count || 0,
+      pendingCount: stats?.pending_count || 0,
+    };
+  }, [stats]);
 
+  // Dados para gráfico de tendência
+  const trendData = useMemo(() => {
+    return stats?.trend_data || [];
+  }, [stats]);
+
+  // Cálculo da simulação
   const simulatedCommission = (simulationValues.sales * simulationValues.rate / 100) + simulationValues.bonus;
+
+  // Loading state
+  if (isLoading && !commissionsData) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24" />)}
+          </div>
+          <Skeleton className="h-64" />
+          <Skeleton className="h-96" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <MainLayout>
+        <div className="flex flex-col items-center justify-center h-96 gap-4">
+          <AlertTriangle className="h-16 w-16 text-accent-danger" />
+          <h2 className="text-xl font-semibold">Erro ao carregar comissões</h2>
+          <p className="text-text-secondary">{(error as Error)?.message}</p>
+          <Button onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -285,12 +322,10 @@ export function CommissionsPage() {
               <option value="2025-12">Dezembro/2025</option>
               <option value="2025-11">Novembro/2025</option>
             </select>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
+            <Button variant="outline" leftIcon={<Download className="h-4 w-4" />}>
               Exportar
             </Button>
-            <Button variant="primary">
-              <Calculator className="h-4 w-4 mr-2" />
+            <Button variant="primary" leftIcon={<Calculator className="h-4 w-4" />}>
               Calcular Período
             </Button>
           </div>
@@ -300,30 +335,30 @@ export function CommissionsPage() {
         <StatGrid columns={5}>
           <StatCard
             title="Total Comissões"
-            value={totalCommissions.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            value={isLoadingStats ? '...' : formatCurrency(displayStats.totalCommissions)}
             icon={<DollarSign className="h-5 w-5" />}
             iconColor="success"
           />
           <StatCard
             title="Total Vendas"
-            value={totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            value={isLoadingStats ? '...' : formatCurrency(displayStats.totalSales)}
             icon={<TrendingUp className="h-5 w-5" />}
             iconColor="primary"
           />
           <StatCard
             title="Taxa Média"
-            value={`${avgRate.toFixed(1)}%`}
+            value={isLoadingStats ? '...' : `${displayStats.avgRate.toFixed(1)}%`}
             icon={<Target className="h-5 w-5" />}
             iconColor="info"
           />
           <StatCard
             title="Vendedores"
-            value={mockCommissions.length.toString()}
+            value={isLoadingStats ? '...' : displayStats.salespeoplCount.toString()}
             icon={<Users className="h-5 w-5" />}
           />
           <StatCard
             title="Pendentes"
-            value={pendingCount.toString()}
+            value={isLoadingStats ? '...' : displayStats.pendingCount.toString()}
             changeLabel="aguardando aprovação"
             icon={<Clock className="h-5 w-5" />}
             iconColor="warning"
@@ -340,7 +375,7 @@ export function CommissionsPage() {
           <CardBody>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={commissionTrendData}>
+                <AreaChart data={trendData}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -354,9 +389,9 @@ export function CommissionsPage() {
                     contentStyle={{
                       backgroundColor: '#1a1a2e',
                       border: '1px solid #2d2d3d',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
                     }}
-                    formatter={(value: number) => [value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), '']}
+                    formatter={(value: number) => [formatCurrency(value), '']}
                   />
                   <Area
                     type="monotone"
@@ -382,12 +417,12 @@ export function CommissionsPage() {
 
         {/* Tabs */}
         <SimpleTabBar
-          tabs={tabs}
+          tabs={TABS}
           value={activeTab}
           onChange={setActiveTab}
         />
 
-        {/* Content */}
+        {/* Commissions Tab Content */}
         {activeTab === 'commissions' && (
           <Card>
             <CardHeader>
@@ -395,29 +430,32 @@ export function CommissionsPage() {
                 <h3 className="text-lg font-semibold text-text-primary">
                   Comissões do Período
                 </h3>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-secondary" />
+                <div className="flex items-center gap-3">
                   <Input
                     placeholder="Buscar vendedor..."
+                    leftIcon={<Search className="h-4 w-4" />}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-64"
+                    className="w-64"
                   />
+                  <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isLoading}>
+                    <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  </Button>
                 </div>
               </div>
             </CardHeader>
             <CardBody className="p-0">
               <DataTable<Commission>
-                data={mockCommissions.filter(c =>
-                  c.salesperson.toLowerCase().includes(searchTerm.toLowerCase())
-                )}
+                data={commissions}
                 columns={columns}
                 keyExtractor={(row) => row.id}
+                onRowClick={openCommissionDetail}
               />
             </CardBody>
           </Card>
         )}
 
+        {/* Ranking Tab Content */}
         {activeTab === 'ranking' && (
           <Card>
             <CardHeader>
@@ -426,48 +464,61 @@ export function CommissionsPage() {
               </h3>
             </CardHeader>
             <CardBody>
-              <div className="space-y-4">
-                {rankingData.map((seller, index) => (
-                  <motion.div
-                    key={seller.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-lg"
-                  >
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
-                      index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                      index === 1 ? 'bg-gray-400/20 text-gray-400' :
-                      index === 2 ? 'bg-orange-500/20 text-orange-500' :
-                      'bg-bg-secondary text-text-secondary'
-                    }`}>
-                      {index + 1}º
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-text-primary">{seller.name}</p>
-                      <p className="text-sm text-text-secondary">
-                        {seller.contractsCount} contratos | Taxa conversão: {seller.conversionRate}%
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-text-primary">
-                        {seller.totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </p>
-                      <p className="text-sm text-accent-success">
-                        Comissão: {seller.totalCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </p>
-                    </div>
-                    <div className={`flex items-center gap-1 ${seller.trend >= 0 ? 'text-accent-success' : 'text-accent-danger'}`}>
-                      <TrendingUp className={`h-4 w-4 ${seller.trend < 0 ? 'rotate-180' : ''}`} />
-                      <span className="font-medium">{Math.abs(seller.trend)}%</span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+              {isLoadingRanking ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20" />)}
+                </div>
+              ) : (rankingData?.length || 0) > 0 ? (
+                <div className="space-y-4">
+                  {rankingData?.map((seller, index) => (
+                    <motion.div
+                      key={seller.seller_id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-lg"
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                        index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
+                        index === 1 ? 'bg-gray-400/20 text-gray-400' :
+                        index === 2 ? 'bg-orange-500/20 text-orange-500' :
+                        'bg-bg-secondary text-text-secondary'
+                      }`}>
+                        {index + 1}º
+                      </div>
+                      <Avatar name={seller.name} size="md" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-text-primary">{seller.name}</p>
+                        <p className="text-sm text-text-secondary">
+                          {seller.contracts_count} contratos | Taxa conversão: {seller.conversion_rate}%
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-text-primary">
+                          {formatCurrency(seller.total_sales)}
+                        </p>
+                        <p className="text-sm text-accent-success">
+                          Comissão: {formatCurrency(seller.total_commission)}
+                        </p>
+                      </div>
+                      <div className={`flex items-center gap-1 ${seller.trend === 'up' || seller.trend === 'stable' ? 'text-accent-success' : 'text-accent-danger'}`}>
+                        <TrendingUp className={`h-4 w-4 ${seller.trend === 'down' ? 'rotate-180' : ''}`} />
+                        <span className="font-medium">{seller.trend === 'up' ? '↑' : seller.trend === 'down' ? '↓' : '→'}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-text-muted">
+                  <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum dado de ranking disponível</p>
+                </div>
+              )}
             </CardBody>
           </Card>
         )}
 
+        {/* Simulation Tab Content */}
         {activeTab === 'simulation' && (
           <Card>
             <CardHeader>
@@ -484,6 +535,7 @@ export function CommissionsPage() {
                     </label>
                     <Input
                       type="number"
+                      leftIcon={<DollarSign className="h-4 w-4" />}
                       value={simulationValues.sales}
                       onChange={(e) => setSimulationValues(prev => ({ ...prev, sales: Number(e.target.value) }))}
                       placeholder="100000"
@@ -507,6 +559,7 @@ export function CommissionsPage() {
                     </label>
                     <Input
                       type="number"
+                      leftIcon={<DollarSign className="h-4 w-4" />}
                       value={simulationValues.bonus}
                       onChange={(e) => setSimulationValues(prev => ({ ...prev, bonus: Number(e.target.value) }))}
                       placeholder="0"
@@ -516,12 +569,12 @@ export function CommissionsPage() {
                 <div className="flex flex-col items-center justify-center p-8 bg-bg-tertiary rounded-xl">
                   <p className="text-text-secondary mb-2">Comissão Estimada</p>
                   <p className="text-4xl font-bold text-accent-success">
-                    {simulatedCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {formatCurrency(simulatedCommission)}
                   </p>
                   <div className="mt-4 text-sm text-text-secondary">
-                    <p>Base: {(simulationValues.sales * simulationValues.rate / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                    <p>Base: {formatCurrency(simulationValues.sales * simulationValues.rate / 100)}</p>
                     {simulationValues.bonus > 0 && (
-                      <p>+ Bônus: {simulationValues.bonus.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                      <p>+ Bônus: {formatCurrency(simulationValues.bonus)}</p>
                     )}
                   </div>
                 </div>
@@ -540,12 +593,13 @@ export function CommissionsPage() {
           {selectedCommission && (
             <div className="space-y-6">
               <div className="flex items-center gap-4 p-4 bg-bg-tertiary rounded-lg">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center text-white text-xl font-bold">
-                  {selectedCommission.salesperson.split(' ').map(n => n[0]).slice(0, 2).join('')}
-                </div>
+                <Avatar name={selectedCommission.salesperson_name} size="lg" />
                 <div>
-                  <h3 className="text-xl font-semibold text-text-primary">{selectedCommission.salesperson}</h3>
+                  <h3 className="text-xl font-semibold text-text-primary">{selectedCommission.salesperson_name}</h3>
                   <p className="text-text-secondary">{selectedCommission.period}</p>
+                  <Badge variant={STATUS_CONFIG[selectedCommission.status]?.color || 'neutral'} className="mt-2">
+                    {STATUS_CONFIG[selectedCommission.status]?.label || selectedCommission.status}
+                  </Badge>
                 </div>
               </div>
 
@@ -553,27 +607,27 @@ export function CommissionsPage() {
                 <div className="p-4 bg-bg-tertiary rounded-lg">
                   <p className="text-sm text-text-secondary">Total Vendas</p>
                   <p className="text-xl font-semibold text-text-primary">
-                    {selectedCommission.totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {formatCurrency(selectedCommission.total_sales)}
                   </p>
                 </div>
                 <div className="p-4 bg-bg-tertiary rounded-lg">
                   <p className="text-sm text-text-secondary">Contratos</p>
-                  <p className="text-xl font-semibold text-text-primary">{selectedCommission.contractsCount}</p>
+                  <p className="text-xl font-semibold text-text-primary">{selectedCommission.contracts_count}</p>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between p-3 bg-bg-secondary rounded-lg">
-                  <span className="text-text-secondary">Comissão Base ({selectedCommission.commissionRate}%)</span>
+                  <span className="text-text-secondary">Comissão Base ({selectedCommission.commission_rate}%)</span>
                   <span className="text-text-primary">
-                    {selectedCommission.commissionValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {formatCurrency(selectedCommission.commission_value)}
                   </span>
                 </div>
                 {selectedCommission.bonuses > 0 && (
                   <div className="flex justify-between p-3 bg-accent-success/10 rounded-lg">
                     <span className="text-accent-success">+ Bônus</span>
                     <span className="text-accent-success">
-                      {selectedCommission.bonuses.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {formatCurrency(selectedCommission.bonuses)}
                     </span>
                   </div>
                 )}
@@ -581,14 +635,14 @@ export function CommissionsPage() {
                   <div className="flex justify-between p-3 bg-accent-danger/10 rounded-lg">
                     <span className="text-accent-danger">- Deduções</span>
                     <span className="text-accent-danger">
-                      {selectedCommission.deductions.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {formatCurrency(selectedCommission.deductions)}
                     </span>
                   </div>
                 )}
                 <div className="flex justify-between p-4 bg-accent-primary/10 rounded-lg border border-accent-primary/30">
                   <span className="font-semibold text-text-primary">Total Líquido</span>
                   <span className="font-bold text-xl text-accent-success">
-                    {selectedCommission.netCommission.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {formatCurrency(selectedCommission.net_commission)}
                   </span>
                 </div>
               </div>
@@ -598,8 +652,23 @@ export function CommissionsPage() {
                   Fechar
                 </Button>
                 {selectedCommission.status === 'pending' && (
-                  <Button variant="primary">
-                    Aprovar Comissão
+                  <Button
+                    variant="primary"
+                    leftIcon={approveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                    onClick={() => handleApprove(selectedCommission.id)}
+                    disabled={approveMutation.isPending}
+                  >
+                    {approveMutation.isPending ? 'Aprovando...' : 'Aprovar Comissão'}
+                  </Button>
+                )}
+                {selectedCommission.status === 'approved' && (
+                  <Button
+                    variant="primary"
+                    leftIcon={payMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
+                    onClick={() => handlePay(selectedCommission.id)}
+                    disabled={payMutation.isPending}
+                  >
+                    {payMutation.isPending ? 'Processando...' : 'Marcar como Paga'}
                   </Button>
                 )}
               </div>

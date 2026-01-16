@@ -13,8 +13,10 @@ export interface StatCardProps {
   changeLabel?: string;
   changePeriod?: string;
   icon?: ReactNode;
-  iconColor?: 'primary' | 'success' | 'warning' | 'danger' | 'info';
-  trend?: 'up' | 'down' | 'neutral';
+  iconColor?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+  color?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info'; // Alias for iconColor
+  trend?: 'up' | 'down' | 'neutral' | { value: number; isPositive: boolean }; // Support both formats
+  trendValue?: string | number; // Direct trend value display
   loading?: boolean;
   className?: string;
   onClick?: () => void;
@@ -22,6 +24,7 @@ export interface StatCardProps {
 
 const iconColorClasses = {
   primary: 'bg-accent-primary/10 text-accent-primary',
+  secondary: 'bg-accent-secondary/10 text-accent-secondary',
   success: 'bg-success/10 text-success',
   warning: 'bg-warning/10 text-warning',
   danger: 'bg-danger/10 text-danger',
@@ -35,14 +38,31 @@ export function StatCard({
   changeLabel,
   changePeriod = 'vs. mês anterior',
   icon,
-  iconColor = 'primary',
+  iconColor,
+  color,
   trend,
+  trendValue: propTrendValue,
   loading,
   className,
   onClick,
 }: StatCardProps) {
+  // Support color as alias for iconColor
+  const effectiveIconColor = iconColor ?? color ?? 'primary';
+
+  // Normalize trend - can be string or object
+  let normalizedTrend: 'up' | 'down' | 'neutral' | undefined;
+  let objectTrendValue: number | undefined;
+
+  if (typeof trend === 'object' && trend !== null) {
+    normalizedTrend = trend.isPositive ? 'up' : 'down';
+    objectTrendValue = trend.value;
+  } else if (trend === 'up' || trend === 'down' || trend === 'neutral') {
+    normalizedTrend = trend;
+  }
+
   // Determine trend from change if not provided
-  const actualTrend = trend || (change !== undefined ? (change > 0 ? 'up' : change < 0 ? 'down' : 'neutral') : undefined);
+  const actualTrend = normalizedTrend || (change !== undefined ? (change > 0 ? 'up' : change < 0 ? 'down' : 'neutral') : undefined);
+  const displayChange = propTrendValue ?? objectTrendValue ?? change;
 
   const TrendIcon = actualTrend === 'up' ? TrendingUp : actualTrend === 'down' ? TrendingDown : Minus;
 
@@ -80,11 +100,11 @@ export function StatCard({
           >
             {value}
           </motion.p>
-          {change !== undefined && (
+          {displayChange !== undefined && (
             <div className="flex items-center gap-1.5 mt-2">
               <span className={cn('flex items-center gap-0.5 text-sm font-medium', trendColorClass)}>
                 <TrendIcon className="w-4 h-4" />
-                {Math.abs(change)}%
+                {typeof displayChange === 'string' ? displayChange : `${Math.abs(displayChange)}%`}
               </span>
               <span className="text-xs text-text-muted">
                 {changeLabel || changePeriod}
@@ -93,7 +113,7 @@ export function StatCard({
           )}
         </div>
         {icon && (
-          <div className={cn('p-3 rounded-xl', iconColorClasses[iconColor])}>
+          <div className={cn('p-3 rounded-xl', iconColorClasses[effectiveIconColor])}>
             {icon}
           </div>
         )}

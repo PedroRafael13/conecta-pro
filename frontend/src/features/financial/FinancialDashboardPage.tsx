@@ -1,24 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  DollarSign,
   TrendingUp,
   TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
-  CreditCard,
   Building2,
   Calendar,
   AlertTriangle,
   CheckCircle2,
   Clock,
-  PieChart,
-  BarChart3,
   Wallet,
-  Receipt,
-  ArrowRightLeft,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { MainLayout } from '@/layouts';
 import {
@@ -27,12 +23,10 @@ import {
   CardBody,
   Button,
   Badge,
-  Avatar,
-  StatCard,
-  StatGrid,
   DataTable,
   type Column,
   SimpleTabBar,
+  Skeleton,
 } from '@/design-system/components';
 import {
   AreaChart,
@@ -50,175 +44,222 @@ import {
   Legend,
 } from 'recharts';
 
-// Mock Data
-const cashflowData = [
-  { month: 'Jul', receitas: 485000, despesas: 320000, saldo: 165000 },
-  { month: 'Ago', receitas: 520000, despesas: 340000, saldo: 180000 },
-  { month: 'Set', receitas: 510000, despesas: 355000, saldo: 155000 },
-  { month: 'Out', receitas: 545000, despesas: 360000, saldo: 185000 },
-  { month: 'Nov', receitas: 580000, despesas: 380000, saldo: 200000 },
-  { month: 'Dez', receitas: 620000, despesas: 410000, saldo: 210000 },
-  { month: 'Jan', receitas: 595000, despesas: 385000, saldo: 210000 },
-];
+// Types & Hooks
+import {
+  useFinancialDashboard,
+  useFinancialKPIs,
+  useFinancialAlerts,
+  useReceivableStats,
+  usePayableStats,
+  useBankAccountStats,
+  useBankTransactions,
+} from './hooks';
+import type { BankTransaction } from './types';
+import { TransactionType, TransactionStatus } from './types';
 
-const expensesByCategory = [
-  { name: 'Folha de Pagamento', value: 245000, color: '#6366f1' },
-  { name: 'Fornecedores', value: 85000, color: '#8b5cf6' },
-  { name: 'Impostos', value: 42000, color: '#ec4899' },
-  { name: 'Operacional', value: 28000, color: '#14b8a6' },
-  { name: 'Administrativo', value: 18000, color: '#f59e0b' },
-  { name: 'Outros', value: 12000, color: '#64748b' },
-];
-
-const revenueByClient = [
-  { name: 'Shopping Center Norte', value: 128000 },
-  { name: 'Hospital São Lucas', value: 95000 },
-  { name: 'Tech Park', value: 67000 },
-  { name: 'Condomínio Aurora', value: 45000 },
-  { name: 'Outros', value: 260000 },
-];
-
-interface Transaction {
-  id: string;
-  description: string;
-  category: string;
-  type: 'income' | 'expense';
-  value: number;
-  date: string;
-  status: 'completed' | 'pending' | 'scheduled';
-  account: string;
-}
-
-const recentTransactions: Transaction[] = [
-  {
-    id: '1',
-    description: 'Pagamento - Shopping Center Norte',
-    category: 'Receita',
-    type: 'income',
-    value: 128000,
-    date: '2026-01-15',
-    status: 'completed',
-    account: 'Itaú Empresas',
-  },
-  {
-    id: '2',
-    description: 'Folha de Pagamento - Janeiro',
-    category: 'RH',
-    type: 'expense',
-    value: 245000,
-    date: '2026-01-10',
-    status: 'completed',
-    account: 'Bradesco PJ',
-  },
-  {
-    id: '3',
-    description: 'Uniforme - Lote 2026/01',
-    category: 'Fornecedor',
-    type: 'expense',
-    value: 18500,
-    date: '2026-01-18',
-    status: 'pending',
-    account: 'Itaú Empresas',
-  },
-  {
-    id: '4',
-    description: 'Pagamento - Hospital São Lucas',
-    category: 'Receita',
-    type: 'income',
-    value: 95000,
-    date: '2026-01-20',
-    status: 'scheduled',
-    account: 'Itaú Empresas',
-  },
-  {
-    id: '5',
-    description: 'INSS Competência 12/2025',
-    category: 'Imposto',
-    type: 'expense',
-    value: 42000,
-    date: '2026-01-20',
-    status: 'scheduled',
-    account: 'Bradesco PJ',
-  },
-];
-
-const transactionColumns: Column<Transaction>[] = [
-  {
-    key: 'description',
-    header: 'Descrição',
-    render: (row) => (
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${row.type === 'income' ? 'bg-success/10' : 'bg-danger/10'}`}>
-          {row.type === 'income' ? (
-            <ArrowUpRight className="w-4 h-4 text-success" />
-          ) : (
-            <ArrowDownRight className="w-4 h-4 text-danger" />
-          )}
-        </div>
-        <div>
-          <p className="font-medium text-text-primary">{row.description}</p>
-          <p className="text-xs text-text-muted">{row.category}</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    key: 'value',
-    header: 'Valor',
-    render: (row) => (
-      <span className={`font-mono font-medium ${row.type === 'income' ? 'text-success' : 'text-danger'}`}>
-        {row.type === 'income' ? '+' : '-'}
-        {row.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-      </span>
-    ),
-  },
-  {
-    key: 'date',
-    header: 'Data',
-    render: (row) => (
-      <span className="text-sm text-text-secondary">
-        {new Date(row.date).toLocaleDateString('pt-BR')}
-      </span>
-    ),
-  },
-  {
-    key: 'account',
-    header: 'Conta',
-    render: (row) => (
-      <div className="flex items-center gap-2">
-        <Building2 className="w-4 h-4 text-text-muted" />
-        <span className="text-sm text-text-secondary">{row.account}</span>
-      </div>
-    ),
-  },
-  {
-    key: 'status',
-    header: 'Status',
-    render: (row) => {
-      const config = {
-        completed: { label: 'Concluído', color: 'success' as const, icon: CheckCircle2 },
-        pending: { label: 'Pendente', color: 'warning' as const, icon: Clock },
-        scheduled: { label: 'Agendado', color: 'info' as const, icon: Calendar },
-      };
-      const status = config[row.status];
-      return (
-        <Badge variant={status.color} leftIcon={<status.icon className="w-3 h-3" />}>
-          {status.label}
-        </Badge>
-      );
-    },
-  },
-];
+// Chart colors
+const EXPENSE_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#f59e0b', '#64748b'];
 
 export function FinancialDashboardPage() {
+  // State
   const [period, setPeriod] = useState('month');
 
-  // Calculate totals
-  const totalReceitas = 595000;
-  const totalDespesas = 385000;
-  const saldoAtual = totalReceitas - totalDespesas;
-  const contasReceber = 280000;
-  const contasPagar = 145000;
+  // Queries
+  const { data: dashboardData, isLoading: isLoadingDashboard, error, refetch } = useFinancialDashboard({ period });
+  const { data: kpisData, isLoading: isLoadingKPIs } = useFinancialKPIs();
+  const { data: alertsData } = useFinancialAlerts();
+  const { data: receivableStats } = useReceivableStats();
+  const { data: payableStats } = usePayableStats();
+  const { data: bankStats } = useBankAccountStats();
+  const { data: transactionsData, isLoading: isLoadingTransactions } = useBankTransactions({ page_size: 5 });
+
+  // Memoized data
+  const dashboard = useMemo(() => dashboardData || {
+    total_income: 0,
+    total_expense: 0,
+    net_balance: 0,
+    monthly_data: [],
+    expenses_by_category: [],
+    revenue_by_client: [],
+  }, [dashboardData]);
+
+  const kpis = useMemo(() => kpisData || {
+    revenue_growth: 0,
+    expense_growth: 0,
+    profit_margin: 0,
+  }, [kpisData]);
+
+  const alerts = useMemo(() => alertsData || [], [alertsData]);
+  const receivables = useMemo(() => receivableStats || { total_balance: 0, total_accounts: 0, overdue_count: 0 }, [receivableStats]);
+  const payables = useMemo(() => payableStats || { total_balance: 0, total_accounts: 0, overdue_count: 0 }, [payableStats]);
+  const bank = useMemo(() => bankStats || { total_balance: 0 }, [bankStats]);
+  const transactions = useMemo(() => transactionsData?.items || [], [transactionsData]);
+
+  // Chart data
+  const cashflowData = useMemo(() => {
+    if (dashboard.monthly_data?.length > 0) {
+      return dashboard.monthly_data;
+    }
+    // Generate mock data based on totals
+    const months = ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez', 'Jan'];
+    const baseIncome = dashboard.total_income / 7;
+    const baseExpense = dashboard.total_expense / 7;
+    return months.map(month => ({
+      month,
+      receitas: Math.round(baseIncome * (0.8 + Math.random() * 0.4)),
+      despesas: Math.round(baseExpense * (0.8 + Math.random() * 0.4)),
+    }));
+  }, [dashboard]);
+
+  const expensesByCategory = useMemo(() => {
+    if (dashboard.expenses_by_category?.length > 0) {
+      return dashboard.expenses_by_category.map((item: any, i: number) => ({
+        ...item,
+        color: EXPENSE_COLORS[i % EXPENSE_COLORS.length],
+      }));
+    }
+    // Mock data
+    return [
+      { name: 'Folha de Pagamento', value: dashboard.total_expense * 0.45, color: EXPENSE_COLORS[0] },
+      { name: 'Fornecedores', value: dashboard.total_expense * 0.2, color: EXPENSE_COLORS[1] },
+      { name: 'Impostos', value: dashboard.total_expense * 0.15, color: EXPENSE_COLORS[2] },
+      { name: 'Operacional', value: dashboard.total_expense * 0.1, color: EXPENSE_COLORS[3] },
+      { name: 'Administrativo', value: dashboard.total_expense * 0.07, color: EXPENSE_COLORS[4] },
+      { name: 'Outros', value: dashboard.total_expense * 0.03, color: EXPENSE_COLORS[5] },
+    ];
+  }, [dashboard]);
+
+  const revenueByClient = useMemo(() => {
+    if (dashboard.revenue_by_client?.length > 0) {
+      return dashboard.revenue_by_client.slice(0, 5);
+    }
+    return [
+      { name: 'Cliente 1', value: dashboard.total_income * 0.25 },
+      { name: 'Cliente 2', value: dashboard.total_income * 0.2 },
+      { name: 'Cliente 3', value: dashboard.total_income * 0.15 },
+      { name: 'Cliente 4', value: dashboard.total_income * 0.1 },
+      { name: 'Outros', value: dashboard.total_income * 0.3 },
+    ];
+  }, [dashboard]);
+
+  // Transaction columns
+  const transactionColumns: Column<BankTransaction>[] = useMemo(() => [
+    {
+      key: 'description',
+      header: 'Descrição',
+      render: (row) => {
+        const isIncome = row.transaction_type === TransactionType.CREDIT || row.transaction_type === TransactionType.TRANSFER_IN;
+        return (
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${isIncome ? 'bg-success/10' : 'bg-danger/10'}`}>
+              {isIncome ? (
+                <ArrowUpRight className="w-4 h-4 text-success" />
+              ) : (
+                <ArrowDownRight className="w-4 h-4 text-danger" />
+              )}
+            </div>
+            <div>
+              <p className="font-medium text-text-primary">{row.description}</p>
+              <p className="text-xs text-text-muted">{row.category_name || 'Sem categoria'}</p>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'amount',
+      header: 'Valor',
+      render: (row) => {
+        const isIncome = row.transaction_type === TransactionType.CREDIT || row.transaction_type === TransactionType.TRANSFER_IN;
+        return (
+          <span className={`font-mono font-medium ${isIncome ? 'text-success' : 'text-danger'}`}>
+            {isIncome ? '+' : '-'}
+            {Math.abs(row.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'transaction_date',
+      header: 'Data',
+      render: (row) => (
+        <span className="text-sm text-text-secondary">
+          {new Date(row.transaction_date).toLocaleDateString('pt-BR')}
+        </span>
+      ),
+    },
+    {
+      key: 'account_name',
+      header: 'Conta',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-text-muted" />
+          <span className="text-sm text-text-secondary">{row.account_name || 'N/A'}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row) => {
+        const config: Record<string, { label: string; color: 'success' | 'warning' | 'info'; icon: typeof CheckCircle2 }> = {
+          confirmed: { label: 'Concluído', color: 'success', icon: CheckCircle2 },
+          reconciled: { label: 'Conciliado', color: 'success', icon: CheckCircle2 },
+          pending: { label: 'Pendente', color: 'warning', icon: Clock },
+          cancelled: { label: 'Cancelado', color: 'info', icon: Calendar },
+        };
+        const status = config[row.status] || config.pending;
+        const Icon = status.icon;
+        return (
+          <Badge variant={status.color} leftIcon={<Icon className="w-3 h-3" />}>
+            {status.label}
+          </Badge>
+        );
+      },
+    },
+  ], []);
+
+  // Loading state
+  if (isLoadingDashboard) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-8 w-56" />
+              <Skeleton className="h-4 w-72 mt-2" />
+            </div>
+            <Skeleton className="h-10 w-48" />
+          </div>
+          <div className="grid grid-cols-5 gap-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-28" />
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-6">
+            <Skeleton className="col-span-2 h-96" />
+            <Skeleton className="h-96" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="flex flex-col items-center justify-center py-12">
+          <AlertTriangle className="w-12 h-12 text-danger mb-4" />
+          <h2 className="text-xl font-semibold text-text-primary mb-2">Erro ao carregar dashboard</h2>
+          <p className="text-text-secondary mb-4">Não foi possível carregar os dados financeiros.</p>
+          <Button variant="primary" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={() => refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -249,80 +290,102 @@ export function FinancialDashboardPage() {
 
         {/* Main Stats */}
         <div className="grid grid-cols-5 gap-4">
-          <Card className="bg-gradient-to-br from-success/10 to-bg-secondary border-success/20">
-            <CardBody className="py-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-success/10">
-                  <TrendingUp className="w-5 h-5 text-success" />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="bg-gradient-to-br from-success/10 to-bg-secondary border-success/20">
+              <CardBody className="py-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <TrendingUp className="w-5 h-5 text-success" />
+                  </div>
+                  <span className="text-xs text-text-muted">Receitas</span>
                 </div>
-                <span className="text-xs text-text-muted">Receitas</span>
-              </div>
-              <p className="text-2xl font-mono font-bold text-success">
-                {totalReceitas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </p>
-              <p className="text-xs text-success mt-1">+12.5% vs mês anterior</p>
-            </CardBody>
-          </Card>
+                <p className="text-2xl font-mono font-bold text-success">
+                  {dashboard.total_income.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+                {kpis.revenue_growth !== 0 && (
+                  <p className={`text-xs mt-1 ${kpis.revenue_growth >= 0 ? 'text-success' : 'text-danger'}`}>
+                    {kpis.revenue_growth >= 0 ? '+' : ''}{kpis.revenue_growth.toFixed(1)}% vs período anterior
+                  </p>
+                )}
+              </CardBody>
+            </Card>
+          </motion.div>
 
-          <Card className="bg-gradient-to-br from-danger/10 to-bg-secondary border-danger/20">
-            <CardBody className="py-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-danger/10">
-                  <TrendingDown className="w-5 h-5 text-danger" />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="bg-gradient-to-br from-danger/10 to-bg-secondary border-danger/20">
+              <CardBody className="py-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-danger/10">
+                    <TrendingDown className="w-5 h-5 text-danger" />
+                  </div>
+                  <span className="text-xs text-text-muted">Despesas</span>
                 </div>
-                <span className="text-xs text-text-muted">Despesas</span>
-              </div>
-              <p className="text-2xl font-mono font-bold text-danger">
-                {totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </p>
-              <p className="text-xs text-danger mt-1">+8.2% vs mês anterior</p>
-            </CardBody>
-          </Card>
+                <p className="text-2xl font-mono font-bold text-danger">
+                  {dashboard.total_expense.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+                {kpis.expense_growth !== 0 && (
+                  <p className={`text-xs mt-1 ${kpis.expense_growth <= 0 ? 'text-success' : 'text-danger'}`}>
+                    {kpis.expense_growth >= 0 ? '+' : ''}{kpis.expense_growth.toFixed(1)}% vs período anterior
+                  </p>
+                )}
+              </CardBody>
+            </Card>
+          </motion.div>
 
-          <Card className="bg-gradient-to-br from-accent-primary/10 to-bg-secondary border-accent-primary/20">
-            <CardBody className="py-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-accent-primary/10">
-                  <Wallet className="w-5 h-5 text-accent-primary" />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+            <Card className="bg-gradient-to-br from-accent-primary/10 to-bg-secondary border-accent-primary/20">
+              <CardBody className="py-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-accent-primary/10">
+                    <Wallet className="w-5 h-5 text-accent-primary" />
+                  </div>
+                  <span className="text-xs text-text-muted">Saldo Bancário</span>
                 </div>
-                <span className="text-xs text-text-muted">Saldo</span>
-              </div>
-              <p className="text-2xl font-mono font-bold text-accent-primary">
-                {saldoAtual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </p>
-              <p className="text-xs text-accent-primary mt-1">Margem: 35.3%</p>
-            </CardBody>
-          </Card>
+                <p className="text-2xl font-mono font-bold text-accent-primary">
+                  {bank.total_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+                {kpis.profit_margin !== 0 && (
+                  <p className="text-xs text-accent-primary mt-1">
+                    Margem: {kpis.profit_margin.toFixed(1)}%
+                  </p>
+                )}
+              </CardBody>
+            </Card>
+          </motion.div>
 
-          <Card className="bg-gradient-to-br from-info/10 to-bg-secondary border-info/20">
-            <CardBody className="py-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-info/10">
-                  <ArrowUpRight className="w-5 h-5 text-info" />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+            <Card className="bg-gradient-to-br from-info/10 to-bg-secondary border-info/20">
+              <CardBody className="py-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-info/10">
+                    <ArrowUpRight className="w-5 h-5 text-info" />
+                  </div>
+                  <span className="text-xs text-text-muted">A Receber</span>
                 </div>
-                <span className="text-xs text-text-muted">A Receber</span>
-              </div>
-              <p className="text-2xl font-mono font-bold text-info">
-                {contasReceber.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </p>
-              <p className="text-xs text-text-muted mt-1">15 títulos</p>
-            </CardBody>
-          </Card>
+                <p className="text-2xl font-mono font-bold text-info">
+                  {receivables.total_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+                <p className="text-xs text-text-muted mt-1">{receivables.total_accounts} títulos</p>
+              </CardBody>
+            </Card>
+          </motion.div>
 
-          <Card className="bg-gradient-to-br from-warning/10 to-bg-secondary border-warning/20">
-            <CardBody className="py-4">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-warning/10">
-                  <ArrowDownRight className="w-5 h-5 text-warning" />
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+            <Card className="bg-gradient-to-br from-warning/10 to-bg-secondary border-warning/20">
+              <CardBody className="py-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <ArrowDownRight className="w-5 h-5 text-warning" />
+                  </div>
+                  <span className="text-xs text-text-muted">A Pagar</span>
                 </div>
-                <span className="text-xs text-text-muted">A Pagar</span>
-              </div>
-              <p className="text-2xl font-mono font-bold text-warning">
-                {contasPagar.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </p>
-              <p className="text-xs text-text-muted mt-1">8 títulos</p>
-            </CardBody>
-          </Card>
+                <p className="text-2xl font-mono font-bold text-warning">
+                  {payables.total_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+                <p className="text-xs text-text-muted mt-1">{payables.total_accounts} títulos</p>
+              </CardBody>
+            </Card>
+          </motion.div>
         </div>
 
         {/* Charts Row */}
@@ -394,7 +457,7 @@ export function FinancialDashboardPage() {
 
           {/* Expenses by Category */}
           <Card>
-            <CardHeader title="Despesas por Categoria" subtitle="Janeiro 2026" />
+            <CardHeader title="Despesas por Categoria" subtitle={`${period === 'month' ? 'Este mês' : period === 'quarter' ? 'Este trimestre' : 'Este ano'}`} />
             <CardBody>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
@@ -408,7 +471,7 @@ export function FinancialDashboardPage() {
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {expensesByCategory.map((entry, index) => (
+                      {expensesByCategory.map((entry: any, index: number) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -426,7 +489,7 @@ export function FinancialDashboardPage() {
                 </ResponsiveContainer>
               </div>
               <div className="space-y-2 mt-4">
-                {expensesByCategory.slice(0, 4).map((item) => (
+                {expensesByCategory.slice(0, 4).map((item: any) => (
                   <div key={item.name} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div
@@ -497,35 +560,48 @@ export function FinancialDashboardPage() {
               }
             />
             <CardBody className="p-0">
-              <DataTable
-                columns={transactionColumns}
-                data={recentTransactions}
-                keyExtractor={(row) => row.id}
-              />
+              {isLoadingTransactions ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-accent-primary mx-auto" />
+                </div>
+              ) : (
+                <DataTable
+                  columns={transactionColumns}
+                  data={transactions}
+                  keyExtractor={(row) => row.id}
+                  emptyState={{ title: "Nenhuma transação recente" }}
+                />
+              )}
             </CardBody>
           </Card>
         </div>
 
         {/* Alerts */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="border-warning/30 bg-warning/5">
-            <CardBody>
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-warning/10">
-                  <AlertTriangle className="w-6 h-6 text-warning" />
+          {(payables.overdue_count > 0 || receivables.overdue_count > 0) && (
+            <Card className="border-warning/30 bg-warning/5">
+              <CardBody>
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-warning/10">
+                    <AlertTriangle className="w-6 h-6 text-warning" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-text-primary">
+                      {payables.overdue_count > 0
+                        ? `${payables.overdue_count} títulos a pagar vencidos`
+                        : `${receivables.overdue_count} títulos a receber vencidos`}
+                    </p>
+                    <p className="text-sm text-text-secondary mt-1">
+                      Verifique os títulos pendentes
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Ver Títulos
+                  </Button>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-text-primary">3 títulos vencem esta semana</p>
-                  <p className="text-sm text-text-secondary mt-1">
-                    Total de R$ 65.500,00 em contas a pagar
-                  </p>
-                </div>
-                <Button variant="outline" size="sm">
-                  Ver Títulos
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
+          )}
 
           <Card className="border-success/30 bg-success/5">
             <CardBody>
@@ -534,13 +610,17 @@ export function FinancialDashboardPage() {
                   <CheckCircle2 className="w-6 h-6 text-success" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-text-primary">Conciliação bancária atualizada</p>
+                  <p className="font-medium text-text-primary">
+                    {dashboard.net_balance >= 0 ? 'Saldo positivo no período' : 'Dashboard atualizado'}
+                  </p>
                   <p className="text-sm text-text-secondary mt-1">
-                    Última sincronização há 2 horas
+                    {dashboard.net_balance >= 0
+                      ? `Lucro de ${dashboard.net_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`
+                      : 'Dados sincronizados'}
                   </p>
                 </div>
                 <Button variant="outline" size="sm">
-                  Conciliar Agora
+                  Ver Relatório
                 </Button>
               </div>
             </CardBody>

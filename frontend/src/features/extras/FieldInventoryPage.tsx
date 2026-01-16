@@ -1056,7 +1056,7 @@ export function FieldInventoryPage() {
             value={totalItems.toLocaleString('pt-BR')}
             icon={<Package className="h-5 w-5" />}
             iconColor="primary"
-            change="+45"
+            change={45}
             changeLabel="este mês"
           />
           <StatCard
@@ -1064,7 +1064,7 @@ export function FieldInventoryPage() {
             value={formatCurrency(totalValue)}
             icon={<TrendingUp className="h-5 w-5" />}
             iconColor="success"
-            change="+8%"
+            change={8}
             changeLabel="vs mês anterior"
           />
           <StatCard

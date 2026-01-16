@@ -10,3 +10,9 @@ export { OccurrencesPage } from './OccurrencesPage';
 export { AccessLogPage } from './AccessLogPage';
 export { EquipmentStatusPage } from './EquipmentStatusPage';
 export { RoutesPage } from './RoutesPage';
+
+// Advanced Features
+export { GuardianSyncPage } from './GuardianSyncPage';
+export { SecurityAuditPage } from './SecurityAuditPage';
+export { SSHGatewayPage } from './SSHGatewayPage';
+export { FieldMonitoringPage } from './FieldMonitoringPage';

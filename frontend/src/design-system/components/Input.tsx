@@ -39,6 +39,7 @@ export interface InputProps
   success?: string;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  icon?: ReactNode; // Alias for leftIcon
   required?: boolean;
 }
 
@@ -54,6 +55,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       success,
       leftIcon,
       rightIcon,
+      icon,
       required,
       id,
       ...props
@@ -62,6 +64,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
     const currentVariant = error ? 'error' : success ? 'success' : variant;
+    const effectiveLeftIcon = leftIcon ?? icon;
 
     return (
       <div className="w-full">
@@ -77,9 +80,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </label>
         )}
         <div className="relative">
-          {leftIcon && (
+          {effectiveLeftIcon && (
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">
-              {leftIcon}
+              {effectiveLeftIcon}
             </div>
           )}
           <input
@@ -87,7 +90,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               inputVariants({ variant: currentVariant, inputSize }),
-              leftIcon && 'pl-10',
+              effectiveLeftIcon && 'pl-10',
               (rightIcon || error || success) && 'pr-10',
               className
             )}

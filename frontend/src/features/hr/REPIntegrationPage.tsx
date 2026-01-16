@@ -371,6 +371,29 @@ export function REPIntegrationPage() {
   const [showAddDeviceModal, setShowAddDeviceModal] = useState(false);
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [devices, setDevices] = useState<REPDevice[]>(mockDevices);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Handler para sincronizar todos os dispositivos
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    // Marca todos os dispositivos online como "syncing"
+    setDevices(prev => prev.map(d =>
+      d.status === 'online' ? { ...d, status: 'syncing' as const } : d
+    ));
+
+    // Simula tempo de sincronização
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    // Atualiza para status final
+    setDevices(prev => prev.map(d => ({
+      ...d,
+      status: d.status === 'syncing' ? 'online' as const : d.status,
+      lastSync: d.status === 'syncing' ? new Date().toISOString() : d.lastSync,
+    })));
+
+    setIsSyncing(false);
+  };
 
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <BarChart3 className="h-4 w-4" /> },
@@ -691,7 +714,7 @@ export function REPIntegrationPage() {
     }
   ];
 
-  const filteredDevices = mockDevices.filter(device => {
+  const filteredDevices = devices.filter(device => {
     const matchesSearch = device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       device.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       device.ipAddress.includes(searchTerm);
@@ -699,10 +722,10 @@ export function REPIntegrationPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const onlineCount = mockDevices.filter(d => d.status === 'online').length;
-  const offlineCount = mockDevices.filter(d => d.status === 'offline').length;
-  const syncingCount = mockDevices.filter(d => d.status === 'syncing').length;
-  const totalRecords = mockDevices.reduce((sum, d) => sum + d.recordsToday, 0);
+  const onlineCount = devices.filter(d => d.status === 'online').length;
+  const offlineCount = devices.filter(d => d.status === 'offline').length;
+  const syncingCount = devices.filter(d => d.status === 'syncing').length;
+  const totalRecords = devices.reduce((sum, d) => sum + d.recordsToday, 0);
 
   return (
     <MainLayout>
@@ -718,9 +741,9 @@ export function REPIntegrationPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => {}}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Sincronizar Todos
+            <Button variant="outline" onClick={handleSyncAll} disabled={isSyncing}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Sincronizando...' : 'Sincronizar Todos'}
             </Button>
             <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
@@ -912,7 +935,7 @@ export function REPIntegrationPage() {
                 </Button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {mockDevices.slice(0, 6).map((device) => (
+                {devices.slice(0, 6).map((device) => (
                   <div
                     key={device.id}
                     className="flex items-center justify-between p-4 bg-bg-tertiary rounded-lg"

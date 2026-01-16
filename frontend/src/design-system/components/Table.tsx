@@ -188,7 +188,7 @@ export interface Column<T> {
 export interface DataTableProps<T> {
   columns: Column<T>[];
   data: T[];
-  keyExtractor: (row: T) => string;
+  keyExtractor?: (row: T) => string;
   loading?: boolean;
   emptyState?: TableEmptyProps;
   onRowClick?: (row: T) => void;
@@ -206,6 +206,13 @@ export function DataTable<T>({
   selectedRows = [],
   className,
 }: DataTableProps<T>) {
+  // Default key extractor uses 'id' property or index
+  const getKey = keyExtractor ?? ((row: T, index?: number) => {
+    if (typeof row === 'object' && row !== null && 'id' in row) {
+      return String((row as { id: unknown }).id);
+    }
+    return String(index ?? 0);
+  });
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: 'asc' | 'desc';
@@ -288,7 +295,7 @@ export function DataTable<T>({
             <TableEmpty {...emptyState} colSpan={columns.length} />
           ) : (
             sortedData.map((row, index) => {
-              const key = keyExtractor(row);
+              const key = getKey(row, index);
               return (
                 <TableRow
                   key={key}

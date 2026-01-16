@@ -951,7 +951,7 @@ export function DocumentKitsPage() {
             value={mockKits.filter(k => k.status === 'active').length.toString()}
             icon={<Package className="h-5 w-5" />}
             iconColor="primary"
-            change="+3"
+            change={3}
             changeLabel="este mês"
           />
           <StatCard
@@ -959,7 +959,7 @@ export function DocumentKitsPage() {
             value={mockDocuments.length.toString()}
             icon={<FileText className="h-5 w-5" />}
             iconColor="info"
-            change="+12"
+            change={12}
             changeLabel="novos"
           />
           <StatCard
@@ -967,7 +967,7 @@ export function DocumentKitsPage() {
             value="89"
             icon={<Download className="h-5 w-5" />}
             iconColor="success"
-            change="+15%"
+            change={15}
             changeLabel="vs ontem"
           />
           <StatCard

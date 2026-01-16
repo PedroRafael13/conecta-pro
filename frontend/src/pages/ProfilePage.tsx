@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+'use client';
+
+import { useState } from 'react';
 import {
   User,
   Mail,
@@ -11,6 +13,8 @@ import {
   Shield,
   Bell,
 } from 'lucide-react';
+import { MainLayout } from '@/layouts/MainLayout';
+import { Card, CardHeader, CardBody, Button, Input, Avatar, Badge } from '@/design-system/components';
 
 export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -27,6 +31,7 @@ export function ProfilePage() {
   };
 
   return (
+    <MainLayout>
     <div className="space-y-6">
       {/* Header */}
       <div>
@@ -204,6 +209,7 @@ export function ProfilePage() {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 }
 

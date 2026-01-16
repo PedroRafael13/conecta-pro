@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Plus,
@@ -16,11 +16,9 @@ import {
   AlertTriangle,
   Eye,
   Link2,
-  Unlink,
   DollarSign,
   TrendingUp,
-  Calendar,
-  FileText,
+  Loader2,
   ArrowRightLeft,
 } from 'lucide-react';
 import { MainLayout } from '@/layouts';
@@ -31,14 +29,12 @@ import {
   Button,
   Input,
   Badge,
-  Avatar,
-  StatCard,
-  StatGrid,
   DataTable,
   type Column,
   SimpleTabBar,
   Modal,
   Select,
+  Skeleton,
 } from '@/design-system/components';
 import {
   AreaChart,
@@ -50,256 +46,63 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-// Types
-interface BankAccount {
-  id: string;
-  bank: string;
-  bankLogo: string;
-  accountName: string;
-  accountNumber: string;
-  agency: string;
-  type: 'checking' | 'savings' | 'investment';
-  balance: number;
-  lastSync: string;
-  status: 'active' | 'inactive' | 'pending';
-}
+// Types & Hooks
+import type { BankAccount, BankTransaction, BankAccountCreate, TransferRequest } from './types';
+import { BankAccountType, BankAccountStatus, TransactionType, TransactionStatus } from './types';
+import {
+  useBankAccounts,
+  useBankAccountStats,
+  useBankTransactions,
+  useBankTransactionSummary,
+  usePendingReconciliation,
+  useCreateBankAccount,
+  useBankTransfer,
+  useReconcileBankTransaction,
+} from './hooks';
 
-interface BankTransaction {
-  id: string;
-  date: string;
-  description: string;
-  type: 'credit' | 'debit';
-  value: number;
-  balance: number;
-  category: string;
-  reconciled: boolean;
-  linkedTo: string | null;
-}
+// Type configs
+const accountTypeConfig: Record<string, { label: string; color: 'primary' | 'success' | 'warning' }> = {
+  checking: { label: 'Conta Corrente', color: 'primary' },
+  savings: { label: 'Poupança', color: 'success' },
+  investment: { label: 'Investimento', color: 'warning' },
+  petty_cash: { label: 'Caixa Pequeno', color: 'primary' },
+};
 
-// Mock Data
-const bankAccounts: BankAccount[] = [
-  {
-    id: '1',
-    bank: 'Itaú',
-    bankLogo: '/banks/itau.png',
-    accountName: 'Itaú Empresas',
-    accountNumber: '12345-6',
-    agency: '1234',
-    type: 'checking',
-    balance: 485000,
-    lastSync: '2026-01-15T14:30:00',
-    status: 'active',
-  },
-  {
-    id: '2',
-    bank: 'Bradesco',
-    bankLogo: '/banks/bradesco.png',
-    accountName: 'Bradesco PJ',
-    accountNumber: '78901-2',
-    agency: '5678',
-    type: 'checking',
-    balance: 215000,
-    lastSync: '2026-01-15T14:25:00',
-    status: 'active',
-  },
-  {
-    id: '3',
-    bank: 'Santander',
-    bankLogo: '/banks/santander.png',
-    accountName: 'Santander Select',
-    accountNumber: '34567-8',
-    agency: '9012',
-    type: 'savings',
-    balance: 150000,
-    lastSync: '2026-01-15T10:00:00',
-    status: 'active',
-  },
-  {
-    id: '4',
-    bank: 'BTG Pactual',
-    bankLogo: '/banks/btg.png',
-    accountName: 'BTG Investimentos',
-    accountNumber: '90123-4',
-    agency: '0001',
-    type: 'investment',
-    balance: 500000,
-    lastSync: '2026-01-14T18:00:00',
-    status: 'active',
-  },
-];
+const transactionStatusConfig: Record<string, { label: string; color: 'success' | 'warning' | 'neutral' }> = {
+  pending: { label: 'Pendente', color: 'warning' },
+  confirmed: { label: 'Confirmado', color: 'success' },
+  reconciled: { label: 'Conciliado', color: 'success' },
+  cancelled: { label: 'Cancelado', color: 'neutral' },
+};
 
-const transactions: BankTransaction[] = [
-  {
-    id: '1',
-    date: '2026-01-15',
-    description: 'PIX Recebido - Shopping Center Norte',
-    type: 'credit',
-    value: 128000,
-    balance: 485000,
-    category: 'Receita',
-    reconciled: true,
-    linkedTo: 'CR-2026-0089',
-  },
-  {
-    id: '2',
-    date: '2026-01-15',
-    description: 'TED Enviada - Folha Janeiro',
-    type: 'debit',
-    value: 245000,
-    balance: 357000,
-    category: 'RH',
-    reconciled: true,
-    linkedTo: 'CP-2026-0124',
-  },
-  {
-    id: '3',
-    date: '2026-01-14',
-    description: 'Pagamento Boleto - Fornecedor ABC',
-    type: 'debit',
-    value: 18500,
-    balance: 602000,
-    category: 'Fornecedor',
-    reconciled: false,
-    linkedTo: null,
-  },
-  {
-    id: '4',
-    date: '2026-01-14',
-    description: 'Depósito Identificado',
-    type: 'credit',
-    value: 45000,
-    balance: 620500,
-    category: 'Receita',
-    reconciled: true,
-    linkedTo: 'CR-2026-0087',
-  },
-  {
-    id: '5',
-    date: '2026-01-13',
-    description: 'Tarifa Bancária',
-    type: 'debit',
-    value: 150,
-    balance: 575500,
-    category: 'Administrativa',
-    reconciled: true,
-    linkedTo: null,
-  },
-  {
-    id: '6',
-    date: '2026-01-12',
-    description: 'Débito Automático - Energia',
-    type: 'debit',
-    value: 4800,
-    balance: 575650,
-    category: 'Utilidades',
-    reconciled: false,
-    linkedTo: null,
-  },
-];
+// Initial form state
+const initialAccountForm: Partial<BankAccountCreate> = {
+  bank_code: '',
+  bank_name: '',
+  agency: '',
+  account_number: '',
+  account_type: BankAccountType.CHECKING,
+  description: '',
+  initial_balance: 0,
+};
 
-const balanceHistory = [
-  { date: '10/01', balance: 520000 },
-  { date: '11/01', balance: 575650 },
-  { date: '12/01', balance: 580450 },
-  { date: '13/01', balance: 575500 },
-  { date: '14/01', balance: 620500 },
-  { date: '15/01', balance: 485000 },
-];
+const initialTransferForm: Partial<TransferRequest> = {
+  from_account_id: '',
+  to_account_id: '',
+  amount: 0,
+  description: '',
+};
 
-const transactionColumns: Column<BankTransaction>[] = [
-  {
-    key: 'date',
-    header: 'Data',
-    render: (row) => (
-      <span className="text-sm text-text-secondary">
-        {new Date(row.date).toLocaleDateString('pt-BR')}
-      </span>
-    ),
-  },
-  {
-    key: 'description',
-    header: 'Descrição',
-    render: (row) => (
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${row.type === 'credit' ? 'bg-success/10' : 'bg-danger/10'}`}>
-          {row.type === 'credit' ? (
-            <ArrowUpRight className="w-4 h-4 text-success" />
-          ) : (
-            <ArrowDownRight className="w-4 h-4 text-danger" />
-          )}
-        </div>
-        <div>
-          <p className="font-medium text-text-primary">{row.description}</p>
-          <p className="text-xs text-text-muted">{row.category}</p>
-        </div>
-      </div>
-    ),
-  },
-  {
-    key: 'value',
-    header: 'Valor',
-    render: (row) => (
-      <span className={`font-mono font-medium ${row.type === 'credit' ? 'text-success' : 'text-danger'}`}>
-        {row.type === 'credit' ? '+' : '-'}
-        {row.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-      </span>
-    ),
-  },
-  {
-    key: 'balance',
-    header: 'Saldo',
-    render: (row) => (
-      <span className="font-mono text-text-primary">
-        {row.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-      </span>
-    ),
-  },
-  {
-    key: 'reconciled',
-    header: 'Conciliado',
-    render: (row) => (
-      <div className="flex items-center gap-2">
-        {row.reconciled ? (
-          <Badge variant="success" size="sm" leftIcon={<CheckCircle2 className="w-3 h-3" />}>
-            Conciliado
-          </Badge>
-        ) : (
-          <Badge variant="warning" size="sm" leftIcon={<Clock className="w-3 h-3" />}>
-            Pendente
-          </Badge>
-        )}
-        {row.linkedTo && (
-          <Badge variant="secondary" size="sm" leftIcon={<Link2 className="w-3 h-3" />}>
-            {row.linkedTo}
-          </Badge>
-        )}
-      </div>
-    ),
-  },
-  {
-    key: 'actions',
-    header: '',
-    render: (row) => (
-      <div className="flex items-center gap-1">
-        {!row.reconciled && (
-          <Button variant="primary" size="sm" leftIcon={<Link2 className="w-3 h-3" />}>
-            Vincular
-          </Button>
-        )}
-      </div>
-    ),
-  },
-];
-
-function BankAccountCard({ account }: { account: BankAccount }) {
-  const typeConfig = {
-    checking: { label: 'Conta Corrente', color: 'primary' },
-    savings: { label: 'Poupança', color: 'success' },
-    investment: { label: 'Investimento', color: 'warning' },
-  };
+// Bank Account Card Component
+function BankAccountCard({ account, onClick }: { account: BankAccount; onClick?: () => void }) {
+  const typeConfig = accountTypeConfig[account.account_type] || accountTypeConfig.checking;
+  const isMain = account.is_main;
 
   return (
-    <Card className="hover:border-accent-primary/50 transition-colors">
+    <Card
+      className={`hover:border-accent-primary/50 transition-colors cursor-pointer ${isMain ? 'border-accent-primary/30 bg-accent-primary/5' : ''}`}
+      onClick={onClick}
+    >
       <CardBody>
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -307,31 +110,49 @@ function BankAccountCard({ account }: { account: BankAccount }) {
               <Building2 className="w-6 h-6 text-accent-primary" />
             </div>
             <div>
-              <p className="font-medium text-text-primary">{account.accountName}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-text-primary">{account.description || account.bank_name}</p>
+                {isMain && (
+                  <Badge variant="primary" size="sm">Principal</Badge>
+                )}
+              </div>
               <p className="text-sm text-text-muted">
-                Ag: {account.agency} | Cc: {account.accountNumber}
+                Ag: {account.agency} | Cc: {account.account_number}
               </p>
             </div>
           </div>
-          <Badge variant={typeConfig[account.type].color as any} size="sm">
-            {typeConfig[account.type].label}
+          <Badge variant={typeConfig.color} size="sm">
+            {typeConfig.label}
           </Badge>
         </div>
 
         <div className="mb-4">
           <p className="text-xs text-text-muted mb-1">Saldo Atual</p>
           <p className="text-2xl font-mono font-bold text-text-primary">
-            {account.balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            {account.current_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
           </p>
+          {account.blocked_balance > 0 && (
+            <p className="text-xs text-text-muted mt-1">
+              Bloqueado: {account.blocked_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+          )}
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t border-border-subtle">
           <div className="flex items-center gap-2 text-xs text-text-muted">
-            <RefreshCw className="w-3 h-3" />
-            <span>
-              Sincronizado há{' '}
-              {Math.round((Date.now() - new Date(account.lastSync).getTime()) / 1000 / 60)} min
-            </span>
+            {account.last_reconciled_at ? (
+              <>
+                <CheckCircle2 className="w-3 h-3 text-success" />
+                <span>
+                  Conciliado em {new Date(account.last_reconciled_at).toLocaleDateString('pt-BR')}
+                </span>
+              </>
+            ) : (
+              <>
+                <Clock className="w-3 h-3" />
+                <span>Não conciliado</span>
+              </>
+            )}
           </div>
           <Button variant="ghost" size="sm">
             <Eye className="w-4 h-4" />
@@ -343,21 +164,251 @@ function BankAccountCard({ account }: { account: BankAccount }) {
 }
 
 export function BankingPage() {
+  // State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAccount, setSelectedAccount] = useState('all');
   const [selectedTab, setSelectedTab] = useState('all');
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [accountForm, setAccountForm] = useState(initialAccountForm);
+  const [transferForm, setTransferForm] = useState(initialTransferForm);
 
-  const totalBalance = bankAccounts.reduce((acc, account) => acc + account.balance, 0);
-  const pendingReconciliation = transactions.filter((t) => !t.reconciled).length;
-
-  const filteredTransactions = transactions.filter((t) => {
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTab =
-      selectedTab === 'all' ||
-      (selectedTab === 'pending' && !t.reconciled) ||
-      (selectedTab === 'reconciled' && t.reconciled);
-    return matchesSearch && matchesTab;
+  // Queries
+  const { data: accountsData, isLoading: isLoadingAccounts, error: accountsError, refetch: refetchAccounts } = useBankAccounts();
+  const { data: statsData, isLoading: isLoadingStats } = useBankAccountStats();
+  const { data: transactionsData, isLoading: isLoadingTransactions, refetch: refetchTransactions } = useBankTransactions({
+    account_id: selectedAccount !== 'all' ? selectedAccount : undefined,
   });
+  const { data: summaryData } = useBankTransactionSummary();
+  const { data: pendingData } = usePendingReconciliation();
+
+  // Mutations
+  const createAccount = useCreateBankAccount();
+  const transfer = useBankTransfer();
+  const reconcile = useReconcileBankTransaction();
+
+  // Handlers
+  const handleCreateAccount = useCallback(async () => {
+    if (!accountForm.bank_name || !accountForm.agency || !accountForm.account_number) return;
+
+    try {
+      await createAccount.mutateAsync(accountForm as BankAccountCreate);
+      setIsAccountModalOpen(false);
+      setAccountForm(initialAccountForm);
+    } catch (err) {
+      console.error('Erro ao criar conta:', err);
+    }
+  }, [accountForm, createAccount]);
+
+  const handleTransfer = useCallback(async () => {
+    if (!transferForm.from_account_id || !transferForm.to_account_id || !transferForm.amount) return;
+
+    try {
+      await transfer.mutateAsync(transferForm as TransferRequest);
+      setIsTransferModalOpen(false);
+      setTransferForm(initialTransferForm);
+    } catch (err) {
+      console.error('Erro na transferência:', err);
+    }
+  }, [transferForm, transfer]);
+
+  const handleReconcile = useCallback(async (transactionId: string) => {
+    try {
+      await reconcile.mutateAsync({ id: transactionId });
+    } catch (err) {
+      console.error('Erro ao conciliar:', err);
+    }
+  }, [reconcile]);
+
+  // Memoized data
+  const accounts = useMemo(() => accountsData?.items || [], [accountsData]);
+  const transactions = useMemo(() => transactionsData?.items || [], [transactionsData]);
+  const stats = useMemo(() => statsData || {
+    total_accounts: 0,
+    total_balance: 0,
+    total_available: 0,
+    total_blocked: 0,
+  }, [statsData]);
+  const summary = useMemo(() => summaryData || {
+    total_credits: 0,
+    total_debits: 0,
+    net: 0,
+  }, [summaryData]);
+  const pendingCount = useMemo(() => pendingData?.length || 0, [pendingData]);
+
+  // Filtered transactions
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const matchesSearch = t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesTab =
+        selectedTab === 'all' ||
+        (selectedTab === 'pending' && t.status === TransactionStatus.PENDING) ||
+        (selectedTab === 'reconciled' && t.status === TransactionStatus.RECONCILED);
+      return matchesSearch && matchesTab;
+    });
+  }, [transactions, searchTerm, selectedTab]);
+
+  // Balance history (mock for now - could be fetched from API)
+  const balanceHistory = useMemo(() => {
+    const today = new Date();
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(date.getDate() - (6 - i));
+      return {
+        date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        balance: stats.total_balance * (0.9 + Math.random() * 0.2),
+      };
+    });
+  }, [stats.total_balance]);
+
+  // Transaction columns
+  const transactionColumns: Column<BankTransaction>[] = useMemo(() => [
+    {
+      key: 'transaction_date',
+      header: 'Data',
+      render: (row) => (
+        <span className="text-sm text-text-secondary">
+          {new Date(row.transaction_date).toLocaleDateString('pt-BR')}
+        </span>
+      ),
+    },
+    {
+      key: 'description',
+      header: 'Descrição',
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${row.transaction_type === TransactionType.CREDIT || row.transaction_type === TransactionType.TRANSFER_IN ? 'bg-success/10' : 'bg-danger/10'}`}>
+            {row.transaction_type === TransactionType.CREDIT || row.transaction_type === TransactionType.TRANSFER_IN ? (
+              <ArrowUpRight className="w-4 h-4 text-success" />
+            ) : (
+              <ArrowDownRight className="w-4 h-4 text-danger" />
+            )}
+          </div>
+          <div>
+            <p className="font-medium text-text-primary">{row.description}</p>
+            {row.category_name && (
+              <p className="text-xs text-text-muted">{row.category_name}</p>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'amount',
+      header: 'Valor',
+      render: (row) => {
+        const isCredit = row.transaction_type === TransactionType.CREDIT || row.transaction_type === TransactionType.TRANSFER_IN;
+        return (
+          <span className={`font-mono font-medium ${isCredit ? 'text-success' : 'text-danger'}`}>
+            {isCredit ? '+' : '-'}
+            {Math.abs(row.amount).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'balance_after',
+      header: 'Saldo',
+      render: (row) => (
+        <span className="font-mono text-text-primary">
+          {(row.balance_after || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (row) => {
+        const config = transactionStatusConfig[row.status] || transactionStatusConfig.pending;
+        return (
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={config.color}
+              size="sm"
+              leftIcon={row.status === TransactionStatus.RECONCILED ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+            >
+              {config.label}
+            </Badge>
+            {row.reconciled_with_id && (
+              <Badge variant="secondary" size="sm" leftIcon={<Link2 className="w-3 h-3" />}>
+                Vinculado
+              </Badge>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (row) => (
+        <div className="flex items-center gap-1">
+          {row.status === TransactionStatus.PENDING && (
+            <Button
+              variant="primary"
+              size="sm"
+              leftIcon={reconcile.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleReconcile(row.id);
+              }}
+              disabled={reconcile.isPending}
+            >
+              Conciliar
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ], [handleReconcile, reconcile.isPending]);
+
+  // Loading state
+  if (isLoadingAccounts) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64 mt-2" />
+            </div>
+            <div className="flex gap-3">
+              <Skeleton className="h-10 w-28" />
+              <Skeleton className="h-10 w-28" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <div className="grid grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-48" />
+            ))}
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Error state
+  if (accountsError) {
+    return (
+      <MainLayout>
+        <div className="flex flex-col items-center justify-center py-12">
+          <AlertTriangle className="w-12 h-12 text-danger mb-4" />
+          <h2 className="text-xl font-semibold text-text-primary mb-2">Erro ao carregar dados</h2>
+          <p className="text-text-secondary mb-4">Não foi possível carregar as contas bancárias.</p>
+          <Button variant="primary" leftIcon={<RefreshCw className="w-4 h-4" />} onClick={() => refetchAccounts()}>
+            Tentar novamente
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -373,13 +424,21 @@ export function BankingPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="secondary" leftIcon={<RefreshCw className="w-4 h-4" />}>
-              Sincronizar
+            <Button
+              variant="secondary"
+              leftIcon={<ArrowRightLeft className="w-4 h-4" />}
+              onClick={() => setIsTransferModalOpen(true)}
+            >
+              Transferir
             </Button>
             <Button variant="secondary" leftIcon={<Download className="w-4 h-4" />}>
               Exportar OFX
             </Button>
-            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
+            <Button
+              variant="primary"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={() => setIsAccountModalOpen(true)}
+            >
               Nova Conta
             </Button>
           </div>
@@ -396,7 +455,7 @@ export function BankingPage() {
                 <span className="text-xs text-text-muted">Saldo Total</span>
               </div>
               <p className="text-2xl font-mono font-bold text-accent-primary">
-                {totalBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                {isLoadingStats ? '-' : stats.total_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
             </CardBody>
           </Card>
@@ -410,7 +469,7 @@ export function BankingPage() {
                 <span className="text-xs text-text-muted">Entradas (Mês)</span>
               </div>
               <p className="text-2xl font-mono font-bold text-success">
-                R$ 173.000,00
+                {(summary.total_credits || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
             </CardBody>
           </Card>
@@ -424,12 +483,12 @@ export function BankingPage() {
                 <span className="text-xs text-text-muted">Saídas (Mês)</span>
               </div>
               <p className="text-2xl font-mono font-bold text-danger">
-                R$ 268.450,00
+                {(summary.total_debits || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
             </CardBody>
           </Card>
 
-          <Card className={pendingReconciliation > 0 ? 'border-warning/30' : ''}>
+          <Card className={pendingCount > 0 ? 'border-warning/30' : ''}>
             <CardBody className="py-4">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 rounded-lg bg-warning/10">
@@ -438,7 +497,7 @@ export function BankingPage() {
                 <span className="text-xs text-text-muted">Pendentes</span>
               </div>
               <p className="text-2xl font-bold text-warning">
-                {pendingReconciliation} lançamentos
+                {pendingCount} lançamentos
               </p>
             </CardBody>
           </Card>
@@ -447,11 +506,30 @@ export function BankingPage() {
         {/* Bank Accounts Grid */}
         <div>
           <h2 className="text-lg font-medium text-text-primary mb-4">Minhas Contas</h2>
-          <div className="grid grid-cols-4 gap-4">
-            {bankAccounts.map((account) => (
-              <BankAccountCard key={account.id} account={account} />
-            ))}
-          </div>
+          {accounts.length === 0 ? (
+            <Card>
+              <CardBody className="py-12 text-center">
+                <Building2 className="w-12 h-12 text-text-muted mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-text-primary mb-2">Nenhuma conta cadastrada</h3>
+                <p className="text-text-secondary mb-4">Cadastre sua primeira conta bancária para começar.</p>
+                <Button variant="primary" onClick={() => setIsAccountModalOpen(true)}>
+                  Cadastrar Conta
+                </Button>
+              </CardBody>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-4 gap-4">
+              {accounts.map((account) => (
+                <motion.div
+                  key={account.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <BankAccountCard account={account} />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Balance Chart & Transactions */}
@@ -508,12 +586,19 @@ export function BankingPage() {
                   <Select
                     options={[
                       { value: 'all', label: 'Todas as Contas' },
-                      ...bankAccounts.map((a) => ({ value: a.id, label: a.accountName })),
+                      ...accounts.map((a) => ({ value: a.id, label: a.description || a.bank_name })),
                     ]}
                     value={selectedAccount}
                     onChange={setSelectedAccount}
                     className="w-48"
                   />
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => refetchTransactions()}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
                 </div>
               }
             />
@@ -521,8 +606,8 @@ export function BankingPage() {
               <SimpleTabBar
                 tabs={[
                   { value: 'all', label: `Todos (${transactions.length})` },
-                  { value: 'pending', label: `Pendentes (${pendingReconciliation})` },
-                  { value: 'reconciled', label: `Conciliados (${transactions.length - pendingReconciliation})` },
+                  { value: 'pending', label: `Pendentes (${pendingCount})` },
+                  { value: 'reconciled', label: `Conciliados (${transactions.filter(t => t.status === TransactionStatus.RECONCILED).length})` },
                 ]}
                 value={selectedTab}
                 onChange={setSelectedTab}
@@ -530,14 +615,178 @@ export function BankingPage() {
               />
             </CardBody>
             <CardBody className="p-0 pt-0">
-              <DataTable
-                columns={transactionColumns}
-                data={filteredTransactions}
-                keyExtractor={(row) => row.id}
-              />
+              {isLoadingTransactions ? (
+                <div className="p-8 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-accent-primary mx-auto" />
+                </div>
+              ) : (
+                <DataTable
+                  columns={transactionColumns}
+                  data={filteredTransactions}
+                  keyExtractor={(row) => row.id}
+                  emptyState={{ title: "Nenhuma transação encontrada" }}
+                />
+              )}
             </CardBody>
           </Card>
         </div>
+
+        {/* New Account Modal */}
+        <Modal
+          isOpen={isAccountModalOpen}
+          onClose={() => setIsAccountModalOpen(false)}
+          title="Nova Conta Bancária"
+          description="Cadastre uma nova conta"
+          size="lg"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setIsAccountModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleCreateAccount}
+                disabled={createAccount.isPending || !accountForm.bank_name || !accountForm.agency}
+                leftIcon={createAccount.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+              >
+                {createAccount.isPending ? 'Criando...' : 'Cadastrar'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Banco"
+                placeholder="Nome do banco"
+                value={accountForm.bank_name || ''}
+                onChange={(e) => setAccountForm(prev => ({ ...prev, bank_name: e.target.value }))}
+                required
+              />
+              <Input
+                label="Código do Banco"
+                placeholder="Ex: 341"
+                value={accountForm.bank_code || ''}
+                onChange={(e) => setAccountForm(prev => ({ ...prev, bank_code: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Agência"
+                placeholder="0000"
+                value={accountForm.agency || ''}
+                onChange={(e) => setAccountForm(prev => ({ ...prev, agency: e.target.value }))}
+                required
+              />
+              <Input
+                label="Conta"
+                placeholder="00000-0"
+                value={accountForm.account_number || ''}
+                onChange={(e) => setAccountForm(prev => ({ ...prev, account_number: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Select
+                label="Tipo de Conta"
+                options={[
+                  { value: 'checking', label: 'Conta Corrente' },
+                  { value: 'savings', label: 'Poupança' },
+                  { value: 'investment', label: 'Investimento' },
+                  { value: 'petty_cash', label: 'Caixa Pequeno' },
+                ]}
+                value={accountForm.account_type || 'checking'}
+                onChange={(value) => setAccountForm(prev => ({ ...prev, account_type: value as BankAccountType }))}
+              />
+              <Input
+                label="Saldo Inicial"
+                type="number"
+                placeholder="0,00"
+                leftIcon={<span className="text-text-muted">R$</span>}
+                value={accountForm.initial_balance || ''}
+                onChange={(e) => setAccountForm(prev => ({ ...prev, initial_balance: parseFloat(e.target.value) || 0 }))}
+              />
+            </div>
+            <Input
+              label="Descrição"
+              placeholder="Ex: Conta Principal"
+              value={accountForm.description || ''}
+              onChange={(e) => setAccountForm(prev => ({ ...prev, description: e.target.value }))}
+            />
+            <Input
+              label="Chave PIX"
+              placeholder="CPF, CNPJ, E-mail, Telefone ou Chave aleatória"
+              value={accountForm.pix_key || ''}
+              onChange={(e) => setAccountForm(prev => ({ ...prev, pix_key: e.target.value }))}
+            />
+          </div>
+        </Modal>
+
+        {/* Transfer Modal */}
+        <Modal
+          isOpen={isTransferModalOpen}
+          onClose={() => setIsTransferModalOpen(false)}
+          title="Transferência entre Contas"
+          description="Transfira valores entre suas contas"
+          size="md"
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setIsTransferModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleTransfer}
+                disabled={transfer.isPending || !transferForm.from_account_id || !transferForm.to_account_id || !transferForm.amount}
+                leftIcon={transfer.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : undefined}
+              >
+                {transfer.isPending ? 'Transferindo...' : 'Confirmar'}
+              </Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <Select
+              label="Conta de Origem"
+              options={accounts.map(a => ({
+                value: a.id,
+                label: `${a.description || a.bank_name} - ${a.current_balance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+              }))}
+              value={transferForm.from_account_id || ''}
+              onChange={(value) => setTransferForm(prev => ({ ...prev, from_account_id: value }))}
+              placeholder="Selecione a conta de origem..."
+              required
+            />
+            <Select
+              label="Conta de Destino"
+              options={accounts
+                .filter(a => a.id !== transferForm.from_account_id)
+                .map(a => ({
+                  value: a.id,
+                  label: `${a.description || a.bank_name}`,
+                }))}
+              value={transferForm.to_account_id || ''}
+              onChange={(value) => setTransferForm(prev => ({ ...prev, to_account_id: value }))}
+              placeholder="Selecione a conta de destino..."
+              required
+            />
+            <Input
+              label="Valor"
+              type="number"
+              placeholder="0,00"
+              leftIcon={<span className="text-text-muted">R$</span>}
+              value={transferForm.amount || ''}
+              onChange={(e) => setTransferForm(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
+              required
+            />
+            <Input
+              label="Descrição"
+              placeholder="Motivo da transferência"
+              value={transferForm.description || ''}
+              onChange={(e) => setTransferForm(prev => ({ ...prev, description: e.target.value }))}
+            />
+          </div>
+        </Modal>
       </div>
     </MainLayout>
   );

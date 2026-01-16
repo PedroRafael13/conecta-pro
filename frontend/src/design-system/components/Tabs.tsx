@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/shared/utils/cn';
 
@@ -22,26 +22,29 @@ function useTabsContext() {
 
 // Tabs Root
 interface TabsProps {
-  defaultValue: string;
+  defaultValue?: string;
   value?: string;
   onValueChange?: (value: string) => void;
+  onChange?: (value: string) => void; // Alias for onValueChange
   children: ReactNode;
   className?: string;
 }
 
 export function Tabs({
-  defaultValue,
+  defaultValue = '',
   value,
   onValueChange,
+  onChange, // Support both onValueChange and onChange
   children,
   className,
 }: TabsProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
+  const handleChange = onValueChange ?? onChange;
 
   const activeTab = value ?? internalValue;
   const setActiveTab = (newValue: string) => {
     setInternalValue(newValue);
-    onValueChange?.(newValue);
+    handleChange?.(newValue);
   };
 
   return (
@@ -75,7 +78,8 @@ export function TabsList({ children, className, variant = 'default' }: TabsListP
 // Tab Trigger
 interface TabsTriggerProps {
   value: string;
-  children: ReactNode;
+  children?: ReactNode;
+  label?: string; // Alternative to children
   className?: string;
   disabled?: boolean;
   icon?: ReactNode;
@@ -85,11 +89,13 @@ interface TabsTriggerProps {
 export function TabsTrigger({
   value,
   children,
+  label,
   className,
   disabled,
   icon,
   badge,
 }: TabsTriggerProps) {
+  const content = children ?? label;
   const { activeTab, setActiveTab } = useTabsContext();
   const isActive = activeTab === value;
 
@@ -119,7 +125,7 @@ export function TabsTrigger({
       )}
       <span className="relative flex items-center gap-2">
         {icon}
-        {children}
+        {content}
         {badge}
       </span>
     </button>
@@ -155,18 +161,23 @@ export function TabsContent({ value, children, className }: TabsContentProps) {
 }
 
 // Simple Tab Bar (alternative simpler implementation)
+type IconComponent = React.ComponentType<{ className?: string }>;
+
 interface SimpleTab {
-  value: string;
+  value?: string;
+  id?: string; // Support both value and id for flexibility
   label: string;
-  icon?: ReactNode;
+  icon?: ReactNode | IconComponent; // Support both JSX elements and icon components
   badge?: ReactNode;
   disabled?: boolean;
 }
 
 interface SimpleTabBarProps {
   tabs: SimpleTab[];
-  value: string;
-  onChange: (value: string) => void;
+  value?: string;
+  activeTab?: string; // Support both value and activeTab
+  onChange?: (value: string) => void;
+  onTabChange?: (value: string) => void; // Support both onChange and onTabChange
   className?: string;
   variant?: 'default' | 'pills' | 'underline';
 }
@@ -174,10 +185,14 @@ interface SimpleTabBarProps {
 export function SimpleTabBar({
   tabs,
   value,
+  activeTab,
   onChange,
+  onTabChange,
   className,
   variant = 'default',
 }: SimpleTabBarProps) {
+  const currentValue = value ?? activeTab ?? '';
+  const handleChange = onChange ?? onTabChange ?? (() => {});
   const variantClasses = {
     default: {
       container: 'flex items-center gap-1 p-1 bg-bg-tertiary rounded-lg',
@@ -203,28 +218,35 @@ export function SimpleTabBar({
 
   return (
     <div className={cn(styles.container, className)} role="tablist">
-      {tabs.map((tab) => (
-        <button
-          key={tab.value}
-          role="tab"
-          aria-selected={value === tab.value}
-          disabled={tab.disabled}
-          onClick={() => onChange(tab.value)}
-          className={cn(
-            styles.tab,
-            'transition-all duration-200',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            value === tab.value ? styles.active : styles.inactive
-          )}
-        >
-          <span className="flex items-center gap-2">
-            {tab.icon}
-            {tab.label}
-            {tab.badge}
-          </span>
-        </button>
-      ))}
+      {tabs.map((tab) => {
+        const tabValue = tab.value ?? tab.id ?? tab.label;
+        return (
+          <button
+            key={tabValue}
+            role="tab"
+            aria-selected={currentValue === tabValue}
+            disabled={tab.disabled}
+            onClick={() => handleChange(tabValue)}
+            className={cn(
+              styles.tab,
+              'transition-all duration-200',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              currentValue === tabValue ? styles.active : styles.inactive
+            )}
+          >
+            <span className="flex items-center gap-2">
+              {tab.icon && (
+                typeof tab.icon === 'function'
+                  ? React.createElement(tab.icon as IconComponent, { className: 'w-4 h-4' })
+                  : tab.icon
+              )}
+              {tab.label}
+              {tab.badge}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }

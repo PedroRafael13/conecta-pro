@@ -142,6 +142,7 @@ interface SegmentData {
   value: number;
   growth: number;
   color: string;
+  [key: string]: string | number;
 }
 
 interface Column<T> {

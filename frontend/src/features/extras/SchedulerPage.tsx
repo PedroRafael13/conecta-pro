@@ -985,7 +985,7 @@ export function SchedulerPage() {
             value={executedToday.toString()}
             icon={<CheckCircle className="h-5 w-5" />}
             iconColor="primary"
-            change="+12"
+            change={12}
             changeLabel="vs ontem"
           />
           <StatCard

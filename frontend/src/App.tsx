@@ -7,6 +7,12 @@ import { ToastProvider, PageLoader } from '@/design-system/components';
 
 // Lazy load pages - Auth
 const LoginPage = lazy(() => import('@/features/auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('@/features/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const ForgotPasswordPage = lazy(() => import('@/features/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+
+// Lazy load pages - Profile & Help
+const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const HelpPage = lazy(() => import('@/pages/HelpPage').then(m => ({ default: m.HelpPage })));
 
 // Lazy load pages - Dashboard
 const DashboardPage = lazy(() => import('@/features/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -67,6 +73,7 @@ const AIFraudDetectionPage = lazy(() => import('@/features/ai/AIFraudDetectionPa
 
 // Lazy load pages - GED
 const GEDPage = lazy(() => import('@/features/ged/GEDPage').then(m => ({ default: m.GEDPage })));
+const GEDSearchPage = lazy(() => import('@/pages/GEDSearchPage').then(m => ({ default: m.GEDSearchPage })));
 
 // Lazy load pages - Compliance
 const CompliancePage = lazy(() => import('@/features/compliance/CompliancePage').then(m => ({ default: m.CompliancePage })));
@@ -79,6 +86,7 @@ const ReceitaFederalPage = lazy(() => import('@/features/compliance/ReceitaFeder
 // Lazy load pages - Extras
 const DocumentKitsPage = lazy(() => import('@/features/extras/DocumentKitsPage').then(m => ({ default: m.DocumentKitsPage })));
 const MonitoringPage = lazy(() => import('@/features/extras/MonitoringPage').then(m => ({ default: m.MonitoringPage })));
+const RealtimeMonitoringPage = lazy(() => import('@/features/extras/RealtimeMonitoringPage').then(m => ({ default: m.RealtimeMonitoringPage })));
 const SchedulerPage = lazy(() => import('@/features/extras/SchedulerPage').then(m => ({ default: m.SchedulerPage })));
 const FieldInventoryPage = lazy(() => import('@/features/extras/FieldInventoryPage').then(m => ({ default: m.FieldInventoryPage })));
 
@@ -165,13 +173,13 @@ function App() {
             <Routes>
               {/* Auth Routes */}
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<PlaceholderPage title="Cadastro" />} />
-              <Route path="/forgot-password" element={<PlaceholderPage title="Recuperar Senha" />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
               {/* Dashboard */}
               <Route path="/" element={<DashboardPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/realtime" element={<PlaceholderPage title="Tempo Real" />} />
+              <Route path="/realtime" element={<RealtimeMonitoringPage />} />
               <Route path="/reports" element={<ReportsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
 
@@ -244,7 +252,7 @@ function App() {
               {/* GED */}
               <Route path="/ged" element={<GEDPage />} />
               <Route path="/ged/folders" element={<GEDPage />} />
-              <Route path="/ged/search" element={<PlaceholderPage title="Busca" />} />
+              <Route path="/ged/search" element={<GEDSearchPage />} />
 
               {/* Compliance */}
               <Route path="/compliance" element={<CompliancePage />} />
@@ -273,8 +281,8 @@ function App() {
 
               {/* Settings */}
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/profile" element={<PlaceholderPage title="Perfil" />} />
-              <Route path="/help" element={<PlaceholderPage title="Ajuda" />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/help" element={<HelpPage />} />
 
               {/* Services */}
               <Route path="/services" element={<ServicesPage />} />

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+'use client';
+
+import { useState } from 'react';
 import {
   Search,
   FileText,
@@ -9,6 +11,8 @@ import {
   Download,
   Eye,
 } from 'lucide-react';
+import { MainLayout } from '@/layouts/MainLayout';
+import { Card, CardHeader, CardBody, Button, Input, Badge } from '@/design-system/components';
 
 export function GEDSearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,14 +48,15 @@ export function GEDSearchPage() {
   ];
 
   return (
+    <MainLayout>
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Search className="h-7 w-7 text-conecta-escuro" />
+        <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+          <Search className="h-7 w-7 text-accent-primary" />
           Busca de Documentos
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-text-secondary mt-1">
           Encontre documentos por nome, conteudo ou metadados
         </p>
       </div>
@@ -143,6 +148,7 @@ export function GEDSearchPage() {
         </div>
       </div>
     </div>
+    </MainLayout>
   );
 }
 

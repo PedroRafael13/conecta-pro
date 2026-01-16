@@ -16,6 +16,7 @@ const AuditPage = lazy(() => import('@/pages/AuditPage'));
 const LGPDPage = lazy(() => import('@/pages/LGPDPage'));
 const GovernmentPage = lazy(() => import('@/pages/GovernmentPage'));
 const BiddingPage = lazy(() => import('@/pages/BiddingPage'));
+const CCTCompliancePage = lazy(() => import('@/pages/CCTCompliancePage'));
 
 // GED
 const GEDPage = lazy(() => import('@/pages/GEDPage'));
@@ -25,6 +26,7 @@ const GEDSearchPage = lazy(() => import('@/pages/GEDSearchPage'));
 // CRM
 const CRMPage = lazy(() => import('@/pages/CRMPage'));
 const CRMPipelinePage = lazy(() => import('@/pages/CRMPipelinePage'));
+const CRMDashboardPage = lazy(() => import('@/pages/CRMDashboardPage'));
 const ProposalsPage = lazy(() => import('@/pages/ProposalsPage'));
 const MarketplacePage = lazy(() => import('@/pages/MarketplacePage'));
 
@@ -34,6 +36,7 @@ const FieldServicePage = lazy(() => import('@/pages/FieldServicePage'));
 const SchedulingPage = lazy(() => import('@/pages/SchedulingPage'));
 const FacilitiesPage = lazy(() => import('@/pages/FacilitiesPage'));
 const EquipmentPage = lazy(() => import('@/pages/EquipmentPage'));
+const InstallationPage = lazy(() => import('@/pages/InstallationPage'));
 
 // Finance
 const FinancePage = lazy(() => import('@/pages/FinancePage'));
@@ -44,6 +47,15 @@ const HRPage = lazy(() => import('@/pages/HRPage'));
 // Settings & Profile
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const ProfilePage = lazy(() => import('@/pages/ProfilePage'));
+const TenantsPage = lazy(() => import('@/pages/TenantsPage'));
+const FeatureFlagsPage = lazy(() => import('@/pages/FeatureFlagsPage'));
+const ConfigTemplatesPage = lazy(() => import('@/pages/ConfigTemplatesPage'));
+
+// Clients
+const UnitsResidentsPage = lazy(() => import('@/pages/UnitsResidentsPage'));
+
+// Notifications
+const IntelligentNotificationsPage = lazy(() => import('@/pages/IntelligentNotificationsPage'));
 
 // Error
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -117,6 +129,10 @@ export const router = createBrowserRouter([
             path: '/bidding',
             element: <LazyPage component={BiddingPage} />,
           },
+          {
+            path: '/compliance/cct',
+            element: <LazyPage component={CCTCompliancePage} />,
+          },
           // GED
           {
             path: '/ged',
@@ -138,6 +154,10 @@ export const router = createBrowserRouter([
           {
             path: '/crm/pipeline',
             element: <LazyPage component={CRMPipelinePage} />,
+          },
+          {
+            path: '/crm/dashboard',
+            element: <LazyPage component={CRMDashboardPage} />,
           },
           {
             path: '/proposals',
@@ -167,6 +187,10 @@ export const router = createBrowserRouter([
           {
             path: '/equipment',
             element: <LazyPage component={EquipmentPage} />,
+          },
+          {
+            path: '/equipment/installations',
+            element: <LazyPage component={InstallationPage} />,
           },
           // Finance
           {
@@ -200,8 +224,30 @@ export const router = createBrowserRouter([
             element: <LazyPage component={SettingsPage} />,
           },
           {
+            path: '/settings/tenants',
+            element: <LazyPage component={TenantsPage} />,
+          },
+          {
+            path: '/settings/feature-flags',
+            element: <LazyPage component={FeatureFlagsPage} />,
+          },
+          {
+            path: '/settings/config-templates',
+            element: <LazyPage component={ConfigTemplatesPage} />,
+          },
+          {
             path: '/profile',
             element: <LazyPage component={ProfilePage} />,
+          },
+          // Clients
+          {
+            path: '/clients/units-residents',
+            element: <LazyPage component={UnitsResidentsPage} />,
+          },
+          // Notifications
+          {
+            path: '/notifications/intelligent',
+            element: <LazyPage component={IntelligentNotificationsPage} />,
           },
         ],
       },

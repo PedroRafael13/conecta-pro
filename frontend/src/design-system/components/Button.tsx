@@ -26,6 +26,8 @@ const buttonVariants = cva(
                  hover:bg-danger-dark hover:shadow-glow-danger`,
         success: `bg-success text-white
                   hover:bg-success-dark hover:shadow-glow-success`,
+        warning: `bg-warning text-white
+                  hover:brightness-110`,
         link: `bg-transparent text-accent-primary underline-offset-4
                hover:underline`,
       },
