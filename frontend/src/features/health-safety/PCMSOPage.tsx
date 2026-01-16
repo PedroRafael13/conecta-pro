@@ -330,6 +330,15 @@ export function PCMSOPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter states
+  const [filterExamType, setFilterExamType] = useState('all');
+  const [filterExamStatus, setFilterExamStatus] = useState('all');
+
+  // Modal form states
+  const [newEmployee, setNewEmployee] = useState('');
+  const [newExamType, setNewExamType] = useState('');
+  const [newClinic, setNewClinic] = useState('');
+
   // Stats
   const scheduledExams = exams.filter(e => e.status === 'scheduled').length;
   const completedExams = exams.filter(e => e.status === 'completed').length;

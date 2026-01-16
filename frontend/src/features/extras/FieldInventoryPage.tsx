@@ -688,6 +688,15 @@ export function FieldInventoryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [movementTypeFilter, setMovementTypeFilter] = useState('all');
+  const [alertStatusFilter, setAlertStatusFilter] = useState('all');
+
+  // Modal form states
+  const [newItemCategory, setNewItemCategory] = useState('epi');
+  const [newItemLocation, setNewItemLocation] = useState('');
+  const [newMovementType, setNewMovementType] = useState('saida');
+  const [newMovementItem, setNewMovementItem] = useState('');
+  const [newMovementLocation, setNewMovementLocation] = useState('');
 
   // Modals
   const [showItemModal, setShowItemModal] = useState(false);
@@ -1386,8 +1395,8 @@ export function FieldInventoryPage() {
                       label: val.label
                     }))
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={movementTypeFilter}
+                  onChange={(value) => setMovementTypeFilter(value)}
                 />
               </div>
               <Button onClick={() => setShowNewMovementModal(true)}>
@@ -1440,8 +1449,8 @@ export function FieldInventoryPage() {
                     { value: 'pending', label: 'Pendentes' },
                     { value: 'acknowledged', label: 'Reconhecidos' }
                   ]}
-                  value="all"
-                  onChange={() => {}}
+                  value={alertStatusFilter}
+                  onChange={(value) => setAlertStatusFilter(value)}
                 />
                 <Button variant="outline">
                   Reconhecer Todos
@@ -1788,8 +1797,8 @@ export function FieldInventoryPage() {
                     value: key,
                     label: val.label
                   }))}
-                  value="epi"
-                  onChange={() => {}}
+                  value={newItemCategory}
+                  onChange={(value) => setNewItemCategory(value)}
                 />
               </div>
 
@@ -1834,8 +1843,8 @@ export function FieldInventoryPage() {
                     value: loc.id,
                     label: loc.name
                   }))}
-                  value=""
-                  onChange={() => {}}
+                  value={newItemLocation}
+                  onChange={(value) => setNewItemLocation(value)}
                 />
               </div>
 
@@ -1919,8 +1928,8 @@ export function FieldInventoryPage() {
                     value: loc.id,
                     label: loc.name
                   }))}
-                  value=""
-                  onChange={() => {}}
+                  value={newMovementLocation}
+                  onChange={(value) => setNewMovementLocation(value)}
                 />
               </div>
 

@@ -389,6 +389,16 @@ export function PayrollPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filters
+  const [filterDepartment, setFilterDepartment] = useState('all');
+  const [filterItemStatus, setFilterItemStatus] = useState('all');
+
+  // Modal form
+  const [folhaType, setFolhaType] = useState('monthly');
+  const [referenceMonth, setReferenceMonth] = useState('01');
+  const [referenceYear, setReferenceYear] = useState('2026');
+  const [employeesFilter, setEmployeesFilter] = useState('all');
+
   // Stats
   const currentPayroll = periods.find(p => p.status === 'calculating');
   const totalMonthly = currentPayroll?.grossTotal || 0;
@@ -605,8 +615,8 @@ export function PayrollPage() {
                       { value: 'commercial', label: 'Comercial' },
                       { value: 'rh', label: 'RH' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterDepartment}
+                    onChange={(value) => setFilterDepartment(value)}
                     className="w-48"
                   />
                   <Select
@@ -616,8 +626,8 @@ export function PayrollPage() {
                       { value: 'review', label: 'Revisão' },
                       { value: 'error', label: 'Com Erro' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterItemStatus}
+                    onChange={(value) => setFilterItemStatus(value)}
                     className="w-40"
                   />
                 </div>
@@ -695,8 +705,8 @@ export function PayrollPage() {
                 { value: 'vacation', label: 'Férias' },
                 { value: 'termination', label: 'Rescisão' },
               ]}
-              value="monthly"
-              onChange={() => {}}
+              value={folhaType}
+              onChange={(value) => setFolhaType(value)}
             />
             <div className="grid grid-cols-2 gap-4">
               <Select
@@ -706,8 +716,8 @@ export function PayrollPage() {
                   { value: '02', label: 'Fevereiro' },
                   { value: '03', label: 'Março' },
                 ]}
-                value="01"
-                onChange={() => {}}
+                value={referenceMonth}
+                onChange={(value) => setReferenceMonth(value)}
               />
               <Select
                 label="Ano"
@@ -715,8 +725,8 @@ export function PayrollPage() {
                   { value: '2026', label: '2026' },
                   { value: '2025', label: '2025' },
                 ]}
-                value="2026"
-                onChange={() => {}}
+                value={referenceYear}
+                onChange={(value) => setReferenceYear(value)}
               />
             </div>
             <Select
@@ -726,8 +736,8 @@ export function PayrollPage() {
                 { value: 'department', label: 'Por Departamento' },
                 { value: 'selected', label: 'Selecionados' },
               ]}
-              value="all"
-              onChange={() => {}}
+              value={employeesFilter}
+              onChange={(value) => setEmployeesFilter(value)}
             />
             <div className="p-4 bg-bg-tertiary rounded-lg">
               <h4 className="text-sm font-medium text-text-primary mb-2">Itens a Processar</h4>

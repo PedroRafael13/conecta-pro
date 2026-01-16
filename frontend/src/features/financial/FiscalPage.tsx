@@ -496,6 +496,16 @@ export function FiscalPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter states
+  const [filterInvoiceType, setFilterInvoiceType] = useState('all');
+  const [filterInvoiceStatus, setFilterInvoiceStatus] = useState('all');
+  const [filterGuideStatus, setFilterGuideStatus] = useState('all');
+
+  // Modal form states
+  const [newNfType, setNewNfType] = useState('nfse');
+  const [newNfClient, setNewNfClient] = useState('');
+  const [newNfContract, setNewNfContract] = useState('');
+
   // Stats
   const invoicedThisMonth = invoices.filter(i => i.status === 'authorized').reduce((acc, i) => acc + i.value, 0);
   const pendingInvoices = invoices.filter(i => i.status === 'pending').length;
@@ -657,8 +667,8 @@ export function FiscalPage() {
                         { value: 'nfe', label: 'NF-e' },
                         { value: 'nfce', label: 'NFC-e' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterInvoiceType}
+                      onChange={(value) => setFilterInvoiceType(value)}
                       className="w-36"
                     />
                     <Select
@@ -668,8 +678,8 @@ export function FiscalPage() {
                         { value: 'pending', label: 'Pendentes' },
                         { value: 'cancelled', label: 'Canceladas' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterInvoiceStatus}
+                      onChange={(value) => setFilterInvoiceStatus(value)}
                       className="w-40"
                     />
                   </>
@@ -682,8 +692,8 @@ export function FiscalPage() {
                       { value: 'paid', label: 'Pagas' },
                       { value: 'overdue', label: 'Vencidas' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterGuideStatus}
+                    onChange={(value) => setFilterGuideStatus(value)}
                     className="w-40"
                   />
                 )}
@@ -739,8 +749,8 @@ export function FiscalPage() {
                 { value: 'nfe', label: 'NF-e - Nota Fiscal Eletrônica' },
                 { value: 'nfce', label: 'NFC-e - Nota Fiscal Consumidor' },
               ]}
-              value="nfse"
-              onChange={() => {}}
+              value={newNfType}
+              onChange={(value) => setNewNfType(value)}
             />
             <Select
               label="Cliente"
@@ -749,8 +759,8 @@ export function FiscalPage() {
                 { value: '2', label: 'Hospital São Lucas' },
                 { value: '3', label: 'Tech Park Empresarial' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newNfClient}
+              onChange={(value) => setNewNfClient(value)}
               placeholder="Selecione o cliente..."
             />
             <Select
@@ -759,8 +769,8 @@ export function FiscalPage() {
                 { value: '1', label: 'CTR-2025-001 - Vigilância Patrimonial' },
                 { value: '2', label: 'CTR-2025-002 - Portaria 24h' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newNfContract}
+              onChange={(value) => setNewNfContract(value)}
               placeholder="Selecione o contrato..."
             />
             <div className="grid grid-cols-2 gap-4">

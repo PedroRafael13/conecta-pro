@@ -499,6 +499,15 @@ export function ProcurementPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter states
+  const [filterOrderStatus, setFilterOrderStatus] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [filterSupplierCategory, setFilterSupplierCategory] = useState('all');
+
+  // Modal form states
+  const [newSupplier, setNewSupplier] = useState('');
+  const [newOrderPriority, setNewOrderPriority] = useState('medium');
+
   // Stats
   const pendingOrders = orders.filter(o => o.status === 'pending_approval').length;
   const openOrders = orders.filter(o => ['approved', 'sent', 'partial'].includes(o.status)).length;

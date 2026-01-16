@@ -190,6 +190,15 @@ export function SubstitutionsPage() {
   const [showNewSubstitutionModal, setShowNewSubstitutionModal] = useState(false);
   const [selectedSubstitution, setSelectedSubstitution] = useState<Substitution | null>(null);
 
+  // Filter states
+  const [filterDepartment, setFilterDepartment] = useState('');
+
+  // Modal form states
+  const [newTitular, setNewTitular] = useState('');
+  const [newSubstitute, setNewSubstitute] = useState('');
+  const [newShift, setNewShift] = useState('');
+  const [newReason, setNewReason] = useState('');
+
   const tabs = [
     { value: 'overview', label: 'Visão Geral', icon: <UserCog className="h-4 w-4" /> },
     { value: 'substitutions', label: 'Substituições', icon: <ArrowRightLeft className="h-4 w-4" /> },
@@ -603,8 +612,8 @@ export function SubstitutionsPage() {
                 />
               </div>
               <Select
-                value=""
-                onChange={() => {}}
+                value={filterDepartment}
+                onChange={(value) => setFilterDepartment(value)}
                 options={[
                   { value: '', label: 'Todos os departamentos' },
                   { value: 'Segurança', label: 'Segurança' },
@@ -717,8 +726,8 @@ export function SubstitutionsPage() {
         >
           <div className="space-y-4">
             <Select
-              value=""
-              onChange={() => {}}
+              value={newTitular}
+              onChange={(value) => setNewTitular(value)}
               options={[
                 { value: '', label: 'Selecione o funcionário titular' },
                 { value: '1', label: 'João Silva' },
@@ -728,8 +737,8 @@ export function SubstitutionsPage() {
               className="w-full"
             />
             <Select
-              value=""
-              onChange={() => {}}
+              value={newSubstitute}
+              onChange={(value) => setNewSubstitute(value)}
               options={[
                 { value: '', label: 'Selecione o substituto' },
                 ...mockAvailableSubstitutes.filter(s => s.available).map(s => ({ value: s.id, label: s.name }))
@@ -739,8 +748,8 @@ export function SubstitutionsPage() {
             <div className="grid grid-cols-2 gap-4">
               <Input label="Data" type="date" />
               <Select
-                value=""
-                onChange={() => {}}
+                value={newShift}
+                onChange={(value) => setNewShift(value)}
                 options={[
                   { value: '', label: 'Selecione o turno' },
                   { value: 'morning', label: 'Matutino' },
@@ -751,8 +760,8 @@ export function SubstitutionsPage() {
               />
             </div>
             <Select
-              value=""
-              onChange={() => {}}
+              value={newReason}
+              onChange={(value) => setNewReason(value)}
               options={[
                 { value: '', label: 'Selecione o motivo' },
                 { value: 'medical', label: 'Consulta médica' },

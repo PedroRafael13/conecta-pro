@@ -476,6 +476,18 @@ export function AllocationsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter states
+  const [filterClient, setFilterClient] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+
+  // Modal form states
+  const [newEmployee, setNewEmployee] = useState('');
+  const [newClient, setNewClient] = useState('');
+  const [newPost, setNewPost] = useState('');
+  const [newShift, setNewShift] = useState('');
+  const [newAllocationType, setNewAllocationType] = useState('permanent');
+
   // Stats
   const totalAllocations = allocations.filter(a => a.status === 'active').length;
   const activeSubstitutions = substitutions.filter(s => s.status === 'active' || s.status === 'scheduled').length;
@@ -684,8 +696,8 @@ export function AllocationsPage() {
                         { value: '2', label: 'Hospital São Lucas' },
                         { value: '3', label: 'Tech Park Empresarial' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterClient}
+                      onChange={(value) => setFilterClient(value)}
                       className="w-48"
                     />
                     <Select
@@ -695,8 +707,8 @@ export function AllocationsPage() {
                         { value: 'pending', label: 'Pendentes' },
                         { value: 'ended', label: 'Encerrados' },
                       ]}
-                      value="all"
-                      onChange={() => {}}
+                      value={filterStatus}
+                      onChange={(value) => setFilterStatus(value)}
                       className="w-40"
                     />
                   </>
@@ -710,8 +722,8 @@ export function AllocationsPage() {
                       { value: 'medium', label: 'Média' },
                       { value: 'low', label: 'Baixa' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterPriority}
+                    onChange={(value) => setFilterPriority(value)}
                     className="w-44"
                   />
                 )}
@@ -767,8 +779,8 @@ export function AllocationsPage() {
                 { value: '2', label: 'Maria Santos - Vigilante' },
                 { value: '3', label: 'Carlos Eduardo - Supervisor' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newEmployee}
+              onChange={(value) => setNewEmployee(value)}
               placeholder="Selecione o funcionário..."
             />
             <Select
@@ -778,8 +790,8 @@ export function AllocationsPage() {
                 { value: '2', label: 'Hospital São Lucas' },
                 { value: '3', label: 'Tech Park Empresarial' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newClient}
+              onChange={(value) => setNewClient(value)}
               placeholder="Selecione o cliente..."
             />
             <Select
@@ -789,8 +801,8 @@ export function AllocationsPage() {
                 { value: '2', label: 'CFTV' },
                 { value: '3', label: 'Ronda Externa' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newPost}
+              onChange={(value) => setNewPost(value)}
               placeholder="Selecione o posto..."
             />
             <Select
@@ -800,8 +812,8 @@ export function AllocationsPage() {
                 { value: '2', label: '12x36 Noturno (18:00-06:00)' },
                 { value: '3', label: 'Comercial (08:00-18:00)' },
               ]}
-              value=""
-              onChange={() => {}}
+              value={newShift}
+              onChange={(value) => setNewShift(value)}
               placeholder="Selecione o turno..."
             />
             <div className="grid grid-cols-2 gap-4">
@@ -815,8 +827,8 @@ export function AllocationsPage() {
                 { value: 'temporary', label: 'Temporário' },
                 { value: 'replacement', label: 'Substituição' },
               ]}
-              value="permanent"
-              onChange={() => {}}
+              value={newAllocationType}
+              onChange={(value) => setNewAllocationType(value)}
             />
           </div>
         </Modal>

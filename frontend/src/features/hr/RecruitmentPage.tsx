@@ -437,6 +437,17 @@ export function RecruitmentPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
+  // Filters
+  const [filterDepartment, setFilterDepartment] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterPosition, setFilterPosition] = useState('all');
+  const [filterStage, setFilterStage] = useState('all');
+
+  // Modal form
+  const [newDepartment, setNewDepartment] = useState('');
+  const [newContractType, setNewContractType] = useState('');
+  const [newLevel, setNewLevel] = useState('');
+
   // Stats
   const openVacancies = jobOpenings.filter(j => j.status === 'open').length;
   const totalCandidates = jobOpenings.reduce((acc, j) => acc + j.candidates, 0);
@@ -566,8 +577,8 @@ export function RecruitmentPage() {
                       { value: 'commercial', label: 'Comercial' },
                       { value: 'rh', label: 'RH' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterDepartment}
+                    onChange={(value) => setFilterDepartment(value)}
                     className="w-48"
                   />
                   <Select
@@ -577,8 +588,8 @@ export function RecruitmentPage() {
                       { value: 'paused', label: 'Pausadas' },
                       { value: 'filled', label: 'Preenchidas' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterStatus}
+                    onChange={(value) => setFilterStatus(value)}
                     className="w-40"
                   />
                 </div>
@@ -610,8 +621,8 @@ export function RecruitmentPage() {
                       { value: 'all', label: 'Todas Vagas' },
                       ...jobOpenings.map(j => ({ value: j.id, label: j.title })),
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterPosition}
+                    onChange={(value) => setFilterPosition(value)}
                     className="w-48"
                   />
                   <Select
@@ -623,8 +634,8 @@ export function RecruitmentPage() {
                       { value: 'test', label: 'Teste' },
                       { value: 'offer', label: 'Proposta' },
                     ]}
-                    value="all"
-                    onChange={() => {}}
+                    value={filterStage}
+                    onChange={(value) => setFilterStage(value)}
                     className="w-40"
                   />
                 </div>
@@ -757,8 +768,8 @@ export function RecruitmentPage() {
                   { value: 'financial', label: 'Financeiro' },
                   { value: 'ti', label: 'TI' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newDepartment}
+                onChange={(value) => setNewDepartment(value)}
                 placeholder="Selecione..."
               />
               <Input label="Local" placeholder="São Paulo - SP" leftIcon={<MapPin className="w-4 h-4" />} />
@@ -772,8 +783,8 @@ export function RecruitmentPage() {
                   { value: 'temporary', label: 'Temporário' },
                   { value: 'intern', label: 'Estágio' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newContractType}
+                onChange={(value) => setNewContractType(value)}
                 placeholder="Selecione..."
               />
               <Select
@@ -784,8 +795,8 @@ export function RecruitmentPage() {
                   { value: 'senior', label: 'Sênior' },
                   { value: 'lead', label: 'Líder' },
                 ]}
-                value=""
-                onChange={() => {}}
+                value={newLevel}
+                onChange={(value) => setNewLevel(value)}
                 placeholder="Selecione..."
               />
             </div>

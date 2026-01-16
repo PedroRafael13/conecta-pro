@@ -390,6 +390,15 @@ export function InventoryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter states
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterProductStatus, setFilterProductStatus] = useState('all');
+  const [filterMovementType, setFilterMovementType] = useState('all');
+
+  // Modal form states
+  const [newCategory, setNewCategory] = useState('');
+  const [newUnit, setNewUnit] = useState('');
+
   // Stats
   const totalProducts = products.length;
   const totalValue = products.reduce((acc, p) => acc + p.totalValue, 0);
