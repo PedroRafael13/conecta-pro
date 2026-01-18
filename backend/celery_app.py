@@ -24,12 +24,14 @@ app = Celery(
     include=[
         "modules.government_integrations.jobs.sync_tasks",
         "modules.government_integrations.jobs.monitoring_tasks",
+        "modules.integrations.connectors.solides.tasks",
     ]
 )
 
 # Exchanges
 government_exchange = Exchange("government", type="direct")
 government_priority_exchange = Exchange("government_priority", type="direct")
+integrations_exchange = Exchange("integrations", type="direct")
 
 # Filas
 app.conf.task_queues = [
@@ -54,6 +56,14 @@ app.conf.task_queues = [
     # Batch/Sync/Monitoramento
     Queue("gov.batch", government_exchange, routing_key="batch",
           queue_arguments={"x-max-priority": 5}),
+
+    # Integrações - Sólides
+    Queue("integrations", integrations_exchange, routing_key="integrations",
+          queue_arguments={"x-max-priority": 5}),
+    Queue("webhooks", integrations_exchange, routing_key="webhooks",
+          queue_arguments={"x-max-priority": 8}),
+    Queue("maintenance", integrations_exchange, routing_key="maintenance",
+          queue_arguments={"x-max-priority": 3}),
 ]
 
 # Roteamento de tasks
@@ -69,6 +79,18 @@ app.conf.task_routes = {
     "government_integrations.tasks.monitoring.*": {"queue": "gov.batch"},
     "government_integrations.tasks.reprocess.*": {"queue": "gov.batch"},
     "government_integrations.tasks.maintenance.*": {"queue": "gov.batch"},
+
+    # Sólides Integration tasks
+    "solides.full_sync": {"queue": "integrations"},
+    "solides.incremental_sync": {"queue": "integrations"},
+    "solides.sync_all_condominios_incremental": {"queue": "integrations"},
+    "solides.sync_single_entity": {"queue": "integrations"},
+    "solides.health_check": {"queue": "integrations"},
+    "solides.health_check_all": {"queue": "integrations"},
+    "solides.process_webhook_queue": {"queue": "webhooks"},
+    "solides.retry_failed_webhooks": {"queue": "integrations"},
+    "solides.cleanup_old_logs": {"queue": "maintenance"},
+    "solides.cleanup_old_webhooks": {"queue": "maintenance"},
 }
 
 # Configurações gerais
@@ -133,6 +155,48 @@ app.conf.beat_schedule = {
         "task": "government_integrations.tasks.maintenance.limpar_cache",
         "schedule": 86400.0,  # 24 horas
         "options": {"queue": "gov.batch"},
+    },
+
+    # =========================================================================
+    # SÓLIDES - INTEGRAÇÃO RH/DP
+    # =========================================================================
+    # Sync incremental a cada 15 minutos
+    "solides-incremental-sync-all": {
+        "task": "solides.sync_all_condominios_incremental",
+        "schedule": 900.0,  # 15 minutos
+        "options": {"queue": "integrations"},
+    },
+    # Health check a cada 5 minutos
+    "solides-health-check-all": {
+        "task": "solides.health_check_all",
+        "schedule": 300.0,  # 5 minutos
+        "options": {"queue": "integrations"},
+    },
+    # Processar fila de webhooks a cada 30 segundos
+    "solides-process-webhooks": {
+        "task": "solides.process_webhook_queue",
+        "schedule": 30.0,
+        "options": {"queue": "webhooks"},
+    },
+    # Retry de webhooks falhos a cada hora
+    "solides-retry-failed-webhooks": {
+        "task": "solides.retry_failed_webhooks",
+        "schedule": 3600.0,  # 1 hora
+        "options": {"queue": "integrations"},
+    },
+    # Cleanup de logs de sync (diário às 4 AM via crontab)
+    "solides-cleanup-sync-logs": {
+        "task": "solides.cleanup_old_logs",
+        "schedule": 86400.0,  # 24 horas
+        "args": (30,),  # manter 30 dias
+        "options": {"queue": "maintenance"},
+    },
+    # Cleanup de logs de webhook (diário às 4:30 AM via crontab)
+    "solides-cleanup-webhook-logs": {
+        "task": "solides.cleanup_old_webhooks",
+        "schedule": 86400.0,  # 24 horas
+        "args": (7,),  # manter 7 dias
+        "options": {"queue": "maintenance"},
     },
 }
 

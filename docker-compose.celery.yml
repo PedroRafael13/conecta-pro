@@ -105,6 +105,33 @@ services:
       - ./credentials:/opt/conecta-pro/credentials:ro
 
   # ==========================================================================
+  # Celery Worker - Integrações (Sólides, APIs Externas)
+  # ==========================================================================
+  celery-integrations:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-celery-integrations
+    restart: unless-stopped
+    command: celery -A celery_app worker --hostname=integrations@%h --queues=integrations,webhooks,maintenance --concurrency=2 --loglevel=INFO
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://redis:6379/1
+      LOG_LEVEL: INFO
+      SOLIDES_API_TOKEN: ${SOLIDES_API_TOKEN}
+      SOLIDES_WEBHOOK_SECRET: ${SOLIDES_WEBHOOK_SECRET}
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - conecta-pro-network
+    volumes:
+      - ./logs/celery:/app/logs
+      - ./credentials:/opt/conecta-pro/credentials:ro
+
+  # ==========================================================================
   # Celery Beat - Scheduler
   # ==========================================================================
   celery-beat:

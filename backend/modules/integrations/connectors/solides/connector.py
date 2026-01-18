@@ -1,25 +1,39 @@
 """
-Conector Sólides - Gestão de Pessoas
+Conector Sólides DP (Tangerino) - Gestão de Pessoas (RH + DP)
 Sprint 33: Integration Framework
 
-Documentação: https://developers.solides.com.br/
-API Base: https://api.solides.com.br/v1/
+Documentação API: https://employer.tangerino.com.br
+Autenticação: Basic <base64_token>
+
+Endpoints disponíveis:
+- /employee - Colaboradores
+- /job-role - Cargos
+- /workplace - Locais de trabalho
+- /work-schedule - Escalas de trabalho
+- /absence - Absenteísmos
+- /occurrence - Ocorrências
 """
 
 import logging
 import time
-from datetime import datetime
+import os
+from datetime import datetime, date
 from typing import Optional, Dict, Any, List
 from uuid import UUID
+from dataclasses import dataclass
+
+import httpx
 
 from modules.integrations.connectors.base.connector import (
     BaseConnector,
     ConnectorCapabilities,
     SyncResult,
     HealthCheckResult,
+    EntityResult,
 )
-from modules.integrations.connectors.base.auth import OAuth2ClientCredentials
+from modules.integrations.connectors.base.auth import AuthStrategy
 from modules.integrations.connectors.base.rate_limiter import AdaptiveRateLimiter
+from modules.integrations.connectors.base.http_client import HTTPClientConfig
 from modules.integrations.connectors.base.exceptions import (
     ConnectorError,
     APIError,
@@ -29,46 +43,99 @@ from modules.integrations.connectors.base.exceptions import (
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class SolidesTokenAuth(AuthStrategy):
+    """
+    Autenticação via Basic Auth Sólides.
+    Formato: Basic <base64_encoded_credentials>
+    """
+    api_token: str  # Token já em base64
+
+    async def authenticate(self, client: httpx.AsyncClient) -> None:
+        """Aplica Basic auth ao cliente."""
+        if not self.api_token:
+            raise AuthenticationError("Token Sólides não configurado")
+
+        client.headers["Authorization"] = f"Basic {self.api_token}"
+        logger.debug("SolidesTokenAuth: Autenticação Basic aplicada")
+
+    async def refresh_if_needed(self, client: httpx.AsyncClient) -> bool:
+        """Token Sólides não expira automaticamente."""
+        return False
+
+    def get_headers(self) -> Dict[str, str]:
+        """Retorna headers de autenticação."""
+        return {"Authorization": f"Basic {self.api_token}"}
+
+    def is_expired(self) -> bool:
+        """Token Sólides não expira automaticamente."""
+        return False
+
+
 class SolidesConnector(BaseConnector):
     """
-    Conector para Sólides - Plataforma de Gestão de Pessoas.
+    Conector para Sólides DP (Tangerino) - Plataforma de Gestão de Pessoas.
+
+    API: https://employer.tangerino.com.br
 
     Entidades suportadas:
-    - colaboradores (funcionários)
-    - departamentos
-    - cargos
-    - vagas (recrutamento)
-    - candidatos
-    - inscricoes (candidaturas)
-    - avaliacoes (desempenho)
-    - pesquisas_clima
+    - employees (colaboradores)
+    - job_roles (cargos)
+    - workplaces (locais de trabalho)
+    - work_schedules (escalas de trabalho)
+    - absences (faltas, atrasos, afastamentos)
+    - occurrences (advertências, elogios, etc.)
+    - departments (departamentos)
+    - cost_centers (centros de custo)
     """
 
     NAME = "solides"
-    VERSION = "1.0.0"
+    VERSION = "2.0.0"
+
+    # URL base da API Sólides DP (Tangerino)
+    BASE_URL = "https://employer.tangerino.com.br"
 
     # Mapeamento de entidades para endpoints
     ENTITY_ENDPOINTS = {
-        "colaboradores": "/employees",
-        "departamentos": "/departments",
-        "cargos": "/positions",
-        "vagas": "/job-openings",
-        "candidatos": "/candidates",
-        "inscricoes": "/applications",
-        "avaliacoes": "/assessments",
-        "pesquisas_clima": "/climate-surveys",
+        "employees": "/employee/find-all",
+        "job_roles": "/job-role/find-all",
+        "workplaces": "/workplace/find-all",
+        "work_schedules": "/work-schedule",
+        "absences": "/absence/find-all",
+        "occurrences": "/occurrence/find-all",
+        "departments": "/department/find-all",
+        "cost_centers": "/cost-center/find-all",
+    }
+
+    # Endpoints para operações específicas
+    ENTITY_DETAIL_ENDPOINTS = {
+        "employees": "/employee/{id}",
+        "job_roles": "/job-role/{id}",
+        "workplaces": "/workplace/{id}",
+        "work_schedules": "/work-schedule/{id}",
+        "absences": "/absence/{id}",
+        "occurrences": "/occurrence/{id}",
+        "departments": "/department/{id}",
+        "cost_centers": "/cost-center/{id}",
+    }
+
+    # Endpoints para criação
+    ENTITY_CREATE_ENDPOINTS = {
+        "employees": "/employee",
+        "occurrences": "/occurrence",
+        "absences": "/absence",
     }
 
     # Campos de data por entidade para sync incremental
     DATE_FIELDS = {
-        "colaboradores": "updated_at",
-        "departamentos": "updated_at",
-        "cargos": "updated_at",
-        "vagas": "updated_at",
-        "candidatos": "updated_at",
-        "inscricoes": "updated_at",
-        "avaliacoes": "updated_at",
-        "pesquisas_clima": "updated_at",
+        "employees": "updatedAt",
+        "job_roles": "updatedAt",
+        "workplaces": "updatedAt",
+        "work_schedules": "updatedAt",
+        "absences": "startDate",
+        "occurrences": "date",
+        "departments": "updatedAt",
+        "cost_centers": "updatedAt",
     }
 
     @property
@@ -78,74 +145,100 @@ class SolidesConnector(BaseConnector):
             supports_full_sync=True,
             supports_webhooks=True,
             supports_write=True,
-            supports_delete=False,
+            supports_delete=False,  # Sólides DP não suporta delete direto
             supported_entities=list(self.ENTITY_ENDPOINTS.keys()),
-            rate_limit_per_second=10.0,
-            rate_limit_per_minute=300.0,
+            rate_limit_per_second=2.0,
+            rate_limit_per_minute=60.0,
         )
 
     def _get_base_url(self) -> str:
-        """Retorna URL base da API Sólides."""
-        return self.config.get("base_url", "https://api.solides.com.br/v1")
+        """Retorna URL base da API Sólides DP."""
+        return self.config.get("base_url", self.BASE_URL)
 
-    def _create_auth_strategy(self) -> OAuth2ClientCredentials:
-        """Cria autenticação via OAuth2 Client Credentials."""
-        client_id = self.credentials.get("client_id")
-        client_secret = self.credentials.get("client_secret")
+    def _create_auth_strategy(self) -> SolidesTokenAuth:
+        """Cria autenticação via Token Sólides."""
+        api_token = self.credentials.get("api_token") or self.credentials.get("token")
 
-        if not client_id or not client_secret:
+        # Também verifica variável de ambiente
+        if not api_token:
+            api_token = os.getenv("SOLIDES_API_TOKEN")
+
+        if not api_token:
             raise ConnectorError(
-                "Credenciais OAuth2 do Sólides não configuradas",
+                "Token Sólides não configurado. Configure 'api_token' nas credenciais ou SOLIDES_API_TOKEN no ambiente.",
                 connector=self.NAME,
-                error_code="MISSING_OAUTH_CREDENTIALS"
+                error_code="MISSING_TOKEN"
             )
 
-        token_url = self.config.get(
-            "token_url",
-            "https://api.solides.com.br/oauth/token"
-        )
-
-        return OAuth2ClientCredentials(
-            client_id=client_id,
-            client_secret=client_secret,
-            token_url=token_url,
-            scopes=self.config.get("scopes", ["read", "write"])
-        )
+        return SolidesTokenAuth(api_token=api_token)
 
     def _create_rate_limiter(self) -> AdaptiveRateLimiter:
         """Cria rate limiter adaptativo para Sólides."""
+        rate_limit = self.config.get("rate_limit_per_minute", 60)
         return AdaptiveRateLimiter(
-            initial_rate=10.0,
-            min_rate=1.0,
-            max_rate=20.0,
+            initial_rate=rate_limit / 60,  # Converte para req/s
+            min_rate=0.5,
+            max_rate=2.0,
             name=f"{self.NAME}-ratelimiter"
         )
 
+    def _create_http_config(self) -> HTTPClientConfig:
+        """Cria configuração HTTP customizada."""
+        return HTTPClientConfig(
+            base_url=self._get_base_url(),
+            timeout_connect=10.0,
+            timeout_read=60.0,  # Sólides pode ser lento em listagens grandes
+            timeout_write=30.0,
+            max_retries=3,
+            headers={
+                "User-Agent": f"ConectaPRO-Integration/{self.VERSION}",
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+            }
+        )
+
+    def _get_endpoint(self, entity_type: str, operation: str = "list") -> str:
+        """
+        Retorna endpoint para a entidade.
+
+        Args:
+            entity_type: Tipo da entidade
+            operation: 'list', 'detail', 'create'
+        """
+        if operation == "detail":
+            return self.ENTITY_DETAIL_ENDPOINTS.get(entity_type, "")
+        elif operation == "create":
+            return self.ENTITY_CREATE_ENDPOINTS.get(entity_type, "")
+        return self.ENTITY_ENDPOINTS.get(entity_type, "")
+
     async def health_check(self) -> HealthCheckResult:
-        """Verifica conexão com a API Sólides."""
+        """Verifica conexão com a API Sólides DP."""
         start = time.monotonic()
 
         try:
-            # Buscar 1 departamento para testar conexão
-            response = await self.http.get(
-                "/departments",
-                params={"per_page": 1}
-            )
+            # Usa endpoint /test para verificar conexão
+            response = await self.http.get("/test")
 
             latency = int((time.monotonic() - start) * 1000)
 
             if response.status_code == 200:
+                # Tenta extrair mensagem de boas-vindas
+                try:
+                    welcome_msg = response.text[:100] if response.text else "OK"
+                except Exception:
+                    welcome_msg = "OK"
+
                 return HealthCheckResult(
                     healthy=True,
                     latency_ms=latency,
-                    message="Conexão OK",
-                    details={"api_version": "v1"}
+                    message=f"Conexão OK - {welcome_msg}",
+                    details={"api": "Sólides DP (Tangerino)", "api_url": self._get_base_url()}
                 )
             elif response.status_code == 401:
                 return HealthCheckResult(
                     healthy=False,
                     latency_ms=latency,
-                    message="Falha de autenticação",
+                    message="Falha de autenticação - Token inválido ou expirado",
                     details={"status_code": 401}
                 )
             else:
@@ -178,17 +271,17 @@ class SolidesConnector(BaseConnector):
         entity_type: str,
         cursor: Optional[str] = None,
         updated_since: Optional[datetime] = None,
-        page_size: int = 50,
+        page_size: int = 100,
         filters: Optional[Dict[str, Any]] = None
     ) -> SyncResult:
         """
-        Busca entidades do Sólides.
+        Busca entidades do Sólides DP.
 
         Args:
-            entity_type: Tipo de entidade (colaboradores, vagas, etc.)
+            entity_type: Tipo de entidade (employees, job_roles, etc.)
             cursor: Página para buscar (paginação por página)
             updated_since: Filtrar por data de alteração
-            page_size: Tamanho da página (default 50)
+            page_size: Tamanho da página (max 100)
             filters: Filtros adicionais
 
         Returns:
@@ -201,23 +294,23 @@ class SolidesConnector(BaseConnector):
                 error_code="INVALID_ENTITY"
             )
 
-        endpoint = self.ENTITY_ENDPOINTS[entity_type]
+        endpoint = self._get_endpoint(entity_type)
 
-        # Montar parâmetros
+        # Montar parâmetros - Sólides DP usa 'size' e 'page'
         params: Dict[str, Any] = {
-            "per_page": min(page_size, 100),
+            "size": min(page_size, 100),
         }
 
         # Paginação
         if cursor:
             params["page"] = int(cursor)
         else:
-            params["page"] = 1
+            params["page"] = 0  # Sólides DP usa 0-indexed
 
         # Filtro de data (sync incremental)
         if updated_since:
-            date_field = self.DATE_FIELDS.get(entity_type, "updated_at")
-            params[f"{date_field}_from"] = updated_since.strftime("%Y-%m-%dT%H:%M:%S")
+            date_field = self.DATE_FIELDS.get(entity_type, "updatedAt")
+            params["updatedAfter"] = updated_since.strftime("%Y-%m-%dT%H:%M:%S")
 
         # Filtros adicionais
         if filters:
@@ -245,19 +338,31 @@ class SolidesConnector(BaseConnector):
 
             data = response.json()
 
-            # Sólides retorna { "data": [...], "meta": {...} }
-            items = data.get("data", [])
-            meta = data.get("meta", {})
+            # Sólides DP retorna:
+            # - Lista direta para find-all
+            # - { content: [...], totalElements, totalPages, ... } para paginados
+            if isinstance(data, dict):
+                items = data.get("content", data.get("data", []))
+                total_pages = data.get("totalPages", 1)
+                current_page = data.get("number", params["page"])
+                total_count = data.get("totalElements", len(items))
+            elif isinstance(data, list):
+                items = data
+                total_pages = 1
+                current_page = 0
+                total_count = len(items)
+            else:
+                items = []
+                total_pages = 1
+                current_page = 0
+                total_count = 0
 
-            # Verificar se tem mais páginas
-            total_pages = meta.get("total_pages", 1)
-            current_page = meta.get("current_page", params["page"])
-            has_more = current_page < total_pages
+            has_more = current_page < (total_pages - 1)
             next_cursor = str(current_page + 1) if has_more else None
 
             logger.debug(
                 f"[{self.NAME}] Buscou {len(items)} {entity_type} "
-                f"(página {current_page}/{total_pages})"
+                f"(página {current_page + 1}/{total_pages})"
             )
 
             return SyncResult(
@@ -265,11 +370,11 @@ class SolidesConnector(BaseConnector):
                 data=items,
                 cursor=next_cursor,
                 has_more=has_more,
-                total_count=meta.get("total", len(items)),
+                total_count=total_count,
                 metadata={
                     "page": current_page,
                     "total_pages": total_pages,
-                    "per_page": params["per_page"]
+                    "per_page": params["size"]
                 }
             )
 
@@ -293,18 +398,20 @@ class SolidesConnector(BaseConnector):
 
         Args:
             entity_type: Tipo de entidade
-            external_id: ID no Sólides
+            external_id: ID no Sólides DP
 
         Returns:
             Dados da entidade ou None
         """
-        if entity_type not in self.ENTITY_ENDPOINTS:
+        if entity_type not in self.ENTITY_DETAIL_ENDPOINTS:
             raise ConnectorError(
                 f"Entidade não suportada: {entity_type}",
                 connector=self.NAME
             )
 
-        endpoint = f"{self.ENTITY_ENDPOINTS[entity_type]}/{external_id}"
+        # Usa o endpoint de detalhe com o ID
+        endpoint_template = self._get_endpoint(entity_type, operation="detail")
+        endpoint = endpoint_template.format(id=external_id)
 
         try:
             response = await self.http.get(endpoint)
@@ -320,7 +427,8 @@ class SolidesConnector(BaseConnector):
                 )
 
             data = response.json()
-            return data.get("data")
+            # Retorna dados diretos ou dentro de "data"
+            return data.get("data", data) if isinstance(data, dict) else data
 
         except APIError:
             raise
@@ -332,33 +440,23 @@ class SolidesConnector(BaseConnector):
         self,
         entity_type: str,
         data: Dict[str, Any]
-    ):
-        """Cria entidade no Sólides."""
-        from modules.integrations.connectors.base.connector import EntityResult
-
-        if entity_type not in self.ENTITY_ENDPOINTS:
-            raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME
-            )
-
-        # Entidades que não permitem criação via API
-        read_only_entities = ["pesquisas_clima", "avaliacoes"]
-        if entity_type in read_only_entities:
+    ) -> EntityResult:
+        """Cria entidade no Sólides DP."""
+        if entity_type not in self.ENTITY_CREATE_ENDPOINTS:
             return EntityResult(
                 success=False,
                 action="error",
-                error=f"Entidade {entity_type} é somente leitura"
+                error=f"Entidade {entity_type} não suporta criação"
             )
 
-        endpoint = self.ENTITY_ENDPOINTS[entity_type]
+        endpoint = self._get_endpoint(entity_type, operation="create")
 
         try:
             response = await self.http.post(endpoint, json=data)
 
             if response.status_code in [200, 201]:
                 result = response.json()
-                result_data = result.get("data", {})
+                result_data = result.get("data", result)
                 external_id = result_data.get("id")
 
                 return EntityResult(
@@ -373,7 +471,7 @@ class SolidesConnector(BaseConnector):
                 return EntityResult(
                     success=False,
                     action="validation_error",
-                    error=str(error_data.get("errors", error_data))
+                    error=str(error_data.get("errors", error_data.get("message", error_data)))
                 )
             else:
                 return EntityResult(
@@ -394,17 +492,18 @@ class SolidesConnector(BaseConnector):
         entity_type: str,
         external_id: str,
         data: Dict[str, Any]
-    ):
-        """Atualiza entidade no Sólides."""
-        from modules.integrations.connectors.base.connector import EntityResult
-
-        if entity_type not in self.ENTITY_ENDPOINTS:
-            raise ConnectorError(
-                f"Entidade não suportada: {entity_type}",
-                connector=self.NAME
+    ) -> EntityResult:
+        """Atualiza entidade no Sólides DP."""
+        if entity_type not in self.ENTITY_DETAIL_ENDPOINTS:
+            return EntityResult(
+                success=False,
+                external_id=external_id,
+                action="error",
+                error=f"Entidade {entity_type} não suporta atualização"
             )
 
-        endpoint = f"{self.ENTITY_ENDPOINTS[entity_type]}/{external_id}"
+        endpoint_template = self._get_endpoint(entity_type, operation="detail")
+        endpoint = endpoint_template.format(id=external_id)
 
         try:
             response = await self.http.put(endpoint, json=data)
@@ -416,7 +515,7 @@ class SolidesConnector(BaseConnector):
                     success=True,
                     external_id=external_id,
                     action="updated",
-                    data=result.get("data")
+                    data=result.get("data", result)
                 )
             elif response.status_code == 404:
                 return EntityResult(
@@ -431,7 +530,7 @@ class SolidesConnector(BaseConnector):
                     success=False,
                     external_id=external_id,
                     action="validation_error",
-                    error=str(error_data.get("errors", error_data))
+                    error=str(error_data.get("errors", error_data.get("message", error_data)))
                 )
             else:
                 return EntityResult(
@@ -449,76 +548,283 @@ class SolidesConnector(BaseConnector):
                 error=str(e)
             )
 
-    async def fetch_employee_profile(
+    async def delete_entity(
         self,
-        employee_id: str
-    ) -> Optional[Dict[str, Any]]:
+        entity_type: str,
+        external_id: str
+    ) -> EntityResult:
         """
-        Busca perfil comportamental de um colaborador.
+        Remove/demite entidade no Sólides DP.
+        Nota: Sólides DP geralmente não suporta DELETE direto.
+        """
+        # Sólides DP não suporta delete direto na maioria das entidades
+        return EntityResult(
+            success=False,
+            external_id=external_id,
+            action="error",
+            error="Sólides DP não suporta remoção direta de entidades"
+        )
+
+    async def _delete_entity_internal(
+        self,
+        entity_type: str,
+        external_id: str
+    ) -> EntityResult:
+        """Método interno para delete (caso futura API suporte)."""
+        endpoint_template = self._get_endpoint(entity_type, operation="detail")
+        endpoint = endpoint_template.format(id=external_id)
+
+        try:
+            response = await self.http.delete(endpoint)
+
+            if response.status_code in [200, 204]:
+                return EntityResult(
+                    success=True,
+                    external_id=external_id,
+                    action="deleted"
+                )
+            elif response.status_code == 404:
+                return EntityResult(
+                    success=False,
+                    external_id=external_id,
+                    action="not_found",
+                    error="Entidade não encontrada"
+                )
+            else:
+                return EntityResult(
+                    success=False,
+                    external_id=external_id,
+                    action="error",
+                    error=f"Status {response.status_code}: {response.text[:200]}"
+                )
+
+        except Exception as e:
+            return EntityResult(
+                success=False,
+                external_id=external_id,
+                action="error",
+                error=str(e)
+            )
+
+    # ==================== MÉTODOS ESPECÍFICOS SÓLIDES DP ====================
+
+    async def fetch_employee(self, employee_id: str) -> Optional[Dict[str, Any]]:
+        """Busca colaborador específico com todos os dados."""
+        return await self.fetch_entity_by_id("employees", employee_id)
+
+    async def fetch_employees_active(
+        self,
+        page: int = 0,
+        per_page: int = 100
+    ) -> SyncResult:
+        """Busca apenas colaboradores ativos."""
+        return await self.fetch_entities(
+            entity_type="employees",
+            cursor=str(page),
+            page_size=per_page,
+            filters={"status": "ACTIVE"}
+        )
+
+    async def create_employee(self, data: Dict[str, Any]) -> EntityResult:
+        """Cria novo colaborador no Sólides DP."""
+        return await self.create_entity("employees", data)
+
+    async def update_employee(
+        self,
+        employee_id: str,
+        data: Dict[str, Any]
+    ) -> EntityResult:
+        """Atualiza colaborador existente."""
+        return await self.update_entity("employees", employee_id, data)
+
+    async def terminate_employee(
+        self,
+        employee_id: str,
+        termination_date: date,
+        reason: Optional[str] = None
+    ) -> EntityResult:
+        """Demite colaborador."""
+        data = {
+            "terminationDate": termination_date.isoformat(),
+            "status": "TERMINATED"
+        }
+        if reason:
+            data["terminationReason"] = reason
+
+        return await self.update_entity("employees", employee_id, data)
+
+    async def fetch_occurrences_by_employee(
+        self,
+        employee_id: str,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Busca ocorrências de um colaborador específico.
 
         Args:
             employee_id: ID do colaborador
+            start_date: Data inicial do período
+            end_date: Data final do período
 
         Returns:
-            Dados do perfil ou None
+            Lista de ocorrências
         """
-        try:
-            response = await self.http.get(
-                f"/employees/{employee_id}/profile"
-            )
+        filters = {"employeeId": employee_id}
+        if start_date:
+            filters["startDate"] = start_date.isoformat()
+        if end_date:
+            filters["endDate"] = end_date.isoformat()
 
-            if response.status_code == 404:
-                return None
+        result = await self.fetch_entities(
+            entity_type="occurrences",
+            filters=filters
+        )
 
-            if response.status_code != 200:
-                logger.warning(
-                    f"[{self.NAME}] Erro ao buscar perfil do colaborador "
-                    f"{employee_id}: {response.status_code}"
-                )
-                return None
+        return result.data if result.success else []
 
-            data = response.json()
-            return data.get("data")
-
-        except Exception as e:
-            logger.error(
-                f"[{self.NAME}] Erro ao buscar perfil do colaborador "
-                f"{employee_id}: {e}"
-            )
-            return None
-
-    async def fetch_application_history(
+    async def create_occurrence(
         self,
-        application_id: str
-    ) -> Optional[List[Dict[str, Any]]]:
+        employee_id: str,
+        occurrence_type: str,
+        description: str,
+        occurrence_date: date,
+        additional_data: Optional[Dict[str, Any]] = None
+    ) -> EntityResult:
         """
-        Busca histórico de etapas de uma candidatura.
+        Cria nova ocorrência para colaborador.
 
         Args:
-            application_id: ID da candidatura
+            employee_id: ID do colaborador
+            occurrence_type: Tipo da ocorrência
+            description: Descrição da ocorrência
+            occurrence_date: Data da ocorrência
+            additional_data: Dados extras
 
         Returns:
-            Lista de etapas ou None
+            EntityResult com resultado
         """
-        try:
-            response = await self.http.get(
-                f"/applications/{application_id}/history"
-            )
+        data = {
+            "employeeId": int(employee_id),
+            "type": occurrence_type,
+            "description": description,
+            "date": occurrence_date.isoformat(),
+        }
+        if additional_data:
+            data.update(additional_data)
 
-            if response.status_code != 200:
-                return None
+        return await self.create_entity("occurrences", data)
 
-            data = response.json()
-            return data.get("data", [])
+    async def fetch_absences_by_employee(
+        self,
+        employee_id: str,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Busca absenteísmos de um colaborador específico.
 
-        except Exception as e:
-            logger.error(
-                f"[{self.NAME}] Erro ao buscar histórico da candidatura "
-                f"{application_id}: {e}"
-            )
-            return None
+        Args:
+            employee_id: ID do colaborador
+            start_date: Data inicial do período
+            end_date: Data final do período
+
+        Returns:
+            Lista de absenteísmos
+        """
+        filters = {"employeeId": employee_id}
+        if start_date:
+            filters["startDate"] = start_date.isoformat()
+        if end_date:
+            filters["endDate"] = end_date.isoformat()
+
+        result = await self.fetch_entities(
+            entity_type="absences",
+            filters=filters
+        )
+
+        return result.data if result.success else []
+
+    async def fetch_departments(self) -> List[Dict[str, Any]]:
+        """Busca todos os departamentos."""
+        result = await self.fetch_entities("departments")
+        return result.data if result.success else []
+
+    async def fetch_job_roles(self) -> List[Dict[str, Any]]:
+        """Busca todos os cargos."""
+        result = await self.fetch_entities("job_roles")
+        return result.data if result.success else []
+
+    async def fetch_workplaces(self) -> List[Dict[str, Any]]:
+        """Busca todos os locais de trabalho."""
+        result = await self.fetch_entities("workplaces")
+        return result.data if result.success else []
+
+    async def fetch_work_schedules(self) -> List[Dict[str, Any]]:
+        """Busca todas as escalas de trabalho."""
+        result = await self.fetch_entities("work_schedules")
+        return result.data if result.success else []
+
+    async def fetch_cost_centers(self) -> List[Dict[str, Any]]:
+        """Busca todos os centros de custo."""
+        result = await self.fetch_entities("cost_centers")
+        return result.data if result.success else []
+
+    # ==================== WEBHOOKS ====================
+
+    async def validate_webhook(
+        self,
+        headers: Dict[str, str],
+        body: bytes
+    ) -> bool:
+        """
+        Valida assinatura de webhook do Sólides.
+
+        Args:
+            headers: Headers da requisição
+            body: Body raw da requisição
+
+        Returns:
+            True se válido
+        """
+        import hmac
+        import hashlib
+
+        webhook_secret = self.credentials.get("webhook_secret") or os.getenv("SOLIDES_WEBHOOK_SECRET")
+
+        if not webhook_secret:
+            logger.warning(f"[{self.NAME}] Webhook secret não configurado, pulando validação")
+            return True
+
+        # Sólides usa X-Solides-Signature ou X-Webhook-Signature
+        signature = headers.get("X-Solides-Signature") or headers.get("X-Webhook-Signature", "")
+
+        if not signature:
+            logger.warning(f"[{self.NAME}] Assinatura não encontrada no header")
+            return False
+
+        # Calcula HMAC SHA256
+        expected = hmac.new(
+            webhook_secret.encode(),
+            body,
+            hashlib.sha256
+        ).hexdigest()
+
+        # Remove prefixo sha256= se presente
+        if signature.startswith("sha256="):
+            signature = signature[7:]
+
+        is_valid = hmac.compare_digest(signature, expected)
+
+        if not is_valid:
+            logger.warning(f"[{self.NAME}] Assinatura de webhook inválida")
+
+        return is_valid
 
 
-# Registrar conector
-from modules.integrations.sync.engine import ConnectorRegistry
-ConnectorRegistry.register(SolidesConnector)
+# Registrar conector (se o registry existir)
+try:
+    from modules.integrations.sync.engine import ConnectorRegistry
+    ConnectorRegistry.register(SolidesConnector)
+except ImportError:
+    pass
