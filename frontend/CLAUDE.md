@@ -431,14 +431,46 @@ Execute `grep -rn "onChange={() => {}}" src/` para verificar as ocorrências res
 
 ---
 
+## PWA - Suporte Offline Completo (18/01/2026)
+
+### Componentes Criados
+
+| Componente | Arquivo | Função |
+|------------|---------|--------|
+| `useOnlineStatus` | `core/hooks/useOnlineStatus.ts` | Detecta conexão online/offline |
+| `usePWA` | `core/hooks/usePWA.ts` | Gerencia instalação e atualizações |
+| `OfflineBanner` | `core/components/pwa/OfflineBanner.tsx` | Banner de conexão perdida/restaurada |
+| `InstallPrompt` | `core/components/pwa/InstallPrompt.tsx` | Prompt para instalar o app |
+| `UpdatePrompt` | `core/components/pwa/UpdatePrompt.tsx` | Notifica atualizações disponíveis |
+
+### Funcionalidades PWA
+
+- **Instalação como app nativo** - Mobile e Desktop
+- **Detecção de conexão** - Notifica quando offline/online
+- **Cache de assets** - JS, CSS, imagens, fontes
+- **Cache de API** - NetworkFirst com fallback
+- **Auto-update** - Notifica e atualiza service worker
+- **Atalhos** - Dashboard e CRM no manifest
+
+### Estratégias de Cache (Workbox)
+
+| Tipo | Estratégia | TTL |
+|------|------------|-----|
+| API (`/api/*`) | NetworkFirst | 24h |
+| Imagens | CacheFirst | 30 dias |
+| Fontes | CacheFirst | 1 ano |
+| Assets | Precache | Build time |
+
+---
+
 ## Próximos Passos
 
 1. [x] ~~Corrigir Selects com onChange vazio~~ ✅ CONCLUÍDO
 2. [ ] Integrar APIs reais nos módulos CRM e Financeiro
 3. [ ] Implementar autenticação real com JWT
 4. [ ] Adicionar testes unitários com Vitest
-5. [ ] Implementar PWA (offline support)
+5. [x] ~~Implementar PWA (offline support)~~ ✅ CONCLUÍDO
 6. [ ] Adicionar i18n para internacionalização
 
 ---
-*Última atualização: 16/01/2026*
+*Última atualização: 18/01/2026*

@@ -4,11 +4,19 @@ import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider, PageLoader } from '@/design-system/components';
+import { ThemeProvider } from '@/shared/contexts/ThemeContext';
+import { AuthProvider } from '@/core/auth/AuthProvider';
+import { OfflineBanner, InstallPrompt, UpdatePrompt } from '@/core/components/pwa';
 
 // Lazy load pages - Auth
 const LoginPage = lazy(() => import('@/features/auth/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('@/features/auth/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const ForgotPasswordPage = lazy(() => import('@/features/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
+const AuthCallbackPage = lazy(() => import('@/features/auth/AuthCallbackPage').then(m => ({ default: m.AuthCallbackPage })));
+const PendingApprovalPage = lazy(() => import('@/features/auth/PendingApprovalPage').then(m => ({ default: m.PendingApprovalPage })));
+
+// Lazy load pages - Home Hub
+const HomeHubPage = lazy(() => import('@/features/home/HomeHubPage').then(m => ({ default: m.HomeHubPage })));
 
 // Lazy load pages - Profile & Help
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
@@ -110,6 +118,9 @@ const BidDocumentsPage = lazy(() => import('@/features/bidding/BidDocumentsPage'
 const ClientsPage = lazy(() => import('@/features/clients/ClientsPage').then(m => ({ default: m.ClientsPage })));
 const ClientDetailPage = lazy(() => import('@/features/clients/ClientDetailPage').then(m => ({ default: m.ClientDetailPage })));
 
+// Lazy load pages - Admin
+const UsersManagementPage = lazy(() => import('@/features/admin/UsersManagementPage').then(m => ({ default: m.UsersManagementPage })));
+
 // Lazy load pages - Notifications, Settings, Reports
 const NotificationsPage = lazy(() => import('@/features/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
@@ -166,18 +177,29 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider position="top-right">
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider position="top-right">
+          <AuthProvider>
+            <OfflineBanner />
+            <UpdatePrompt />
+            <InstallPrompt />
+            <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
               {/* Auth Routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/pending-approval" element={<PendingApprovalPage />} />
+
+              {/* Home Hub */}
+              <Route path="/home" element={<HomeHubPage />} />
+              <Route path="/" element={<Navigate to="/home" replace />} />
 
               {/* Dashboard */}
-              <Route path="/" element={<DashboardPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/realtime" element={<RealtimeMonitoringPage />} />
               <Route path="/reports" element={<ReportsPage />} />
@@ -279,8 +301,10 @@ function App() {
               <Route path="/clients" element={<ClientsPage />} />
               <Route path="/clients/:id" element={<ClientDetailPage />} />
 
-              {/* Settings */}
+              {/* Settings & Admin */}
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/users" element={<UsersManagementPage />} />
+              <Route path="/admin/users" element={<UsersManagementPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/help" element={<HelpPage />} />
 
@@ -314,12 +338,14 @@ function App() {
               <Route path="/doc-intelligence" element={<DocIntelligencePage />} />
 
               {/* Catch all */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </BrowserRouter>
-      </ToastProvider>
-    </QueryClientProvider>
+              <Route path="*" element={<Navigate to="/home" replace />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </AuthProvider>
+        </ToastProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
