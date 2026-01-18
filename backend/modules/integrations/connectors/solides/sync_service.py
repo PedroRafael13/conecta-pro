@@ -564,7 +564,7 @@ class SolidesSyncService:
         solides_data: Dict[str, Any]
     ) -> Optional[UUID]:
         """
-        Cria entidade no Conecta PRO.
+        Cria entidade no Conecta PRO (tabelas de staging solides_*).
 
         Args:
             entity_type: Tipo da entidade
@@ -573,35 +573,271 @@ class SolidesSyncService:
         Returns:
             ID da entidade criada ou None
         """
-        # Mapear dados
-        mapper_map = {
-            "colaboradores": solides_colaborador_to_employee,
-            "departamentos": solides_departamento_to_department,
-            "cargos": solides_cargo_to_position,
-            "ocorrencias": solides_ocorrencia_to_occurrence,
-            "absenteismos": solides_absenteismo_to_absence,
-            "passaportes": solides_passaporte_to_behavioral_profile,
-        }
+        from modules.integrations.connectors.solides.models import (
+            SolidesEmployee,
+            SolidesDepartment,
+            SolidesPosition,
+            SolidesOccurrence,
+            SolidesAbsence,
+            SolidesWorkplace,
+            SolidesWorkSchedule,
+            SolidesCostCenter,
+        )
+        from modules.integrations.connectors.solides.mappers import compute_solides_entity_hash
 
-        mapper = mapper_map.get(entity_type)
-        if not mapper:
-            logger.warning(f"[Solides] Mapper não encontrado para {entity_type}")
+        solides_id = str(solides_data.get("id", ""))
+        data_hash = compute_solides_entity_hash(entity_type, solides_data)
+
+        try:
+            if entity_type in ["colaboradores", "employees"]:
+                entity = self._create_employee(solides_data, data_hash)
+            elif entity_type in ["departamentos", "departments"]:
+                entity = self._create_department(solides_data, data_hash)
+            elif entity_type in ["cargos", "job_roles"]:
+                entity = self._create_position(solides_data, data_hash)
+            elif entity_type in ["ocorrencias", "occurrences"]:
+                entity = self._create_occurrence(solides_data, data_hash)
+            elif entity_type in ["absenteismos", "absences"]:
+                entity = self._create_absence(solides_data, data_hash)
+            elif entity_type in ["unidades", "workplaces"]:
+                entity = self._create_workplace(solides_data, data_hash)
+            elif entity_type in ["escalas", "work_schedules"]:
+                entity = self._create_work_schedule(solides_data, data_hash)
+            elif entity_type in ["centros_custo", "cost_centers"]:
+                entity = self._create_cost_center(solides_data, data_hash)
+            else:
+                logger.warning(f"[Solides] Tipo de entidade não suportado: {entity_type}")
+                return None
+
+            if entity:
+                self.db.add(entity)
+                self.db.commit()
+                self.db.refresh(entity)
+                logger.info(f"[Solides] Criado {entity_type}/{solides_id} -> {entity.id}")
+                return entity.id
+
+        except Exception as e:
+            logger.error(f"[Solides] Erro ao criar {entity_type}/{solides_id}: {e}")
+            self.db.rollback()
+
+        return None
+
+    def _create_employee(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de colaborador."""
+        from modules.integrations.connectors.solides.models import SolidesEmployee
+
+        # Extrair dados de cargo/departamento se forem objetos
+        cargo_nome = None
+        if isinstance(data.get("cargo"), dict):
+            cargo_nome = data["cargo"].get("nome")
+        elif data.get("cargo_nome"):
+            cargo_nome = data["cargo_nome"]
+
+        departamento_nome = None
+        if isinstance(data.get("departamento"), dict):
+            departamento_nome = data["departamento"].get("nome")
+        elif data.get("departamento_nome"):
+            departamento_nome = data["departamento_nome"]
+
+        unidade_nome = None
+        if isinstance(data.get("unidade"), dict):
+            unidade_nome = data["unidade"].get("nome")
+
+        return SolidesEmployee(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            nome=data.get("nome", data.get("name", "")),
+            email=data.get("email"),
+            cpf=data.get("cpf"),
+            rg=data.get("rg"),
+            data_nascimento=self._parse_datetime(data.get("data_nascimento") or data.get("birthDate")),
+            sexo=data.get("sexo") or data.get("gender"),
+            estado_civil=data.get("estado_civil") or data.get("maritalStatus"),
+            telefone=data.get("telefone") or data.get("phone"),
+            celular=data.get("celular") or data.get("mobile"),
+            endereco=data.get("endereco") or data.get("address") or {},
+            matricula=data.get("matricula") or data.get("registrationNumber"),
+            cargo_id=str(data.get("cargo_id") or data.get("jobRoleId") or ""),
+            cargo_nome=cargo_nome or data.get("jobRoleName"),
+            departamento_id=str(data.get("departamento_id") or data.get("departmentId") or ""),
+            departamento_nome=departamento_nome or data.get("departmentName"),
+            unidade_id=str(data.get("unidade_id") or data.get("workplaceId") or ""),
+            unidade_nome=unidade_nome or data.get("workplaceName"),
+            gestor_id=str(data.get("gestor_id") or data.get("managerId") or ""),
+            gestor_nome=data.get("gestor_nome") or data.get("managerName"),
+            data_admissao=self._parse_datetime(data.get("data_admissao") or data.get("admissionDate") or data.get("hireDate")),
+            data_demissao=self._parse_datetime(data.get("data_demissao") or data.get("terminationDate")),
+            tipo_contrato=data.get("tipo_contrato") or data.get("contractType"),
+            regime_trabalho=data.get("regime_trabalho") or data.get("workRegime"),
+            jornada_trabalho=data.get("jornada_trabalho") or data.get("workSchedule"),
+            carga_horaria_semanal=data.get("carga_horaria_semanal") or data.get("weeklyHours"),
+            salario=str(data.get("salario") or data.get("salary") or ""),
+            ctps_numero=data.get("ctps_numero") or data.get("ctpsNumber"),
+            ctps_serie=data.get("ctps_serie") or data.get("ctpsSeries"),
+            ctps_uf=data.get("ctps_uf") or data.get("ctpsState"),
+            pis=data.get("pis") or data.get("pisNumber"),
+            titulo_eleitor=data.get("titulo_eleitor") or data.get("voterId"),
+            certificado_reservista=data.get("certificado_reservista") or data.get("militaryCertificate"),
+            dependentes=data.get("dependentes") or data.get("dependents") or [],
+            situacao=data.get("situacao") or data.get("status") or "ativo",
+            perfil_disc=data.get("perfil_disc") or data.get("discProfile"),
+            perfil_profiler=data.get("perfil_profiler") or data.get("profilerProfile"),
+            foto_url=data.get("foto_url") or data.get("photoUrl"),
+            dados_adicionais=data.get("dados_adicionais") or {},
+            data_hash=data_hash,
+        )
+
+    def _create_department(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de departamento."""
+        from modules.integrations.connectors.solides.models import SolidesDepartment
+
+        return SolidesDepartment(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            nome=data.get("nome") or data.get("name", ""),
+            codigo=data.get("codigo") or data.get("code"),
+            departamento_pai_id=str(data.get("departamento_pai_id") or data.get("parentId") or ""),
+            gestor_id=str(data.get("gestor_id") or data.get("managerId") or ""),
+            unidade_id=str(data.get("unidade_id") or data.get("workplaceId") or ""),
+            ativo=data.get("ativo", data.get("active", True)),
+            data_hash=data_hash,
+        )
+
+    def _create_position(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de cargo."""
+        from modules.integrations.connectors.solides.models import SolidesPosition
+
+        return SolidesPosition(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            nome=data.get("nome") or data.get("name", ""),
+            codigo=data.get("codigo") or data.get("code"),
+            descricao=data.get("descricao") or data.get("description"),
+            departamento_id=str(data.get("departamento_id") or data.get("departmentId") or ""),
+            cbo_id=str(data.get("cbo_id") or ""),
+            cbo_codigo=data.get("cbo_codigo") or data.get("cboCode"),
+            nivel=data.get("nivel") or data.get("level"),
+            faixa_salarial_min=str(data.get("faixa_salarial_min") or data.get("salaryRangeMin") or ""),
+            faixa_salarial_max=str(data.get("faixa_salarial_max") or data.get("salaryRangeMax") or ""),
+            ativo=data.get("ativo", data.get("active", True)),
+            data_hash=data_hash,
+        )
+
+    def _create_occurrence(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de ocorrência."""
+        from modules.integrations.connectors.solides.models import SolidesOccurrence
+
+        return SolidesOccurrence(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            colaborador_id=str(data.get("colaborador_id") or data.get("employeeId", "")),
+            colaborador_nome=data.get("colaborador_nome") or data.get("employeeName"),
+            tipo=data.get("tipo") or data.get("type", "outro"),
+            descricao=data.get("descricao") or data.get("description"),
+            data=self._parse_datetime(data.get("data") or data.get("date")),
+            data_vigencia=self._parse_datetime(data.get("data_vigencia") or data.get("effectiveDate")),
+            duracao_dias=data.get("duracao_dias") or data.get("durationDays"),
+            valor_aumento=str(data.get("valor_aumento") or data.get("raiseAmount") or ""),
+            percentual_aumento=str(data.get("percentual_aumento") or data.get("raisePercentage") or ""),
+            novo_cargo_id=str(data.get("novo_cargo_id") or data.get("newPositionId") or ""),
+            novo_cargo_nome=data.get("novo_cargo_nome") or data.get("newPositionName"),
+            registrado_por_id=str(data.get("registrado_por_id") or data.get("registeredById") or ""),
+            registrado_por_nome=data.get("registrado_por_nome") or data.get("registeredByName"),
+            anexos=data.get("anexos") or data.get("attachments") or [],
+            observacoes=data.get("observacoes") or data.get("notes"),
+            dados_adicionais=data.get("dados_adicionais") or {},
+            data_hash=data_hash,
+        )
+
+    def _create_absence(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de absenteísmo."""
+        from modules.integrations.connectors.solides.models import SolidesAbsence
+
+        return SolidesAbsence(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            colaborador_id=str(data.get("colaborador_id") or data.get("employeeId", "")),
+            colaborador_nome=data.get("colaborador_nome") or data.get("employeeName"),
+            tipo=data.get("tipo") or data.get("type", "falta"),
+            motivo=data.get("motivo") or data.get("reason"),
+            data_inicio=self._parse_datetime(data.get("data_inicio") or data.get("startDate")),
+            data_fim=self._parse_datetime(data.get("data_fim") or data.get("endDate")),
+            horas=str(data.get("horas") or data.get("hours") or ""),
+            minutos_atraso=data.get("minutos_atraso") or data.get("minutesLate"),
+            justificado=data.get("justificado", data.get("justified", False)),
+            documento_anexo=data.get("documento_anexo") or data.get("documentUrl"),
+            cid=data.get("cid") or data.get("icdCode"),
+            desconto_em_folha=data.get("desconto_em_folha", data.get("payrollDeduction", True)),
+            dias_descontados=data.get("dias_descontados") or data.get("daysDeducted"),
+            numero_beneficio_inss=data.get("numero_beneficio_inss") or data.get("inssBenefitNumber"),
+            data_inicio_inss=self._parse_datetime(data.get("data_inicio_inss") or data.get("inssStartDate")),
+            data_fim_inss=self._parse_datetime(data.get("data_fim_inss") or data.get("inssEndDate")),
+            registrado_por_id=str(data.get("registrado_por_id") or data.get("registeredById") or ""),
+            registrado_por_nome=data.get("registrado_por_nome") or data.get("registeredByName"),
+            observacoes=data.get("observacoes") or data.get("notes"),
+            dados_adicionais=data.get("dados_adicionais") or {},
+            data_hash=data_hash,
+        )
+
+    def _create_workplace(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de local de trabalho/unidade."""
+        from modules.integrations.connectors.solides.models import SolidesWorkplace
+
+        return SolidesWorkplace(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            nome=data.get("nome") or data.get("name", ""),
+            codigo=data.get("codigo") or data.get("code"),
+            cnpj=data.get("cnpj"),
+            endereco=data.get("endereco") or data.get("address") or {},
+            telefone=data.get("telefone") or data.get("phone"),
+            email=data.get("email"),
+            ativo=data.get("ativo", data.get("active", True)),
+            data_hash=data_hash,
+        )
+
+    def _create_work_schedule(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de escala de trabalho."""
+        from modules.integrations.connectors.solides.models import SolidesWorkSchedule
+
+        return SolidesWorkSchedule(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            nome=data.get("nome") or data.get("name", ""),
+            codigo=data.get("codigo") or data.get("code"),
+            tipo=data.get("tipo") or data.get("type"),
+            carga_horaria_semanal=data.get("carga_horaria_semanal") or data.get("weeklyHours"),
+            horarios=data.get("horarios") or data.get("schedule") or {},
+            ativo=data.get("ativo", data.get("active", True)),
+            data_hash=data_hash,
+        )
+
+    def _create_cost_center(self, data: Dict[str, Any], data_hash: str):
+        """Cria registro de centro de custo."""
+        from modules.integrations.connectors.solides.models import SolidesCostCenter
+
+        return SolidesCostCenter(
+            condominio_id=self.condominio_id,
+            solides_id=str(data.get("id", "")),
+            nome=data.get("nome") or data.get("name", ""),
+            codigo=data.get("codigo") or data.get("code"),
+            descricao=data.get("descricao") or data.get("description"),
+            ativo=data.get("ativo", data.get("active", True)),
+            data_hash=data_hash,
+        )
+
+    def _parse_datetime(self, value) -> Optional[datetime]:
+        """Converte valor para datetime."""
+        if not value:
             return None
-
-        conecta_data = mapper(solides_data, self.condominio_id)
-
-        # TODO: Implementar criação real no banco
-        # Por agora, retorna None (implementar conforme modelos do Conecta PRO)
-        logger.debug(f"[Solides] Criaria {entity_type}: {conecta_data.get('name', conecta_data.get('email', 'N/A'))}")
-
-        # Exemplo de como seria:
-        # if entity_type == "colaboradores":
-        #     from modules.employees.models import Employee
-        #     employee = Employee(**conecta_data)
-        #     self.db.add(employee)
-        #     self.db.commit()
-        #     return employee.id
-
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            for fmt in ["%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f", "%d/%m/%Y"]:
+                try:
+                    return datetime.strptime(value[:26], fmt)
+                except (ValueError, TypeError):
+                    continue
         return None
 
     async def _update_conecta_entity(
@@ -611,7 +847,7 @@ class SolidesSyncService:
         solides_data: Dict[str, Any]
     ) -> bool:
         """
-        Atualiza entidade no Conecta PRO.
+        Atualiza entidade no Conecta PRO (tabelas de staging solides_*).
 
         Args:
             entity_type: Tipo da entidade
@@ -621,9 +857,115 @@ class SolidesSyncService:
         Returns:
             True se atualizado
         """
-        # TODO: Implementar atualização real
-        logger.debug(f"[Solides] Atualizaria {entity_type}/{conecta_id}")
-        return True
+        from modules.integrations.connectors.solides.models import (
+            SolidesEmployee,
+            SolidesDepartment,
+            SolidesPosition,
+            SolidesOccurrence,
+            SolidesAbsence,
+            SolidesWorkplace,
+            SolidesWorkSchedule,
+            SolidesCostCenter,
+        )
+        from modules.integrations.connectors.solides.mappers import compute_solides_entity_hash
+
+        # Mapear tipo para modelo
+        model_map = {
+            "colaboradores": SolidesEmployee,
+            "employees": SolidesEmployee,
+            "departamentos": SolidesDepartment,
+            "departments": SolidesDepartment,
+            "cargos": SolidesPosition,
+            "job_roles": SolidesPosition,
+            "ocorrencias": SolidesOccurrence,
+            "occurrences": SolidesOccurrence,
+            "absenteismos": SolidesAbsence,
+            "absences": SolidesAbsence,
+            "unidades": SolidesWorkplace,
+            "workplaces": SolidesWorkplace,
+            "escalas": SolidesWorkSchedule,
+            "work_schedules": SolidesWorkSchedule,
+            "centros_custo": SolidesCostCenter,
+            "cost_centers": SolidesCostCenter,
+        }
+
+        model = model_map.get(entity_type)
+        if not model:
+            logger.warning(f"[Solides] Modelo não encontrado para {entity_type}")
+            return False
+
+        try:
+            entity = self.db.query(model).filter(model.id == conecta_id).first()
+            if not entity:
+                logger.warning(f"[Solides] Entidade não encontrada: {entity_type}/{conecta_id}")
+                return False
+
+            # Atualizar campos baseado no tipo
+            data_hash = compute_solides_entity_hash(entity_type, solides_data)
+            self._update_entity_fields(entity, entity_type, solides_data, data_hash)
+
+            entity.last_synced_at = datetime.utcnow()
+            entity.data_hash = data_hash
+            self.db.commit()
+
+            logger.info(f"[Solides] Atualizado {entity_type}/{conecta_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"[Solides] Erro ao atualizar {entity_type}/{conecta_id}: {e}")
+            self.db.rollback()
+            return False
+
+    def _update_entity_fields(self, entity, entity_type: str, data: Dict[str, Any], data_hash: str):
+        """Atualiza campos da entidade com novos dados."""
+        if entity_type in ["colaboradores", "employees"]:
+            # Extrair dados de cargo/departamento se forem objetos
+            cargo_nome = None
+            if isinstance(data.get("cargo"), dict):
+                cargo_nome = data["cargo"].get("nome")
+            elif data.get("cargo_nome"):
+                cargo_nome = data["cargo_nome"]
+
+            departamento_nome = None
+            if isinstance(data.get("departamento"), dict):
+                departamento_nome = data["departamento"].get("nome")
+            elif data.get("departamento_nome"):
+                departamento_nome = data["departamento_nome"]
+
+            entity.nome = data.get("nome", data.get("name")) or entity.nome
+            entity.email = data.get("email") or entity.email
+            entity.cpf = data.get("cpf") or entity.cpf
+            entity.telefone = data.get("telefone") or data.get("phone") or entity.telefone
+            entity.celular = data.get("celular") or data.get("mobile") or entity.celular
+            entity.cargo_id = str(data.get("cargo_id") or data.get("jobRoleId") or entity.cargo_id)
+            entity.cargo_nome = cargo_nome or data.get("jobRoleName") or entity.cargo_nome
+            entity.departamento_id = str(data.get("departamento_id") or data.get("departmentId") or entity.departamento_id)
+            entity.departamento_nome = departamento_nome or data.get("departmentName") or entity.departamento_nome
+            entity.situacao = data.get("situacao") or data.get("status") or entity.situacao
+            entity.data_demissao = self._parse_datetime(data.get("data_demissao") or data.get("terminationDate")) or entity.data_demissao
+            entity.salario = str(data.get("salario") or data.get("salary") or entity.salario)
+
+        elif entity_type in ["departamentos", "departments"]:
+            entity.nome = data.get("nome") or data.get("name") or entity.nome
+            entity.codigo = data.get("codigo") or data.get("code") or entity.codigo
+            entity.ativo = data.get("ativo", data.get("active", entity.ativo))
+
+        elif entity_type in ["cargos", "job_roles"]:
+            entity.nome = data.get("nome") or data.get("name") or entity.nome
+            entity.codigo = data.get("codigo") or data.get("code") or entity.codigo
+            entity.descricao = data.get("descricao") or data.get("description") or entity.descricao
+            entity.ativo = data.get("ativo", data.get("active", entity.ativo))
+
+        elif entity_type in ["ocorrencias", "occurrences"]:
+            entity.tipo = data.get("tipo") or data.get("type") or entity.tipo
+            entity.descricao = data.get("descricao") or data.get("description") or entity.descricao
+            entity.observacoes = data.get("observacoes") or data.get("notes") or entity.observacoes
+
+        elif entity_type in ["absenteismos", "absences"]:
+            entity.tipo = data.get("tipo") or data.get("type") or entity.tipo
+            entity.motivo = data.get("motivo") or data.get("reason") or entity.motivo
+            entity.justificado = data.get("justificado", data.get("justified", entity.justificado))
+            entity.data_fim = self._parse_datetime(data.get("data_fim") or data.get("endDate")) or entity.data_fim
 
     async def get_sync_status(self) -> Dict[str, Any]:
         """

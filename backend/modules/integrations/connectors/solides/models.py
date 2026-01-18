@@ -553,3 +553,363 @@ def create_conflict(
     db.commit()
     db.refresh(conflict)
     return conflict
+
+
+# ==================== TABELAS DE DADOS IMPORTADOS ====================
+
+class SolidesEmployee(Base):
+    """
+    Colaboradores importados do Sólides.
+    Tabela de staging com todos os dados históricos sincronizados.
+    """
+    __tablename__ = "solides_employees"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    # Dados pessoais
+    nome = Column(String(255), nullable=False)
+    email = Column(String(255))
+    cpf = Column(String(14))
+    rg = Column(String(20))
+    data_nascimento = Column(DateTime)
+    sexo = Column(String(10))
+    estado_civil = Column(String(50))
+    telefone = Column(String(20))
+    celular = Column(String(20))
+
+    # Endereço (JSON para flexibilidade)
+    endereco = Column(JSONB, default=dict)
+
+    # Dados profissionais
+    matricula = Column(String(50))
+    cargo_id = Column(String(50))
+    cargo_nome = Column(String(255))
+    departamento_id = Column(String(50))
+    departamento_nome = Column(String(255))
+    unidade_id = Column(String(50))
+    unidade_nome = Column(String(255))
+    gestor_id = Column(String(50))
+    gestor_nome = Column(String(255))
+
+    # Contrato
+    data_admissao = Column(DateTime)
+    data_demissao = Column(DateTime)
+    tipo_contrato = Column(String(50))
+    regime_trabalho = Column(String(50))
+    jornada_trabalho = Column(String(100))
+    carga_horaria_semanal = Column(Integer)
+    salario = Column(String(50))  # String para preservar formato original
+
+    # Dados DP
+    ctps_numero = Column(String(50))
+    ctps_serie = Column(String(20))
+    ctps_uf = Column(String(2))
+    pis = Column(String(20))
+    titulo_eleitor = Column(String(20))
+    certificado_reservista = Column(String(20))
+
+    # Dependentes (JSON)
+    dependentes = Column(JSONB, default=list)
+
+    # Status
+    situacao = Column(String(50))  # ativo, inativo, ferias, afastado, demitido
+
+    # Perfil comportamental (JSON)
+    perfil_disc = Column(JSONB)
+    perfil_profiler = Column(JSONB)
+
+    # Foto
+    foto_url = Column(String(500))
+
+    # Dados extras do Sólides
+    dados_adicionais = Column(JSONB, default=dict)
+
+    # Metadados de sincronização
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+    sync_source = Column(String(50), default="solides")
+
+    # Auditoria
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_employee_id'),
+        Index('ix_solides_employee_cpf', 'cpf'),
+        Index('ix_solides_employee_email', 'email'),
+        Index('ix_solides_employee_matricula', 'matricula'),
+        Index('ix_solides_employee_situacao', 'situacao'),
+    )
+
+
+class SolidesDepartment(Base):
+    """
+    Departamentos importados do Sólides.
+    """
+    __tablename__ = "solides_departments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    nome = Column(String(255), nullable=False)
+    codigo = Column(String(50))
+    departamento_pai_id = Column(String(50))
+    gestor_id = Column(String(50))
+    unidade_id = Column(String(50))
+    ativo = Column(Boolean, default=True)
+
+    # Metadados
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_department_id'),
+    )
+
+
+class SolidesPosition(Base):
+    """
+    Cargos importados do Sólides.
+    """
+    __tablename__ = "solides_positions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    nome = Column(String(255), nullable=False)
+    codigo = Column(String(50))
+    descricao = Column(Text)
+    departamento_id = Column(String(50))
+    cbo_id = Column(String(50))
+    cbo_codigo = Column(String(20))
+    nivel = Column(String(50))
+    faixa_salarial_min = Column(String(50))
+    faixa_salarial_max = Column(String(50))
+    ativo = Column(Boolean, default=True)
+
+    # Metadados
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_position_id'),
+    )
+
+
+class SolidesOccurrence(Base):
+    """
+    Ocorrências importadas do Sólides.
+    """
+    __tablename__ = "solides_occurrences"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    colaborador_id = Column(String(50), nullable=False, index=True)
+    colaborador_nome = Column(String(255))
+    tipo = Column(String(100), nullable=False)  # advertencia_verbal, suspensao, elogio, etc.
+    descricao = Column(Text)
+    data = Column(DateTime, nullable=False)
+    data_vigencia = Column(DateTime)
+
+    # Detalhes específicos
+    duracao_dias = Column(Integer)
+    valor_aumento = Column(String(50))
+    percentual_aumento = Column(String(20))
+    novo_cargo_id = Column(String(50))
+    novo_cargo_nome = Column(String(255))
+
+    # Responsável
+    registrado_por_id = Column(String(50))
+    registrado_por_nome = Column(String(255))
+
+    # Anexos (JSON)
+    anexos = Column(JSONB, default=list)
+
+    observacoes = Column(Text)
+    dados_adicionais = Column(JSONB, default=dict)
+
+    # Metadados
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_occurrence_id'),
+        Index('ix_solides_occurrence_colaborador', 'colaborador_id'),
+        Index('ix_solides_occurrence_tipo', 'tipo'),
+        Index('ix_solides_occurrence_data', 'data'),
+    )
+
+
+class SolidesAbsence(Base):
+    """
+    Absenteísmos/Afastamentos importados do Sólides.
+    """
+    __tablename__ = "solides_absences"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    colaborador_id = Column(String(50), nullable=False, index=True)
+    colaborador_nome = Column(String(255))
+    tipo = Column(String(100), nullable=False)  # falta, atraso, atestado, ferias, etc.
+    motivo = Column(Text)
+    data_inicio = Column(DateTime, nullable=False)
+    data_fim = Column(DateTime)
+    horas = Column(String(20))
+    minutos_atraso = Column(Integer)
+
+    # Justificativa
+    justificado = Column(Boolean, default=False)
+    documento_anexo = Column(String(500))
+    cid = Column(String(20))
+
+    # Impacto
+    desconto_em_folha = Column(Boolean, default=True)
+    dias_descontados = Column(Integer)
+
+    # INSS
+    numero_beneficio_inss = Column(String(50))
+    data_inicio_inss = Column(DateTime)
+    data_fim_inss = Column(DateTime)
+
+    # Responsável
+    registrado_por_id = Column(String(50))
+    registrado_por_nome = Column(String(255))
+
+    observacoes = Column(Text)
+    dados_adicionais = Column(JSONB, default=dict)
+
+    # Metadados
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_absence_id'),
+        Index('ix_solides_absence_colaborador', 'colaborador_id'),
+        Index('ix_solides_absence_tipo', 'tipo'),
+        Index('ix_solides_absence_data', 'data_inicio'),
+    )
+
+
+class SolidesWorkplace(Base):
+    """
+    Locais de trabalho/Unidades importados do Sólides.
+    """
+    __tablename__ = "solides_workplaces"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    nome = Column(String(255), nullable=False)
+    codigo = Column(String(50))
+    cnpj = Column(String(20))
+    endereco = Column(JSONB, default=dict)
+    telefone = Column(String(20))
+    email = Column(String(255))
+    ativo = Column(Boolean, default=True)
+
+    # Metadados
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_workplace_id'),
+    )
+
+
+class SolidesWorkSchedule(Base):
+    """
+    Escalas de trabalho importadas do Sólides.
+    """
+    __tablename__ = "solides_work_schedules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    nome = Column(String(255), nullable=False)
+    codigo = Column(String(50))
+    tipo = Column(String(50))  # diurno, noturno, etc.
+    carga_horaria_semanal = Column(Integer)
+
+    # Horários (JSON para flexibilidade)
+    horarios = Column(JSONB, default=dict)
+
+    ativo = Column(Boolean, default=True)
+
+    # Metadados
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_work_schedule_id'),
+    )
+
+
+class SolidesCostCenter(Base):
+    """
+    Centros de custo importados do Sólides.
+    """
+    __tablename__ = "solides_cost_centers"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    solides_id = Column(String(50), nullable=False)
+
+    nome = Column(String(255), nullable=False)
+    codigo = Column(String(50))
+    descricao = Column(Text)
+    ativo = Column(Boolean, default=True)
+
+    # Metadados
+    data_hash = Column(String(32))
+    first_synced_at = Column(DateTime, default=datetime.utcnow)
+    last_synced_at = Column(DateTime, default=datetime.utcnow)
+
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('condominio_id', 'solides_id', name='uq_solides_cost_center_id'),
+    )

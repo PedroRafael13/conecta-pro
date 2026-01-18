@@ -118,7 +118,7 @@ from modules.integrations.connectors.solides.models import (
     SyncSource,
     ConflictStatus,
     ConflictStrategy,
-    # Models SQLAlchemy
+    # Models SQLAlchemy - Controle de Sincronização
     SolidesSyncState,
     SolidesSyncLog,
     SolidesSyncConflict,
@@ -126,6 +126,15 @@ from modules.integrations.connectors.solides.models import (
     SolidesWebhookLog,
     SolidesIntegrationConfig,
     SolidesCredential,
+    # Models SQLAlchemy - Dados Importados
+    SolidesEmployee,
+    SolidesDepartment,
+    SolidesPosition,
+    SolidesOccurrence,
+    SolidesAbsence,
+    SolidesWorkplace,
+    SolidesWorkSchedule,
+    SolidesCostCenter,
     # Helpers
     get_or_create_sync_state,
     get_entity_mapping,
@@ -248,7 +257,7 @@ __all__ = [
     "SyncSource",
     "ConflictStatus",
     "ConflictStrategy",
-    # Models - SQLAlchemy
+    # Models - SQLAlchemy - Controle
     "SolidesSyncState",
     "SolidesSyncLog",
     "SolidesSyncConflict",
@@ -256,6 +265,15 @@ __all__ = [
     "SolidesWebhookLog",
     "SolidesIntegrationConfig",
     "SolidesCredential",
+    # Models - SQLAlchemy - Dados Importados
+    "SolidesEmployee",
+    "SolidesDepartment",
+    "SolidesPosition",
+    "SolidesOccurrence",
+    "SolidesAbsence",
+    "SolidesWorkplace",
+    "SolidesWorkSchedule",
+    "SolidesCostCenter",
     # Models - Helpers
     "get_or_create_sync_state",
     "get_entity_mapping",
