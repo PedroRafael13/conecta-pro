@@ -65,7 +65,7 @@ class SolidesSyncState(Base):
     Estado de sincronização por entidade/empresa.
     Rastreia última sincronização e cursor.
     """
-    __tablename__ = "solides_sync_states"
+    __tablename__ = "solides_sync_state"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -106,7 +106,7 @@ class SolidesSyncLog(Base):
     """
     Log de cada operação de sincronização.
     """
-    __tablename__ = "solides_sync_logs"
+    __tablename__ = "solides_sync_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -150,11 +150,11 @@ class SolidesSyncConflict(Base):
     """
     Conflitos de sincronização detectados.
     """
-    __tablename__ = "solides_sync_conflicts"
+    __tablename__ = "solides_sync_conflict"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    sync_log_id = Column(UUID(as_uuid=True), ForeignKey('solides_sync_logs.id'))
+    sync_log_id = Column(UUID(as_uuid=True), ForeignKey('solides_sync_log.id'))
 
     # Entidade em conflito
     entity_type = Column(String(50), nullable=False)
@@ -193,7 +193,7 @@ class SolidesEntityMapping(Base):
     Mapeamento de IDs entre Sólides e Conecta PRO.
     Permite lookup rápido de entidades sincronizadas.
     """
-    __tablename__ = "solides_entity_mappings"
+    __tablename__ = "solides_entity_mapping"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, index=True)
@@ -231,94 +231,97 @@ class SolidesWebhookLog(Base):
     """
     Log de webhooks recebidos do Sólides.
     """
-    __tablename__ = "solides_webhook_logs"
+    __tablename__ = "solides_webhook_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), index=True)
 
     # Evento
     event_type = Column(String(100), nullable=False)
-    event_id = Column(String(100))  # ID do evento no Sólides (se houver)
 
     # Payload
     payload = Column(JSONB, nullable=False)
     headers = Column(JSONB, default=dict)
 
-    # Status do processamento
-    status = Column(String(20), default="received")  # received, processing, processed, failed
-    processed_at = Column(DateTime)
-    error = Column(Text)
-    retry_count = Column(Integer, default=0)
-
     # Rastreamento
-    request_id = Column(String(100))  # ID da requisição para correlação
+    request_id = Column(String(100))
     ip_address = Column(String(45))
 
+    # Status do processamento
+    status = Column(String(50), default="received")
+    error = Column(Text)
     received_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(DateTime)
+    processing_time_ms = Column(Integer)
 
-    __table_args__ = (
-        Index('ix_solides_webhook_event', 'event_type', 'received_at'),
-        Index('ix_solides_webhook_status', 'status'),
-    )
+    # Retry
+    retry_count = Column(Integer, default=0)
+    next_retry_at = Column(DateTime)
+
+    # Auditoria
+    ativo = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 
 class SolidesIntegrationConfig(Base):
     """
     Configuração da integração Sólides por condomínio.
+    Espelha a tabela existente no banco de dados.
     """
-    __tablename__ = "solides_integration_configs"
+    __tablename__ = "solides_integration_config"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
 
-    # Status geral
-    is_enabled = Column(Boolean, default=False)
-    is_connected = Column(Boolean, default=False)
+    # Configurações de API
+    api_version = Column(String(10), default='v1', nullable=False)
+    base_url_v1 = Column(String(500))
+    base_url_v3 = Column(String(500))
 
     # Configurações de sincronização
-    sync_direction = Column(SQLEnum(SyncDirection), default=SyncDirection.SOLIDES_TO_CONECTA)
-    conflict_strategy = Column(SQLEnum(ConflictStrategy), default=ConflictStrategy.MOST_RECENT)
-    auto_create_departments = Column(Boolean, default=True)
-    auto_create_positions = Column(Boolean, default=True)
-
-    # Entidades habilitadas para sync
-    enabled_entities = Column(JSONB, default=lambda: [
-        "colaboradores",
-        "departamentos",
-        "cargos",
-        "ocorrencias",
-        "absenteismos",
-    ])
-
-    # Agendamento
-    full_sync_schedule = Column(String(50), default="0 3 * * *")  # Cron: 3 AM diário
-    incremental_sync_interval_minutes = Column(Integer, default=15)
+    sync_interval_minutes = Column(Integer, default=15, nullable=False)
+    sync_entities = Column(JSONB)
+    conflict_strategy = Column(String(50), default='most_recent', nullable=False)
+    auto_create_departments = Column(Boolean, default=True, nullable=False)
+    auto_create_positions = Column(Boolean, default=True, nullable=False)
 
     # Rate limiting
-    rate_limit_per_minute = Column(Integer, default=60)
+    rate_limit_per_minute = Column(Integer, default=60, nullable=False)
 
     # Webhooks
-    webhook_enabled = Column(Boolean, default=True)
-    webhook_secret = Column(String(255))  # Armazena hash do secret
+    webhook_secret = Column(String(200))
+    webhook_url = Column(String(500))
+
+    # Status geral
+    is_enabled = Column(Boolean, default=False, nullable=False)
+    is_connected = Column(Boolean, default=False, nullable=False)
 
     # Último health check
     last_health_check_at = Column(DateTime)
     last_health_check_status = Column(Boolean)
     last_health_check_message = Column(Text)
 
-    # Metadados
-    notes = Column(Text)
-    extra_config = Column(JSONB, default=dict)
+    # Sync status
+    last_full_sync_at = Column(DateTime)
+    last_incremental_sync_at = Column(DateTime)
+    next_sync_at = Column(DateTime)
 
+    # Metadados
+    extra_config = Column(JSONB)
+
+    # Auditoria
+    ativo = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(UUID(as_uuid=True))
+    updated_by = Column(UUID(as_uuid=True))
 
 
 class SolidesCredential(Base):
     """
     Credenciais de acesso à API Sólides (armazenadas de forma segura).
     """
-    __tablename__ = "solides_credentials"
+    __tablename__ = "solides_credential"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(UUID(as_uuid=True), nullable=False, unique=True)
@@ -475,7 +478,7 @@ def log_webhook(
     ip_address: str = None
 ) -> SolidesWebhookLog:
     """
-    Registra log de webhook recebido.
+    Registra log de webhook recebido (síncrono).
     """
     log = SolidesWebhookLog(
         condominio_id=condominio_id,
@@ -488,6 +491,32 @@ def log_webhook(
     db.add(log)
     db.commit()
     db.refresh(log)
+    return log
+
+
+async def log_webhook_async(
+    db,
+    event_type: str,
+    payload: Dict,
+    condominio_id = None,
+    headers: Dict = None,
+    request_id: str = None,
+    ip_address: str = None
+) -> SolidesWebhookLog:
+    """
+    Registra log de webhook recebido (assíncrono).
+    """
+    log = SolidesWebhookLog(
+        condominio_id=condominio_id,
+        event_type=event_type,
+        payload=payload,
+        headers=headers or {},
+        request_id=request_id,
+        ip_address=ip_address
+    )
+    db.add(log)
+    await db.commit()
+    await db.refresh(log)
     return log
 
 

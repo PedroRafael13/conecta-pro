@@ -18,6 +18,16 @@ const GovernmentPage = lazy(() => import('@/pages/GovernmentPage'));
 const BiddingPage = lazy(() => import('@/pages/BiddingPage'));
 const CCTCompliancePage = lazy(() => import('@/pages/CCTCompliancePage'));
 
+// Government Integrations
+const CTePage = lazy(() => import('@/features/compliance/CTePage'));
+const MDFePage = lazy(() => import('@/features/compliance/MDFePage'));
+const SPEDFiscalPage = lazy(() => import('@/features/compliance/SPEDFiscalPage'));
+const SPEDContabilPage = lazy(() => import('@/features/compliance/SPEDContabilPage'));
+const NFCePage = lazy(() => import('@/features/compliance/NFCePage'));
+const NFSeNacionalPage = lazy(() => import('@/features/compliance/NFSeNacionalPage'));
+const FGTSDigitalPage = lazy(() => import('@/features/compliance/FGTSDigitalPage'));
+const SimplesNacionalPage = lazy(() => import('@/features/compliance/SimplesNacionalPage'));
+
 // GED
 const GEDPage = lazy(() => import('@/pages/GEDPage'));
 const GEDClassificationPage = lazy(() => import('@/pages/GEDClassificationPage'));
@@ -56,6 +66,10 @@ const UnitsResidentsPage = lazy(() => import('@/pages/UnitsResidentsPage'));
 
 // Notifications
 const IntelligentNotificationsPage = lazy(() => import('@/pages/IntelligentNotificationsPage'));
+
+// Integrations
+const IntegrationsHubPage = lazy(() => import('@/features/integrations').then(m => ({ default: m.IntegrationsHubPage })));
+const SolidesIntegrationPage = lazy(() => import('@/features/integrations').then(m => ({ default: m.SolidesIntegrationPage })));
 
 // Error
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'));
@@ -132,6 +146,42 @@ export const router = createBrowserRouter([
           {
             path: '/compliance/cct',
             element: <LazyPage component={CCTCompliancePage} />,
+          },
+          // Government Integrations - Fiscal
+          {
+            path: '/fiscal/cte',
+            element: <LazyPage component={CTePage} />,
+          },
+          {
+            path: '/fiscal/mdfe',
+            element: <LazyPage component={MDFePage} />,
+          },
+          {
+            path: '/fiscal/nfce',
+            element: <LazyPage component={NFCePage} />,
+          },
+          {
+            path: '/fiscal/nfse',
+            element: <LazyPage component={NFSeNacionalPage} />,
+          },
+          // SPED
+          {
+            path: '/sped/fiscal',
+            element: <LazyPage component={SPEDFiscalPage} />,
+          },
+          {
+            path: '/sped/contabil',
+            element: <LazyPage component={SPEDContabilPage} />,
+          },
+          // Trabalhista
+          {
+            path: '/trabalhista/fgts',
+            element: <LazyPage component={FGTSDigitalPage} />,
+          },
+          // Simples Nacional
+          {
+            path: '/fiscal/simples',
+            element: <LazyPage component={SimplesNacionalPage} />,
           },
           // GED
           {
@@ -248,6 +298,15 @@ export const router = createBrowserRouter([
           {
             path: '/notifications/intelligent',
             element: <LazyPage component={IntelligentNotificationsPage} />,
+          },
+          // Integrations
+          {
+            path: '/integrations',
+            element: <LazyPage component={IntegrationsHubPage} />,
+          },
+          {
+            path: '/integrations/solides',
+            element: <LazyPage component={SolidesIntegrationPage} />,
           },
         ],
       },

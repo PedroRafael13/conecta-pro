@@ -158,6 +158,16 @@ from modules.integrations.connectors.solides.conflict_resolver import (
     get_resolver_for_entity,
 )
 
+# Integration Service (Funcionarios)
+from modules.integrations.connectors.solides.integration_service import (
+    SolidesIntegrationService,
+    SyncAction,
+    SyncEmployeeResult,
+    SyncSummary,
+    get_integration_service,
+    sync_employees_from_solides,
+)
+
 # Celery tasks
 from modules.integrations.connectors.solides.tasks import (
     sync_solides_full,
@@ -281,6 +291,13 @@ __all__ = [
     "schedule_full_sync",
     "schedule_incremental_sync",
     "schedule_entity_sync",
+    # Integration Service
+    "SolidesIntegrationService",
+    "SyncAction",
+    "SyncEmployeeResult",
+    "SyncSummary",
+    "get_integration_service",
+    "sync_employees_from_solides",
 ]
 
 __version__ = "2.0.0"

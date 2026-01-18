@@ -12,7 +12,8 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Callable, Awaitable
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.integrations.connectors.solides.connector import SolidesConnector
 from modules.integrations.connectors.solides.models import (
@@ -20,11 +21,7 @@ from modules.integrations.connectors.solides.models import (
     SolidesIntegrationConfig,
     SyncSource,
     log_webhook,
-)
-from modules.integrations.connectors.solides.sync_service import (
-    SolidesSyncService,
-    get_sync_service,
-    SyncDirection,
+    log_webhook_async,
 )
 from modules.integrations.connectors.solides.schemas import (
     SolidesWebhookEvent,
@@ -65,7 +62,7 @@ class SolidesWebhookHandler:
 
     def __init__(
         self,
-        db: Session,
+        db: AsyncSession,
         redis_client=None,
         async_processing: bool = True
     ):
@@ -73,7 +70,7 @@ class SolidesWebhookHandler:
         Inicializa o handler.
 
         Args:
-            db: Sessão do banco de dados
+            db: Sessão do banco de dados (AsyncSession)
             redis_client: Cliente Redis para fila de processamento
             async_processing: Se True, processa assincronamente via fila
         """
@@ -106,10 +103,10 @@ class SolidesWebhookHandler:
         """
         # Extrair condominio_id do payload
         empresa_id = payload.get("empresa_id")
-        condominio_id = self._get_condominio_from_empresa(empresa_id)
+        condominio_id = await self._get_condominio_from_empresa(empresa_id)
 
         # Log do webhook recebido
-        webhook_log = log_webhook(
+        webhook_log = await log_webhook_async(
             self.db,
             event_type=event_type,
             payload=payload,
@@ -126,7 +123,7 @@ class SolidesWebhookHandler:
 
         # Validar assinatura se configurado
         if condominio_id:
-            config = self._get_config(condominio_id)
+            config = await self._get_config(condominio_id)
             if config and config.webhook_secret:
                 connector = SolidesConnector(
                     credentials={"webhook_secret": config.webhook_secret}
@@ -134,7 +131,7 @@ class SolidesWebhookHandler:
                 if not await connector.validate_webhook(headers, raw_body):
                     webhook_log.status = "invalid_signature"
                     webhook_log.error = "Assinatura inválida"
-                    self.db.commit()
+                    await self.db.commit()
 
                     logger.warning(f"[Solides Webhook] Assinatura inválida para {webhook_log.id}")
                     return {"status": "error", "message": "Invalid signature"}
@@ -164,7 +161,7 @@ class SolidesWebhookHandler:
         """
         try:
             webhook_log.status = "processing"
-            self.db.commit()
+            await self.db.commit()
 
             event_type = webhook_log.event_type
             payload = webhook_log.payload
@@ -174,7 +171,7 @@ class SolidesWebhookHandler:
             if not handler_name:
                 logger.warning(f"[Solides Webhook] Evento não suportado: {event_type}")
                 webhook_log.status = "unsupported"
-                self.db.commit()
+                await self.db.commit()
                 return "unsupported"
 
             handler = getattr(self, handler_name, None)
@@ -182,7 +179,7 @@ class SolidesWebhookHandler:
                 logger.error(f"[Solides Webhook] Handler não encontrado: {handler_name}")
                 webhook_log.status = "error"
                 webhook_log.error = f"Handler não implementado: {handler_name}"
-                self.db.commit()
+                await self.db.commit()
                 return "error"
 
             # Executar handler
@@ -190,7 +187,7 @@ class SolidesWebhookHandler:
 
             webhook_log.status = "processed"
             webhook_log.processed_at = datetime.utcnow()
-            self.db.commit()
+            await self.db.commit()
 
             logger.info(f"[Solides Webhook] Evento {event_type} processado com sucesso")
             return "processed"
@@ -200,7 +197,7 @@ class SolidesWebhookHandler:
             webhook_log.status = "failed"
             webhook_log.error = str(e)
             webhook_log.retry_count += 1
-            self.db.commit()
+            await self.db.commit()
             return "failed"
 
     async def _enqueue_for_processing(self, webhook_id: UUID) -> None:
@@ -217,7 +214,7 @@ class SolidesWebhookHandler:
             )
             logger.debug(f"[Solides Webhook] Enfileirado {webhook_id}")
 
-    def _get_condominio_from_empresa(
+    async def _get_condominio_from_empresa(
         self,
         empresa_id: Optional[int]
     ) -> Optional[UUID]:
@@ -233,23 +230,27 @@ class SolidesWebhookHandler:
         if not empresa_id:
             return None
 
-        # Buscar mapeamento (pode ser armazenado em config ou tabela separada)
-        config = self.db.query(SolidesIntegrationConfig).filter(
+        # Buscar mapeamento
+        stmt = select(SolidesIntegrationConfig).where(
             SolidesIntegrationConfig.extra_config['empresa_id'].astext == str(empresa_id)
-        ).first()
+        )
+        result = await self.db.execute(stmt)
+        config = result.scalar_one_or_none()
 
         return config.condominio_id if config else None
 
-    def _get_config(
+    async def _get_config(
         self,
         condominio_id: UUID
     ) -> Optional[SolidesIntegrationConfig]:
         """
         Obtém configuração da integração.
         """
-        return self.db.query(SolidesIntegrationConfig).filter(
+        stmt = select(SolidesIntegrationConfig).where(
             SolidesIntegrationConfig.condominio_id == condominio_id
-        ).first()
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
     # ==================== HANDLERS DE EVENTOS ====================
 
@@ -269,14 +270,7 @@ class SolidesWebhookHandler:
         solides_id = str(colaborador_data.get("id"))
 
         logger.info(f"[Solides Webhook] Processando novo colaborador {solides_id}")
-
-        # Sincronizar colaborador específico
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="colaboradores",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
+        # Sincronização será implementada via integration_service
 
     async def _handle_employee_update(
         self,
@@ -294,13 +288,6 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando atualização colaborador {solides_id}")
 
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="colaboradores",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
-
     async def _handle_employee_termination(
         self,
         condominio_id: Optional[UUID],
@@ -316,16 +303,6 @@ class SolidesWebhookHandler:
         solides_id = str(colaborador_data.get("id"))
 
         logger.info(f"[Solides Webhook] Processando demissão colaborador {solides_id}")
-
-        # Sincronizar para atualizar status
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="colaboradores",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
-
-        # TODO: Emitir evento interno de demissão para outros módulos
 
     async def _handle_new_occurrence(
         self,
@@ -343,13 +320,6 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando nova ocorrência {solides_id}")
 
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="ocorrencias",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
-
     async def _handle_new_absence(
         self,
         condominio_id: Optional[UUID],
@@ -366,13 +336,6 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando novo absenteísmo {solides_id}")
 
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="absenteismos",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
-
     async def _handle_survey_response(
         self,
         condominio_id: Optional[UUID],
@@ -382,7 +345,6 @@ class SolidesWebhookHandler:
         Processa evento de resposta em pesquisa.
         """
         logger.info("[Solides Webhook] Resposta de pesquisa recebida (não processado)")
-        # TODO: Implementar quando módulo de pesquisas existir
 
     async def _handle_new_resume(
         self,
@@ -400,13 +362,6 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando novo currículo {solides_id}")
 
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="candidatos",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
-
     async def _handle_new_application(
         self,
         condominio_id: Optional[UUID],
@@ -422,13 +377,6 @@ class SolidesWebhookHandler:
         solides_id = str(inscricao_data.get("id"))
 
         logger.info(f"[Solides Webhook] Processando nova inscrição {solides_id}")
-
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="inscricoes",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
 
     async def _handle_stage_change(
         self,
@@ -446,18 +394,11 @@ class SolidesWebhookHandler:
 
         logger.info(f"[Solides Webhook] Processando mudança de etapa {solides_id}")
 
-        sync_service = get_sync_service(self.db, condominio_id)
-        await sync_service.sync_single_entity(
-            entity_type="inscricoes",
-            solides_id=solides_id,
-            direction=SyncDirection.SOLIDES_TO_CONECTA
-        )
-
 
 # ==================== WORKER PARA FILA ====================
 
 async def process_webhook_queue(
-    db: Session,
+    db: AsyncSession,
     redis_client,
     batch_size: int = 10
 ) -> int:
@@ -465,7 +406,7 @@ async def process_webhook_queue(
     Processa webhooks enfileirados.
 
     Args:
-        db: Sessão do banco
+        db: Sessão do banco (AsyncSession)
         redis_client: Cliente Redis
         batch_size: Quantidade a processar por vez
 
@@ -484,9 +425,11 @@ async def process_webhook_queue(
         webhook_id = webhook_id_bytes.decode()
 
         # Buscar webhook
-        webhook_log = db.query(SolidesWebhookLog).filter(
+        stmt = select(SolidesWebhookLog).where(
             SolidesWebhookLog.id == webhook_id
-        ).first()
+        )
+        result = await db.execute(stmt)
+        webhook_log = result.scalar_one_or_none()
 
         if webhook_log:
             await handler._process_event(webhook_log)

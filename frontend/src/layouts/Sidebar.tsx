@@ -110,12 +110,26 @@ const navigation: NavItem[] = [
     ],
   },
   {
+    label: 'Fiscal',
+    icon: Receipt,
+    children: [
+      { label: 'NFC-e', path: '/fiscal/nfce', icon: Receipt },
+      { label: 'NFS-e', path: '/fiscal/nfse', icon: FileText },
+      { label: 'CT-e', path: '/fiscal/cte', icon: Truck },
+      { label: 'MDF-e', path: '/fiscal/mdfe', icon: Route },
+      { label: 'Simples Nacional', path: '/fiscal/simples', icon: DollarSign },
+      { label: 'SPED Fiscal', path: '/sped/fiscal', icon: FileSpreadsheet },
+      { label: 'SPED Contábil', path: '/sped/contabil', icon: FileSpreadsheet },
+    ],
+  },
+  {
     label: 'RH',
     icon: UserCircle,
     children: [
       { label: 'Dashboard', path: '/hr', icon: BarChart3 },
       { label: 'Funcionários', path: '/hr/employees', icon: Users },
       { label: 'Folha', path: '/hr/payroll', icon: DollarSign },
+      { label: 'FGTS Digital', path: '/trabalhista/fgts', icon: Wallet },
       { label: 'Ponto', path: '/hr/time-tracking', icon: Clock },
       { label: 'Recrutamento', path: '/hr/recruitment', icon: UserCircle },
       { label: 'REP', path: '/hr/rep-integration', icon: Zap },
@@ -178,6 +192,7 @@ const navigation: NavItem[] = [
     icon: Zap,
     children: [
       { label: 'Hub', path: '/integrations', icon: Zap },
+      { label: 'Sólides (RH)', path: '/integrations/solides', icon: Users },
       { label: 'Open Banking', path: '/integrations/open-banking', icon: Building2 },
       { label: 'Email', path: '/integrations/email', icon: Mail },
       { label: 'WhatsApp', path: '/integrations/whatsapp', icon: MessageSquare },
@@ -246,6 +261,7 @@ const bottomNav: NavItem[] = [
     icon: Settings,
     children: [
       { label: 'Geral', path: '/settings', icon: Settings },
+      { label: 'Usuarios', path: '/settings/users', icon: Users },
       { label: 'Tenants', path: '/settings/tenants', icon: Building2 },
       { label: 'Feature Flags', path: '/settings/feature-flags', icon: Zap },
       { label: 'Templates Config', path: '/settings/config-templates', icon: FileText },
@@ -312,9 +328,11 @@ export function Sidebar({
       {/* Logo */}
       <div className="h-16 px-4 flex items-center justify-between border-b border-border-subtle">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-lg">C</span>
-          </div>
+          <img
+            src="/logo.png"
+            alt="Conecta PRO"
+            className="h-10 w-auto flex-shrink-0"
+          />
           <AnimatePresence>
             {(!showCollapsed || isMobile) && (
               <motion.div
@@ -323,9 +341,14 @@ export function Sidebar({
                 exit={{ opacity: 0, width: 0 }}
                 className="overflow-hidden"
               >
-                <span className="font-display font-bold text-text-primary whitespace-nowrap">
-                  Conecta PRO
-                </span>
+                <div className="whitespace-nowrap">
+                  <span className="font-display font-bold text-text-primary block leading-tight">
+                    Conecta PRO
+                  </span>
+                  <span className="text-2xs text-text-muted">
+                    By <span className="text-accent-primary">Conecta Mais</span>
+                  </span>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

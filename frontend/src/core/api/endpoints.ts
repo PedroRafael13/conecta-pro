@@ -48,6 +48,23 @@ export const API_ENDPOINTS = {
     ANALYTICS: '/dashboard/analytics',
     REALTIME: '/dashboard/realtime',
   },
+  INTEGRATIONS: {
+    HUB: '/integrations',
+    SOLIDES: {
+      CONFIG: '/integrations/solides/config',
+      STATUS: '/integrations/solides/status',
+      HEALTH: '/integrations/solides/health',
+      LOGS: '/integrations/solides/logs',
+      LOG_DETAIL: (id: string) => `/integrations/solides/logs/${id}`,
+      CONFLICTS: '/integrations/solides/conflicts',
+      SYNC_FULL: '/integrations/solides/sync/full',
+      SYNC_INCREMENTAL: '/integrations/solides/sync/incremental',
+      SYNC_ENTITY: (type: string, id: string) => `/integrations/solides/sync/entity/${type}/${id}`,
+      RESOLVE_CONFLICT: (id: string) => `/integrations/solides/conflicts/${id}/resolve`,
+      IGNORE_CONFLICT: (id: string) => `/integrations/solides/conflicts/${id}/ignore`,
+      WEBHOOK: '/integrations/solides/webhook',
+    },
+  },
 } as const;
 
 export default API_ENDPOINTS;
