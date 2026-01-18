@@ -325,23 +325,67 @@ npx tsc --noEmit         # Verificar tipos TypeScript
 - Mac com Xcode
 - Certificados de distribuição
 
-### Processo de Build
+### Scripts de Build Automatizado
 
+Scripts completos para automação de builds mobile:
+
+| Script | Descrição |
+|--------|-----------|
+| `scripts/mobile/build-android.sh` | Build Android completo |
+| `scripts/mobile/build-ios.sh` | Build iOS completo (requer Mac) |
+| `scripts/mobile/release.sh` | Release manager (versão + builds) |
+
+#### Build Android
 ```bash
-# Android
-npm run cap:build
-cd android
-./gradlew bundleRelease
-# → android/app/build/outputs/bundle/release/app-release.aab
+# Release para Play Store
+./scripts/mobile/build-android.sh --release --sign
 
-# iOS (no Mac)
-npm run cap:build
-npm run cap:ios
-# → Xcode > Product > Archive
+# Debug para testes
+./scripts/mobile/build-android.sh --debug --apk --install
+
+# Opções: --release, --debug, --apk, --install, --clean, --skip-sync, --sign
 ```
 
+#### Build iOS (Mac)
+```bash
+# Archive para App Store
+./scripts/mobile/build-ios.sh --archive --export-ipa
+
+# Simulador
+./scripts/mobile/build-ios.sh --simulator --debug
+
+# Opções: --release, --debug, --archive, --simulator, --device, --export-ipa, --clean, --open
+```
+
+#### Release Completo
+```bash
+# Release Android + iOS com bump de versão
+./scripts/mobile/release.sh --all --bump-patch
+
+# Simular (dry-run)
+./scripts/mobile/release.sh --all --dry-run
+
+# Opções: --android, --ios, --all, --version X.Y.Z, --bump-patch/minor/major, --dry-run
+```
+
+### Comandos Claude Code
+
+Comandos customizados disponíveis em `.claude/commands/`:
+
+| Comando | Função |
+|---------|--------|
+| `/build-android` | Instruções para build Android |
+| `/build-ios` | Instruções para build iOS |
+| `/release-mobile` | Instruções para release |
+| `/setup-mobile` | Setup do ambiente de build |
+| `/status-mobile` | Verificar estado do projeto |
+
 ### Documentação Completa
-Ver `docs/MOBILE_APP_PUBLISH.md` para guia detalhado.
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `docs/MOBILE_APP_PUBLISH.md` | Guia de publicação nas lojas |
+| `scripts/mobile/CLAUDE_LOCAL.md` | Guia para builds locais |
 
 ---
 
@@ -354,6 +398,8 @@ Ver `docs/MOBILE_APP_PUBLISH.md` para guia detalhado.
 - [x] Verificar autenticação JWT
 - [x] Configurar Capacitor para apps nativos
 - [x] Criar documentação de publicação
+- [x] Criar scripts de build automatizados
+- [x] Criar comandos Claude Code customizados
 
 ### Pendentes
 - [ ] Adicionar testes unitários com Vitest
@@ -375,4 +421,4 @@ Swagger: http://172.18.0.6:8080/docs
 
 ---
 
-*Última atualização: 18/01/2026 - Sessão PWA + Capacitor*
+*Última atualização: 18/01/2026 - Sessão Scripts de Automação Mobile*
