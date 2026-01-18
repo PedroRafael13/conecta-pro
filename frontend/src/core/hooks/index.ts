@@ -6,3 +6,4 @@ export { useAnnounce, useAnnounceOnChange } from './useAnnounce';
 export { useModules } from './useModules';
 export { useOnlineStatus } from './useOnlineStatus';
 export { usePWA } from './usePWA';
+export { useCapacitor } from './useCapacitor';

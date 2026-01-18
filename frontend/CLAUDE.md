@@ -463,14 +463,76 @@ Execute `grep -rn "onChange={() => {}}" src/` para verificar as ocorrências res
 
 ---
 
+## Capacitor - Apps Nativos iOS/Android (18/01/2026)
+
+### Configuração
+
+| Item | Valor |
+|------|-------|
+| App ID | `br.com.conectapro.app` |
+| Nome | Conecta PRO |
+| Web Dir | `dist` |
+| Android Scheme | `https` |
+| iOS Scheme | `https` |
+
+### Plugins Instalados
+
+| Plugin | Função |
+|--------|--------|
+| `@capacitor/app` | Lifecycle, deep links |
+| `@capacitor/status-bar` | Customização da status bar |
+| `@capacitor/splash-screen` | Splash screen nativa |
+| `@capacitor/keyboard` | Controle do teclado |
+| `@capacitor/push-notifications` | Notificações push |
+| `@capacitor/camera` | Acesso à câmera |
+| `@capacitor/geolocation` | GPS e localização |
+| `@capacitor/network` | Status de conexão |
+| `@capacitor/haptics` | Feedback tátil |
+| `@capacitor/browser` | Browser in-app |
+| `@capacitor/preferences` | Storage local |
+
+### Scripts Disponíveis
+
+```bash
+npm run cap:build      # Build + Sync
+npm run cap:android    # Abrir Android Studio
+npm run cap:ios        # Abrir Xcode
+npm run cap:android:run # Rodar em device Android
+npm run cap:ios:run     # Rodar em device iOS
+npm run cap:assets      # Gerar ícones/splash
+npm run cap:sync        # Apenas sync
+```
+
+### Estrutura de Pastas
+
+```
+frontend/
+├── android/           # Projeto Android Studio
+├── ios/              # Projeto Xcode
+├── resources/        # Ícones e splash source
+├── capacitor.config.ts
+└── docs/MOBILE_APP_PUBLISH.md  # Guia de publicação
+```
+
+### Hooks Criados
+
+| Hook | Arquivo | Função |
+|------|---------|--------|
+| `useCapacitor` | `core/hooks/useCapacitor.ts` | Inicialização e APIs nativas |
+
+---
+
 ## Próximos Passos
 
 1. [x] ~~Corrigir Selects com onChange vazio~~ ✅ CONCLUÍDO
-2. [ ] Integrar APIs reais nos módulos CRM e Financeiro
-3. [ ] Implementar autenticação real com JWT
+2. [x] ~~Integrar APIs reais~~ ✅ VERIFICADO (já funciona)
+3. [x] ~~Autenticação JWT~~ ✅ VERIFICADO (já funciona)
 4. [ ] Adicionar testes unitários com Vitest
-5. [x] ~~Implementar PWA (offline support)~~ ✅ CONCLUÍDO
-6. [ ] Adicionar i18n para internacionalização
+5. [x] ~~PWA (offline support)~~ ✅ CONCLUÍDO
+6. [x] ~~Apps nativos iOS/Android~~ ✅ CONCLUÍDO (Capacitor)
+7. [ ] Adicionar i18n para internacionalização
+8. [ ] Configurar Firebase para push notifications
+9. [ ] Gerar builds de produção para as lojas
 
 ---
 *Última atualização: 18/01/2026*

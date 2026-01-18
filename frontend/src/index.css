@@ -5,11 +5,13 @@
 @tailwind utilities;
 
 /* ========================================
-   CONECTA PRO - Dark Mode Premium Theme
+   CONECTA PRO - Theme System
    ======================================== */
 
 @layer base {
-  :root {
+  /* Dark Mode (Default) */
+  :root,
+  [data-theme="dark"] {
     /* Background Layers */
     --bg-primary: #0a0a0f;
     --bg-secondary: #12121a;
@@ -76,6 +78,57 @@
     --space-10: 2.5rem;
     --space-12: 3rem;
     --space-16: 4rem;
+
+    /* Color scheme for native elements */
+    color-scheme: dark;
+  }
+
+  /* Light Mode */
+  [data-theme="light"] {
+    /* Background Layers */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --bg-elevated: #ffffff;
+    --bg-hover: #e2e8f0;
+
+    /* Accent Colors - slightly darker for contrast */
+    --accent-primary: #4f46e5;
+    --accent-primary-hover: #6366f1;
+    --accent-secondary: #7c3aed;
+    --accent-secondary-hover: #8b5cf6;
+
+    /* Semantic Colors - same, good contrast on light */
+    --success: #059669;
+    --success-light: #10b981;
+    --success-dark: #047857;
+    --warning: #d97706;
+    --warning-light: #f59e0b;
+    --warning-dark: #b45309;
+    --danger: #dc2626;
+    --danger-light: #ef4444;
+    --danger-dark: #b91c1c;
+    --info: #2563eb;
+    --info-light: #3b82f6;
+    --info-dark: #1d4ed8;
+
+    /* Text Colors */
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --text-inverse: #f8fafc;
+
+    /* Border Colors */
+    --border-subtle: #f1f5f9;
+    --border-default: #e2e8f0;
+    --border-strong: #cbd5e1;
+
+    /* Shadows - lighter for light mode */
+    --shadow-glow: 0 0 20px -5px rgba(79, 70, 229, 0.25);
+    --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+
+    /* Color scheme for native elements */
+    color-scheme: light;
   }
 
   /* Reset & Base Styles */
@@ -94,12 +147,26 @@
   }
 
   body {
-    @apply font-sans text-text-primary min-h-screen;
-    background: var(--bg-primary);
+    @apply font-sans min-h-screen;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Background gradients per theme */
+  [data-theme="dark"] body {
     background-image:
       radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
       radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
       radial-gradient(at 0% 80%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  [data-theme="light"] body {
+    background-image:
+      radial-gradient(at 40% 20%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
+      radial-gradient(at 0% 80%, rgba(99, 102, 241, 0.03) 0px, transparent 50%);
     background-attachment: fixed;
   }
 
@@ -246,12 +313,16 @@
   }
 
   .card-glow {
-    @apply card hover:border-accent-primary/30 hover:shadow-glow;
+    @apply card hover:shadow-glow;
+  }
+  .card-glow:hover {
+    border-color: color-mix(in srgb, var(--accent-primary) 30%, transparent);
   }
 
   .card-glass {
-    @apply bg-bg-secondary/80 backdrop-blur-xl rounded-xl border border-border-subtle/50
-           shadow-card;
+    @apply backdrop-blur-xl rounded-xl shadow-card;
+    background-color: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border-subtle) 50%, transparent);
   }
 
   .card-header {
@@ -263,7 +334,8 @@
   }
 
   .card-footer {
-    @apply px-6 py-4 border-t border-border-subtle bg-bg-primary/50;
+    @apply px-6 py-4 border-t border-border-subtle;
+    background-color: color-mix(in srgb, var(--bg-primary) 50%, transparent);
   }
 
   /* ========================================
@@ -333,27 +405,33 @@
   }
 
   .badge-primary {
-    @apply badge bg-accent-primary/20 text-accent-primary;
+    @apply badge text-accent-primary;
+    background-color: color-mix(in srgb, var(--accent-primary) 20%, transparent);
   }
 
   .badge-secondary {
-    @apply badge bg-accent-secondary/20 text-accent-secondary;
+    @apply badge text-accent-secondary;
+    background-color: color-mix(in srgb, var(--accent-secondary) 20%, transparent);
   }
 
   .badge-success {
-    @apply badge bg-success/20 text-success;
+    @apply badge text-success;
+    background-color: color-mix(in srgb, var(--success) 20%, transparent);
   }
 
   .badge-warning {
-    @apply badge bg-warning/20 text-warning;
+    @apply badge text-warning;
+    background-color: color-mix(in srgb, var(--warning) 20%, transparent);
   }
 
   .badge-danger {
-    @apply badge bg-danger/20 text-danger;
+    @apply badge text-danger;
+    background-color: color-mix(in srgb, var(--danger) 20%, transparent);
   }
 
   .badge-info {
-    @apply badge bg-info/20 text-info;
+    @apply badge text-info;
+    background-color: color-mix(in srgb, var(--info) 20%, transparent);
   }
 
   .badge-neutral {
@@ -460,7 +538,10 @@
   }
 
   .dropdown-item-danger {
-    @apply dropdown-item text-danger hover:bg-danger/10;
+    @apply dropdown-item text-danger;
+  }
+  .dropdown-item-danger:hover {
+    background-color: color-mix(in srgb, var(--danger) 10%, transparent);
   }
 
   .dropdown-divider {
@@ -477,8 +558,12 @@
   }
 
   .nav-item-active {
-    @apply nav-item bg-accent-primary/10 text-accent-primary
-           hover:bg-accent-primary/15 hover:text-accent-primary;
+    @apply nav-item text-accent-primary;
+    background-color: color-mix(in srgb, var(--accent-primary) 10%, transparent);
+  }
+  .nav-item-active:hover {
+    background-color: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+    color: var(--accent-primary);
   }
 
   /* ========================================
@@ -617,8 +702,9 @@
      HEADER
      ======================================== */
   .header {
-    @apply fixed top-0 right-0 left-64 h-16 bg-bg-secondary/80 backdrop-blur-xl
+    @apply fixed top-0 right-0 left-64 h-16 backdrop-blur-xl
            border-b border-border-subtle flex items-center justify-between px-6 z-20;
+    background-color: color-mix(in srgb, var(--bg-secondary) 80%, transparent);
   }
 
   .header-collapsed {
@@ -629,7 +715,8 @@
 @layer utilities {
   /* Glass Effect */
   .glass {
-    @apply bg-bg-secondary/60 backdrop-blur-xl border border-white/5;
+    @apply backdrop-blur-xl border border-white/5;
+    background-color: color-mix(in srgb, var(--bg-secondary) 60%, transparent);
   }
 
   /* Gradient Text */
@@ -752,4 +839,74 @@
 .reveal.visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ========================================
+   CAPACITOR / MOBILE APP STYLES
+   ======================================== */
+
+/* Safe Areas para notch e home indicator */
+.capacitor {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Ajustes específicos iOS */
+.platform-ios {
+  /* Previne bounce scroll no iOS */
+  overscroll-behavior: none;
+}
+
+.platform-ios input,
+.platform-ios textarea,
+.platform-ios select {
+  /* Previne zoom em inputs no iOS */
+  font-size: 16px !important;
+}
+
+/* Ajustes específicos Android */
+.platform-android {
+  /* Cor da seleção de texto */
+  --selection-color: var(--accent-primary);
+}
+
+/* Keyboard open - ajusta layout quando teclado está aberto */
+.keyboard-open {
+  /* Reduz altura para acomodar teclado */
+  height: calc(100vh - 300px);
+  overflow: hidden;
+}
+
+/* Status bar spacing */
+.capacitor .main-header {
+  padding-top: calc(env(safe-area-inset-top) + 0.5rem);
+}
+
+/* Bottom navigation safe area */
+.capacitor .bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Touch feedback */
+.capacitor .touchable {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.capacitor .touchable:active {
+  opacity: 0.7;
+  transform: scale(0.98);
+  transition: all 0.1s ease;
+}
+
+/* Pull to refresh area (se implementado) */
+.capacitor .pull-to-refresh {
+  overscroll-behavior-y: contain;
+}
+
+/* Splash screen matching */
+.capacitor .splash-bg {
+  background-color: #0A2540;
 }

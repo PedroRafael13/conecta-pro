@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToastProvider, PageLoader } from '@/design-system/components';
 import { ThemeProvider } from '@/shared/contexts/ThemeContext';
 import { AuthProvider } from '@/core/auth/AuthProvider';
-import { OfflineBanner, InstallPrompt, UpdatePrompt } from '@/core/components/pwa';
+import { OfflineBanner, InstallPrompt, UpdatePrompt, CapacitorInit } from '@/core/components/pwa';
 
 // Lazy load pages - Auth
 const LoginPage = lazy(() => import('@/features/auth/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -181,6 +181,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ToastProvider position="top-right">
           <AuthProvider>
+            <CapacitorInit />
             <OfflineBanner />
             <UpdatePrompt />
             <InstallPrompt />
