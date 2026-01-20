@@ -18,6 +18,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
     # App
@@ -47,20 +48,25 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = Field(default=30)
     jwt_refresh_token_expire_days: int = Field(default=7)
 
-    # CORS
-    cors_origins: List[str] = Field(default=["http://localhost:3000"])
+    # CORS - usa string para evitar problemas de parsing
+    cors_origins_str: str = Field(default="http://localhost:3000", alias="cors_origins")
 
     # Logging
     log_level: str = Field(default="INFO")
     log_format: str = Field(default="json")
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
-        """Parse CORS origins de string separada por vírgula."""
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
-        return v
+    # Google OAuth
+    GOOGLE_CLIENT_ID: str = Field(default="")
+    GOOGLE_CLIENT_SECRET: str = Field(default="")
+    GOOGLE_REDIRECT_URI: str = Field(default="https://erp.conectamais.pro/api/v1/auth/google/callback")
+    FRONTEND_URL: str = Field(default="https://erp.conectamais.pro")
+
+    @property
+    def cors_origins(self) -> List[str]:
+        """Retorna lista de CORS origins parseada."""
+        if isinstance(self.cors_origins_str, str):
+            return [origin.strip() for origin in self.cors_origins_str.split(",") if origin.strip()]
+        return ["http://localhost:3000"]
 
     @field_validator("jwt_secret_key")
     @classmethod

@@ -161,7 +161,7 @@ class Benchmark(Base):
     # Metadados
     tags = Column(JSONB, nullable=True)
     notes = Column(Text, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Auditoria
     last_updated_from_source = Column(DateTime, nullable=True)

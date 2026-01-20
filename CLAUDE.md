@@ -1,263 +1,227 @@
 # Conecta PRO - Arquivo de Continuidade
 
-**Ultima Atualizacao:** 2026-01-16 (Sessao 6 - Frontend Completo)
-**Proxima Tarefa:** Continuar desenvolvimento do frontend / Integrar com backend API
+**Ultima Atualizacao:** 2026-01-19 19:15 UTC (Sessao 12 - Modulo Operacional Fase 1)
+**Proxima Tarefa:** Modulo Operacional Fase 2 - Alocacoes, Turnos, Funcionarios, Relatorios
 
 ---
 
-## SESSAO ATUAL - 2026-01-16 (Sessao 6)
+## SESSAO ATUAL - 2026-01-19 (Sessao 12 - Modulo Operacional Fase 1)
+
+### Objetivo da Sessao
+Implementar o modulo Operacional com dados reais do backend, preparando para producao.
 
 ### O que foi feito nesta sessao:
 
-#### 1. Frontend Completo Implementado (Concluido)
-Commit: `bed03ed` - 429 arquivos, 121.569 linhas
+#### FASE 1: Postos de Trabalho (CRUD Completo)
 
-**Stack Tecnologica:**
-- React 19.2 + TypeScript 5.9
-- Vite 7.2 (bundler/dev server)
-- Tailwind CSS 3.4
-- Headless UI + Framer Motion
-- Zustand (estado) + React Query (cache)
-- React Hook Form + Zod (formularios)
-- Recharts (graficos)
-- Lucide React (icones)
+**Correcoes no Backend:**
+- Corrigido modelo `Shift` - colunas renomeadas para match com banco:
+  - `start_time` -> `planned_start_time`
+  - `end_time` -> `planned_end_time`
+  - `base_cost/overtime_cost/total_cost` -> `base_pay/overtime_pay/total_pay`
+- Corrigido modelo `Scale` - removido campo `code` inexistente
+- Corrigido modelo `Allocation` - removido `created_by`
+- Adicionado `lazy="noload"` em relationships para evitar erros de schema
 
-**Ferramenta utilizada:** Claude Design Engineer
+**Frontend - Postos:**
+| Arquivo | Descricao |
+|---------|-----------|
+| `/types/operacional.ts` | Interfaces Post, Allocation, enums e labels |
+| `/lib/services/posts.ts` | Service API com CRUD completo |
+| `/hooks/usePosts.ts` | Hooks: usePosts, usePostStats, usePost |
+| `/components/ui/modal.tsx` | Modal base + ConfirmModal |
+| `/components/operacional/post-detail-modal.tsx` | Modal de visualizacao |
+| `/components/operacional/post-form-modal.tsx` | Modal de criacao/edicao |
+| `/app/modulos/operacional/page.tsx` | Dashboard com stats |
+| `/app/modulos/operacional/postos/page.tsx` | Listagem com CRUD |
 
-#### 2. Modulos/Features Criados (26 modulos)
+**Funcionalidades Postos:**
+- Listagem com paginacao, busca e filtros
+- Visualizacao detalhada (efetivo, turno, requisitos, valores, contatos)
+- Criacao de novo posto
+- Edicao de posto existente
+- Exclusao com confirmacao (soft delete)
+- 9 postos cadastrados no sistema
 
-| Categoria | Modulos |
-|-----------|---------|
-| Core | auth, dashboard, settings |
-| Financeiro | financial (12 paginas) |
-| RH | hr, hr-portal, recruitment |
-| Operacional | operations, campo, equipment |
-| Documentos | ged, doc-intelligence |
-| Comercial | crm, clients, bidding |
-| Compliance | compliance, health-safety |
-| Outros | ai, automation, integrations, notifications, reports, services, extras |
+#### FASE 1.5: Escalas de Trabalho
 
-#### 3. Design System Completo
+**Correcoes no Backend:**
+- Atualizado schema `ScaleResponse` para match com modelo
+- Adicionado `computed_field` para propriedades calculadas
 
-| Componente | Arquivo |
-|------------|---------|
-| Button | src/design-system/components/Button.tsx |
-| Input | src/design-system/components/Input.tsx |
-| Select | src/design-system/components/Select.tsx |
-| Modal | src/design-system/components/Modal.tsx |
-| Table | src/design-system/components/Table.tsx |
-| Card | src/design-system/components/Card.tsx |
-| Tabs | src/design-system/components/Tabs.tsx |
-| Toast | src/design-system/components/Toast.tsx |
-| Badge | src/design-system/components/Badge.tsx |
-| Avatar | src/design-system/components/Avatar.tsx |
-| Skeleton | src/design-system/components/Skeleton.tsx |
-| Spinner | src/design-system/components/Spinner.tsx |
-| StatCard | src/design-system/components/StatCard.tsx |
+**Frontend - Escalas:**
+| Arquivo | Descricao |
+|---------|-----------|
+| `/types/operacional.ts` | Adicionado Scale, ScaleType, ScaleStatus |
+| `/lib/services/scales.ts` | Service API com workflow completo |
+| `/hooks/useScales.ts` | Hooks: useScales, useScale, useScaleOperations |
+| `/components/operacional/scale-generate-modal.tsx` | Modal de geracao |
+| `/app/modulos/operacional/escalas/page.tsx` | Listagem com acoes de workflow |
 
-#### 4. Paginas por Modulo
+**Funcionalidades Escalas:**
+- Listagem em cards com filtros (status, mes, ano)
+- Geracao automatica de escala
+- Workflow: Rascunho -> Aprovacao -> Publicacao
+- Metricas: turnos, horas, taxa de preenchimento
+- Exclusao de escalas em rascunho
 
-**Financial (12 paginas):**
-- FinancialDashboardPage, CashflowPage, ReceivablesPage, PayablesPage
-- BankingPage, BankReconciliationPage, AccountingPage, FiscalPage
-- InventoryPage, ProcurementPage, SuppliersPage, BillingRulesPage
+---
 
-**HR (7 paginas):**
-- HRDashboardPage, EmployeesPage, TimeTrackingPage, PayrollPage
-- RecruitmentPage, REPIntegrationPage, MobileTimeClockPage
+## PROXIMA SESSAO - FASE 2: Operacional 100% Funcional
 
-**Operations (4 paginas):**
-- ShiftsPage, AllocationsPage, SubstitutionsPage, TimeBankPage
+### 1. Alocacoes - Vincular funcionarios aos postos
+- [ ] Criar types e service para Allocations
+- [ ] Criar hooks useAllocations
+- [ ] Criar pagina de listagem de alocacoes
+- [ ] Criar modal de alocacao de funcionario
+- [ ] Integracao com modulo de Funcionarios
 
-**Campo (8 paginas):**
-- CampoDashboardPage, ServiceOrdersPage, OccurrencesPage, VisitsPage
-- AccessLogPage, EquipmentStatusPage, ChecklistPage, RoutesPage
+### 2. Turnos - Visualizacao calendario e check-in/check-out
+- [ ] Criar types e service para Shifts
+- [ ] Criar hooks useShifts
+- [ ] Criar pagina com visualizacao em calendario
+- [ ] Implementar registro de ponto (check-in/check-out)
+- [ ] Calculos de horas trabalhadas e extras
 
-**Equipment (4 paginas):**
-- EquipmentDashboardPage, EquipmentListPage, MaintenancePage, ComodatoPage
+### 3. Integracao com Funcionarios
+- [ ] Buscar funcionarios disponiveis para alocacao
+- [ ] Selecao de funcionarios na geracao de escala
+- [ ] Verificacao de conflitos de horario
 
-### Frontend Publicado
+### 4. Relatorios Operacionais
+- [ ] Cobertura de postos (preenchidos vs vagas)
+- [ ] Horas trabalhadas por funcionario/posto
+- [ ] Custos por posto/cliente
+- [ ] Absenteismo e substituicoes
 
-**URL:** http://82.25.75.74:3002
-**Status:** Operacional
+---
 
-### Comandos Uteis Frontend
+## PADROES DO PROJETO
 
-```bash
-# Diretorio do frontend
-cd /opt/conecta-pro/frontend
+### Backend - Operacional
+```
+/backend/modules/operacional/
+├── controllers/           # Endpoints FastAPI
+│   ├── post_controller.py
+│   ├── scale_controller.py
+│   ├── shift_controller.py
+│   └── allocation_controller.py
+├── models/               # SQLAlchemy Models
+├── repositories/         # Data Access Layer
+├── schemas/              # Pydantic Schemas
+└── services/             # Business Logic
+```
 
-# Desenvolvimento local
-npm run dev
+### Frontend - Operacional
+```
+/frontend/src/
+├── types/operacional.ts           # Interfaces TypeScript
+├── lib/services/
+│   ├── posts.ts                   # API Service Postos
+│   └── scales.ts                  # API Service Escalas
+├── hooks/
+│   ├── usePosts.ts               # Hooks Postos
+│   └── useScales.ts              # Hooks Escalas
+├── components/operacional/
+│   ├── post-detail-modal.tsx     # Modal Visualizacao
+│   ├── post-form-modal.tsx       # Modal Criacao/Edicao
+│   └── scale-generate-modal.tsx  # Modal Geracao Escala
+└── app/modulos/operacional/
+    ├── page.tsx                  # Dashboard
+    ├── postos/page.tsx           # CRUD Postos
+    └── escalas/page.tsx          # CRUD Escalas
+```
 
-# Build producao
-npm run build
+### Padrao de Hook com Options
+```typescript
+// Hooks usam objeto de opcoes, nao argumentos posicionais
+const { posts, isLoading } = usePosts({
+  initialPageSize: 100,
+  initialFilters: { status: 'active' }
+});
+```
 
-# Preview build
-npm run preview
-
-# Lint
-npm run lint
+### Padrao de Service API
+```typescript
+// Trailing slash obrigatorio em alguns endpoints
+const response = await api.get(`${BASE_URL}/?${params}`);  // List
+const response = await api.post(`${BASE_URL}/`, data);     // Create
 ```
 
 ---
 
 ## HISTORICO DE SESSOES
 
-### Sessao 5 - 2026-01-11 (Fase 6 Refinamentos)
-- Refatoracao de 3 modulos monoliticos (77 arquivos)
-- Correcao de 7 modulos com __init__.py vazios
-- Instalacao de dependencias ML
-- Commit: `10368c4`, `6924653`
+### Sessao 12 - 2026-01-19 (Modulo Operacional Fase 1)
+- CRUD completo de Postos (listagem, visualizacao, criacao, edicao, exclusao)
+- Pagina de Escalas com workflow (gerar, aprovar, publicar)
+- Correcoes de schema no backend para match com banco
+- Build passando, deploy em producao
 
-### Sessao 4 - Bartolo (Assistente IA)
-- Implementado assistente inteligente Bartolo
-- 19 arquivos Python, ~4,825 linhas
-- 20+ modulos suportados
-- Sistema de wizards (propostas, admissao)
+### Sessao 11.2 - 2026-01-17 (API Layer + Backend Integration)
+- API Layer completa (endpoints, services, types, hooks)
+- 100+ React Query hooks para integracoes governamentais
 
-### Sessao 3 - Modulos Criticos
-- Corrigidos 4 modulos criticos (automation, marketplace, hr/employee_portal, porteiro)
-- Deletado modulo porteiro por problemas de SQLAlchemy
+### Sessao 11 - 2026-01-17 (Integracao Governamental Frontend)
+- 8 paginas de integracao governamental criadas
+- Menu Sidebar atualizado com secao Fiscal
 
-### Sessao 2 - Modulo de Licitacoes
-- Implementado modulo completo de licitacoes publicas
-- Integracao com PNCP
-- 45+ arquivos
+### Sessao 10 - 2026-01-17 (Responsividade + Controle de Acesso)
+- Responsividade mobile/tablet
+- Sistema de controle de acesso por perfis
+- Sistema de temas light/dark
 
-### Sessao 1 - Setup Inicial
-- Configuracao do ambiente
-- Estrutura base do projeto
+### Sessoes Anteriores (1-9)
+- Setup inicial, modulos, backend, frontend, deploy, Google OAuth
 
 ---
 
-## ESTRUTURA DO PROJETO
+## CONFIGURACAO ATUAL DE PRODUCAO
 
+### URLs
+| URL | Funcao | Status |
+|-----|--------|--------|
+| https://erp.conectamais.pro | ERP Desktop | OK |
+| https://erp.conectamais.pro/modulos/operacional | Operacional | OK |
+| https://erp.conectamais.pro/modulos/operacional/postos | Postos | OK |
+| https://erp.conectamais.pro/modulos/operacional/escalas | Escalas | OK |
+
+### Docker Containers
 ```
-/opt/conecta-pro/
-├── backend/
-│   ├── api/v1/           # Routers principais
-│   ├── core/             # Auth, config, database, models base
-│   ├── modules/          # Modulos de negocio
-│   │   ├── ai/           # Bartolo, analytics, ML
-│   │   ├── audit/        # Auditoria e compliance
-│   │   ├── bidding/      # Licitacoes (PNCP)
-│   │   ├── clients/      # Clientes e condominios
-│   │   ├── crm/          # CRM e propostas
-│   │   ├── financial/    # Financeiro, BI, costing
-│   │   ├── ged/          # Gestao de documentos
-│   │   ├── government_integrations/  # eSocial, SEFAZ, Receita
-│   │   ├── health_occupational/      # PCMSO, PPRA, EPI (NRs)
-│   │   ├── hr/           # RH, folha, ponto
-│   │   ├── integrations/ # API gateway, webhooks
-│   │   ├── operations/   # Postos, escalas, turnos
-│   │   └── security_lgpd/  # LGPD compliance
-│   ├── tests/            # Testes pytest
-│   └── requirements.txt  # Dependencias Python
-├── frontend/             # React 19 + Vite + Tailwind (IMPLEMENTADO)
-│   ├── src/
-│   │   ├── app/          # Configuracoes da aplicacao
-│   │   ├── core/         # Auth, API client, hooks
-│   │   ├── design-system/# Componentes base (Button, Input, etc)
-│   │   ├── features/     # 26 modulos de features
-│   │   ├── layouts/      # Layouts da aplicacao
-│   │   ├── pages/        # Paginas principais
-│   │   └── shared/       # Utils e componentes compartilhados
-│   ├── package.json
-│   └── vite.config.ts
-└── docker-compose.yml
+conecta-pro-frontend   - Next.js 16 (porta 3001)
+conecta-pro-backend    - FastAPI (porta 8080)
+conecta-pro-postgres   - PostgreSQL 16
+conecta-pro-redis      - Redis 7
 ```
+
+### Credenciais Admin
+```
+Email: admin@conectapro.com.br
+Senha: admin123
+Role: admin
+```
+
+---
 
 ## TECNOLOGIAS
 
-**Backend:**
-- Python 3.12, FastAPI, SQLAlchemy 2.0
-- PostgreSQL 16, Redis 7
-- pandas, scikit-learn, numpy (AI/ML)
-- pytest, pytest-asyncio (testes)
-
-**Frontend:**
-- React 19.2 + TypeScript 5.9
-- Vite 7.2 (bundler)
-- Tailwind CSS 3.4
-- Headless UI + Framer Motion
-- Zustand + React Query
-- React Hook Form + Zod
-
-**Infraestrutura:**
-- Docker + Docker Compose
-- Nginx (proxy reverso)
-
-## CREDENCIAIS (DEV)
-
-- Admin: admin@conectaplus.com.br
-- API: http://localhost:8080
-- PostgreSQL: conecta_user / conecta_pass_2024
+**Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Redis 7
+**Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS 4
+**Auth:** JWT + Google OAuth2
+**Infra:** Docker, Nginx, Let's Encrypt
 
 ---
 
-# 🚀 ROADMAP DE FASES - CONECTA PRO
+## DADOS ATUAIS NO SISTEMA
 
-## ✅ FASE 1: Base de Inteligência (CONCLUÍDA)
-- **ROI:** R$ 3.5M
-- **Módulos:** Intelligence Hub, Analytics Core, AI Foundation
-- **Status:** 100% implementado e operacional
-
-## ✅ FASE 2: Core Business (CONCLUÍDA - Janeiro 2026)
-- **ROI:** R$ 1.4M (TARGET ATINGIDO!)
-- **Módulos Implementados:**
-  - ✅ CFO Virtual (financial) - 95% + 6 AI services
-  - ✅ Saúde Ocupacional Preditiva (health_occupational) - 100% com Safety AI
-  - ✅ RH Preditivo (hr) - 100% com Churn Prediction AI
-- **Status:** 100% concluído com ROI validado
-
-## 🚀 FASE 3: Otimização Total (EM PLANEJAMENTO)
-- **ROI Projetado:** R$ 2.2M
-- **Timeline:** 8 meses (4 ondas de 2 meses)
-- **Módulos:** 30 módulos restantes
-- **Estratégia:** 4 Ondas Sincronizadas
-
-### ONDA 1 - Business Intelligence (Meses 1-2)
-- **ROI:** R$ 650K
-- **Módulos:** analytics, reports, monitoring, ai (Bartolo 2.0)
-- **Prioridade:** CRÍTICA
-
-### ONDA 2 - Excelência Operacional (Meses 3-4)
-- **ROI:** R$ 580K
-- **Módulos:** operations, field_service, scheduler, facilities, equipment_management
-- **Prioridade:** ALTA
-
-### ONDA 3 - Transformação Digital (Meses 5-6)
-- **ROI:** R$ 520K
-- **Módulos:** crm, clients, marketplace, mobile, notifications
-- **Prioridade:** ALTA
-
-### ONDA 4 - Compliance & Suporte (Meses 7-8)
-- **ROI:** R$ 450K
-- **Módulos:** audit, government_integrations, security_lgpd, bidding, ged
-- **Prioridade:** MÉDIA-ALTA
-
-## 📊 RESUMO FINANCEIRO CONSOLIDADO
-
-| FASE | STATUS | ROI | ACUMULADO |
-|------|--------|-----|-----------|
-| FASE 1 | ✅ CONCLUÍDA | R$ 3.5M | R$ 3.5M |
-| FASE 2 | ✅ CONCLUÍDA | R$ 1.4M | R$ 4.9M |
-| FASE 3 | 🚀 PLANEJADA | R$ 2.2M | **R$ 7.1M** |
-
-## 🎯 PRÓXIMOS PASSOS
-
-### ONDA 1 - Preparação Imediata
-- [ ] Validação do roadmap com stakeholders
-- [ ] Aprovação do budget R$ 800K
-- [ ] Setup de desenvolvimento para analytics
-- [ ] Início do Bartolo 2.0
-
-### Milestone Principal
-**Objetivo:** Transformar Conecta Pro na plataforma de IA mais avançada do setor de administração de condomínios no Brasil.
+| Entidade | Quantidade |
+|----------|------------|
+| Postos | 9 |
+| Alocacoes | 44 |
+| Escalas | 0 |
+| Turnos | 0 |
 
 ---
 
-*Última atualização: Janeiro 2026*
-*Status: FASE 2 concluída, FASE 3 em aprovação*
-
+*Ultima atualizacao: 2026-01-19*
+*Status: Build passando, Operacional Fase 1 completa*

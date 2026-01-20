@@ -1,200 +1,589 @@
 """
-Service de Auditoria LGPD.
+Service de Auditoria LGPD - Consolidado
+=======================================
+
+Sistema de logging de auditoria para compliance LGPD com
+rastreabilidade completa de acesso a dados pessoais.
+
+Migrado de 01_security_lgpd/audit/audit_logger.py
+
+Compliance: LGPD Art. 37, 49 - Registro de Operações de Tratamento
 """
 
+from typing import Dict, List, Optional, Any, Union
+from dataclasses import dataclass, field
+from enum import Enum
+from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
+from uuid import UUID, uuid4
+from contextvars import ContextVar
+import json
 import hashlib
 import logging
-import uuid
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+import asyncio
+
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
+# Context variable para rastreamento de requisição
+_request_context: ContextVar[Dict[str, Any]] = ContextVar('request_context', default={})
 
-class AuditService:
-    """Service para gerenciamento de trilha de auditoria.
 
-    Encapsula a logica de registro e consulta de eventos
-    de auditoria com hash chain.
-    """
+class AuditAction(str, Enum):
+    """Ações auditáveis no sistema."""
+    # Operações de dados
+    CREATE = "create"
+    READ = "read"
+    UPDATE = "update"
+    DELETE = "delete"
+    EXPORT = "export"
+    IMPORT = "import"
+    # Autenticação
+    LOGIN = "login"
+    LOGOUT = "logout"
+    LOGIN_FAILED = "login_failed"
+    PASSWORD_CHANGE = "password_change"
+    PASSWORD_RESET = "password_reset"
+    MFA_ENABLED = "mfa_enabled"
+    MFA_DISABLED = "mfa_disabled"
+    # Autorização
+    PERMISSION_GRANTED = "permission_granted"
+    PERMISSION_REVOKED = "permission_revoked"
+    ROLE_ASSIGNED = "role_assigned"
+    ROLE_REMOVED = "role_removed"
+    ACCESS_DENIED = "access_denied"
+    # LGPD
+    CONSENT_GRANTED = "consent_granted"
+    CONSENT_WITHDRAWN = "consent_withdrawn"
+    DATA_ACCESS_REQUEST = "data_access_request"
+    DATA_ERASURE_REQUEST = "data_erasure_request"
+    DATA_PORTABILITY = "data_portability"
+    PII_ACCESSED = "pii_accessed"
+    PII_MODIFIED = "pii_modified"
+    # Sistema
+    CONFIG_CHANGE = "config_change"
+    SYSTEM_ERROR = "system_error"
+    SECURITY_ALERT = "security_alert"
+    BACKUP_CREATED = "backup_created"
+    BACKUP_RESTORED = "backup_restored"
+    # Criptografia
+    ENCRYPT = "encrypt"
+    DECRYPT = "decrypt"
+    MASK = "mask"
+    ERASURE = "erasure"
 
-    # Armazenamento em memoria (em producao, usar banco de dados)
-    _logs: List[Dict[str, Any]] = []
-    _last_hash: str = "0" * 64
 
-    def __init__(self):
-        """Inicializa o service."""
+class AuditSeverity(str, Enum):
+    """Níveis de severidade de eventos."""
+    DEBUG = "debug"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    CRITICAL = "critical"
+
+
+class ResourceType(str, Enum):
+    """Tipos de recursos auditados."""
+    USER = "user"
+    EMPLOYEE = "employee"
+    CLIENT = "client"
+    CONTRACT = "contract"
+    DOCUMENT = "document"
+    REPORT = "report"
+    CONFIGURATION = "configuration"
+    PERMISSION = "permission"
+    CONSENT = "consent"
+    MEDICAL_RECORD = "medical_record"
+    PAYROLL = "payroll"
+    SYSTEM = "system"
+    DATA = "data"
+    AUDIT = "audit"
+
+
+@dataclass
+class AuditContext:
+    """Contexto de uma operação auditada."""
+    request_id: str
+    user_id: Optional[str] = None
+    user_email: Optional[str] = None
+    user_role: Optional[str] = None
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    session_id: Optional[str] = None
+    tenant_id: Optional[str] = None
+    correlation_id: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "request_id": self.request_id,
+            "user_id": self.user_id,
+            "user_email": self.user_email,
+            "user_role": self.user_role,
+            "ip_address": self.ip_address,
+            "user_agent": self.user_agent,
+            "session_id": self.session_id,
+            "tenant_id": self.tenant_id,
+            "correlation_id": self.correlation_id,
+        }
+
+
+@dataclass
+class AuditEntry:
+    """Entrada de log de auditoria."""
+    id: UUID
+    timestamp: datetime
+    action: AuditAction
+    severity: AuditSeverity
+    resource_type: ResourceType
+    resource_id: Optional[str]
+    context: AuditContext
+    description: str
+    old_value: Optional[Dict[str, Any]] = None
+    new_value: Optional[Dict[str, Any]] = None
+    pii_fields_accessed: List[str] = field(default_factory=list)
+    success: bool = True
+    error_message: Optional[str] = None
+    duration_ms: Optional[int] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    previous_hash: Optional[str] = None
+    hash: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": str(self.id),
+            "timestamp": self.timestamp.isoformat(),
+            "action": self.action.value,
+            "severity": self.severity.value,
+            "resource_type": self.resource_type.value,
+            "resource_id": self.resource_id,
+            "context": self.context.to_dict(),
+            "description": self.description,
+            "old_value": self.old_value,
+            "new_value": self.new_value,
+            "pii_fields_accessed": self.pii_fields_accessed,
+            "success": self.success,
+            "error_message": self.error_message,
+            "duration_ms": self.duration_ms,
+            "metadata": self.metadata,
+            "hash": self.hash,
+        }
+
+    def to_json(self) -> str:
+        """Serializa para JSON."""
+        return json.dumps(self.to_dict(), default=str, ensure_ascii=False)
+
+
+class AuditStoreInterface(ABC):
+    """Interface abstrata para armazenamento de logs."""
+
+    @abstractmethod
+    async def store(self, entry: AuditEntry) -> bool:
+        """Armazena entrada de auditoria."""
         pass
 
-    def _calculate_hash(self, data: Dict[str, Any]) -> str:
-        """Calcula hash do evento para hash chain."""
-        content = f"{self._last_hash}{data['timestamp']}{data['action']}{data['resource_id']}"
-        return hashlib.sha256(content.encode()).hexdigest()
-
-    def log_event(
+    @abstractmethod
+    async def query(
         self,
-        action: str,
-        resource_type: str,
-        resource_id: str,
-        user_id: str,
-        details: Optional[Dict[str, Any]] = None,
-        severity: str = "info",
-    ) -> Dict[str, Any]:
-        """Registra evento de auditoria.
-
-        Args:
-            action: Acao executada.
-            resource_type: Tipo de recurso.
-            resource_id: ID do recurso.
-            user_id: ID do usuario.
-            details: Detalhes adicionais.
-            severity: Severidade do evento.
-
-        Returns:
-            Dict com confirmacao do registro.
-        """
-        log_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat()
-
-        log_entry = {
-            "log_id": log_id,
-            "action": action,
-            "resource_type": resource_type,
-            "resource_id": resource_id,
-            "user_id": user_id,
-            "details": details or {},
-            "severity": severity,
-            "timestamp": timestamp,
-            "previous_hash": self._last_hash,
-        }
-
-        # Calcula hash para hash chain
-        log_entry["hash"] = self._calculate_hash(log_entry)
-        self._last_hash = log_entry["hash"]
-
-        self._logs.append(log_entry)
-
-        logger.info(
-            "Evento de auditoria registrado: action=%s, resource=%s",
-            action,
-            resource_type,
-        )
-
-        return {
-            "log_id": log_id,
-            "action": action,
-            "resource_type": resource_type,
-            "timestamp": timestamp,
-            "hash": log_entry["hash"][:16] + "...",
-        }
-
-    def query_logs(
-        self,
-        resource_type: Optional[str] = None,
-        user_id: Optional[str] = None,
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
+        user_id: Optional[str] = None,
+        resource_type: Optional[ResourceType] = None,
+        action: Optional[AuditAction] = None,
         limit: int = 100,
-        offset: int = 0,
-    ) -> Dict[str, Any]:
-        """Consulta eventos de auditoria.
+        offset: int = 0
+    ) -> List[AuditEntry]:
+        """Consulta logs de auditoria."""
+        pass
+
+
+class InMemoryAuditStore(AuditStoreInterface):
+    """Armazenamento em memória para desenvolvimento."""
+
+    def __init__(self, max_entries: int = 10000):
+        self._entries: List[AuditEntry] = []
+        self._max_entries = max_entries
+        self._lock = asyncio.Lock()
+        self._last_hash = "0" * 64
+
+    def _calculate_hash(self, entry: AuditEntry) -> str:
+        """Calcula hash do evento para hash chain."""
+        content = f"{self._last_hash}{entry.timestamp.isoformat()}{entry.action.value}{entry.resource_id}"
+        return hashlib.sha256(content.encode()).hexdigest()
+
+    async def store(self, entry: AuditEntry) -> bool:
+        async with self._lock:
+            entry.previous_hash = self._last_hash
+            entry.hash = self._calculate_hash(entry)
+            self._last_hash = entry.hash
+
+            self._entries.append(entry)
+            if len(self._entries) > self._max_entries:
+                self._entries = self._entries[-self._max_entries:]
+            return True
+
+    async def query(
+        self,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        user_id: Optional[str] = None,
+        resource_type: Optional[ResourceType] = None,
+        action: Optional[AuditAction] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[AuditEntry]:
+        async with self._lock:
+            results = self._entries.copy()
+
+            if start_date:
+                results = [e for e in results if e.timestamp >= start_date]
+            if end_date:
+                results = [e for e in results if e.timestamp <= end_date]
+            if user_id:
+                results = [e for e in results if e.context.user_id == user_id]
+            if resource_type:
+                results = [e for e in results if e.resource_type == resource_type]
+            if action:
+                results = [e for e in results if e.action == action]
+
+            results.sort(key=lambda x: x.timestamp, reverse=True)
+            return results[offset:offset + limit]
+
+    async def verify_chain_integrity(self) -> Dict[str, Any]:
+        """Verifica integridade da cadeia de hashes."""
+        async with self._lock:
+            if not self._entries:
+                return {"valid": True, "total_logs": 0, "message": "Cadeia vazia"}
+
+            previous_hash = "0" * 64
+            for i, entry in enumerate(self._entries):
+                if entry.previous_hash != previous_hash:
+                    return {
+                        "valid": False,
+                        "total_logs": len(self._entries),
+                        "error_at": i,
+                        "message": f"Hash inconsistente no log {i}",
+                    }
+                previous_hash = entry.hash
+
+            return {
+                "valid": True,
+                "total_logs": len(self._entries),
+                "message": "Cadeia íntegra",
+            }
+
+
+class AuditService:
+    """
+    Logger de auditoria centralizado para compliance LGPD.
+
+    Registra todas as operações relevantes com contexto completo
+    para rastreabilidade e conformidade legal.
+
+    Example:
+        >>> audit = AuditService(store)
+        >>> await audit.log(
+        ...     action=AuditAction.READ,
+        ...     resource_type=ResourceType.EMPLOYEE,
+        ...     resource_id="emp123",
+        ...     description="Visualização de dados do funcionário",
+        ...     pii_fields=["cpf", "salary"]
+        ... )
+    """
+
+    def __init__(
+        self,
+        store: Optional[AuditStoreInterface] = None,
+        app_name: str = "conecta-pro",
+        enable_console_output: bool = False,
+        mask_pii_in_logs: bool = True
+    ):
+        """
+        Inicializa o logger de auditoria.
 
         Args:
-            resource_type: Filtro por tipo de recurso.
-            user_id: Filtro por usuario.
-            start_date: Data inicial.
-            end_date: Data final.
-            limit: Limite de resultados.
-            offset: Offset para paginacao.
-
-        Returns:
-            Dict com lista de eventos.
+            store: Backend de armazenamento.
+            app_name: Nome da aplicação.
+            enable_console_output: Se imprime logs no console.
+            mask_pii_in_logs: Se mascara PII nos valores logados.
         """
-        filtered_logs = self._logs.copy()
+        self.store = store or InMemoryAuditStore()
+        self.app_name = app_name
+        self.enable_console = enable_console_output
+        self.mask_pii = mask_pii_in_logs
+        self._pii_fields = {
+            "cpf", "cnpj", "rg", "email", "phone", "password",
+            "salary", "bank_account", "credit_card", "address",
+            "birth_date", "health_data", "biometric"
+        }
+        logger.info("AuditService inicializado para %s", app_name)
 
-        if resource_type:
-            filtered_logs = [l for l in filtered_logs if l["resource_type"] == resource_type]
+    def set_context(self, **kwargs) -> None:
+        """Define contexto da requisição atual."""
+        ctx = _request_context.get().copy()
+        ctx.update(kwargs)
+        _request_context.set(ctx)
 
-        if user_id:
-            filtered_logs = [l for l in filtered_logs if l["user_id"] == user_id]
+    def get_context(self) -> AuditContext:
+        """Recupera contexto da requisição atual."""
+        ctx = _request_context.get()
+        return AuditContext(
+            request_id=ctx.get("request_id", str(uuid4())),
+            user_id=ctx.get("user_id"),
+            user_email=ctx.get("user_email"),
+            user_role=ctx.get("user_role"),
+            ip_address=ctx.get("ip_address"),
+            user_agent=ctx.get("user_agent"),
+            session_id=ctx.get("session_id"),
+            tenant_id=ctx.get("tenant_id"),
+            correlation_id=ctx.get("correlation_id"),
+        )
 
-        if start_date:
-            start_str = start_date.isoformat()
-            filtered_logs = [l for l in filtered_logs if l["timestamp"] >= start_str]
+    def clear_context(self) -> None:
+        """Limpa contexto da requisição."""
+        _request_context.set({})
 
-        if end_date:
-            end_str = end_date.isoformat()
-            filtered_logs = [l for l in filtered_logs if l["timestamp"] <= end_str]
+    def _mask_pii_values(self, data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Mascara valores PII nos dados."""
+        if not data or not self.mask_pii:
+            return data
 
-        # Paginacao
-        total = len(filtered_logs)
-        paginated = filtered_logs[offset:offset + limit]
+        masked = data.copy()
+        for key in masked:
+            if key.lower() in self._pii_fields:
+                value = masked[key]
+                if isinstance(value, str) and len(value) > 4:
+                    masked[key] = value[:2] + "*" * (len(value) - 4) + value[-2:]
+                else:
+                    masked[key] = "****"
+        return masked
 
-        return {
-            "logs": paginated,
-            "total": total,
-            "limit": limit,
-            "offset": offset,
+    async def log(
+        self,
+        action: AuditAction,
+        resource_type: ResourceType,
+        description: str,
+        resource_id: Optional[str] = None,
+        severity: AuditSeverity = AuditSeverity.INFO,
+        old_value: Optional[Dict[str, Any]] = None,
+        new_value: Optional[Dict[str, Any]] = None,
+        pii_fields: Optional[List[str]] = None,
+        success: bool = True,
+        error_message: Optional[str] = None,
+        duration_ms: Optional[int] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> AuditEntry:
+        """Registra evento de auditoria."""
+        entry = AuditEntry(
+            id=uuid4(),
+            timestamp=datetime.utcnow(),
+            action=action,
+            severity=severity,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            context=self.get_context(),
+            description=description,
+            old_value=self._mask_pii_values(old_value),
+            new_value=self._mask_pii_values(new_value),
+            pii_fields_accessed=pii_fields or [],
+            success=success,
+            error_message=error_message,
+            duration_ms=duration_ms,
+            metadata=metadata or {},
+        )
+
+        await self.store.store(entry)
+
+        if self.enable_console:
+            self._console_output(entry)
+
+        return entry
+
+    def _console_output(self, entry: AuditEntry) -> None:
+        """Imprime entrada no console."""
+        level_map = {
+            AuditSeverity.DEBUG: logging.DEBUG,
+            AuditSeverity.INFO: logging.INFO,
+            AuditSeverity.WARNING: logging.WARNING,
+            AuditSeverity.ERROR: logging.ERROR,
+            AuditSeverity.CRITICAL: logging.CRITICAL,
+        }
+        log_level = level_map.get(entry.severity, logging.INFO)
+        logger.log(
+            log_level,
+            "[AUDIT] %s | %s | %s:%s | %s | user=%s",
+            entry.action.value,
+            entry.severity.value,
+            entry.resource_type.value,
+            entry.resource_id or "-",
+            entry.description,
+            entry.context.user_id or "anonymous"
+        )
+
+    # Métodos de conveniência
+    async def log_login(self, user_id: str, user_email: str, success: bool = True, failure_reason: Optional[str] = None) -> AuditEntry:
+        """Log de tentativa de login."""
+        return await self.log(
+            action=AuditAction.LOGIN if success else AuditAction.LOGIN_FAILED,
+            resource_type=ResourceType.USER,
+            resource_id=user_id,
+            description=f"Login {'bem sucedido' if success else 'falhou'}: {user_email}",
+            severity=AuditSeverity.INFO if success else AuditSeverity.WARNING,
+            success=success,
+            error_message=failure_reason,
+            metadata={"email": user_email}
+        )
+
+    async def log_logout(self, user_id: str) -> AuditEntry:
+        """Log de logout."""
+        return await self.log(
+            action=AuditAction.LOGOUT,
+            resource_type=ResourceType.USER,
+            resource_id=user_id,
+            description="Usuário deslogado",
+        )
+
+    async def log_data_access(self, resource_type: ResourceType, resource_id: str, description: str, pii_fields: Optional[List[str]] = None) -> AuditEntry:
+        """Log de acesso a dados."""
+        action = AuditAction.PII_ACCESSED if pii_fields else AuditAction.READ
+        return await self.log(action=action, resource_type=resource_type, resource_id=resource_id, description=description, pii_fields=pii_fields)
+
+    async def log_data_modification(self, resource_type: ResourceType, resource_id: str, description: str, old_value: Optional[Dict[str, Any]] = None, new_value: Optional[Dict[str, Any]] = None, pii_fields: Optional[List[str]] = None) -> AuditEntry:
+        """Log de modificação de dados."""
+        action = AuditAction.PII_MODIFIED if pii_fields else AuditAction.UPDATE
+        return await self.log(action=action, resource_type=resource_type, resource_id=resource_id, description=description, old_value=old_value, new_value=new_value, pii_fields=pii_fields)
+
+    async def log_consent_change(self, subject_id: str, action_type: str, purposes: List[str]) -> AuditEntry:
+        """Log de alteração de consentimento."""
+        action = AuditAction.CONSENT_GRANTED if action_type == "granted" else AuditAction.CONSENT_WITHDRAWN
+        return await self.log(action=action, resource_type=ResourceType.CONSENT, resource_id=subject_id, description=f"Consentimento {action_type} para: {', '.join(purposes)}", metadata={"purposes": purposes})
+
+    async def log_security_event(self, description: str, severity: AuditSeverity = AuditSeverity.WARNING, metadata: Optional[Dict[str, Any]] = None) -> AuditEntry:
+        """Log de evento de segurança."""
+        return await self.log(action=AuditAction.SECURITY_ALERT, resource_type=ResourceType.SYSTEM, description=description, severity=severity, metadata=metadata)
+
+    # Métodos de consulta
+    async def query(self, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, user_id: Optional[str] = None, resource_type: Optional[ResourceType] = None, action: Optional[AuditAction] = None, limit: int = 100, offset: int = 0) -> List[AuditEntry]:
+        """Consulta logs de auditoria."""
+        return await self.store.query(start_date=start_date, end_date=end_date, user_id=user_id, resource_type=resource_type, action=action, limit=limit, offset=offset)
+
+    async def get_user_activity(self, user_id: str, days: int = 30) -> List[AuditEntry]:
+        """Recupera atividade de um usuário."""
+        start_date = datetime.utcnow() - timedelta(days=days)
+        return await self.query(start_date=start_date, user_id=user_id, limit=1000)
+
+    async def get_pii_access_report(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+        """Gera relatório de acesso a PII."""
+        entries = await self.query(start_date=start_date, end_date=end_date, action=AuditAction.PII_ACCESSED, limit=10000)
+
+        report = {
+            "period": {"start": start_date.isoformat(), "end": end_date.isoformat()},
+            "total_access_events": len(entries),
+            "unique_users": len(set(e.context.user_id for e in entries if e.context.user_id)),
+            "by_resource_type": {},
+            "by_pii_field": {},
+            "by_user": {},
         }
 
-    def verify_chain_integrity(self) -> Dict[str, Any]:
-        """Verifica integridade da cadeia de hashes.
+        for entry in entries:
+            rt = entry.resource_type.value
+            report["by_resource_type"][rt] = report["by_resource_type"].get(rt, 0) + 1
+            for field in entry.pii_fields_accessed:
+                report["by_pii_field"][field] = report["by_pii_field"].get(field, 0) + 1
+            user = entry.context.user_id or "anonymous"
+            report["by_user"][user] = report["by_user"].get(user, 0) + 1
 
-        Returns:
-            Dict com resultado da verificacao.
-        """
-        if not self._logs:
-            return {"valid": True, "total_logs": 0, "message": "Cadeia vazia"}
+        return report
 
-        previous_hash = "0" * 64
-        for i, log in enumerate(self._logs):
-            if log["previous_hash"] != previous_hash:
-                return {
-                    "valid": False,
-                    "total_logs": len(self._logs),
-                    "error_at": i,
-                    "message": f"Hash inconsistente no log {i}",
-                }
-            previous_hash = log["hash"]
+    async def verify_chain_integrity(self) -> Dict[str, Any]:
+        """Verifica integridade da cadeia de hashes."""
+        if isinstance(self.store, InMemoryAuditStore):
+            return await self.store.verify_chain_integrity()
+        return {"valid": True, "message": "Verificação disponível apenas para InMemoryStore"}
 
-        return {
-            "valid": True,
-            "total_logs": len(self._logs),
-            "message": "Cadeia integra",
-        }
+    # Métodos síncronos para compatibilidade
+    def log_event(self, action: str, resource_type: str, resource_id: str, user_id: str, details: Optional[Dict[str, Any]] = None, severity: str = "info") -> Dict[str, Any]:
+        """Registra evento de auditoria (síncrono - compatibilidade)."""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+
+        self.set_context(user_id=user_id)
+
+        try:
+            entry = loop.run_until_complete(self.log(
+                action=AuditAction(action) if action in [a.value for a in AuditAction] else AuditAction.READ,
+                resource_type=ResourceType(resource_type) if resource_type in [r.value for r in ResourceType] else ResourceType.DATA,
+                resource_id=resource_id,
+                description=f"{action} em {resource_type}:{resource_id}",
+                metadata=details or {},
+                severity=AuditSeverity(severity) if severity in [s.value for s in AuditSeverity] else AuditSeverity.INFO,
+            ))
+            return {"log_id": str(entry.id), "action": action, "resource_type": resource_type, "timestamp": entry.timestamp.isoformat(), "hash": entry.hash[:16] + "..." if entry.hash else None}
+        finally:
+            self.clear_context()
+
+    def query_logs(self, resource_type: Optional[str] = None, user_id: Optional[str] = None, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, limit: int = 100, offset: int = 0) -> Dict[str, Any]:
+        """Consulta eventos de auditoria (síncrono - compatibilidade)."""
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+
+        rt = ResourceType(resource_type) if resource_type and resource_type in [r.value for r in ResourceType] else None
+        entries = loop.run_until_complete(self.query(start_date=start_date, end_date=end_date, user_id=user_id, resource_type=rt, limit=limit, offset=offset))
+
+        return {"logs": [e.to_dict() for e in entries], "total": len(entries), "limit": limit, "offset": offset}
 
     def get_actions(self) -> List[Dict[str, str]]:
-        """Lista acoes de auditoria disponiveis.
-
-        Returns:
-            Lista de acoes.
-        """
-        return [
-            {"id": "create", "description": "Criacao de recurso"},
-            {"id": "read", "description": "Leitura de recurso"},
-            {"id": "update", "description": "Atualizacao de recurso"},
-            {"id": "delete", "description": "Exclusao de recurso"},
-            {"id": "export", "description": "Exportacao de dados"},
-            {"id": "consent", "description": "Operacao de consentimento"},
-            {"id": "login", "description": "Login de usuario"},
-            {"id": "logout", "description": "Logout de usuario"},
-            {"id": "encrypt", "description": "Criptografia de dados"},
-            {"id": "decrypt", "description": "Descriptografia de dados"},
-            {"id": "mask", "description": "Mascaramento de dados"},
-            {"id": "erasure", "description": "Exclusao de dados"},
-        ]
+        """Lista ações de auditoria disponíveis."""
+        return [{"id": a.value, "description": a.name.replace("_", " ").title()} for a in AuditAction]
 
     def get_resource_types(self) -> List[Dict[str, str]]:
-        """Lista tipos de recurso auditados.
+        """Lista tipos de recurso auditados."""
+        return [{"id": r.value, "description": r.name.replace("_", " ").title()} for r in ResourceType]
 
-        Returns:
-            Lista de tipos de recurso.
-        """
-        return [
-            {"id": "user", "description": "Usuario"},
-            {"id": "document", "description": "Documento"},
-            {"id": "consent", "description": "Consentimento"},
-            {"id": "data", "description": "Dados"},
-            {"id": "system", "description": "Sistema"},
-            {"id": "audit", "description": "Auditoria"},
-        ]
+
+# Decorador para auditoria automática
+def audit_action(action: AuditAction, resource_type: ResourceType, description_template: str, pii_fields: Optional[List[str]] = None):
+    """Decorador para auditoria automática de funções."""
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            audit = get_audit_service()
+            start_time = datetime.utcnow()
+            resource_id = kwargs.get('resource_id') or kwargs.get('id') or (args[0] if args else None)
+
+            try:
+                result = await func(*args, **kwargs)
+                duration = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+                await audit.log(action=action, resource_type=resource_type, resource_id=str(resource_id) if resource_id else None, description=description_template.format(resource_id=resource_id), pii_fields=pii_fields, success=True, duration_ms=duration)
+                return result
+            except Exception as e:
+                duration = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+                await audit.log(action=action, resource_type=resource_type, resource_id=str(resource_id) if resource_id else None, description=description_template.format(resource_id=resource_id), severity=AuditSeverity.ERROR, success=False, error_message=str(e), duration_ms=duration)
+                raise
+
+        return wrapper
+    return decorator
+
+
+# Singleton
+_audit_service: Optional[AuditService] = None
+
+
+def get_audit_service() -> AuditService:
+    """Retorna instância singleton do AuditService."""
+    global _audit_service
+    if _audit_service is None:
+        _audit_service = AuditService()
+    return _audit_service
+
+
+def init_audit_service(store: Optional[AuditStoreInterface] = None, app_name: str = "conecta-pro", enable_console: bool = False) -> AuditService:
+    """Inicializa o AuditService singleton."""
+    global _audit_service
+    _audit_service = AuditService(store, app_name, enable_console)
+    return _audit_service

@@ -144,6 +144,17 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Auth: {e}")
 
+# Users - gerenciamento de usuarios (admin)
+try:
+    spec = importlib.util.spec_from_file_location("users", "/app/api/v1/endpoints/users.py")
+    users_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(users_module)
+    users_router = users_module.router
+    api_router.include_router(users_router)
+    logger.info("Modulo Users: OK")
+except Exception as e:
+    logger.warning(f"Modulo Users: {e}")
+
 # CRM
 try:
     from modules.crm.controllers import (
@@ -154,12 +165,12 @@ try:
         commission_router,
         dashboard_router,
     )
-    api_router.include_router(lead_router)
-    api_router.include_router(opportunity_router)
-    api_router.include_router(proposal_router)
-    api_router.include_router(contract_router)
-    api_router.include_router(commission_router)
-    api_router.include_router(dashboard_router)
+    api_router.include_router(lead_router, prefix="/crm", tags=["CRM - Leads"])
+    api_router.include_router(opportunity_router, prefix="/crm", tags=["CRM - Oportunidades"])
+    api_router.include_router(proposal_router, prefix="/crm", tags=["CRM - Propostas"])
+    api_router.include_router(contract_router, prefix="/crm", tags=["CRM - Contratos"])
+    api_router.include_router(commission_router, prefix="/crm", tags=["CRM - Comissoes"])
+    api_router.include_router(dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
     logger.info("Modulo CRM: OK")
 except Exception as e:
     logger.warning(f"Modulo CRM: {e}")
@@ -173,13 +184,16 @@ try:
         allocation_router,
         substitution_router,
         time_bank_router,
+        reports_router,
     )
-    api_router.include_router(post_router, prefix="/operacional/posts", tags=["Operacional - Postos"])
-    api_router.include_router(scale_router, prefix="/operacional/scales", tags=["Operacional - Escalas"])
-    api_router.include_router(shift_router, prefix="/operacional/shifts", tags=["Operacional - Turnos"])
-    api_router.include_router(allocation_router, prefix="/operacional/allocations", tags=["Operacional - Alocacoes"])
-    api_router.include_router(substitution_router, prefix="/operacional/substitutions", tags=["Operacional - Substituicoes"])
-    api_router.include_router(time_bank_router, prefix="/operacional/time-bank", tags=["Operacional - Banco de Horas"])
+    # Routers já têm seu próprio prefix (/posts, /scales, etc)
+    api_router.include_router(post_router, prefix="/operacional", tags=["Operacional - Postos"])
+    api_router.include_router(scale_router, prefix="/operacional", tags=["Operacional - Escalas"])
+    api_router.include_router(shift_router, prefix="/operacional", tags=["Operacional - Turnos"])
+    api_router.include_router(allocation_router, prefix="/operacional", tags=["Operacional - Alocacoes"])
+    api_router.include_router(substitution_router, prefix="/operacional", tags=["Operacional - Substituicoes"])
+    api_router.include_router(time_bank_router, prefix="/operacional", tags=["Operacional - Banco de Horas"])
+    api_router.include_router(reports_router, prefix="/operacional", tags=["Operacional - Relatorios"])
     logger.info("Modulo Operations: OK")
 except Exception as e:
     logger.warning(f"Modulo Operations: {e}")
@@ -201,19 +215,20 @@ try:
         purchase_router,
         inventory_router,
     )
-    api_router.include_router(accounting_router, prefix="/financial/accounting", tags=["Financial - Contabilidade"])
-    api_router.include_router(supplier_router, prefix="/financial/suppliers", tags=["Financial - Fornecedores"])
-    api_router.include_router(payable_router, prefix="/financial/payables", tags=["Financial - Contas a Pagar"])
-    api_router.include_router(customer_router, prefix="/financial/customers", tags=["Financial - Clientes"])
-    api_router.include_router(receivable_category_router, prefix="/financial/receivable-categories", tags=["Financial - Categorias"])
-    api_router.include_router(receivable_router, prefix="/financial/receivables", tags=["Financial - Contas a Receber"])
-    api_router.include_router(billing_rule_router, prefix="/financial/billing-rules", tags=["Financial - Regras de Cobranca"])
-    api_router.include_router(bank_account_router, prefix="/financial/bank-accounts", tags=["Financial - Contas Bancarias"])
-    api_router.include_router(bank_transaction_router, prefix="/financial/bank-transactions", tags=["Financial - Transacoes"])
-    api_router.include_router(bank_reconciliation_router, prefix="/financial/bank-reconciliation", tags=["Financial - Conciliacao"])
-    api_router.include_router(cashflow_router, prefix="/financial/cashflow", tags=["Financial - Fluxo de Caixa"])
-    api_router.include_router(purchase_router, prefix="/financial/purchases", tags=["Financial - Compras"])
-    api_router.include_router(inventory_router, prefix="/financial/inventory", tags=["Financial - Estoque"])
+    # Todos os routers já têm seu próprio prefix, então usamos apenas /financial
+    api_router.include_router(accounting_router, prefix="/financial", tags=["Financial - Contabilidade"])
+    api_router.include_router(supplier_router, prefix="/financial", tags=["Financial - Fornecedores"])
+    api_router.include_router(payable_router, prefix="/financial", tags=["Financial - Contas a Pagar"])
+    api_router.include_router(customer_router, prefix="/financial", tags=["Financial - Clientes"])
+    api_router.include_router(receivable_category_router, prefix="/financial", tags=["Financial - Categorias"])
+    api_router.include_router(receivable_router, prefix="/financial", tags=["Financial - Contas a Receber"])
+    api_router.include_router(billing_rule_router, prefix="/financial", tags=["Financial - Regras de Cobranca"])
+    api_router.include_router(bank_account_router, prefix="/financial", tags=["Financial - Contas Bancarias"])
+    api_router.include_router(bank_transaction_router, prefix="/financial", tags=["Financial - Transacoes"])
+    api_router.include_router(bank_reconciliation_router, prefix="/financial", tags=["Financial - Conciliacao"])
+    api_router.include_router(cashflow_router, prefix="/financial", tags=["Financial - Fluxo de Caixa"])
+    api_router.include_router(purchase_router, prefix="/financial", tags=["Financial - Compras"])
+    api_router.include_router(inventory_router, prefix="/financial", tags=["Financial - Estoque"])
     logger.info("Modulo Financial: OK")
 except Exception as e:
     logger.warning(f"Modulo Financial: {e}")
@@ -228,12 +243,13 @@ try:
         tag_router,
         signature_router,
     )
-    api_router.include_router(folder_router, prefix="/ged/folders", tags=["GED - Pastas"])
-    api_router.include_router(document_router, prefix="/ged/documents", tags=["GED - Documentos"])
-    api_router.include_router(version_router, prefix="/ged/versions", tags=["GED - Versoes"])
-    api_router.include_router(share_router, prefix="/ged/shares", tags=["GED - Compartilhamentos"])
-    api_router.include_router(tag_router, prefix="/ged/tags", tags=["GED - Tags"])
-    api_router.include_router(signature_router, prefix="/ged/signatures", tags=["GED - Assinaturas"])
+    # Routers já têm seu próprio prefix
+    api_router.include_router(folder_router, prefix="/ged", tags=["GED - Pastas"])
+    api_router.include_router(document_router, prefix="/ged", tags=["GED - Documentos"])
+    api_router.include_router(version_router, prefix="/ged", tags=["GED - Versoes"])
+    api_router.include_router(share_router, prefix="/ged", tags=["GED - Compartilhamentos"])
+    api_router.include_router(tag_router, prefix="/ged", tags=["GED - Tags"])
+    api_router.include_router(signature_router, prefix="/ged", tags=["GED - Assinaturas"])
     logger.info("Modulo GED: OK")
 except Exception as e:
     logger.warning(f"Modulo GED: {e}")
@@ -241,7 +257,8 @@ except Exception as e:
 # Clients
 try:
     from modules.clients.controllers import router as client_router
-    api_router.include_router(client_router, prefix="/clients", tags=["Clients - Cadastro"])
+    # Router já tem prefix="/clients"
+    api_router.include_router(client_router, tags=["Clients - Cadastro"])
     logger.info("Modulo Clients: OK")
 except Exception as e:
     logger.warning(f"Modulo Clients: {e}")
@@ -249,7 +266,8 @@ except Exception as e:
 # Audit
 try:
     from modules.audit.controllers import router as audit_router
-    api_router.include_router(audit_router, prefix="/audit", tags=["Audit - Auditoria"])
+    # Router já tem prefix="/audit"
+    api_router.include_router(audit_router, tags=["Audit - Auditoria"])
     logger.info("Modulo Audit: OK")
 except Exception as e:
     logger.warning(f"Modulo Audit: {e}")
@@ -257,7 +275,8 @@ except Exception as e:
 # Config
 try:
     from modules.config.controllers import router as config_router
-    api_router.include_router(config_router, prefix="/config", tags=["Config - Configuracoes"])
+    # Router já tem prefix="/config"
+    api_router.include_router(config_router, tags=["Config - Configuracoes"])
     logger.info("Modulo Config: OK")
 except Exception as e:
     logger.warning(f"Modulo Config: {e}")
@@ -265,7 +284,8 @@ except Exception as e:
 # Reports
 try:
     from modules.reports.controllers import router as report_router
-    api_router.include_router(report_router, prefix="/reports", tags=["Reports - Relatorios"])
+    # Router já tem prefix="/reports"
+    api_router.include_router(report_router, tags=["Reports - Relatorios"])
     logger.info("Modulo Reports: OK")
 except Exception as e:
     logger.warning(f"Modulo Reports: {e}")
@@ -273,7 +293,8 @@ except Exception as e:
 # Services
 try:
     from modules.services.controllers import router as service_router
-    api_router.include_router(service_router, prefix="/services", tags=["Services - Servicos"])
+    # Router já tem prefix="/services"
+    api_router.include_router(service_router, tags=["Services - Servicos"])
     logger.info("Modulo Services: OK")
 except Exception as e:
     logger.warning(f"Modulo Services: {e}")
@@ -289,19 +310,21 @@ try:
         maintenance_router as equipment_maintenance_router,
         comodato_router,
     )
-    api_router.include_router(equipment_router, prefix="/equipment", tags=["Equipment"])
-    api_router.include_router(installation_router, prefix="/equipment/installations", tags=["Equipment - Instalacoes"])
-    api_router.include_router(equipment_maintenance_router, prefix="/equipment/maintenance", tags=["Equipment - Manutencao"])
-    api_router.include_router(comodato_router, prefix="/equipment/comodato", tags=["Equipment - Comodato"])
+    # Routers já têm prefixes próprios (/equipment, /installations, /maintenances, /comodatos)
+    api_router.include_router(equipment_router, tags=["Equipment"])
+    api_router.include_router(installation_router, tags=["Equipment - Instalacoes"])
+    api_router.include_router(equipment_maintenance_router, tags=["Equipment - Manutencao"])
+    api_router.include_router(comodato_router, tags=["Equipment - Comodato"])
     logger.info("Modulo Equipment: OK")
 except Exception as e:
     logger.warning(f"Modulo Equipment: {e}")
 
-# Integrations (Sprint 32: API Gateway + Sprint 33: Conectores Externos)
+# Integrations (Sprint 32: API Gateway + Sprint 33: Conectores Externos + Sólides)
 try:
-    from modules.integrations.controllers import integration_router, connector_router
+    from modules.integrations.controllers import integration_router, connector_router, solides_router
     api_router.include_router(integration_router, prefix="/integrations", tags=["Integrations - API Gateway"])
     api_router.include_router(connector_router, tags=["Integrations - Conectores"])
+    api_router.include_router(solides_router, prefix="/integrations", tags=["Integrations - Sólides RH/DP"])
     logger.info("Modulo Integrations: OK")
 except Exception as e:
     logger.warning(f"Modulo Integrations: {e}")
@@ -309,7 +332,8 @@ except Exception as e:
 # Diarists
 try:
     from modules.operacional.diaristas.controllers import router as diarist_router
-    api_router.include_router(diarist_router, prefix="/operacional/diaristas", tags=["Operacional - Diaristas"])
+    # Router já tem prefix="/diarists"
+    api_router.include_router(diarist_router, prefix="/operacional", tags=["Operacional - Diaristas"])
     logger.info("Modulo Diarists: OK")
 except Exception as e:
     logger.warning(f"Modulo Diarists: {e}")
@@ -317,7 +341,8 @@ except Exception as e:
 # Document Kits
 try:
     from modules.document_kits.controllers import router as document_kit_router
-    api_router.include_router(document_kit_router, prefix="/document-kits", tags=["Document Kits"])
+    # Router já tem prefix="/document-kits"
+    api_router.include_router(document_kit_router, tags=["Document Kits"])
     logger.info("Modulo Document Kits: OK")
 except Exception as e:
     logger.warning(f"Modulo Document Kits: {e}")

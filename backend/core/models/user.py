@@ -79,6 +79,14 @@ class User(BaseModel):
         nullable=True,
     )
 
+    # OAuth providers
+    google_id: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+
     # Metadata
     last_login: Mapped[Optional[str]] = mapped_column(
         String(50),

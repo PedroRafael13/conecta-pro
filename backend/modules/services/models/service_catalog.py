@@ -131,7 +131,7 @@ class ServiceCatalog(Base):
 
     # Metadados
     tags = Column(ARRAY(String), nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     notes = Column(Text, nullable=True)
 
     # Imagens/Documentos

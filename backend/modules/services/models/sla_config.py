@@ -127,7 +127,7 @@ class SLAConfig(Base):
     current_compliance_percent = Column(Numeric(5, 2), nullable=True)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     notes = Column(Text, nullable=True)
 
     # Auditoria

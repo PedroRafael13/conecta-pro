@@ -311,6 +311,40 @@ class PreferencesResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PrivacySettingsUpdate(BaseModel):
+    """Schema para atualização de configurações de privacidade."""
+
+    show_birthday: Optional[bool] = None
+    show_photo: Optional[bool] = None
+    show_department: Optional[bool] = None
+    show_position: Optional[bool] = None
+    allow_colleague_contact: Optional[bool] = None
+
+
+class DashboardSettingsUpdate(BaseModel):
+    """Schema para atualização de configurações do dashboard."""
+
+    layout: Optional[str] = Field(None, max_length=20)
+    widgets: Optional[List[str]] = None
+    default_page: Optional[str] = Field(None, max_length=50)
+
+
+class DeviceInfo(BaseModel):
+    """Informação de dispositivo para registro."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    user_agent: Optional[str] = None
+    ip_address: Optional[str] = None
+
+
+class TwoFactorSetupResponse(BaseModel):
+    """Resposta de configuração 2FA."""
+
+    secret: str
+    qr_code_uri: str
+    backup_codes: List[str]
+
+
 class ClientConfigResponse(BaseModel):
     """Configurações para o frontend."""
 

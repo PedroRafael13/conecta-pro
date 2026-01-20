@@ -124,7 +124,7 @@ class FeatureFlag(Base):
     tags = Column(JSONB, nullable=True)
     jira_ticket = Column(String(50), nullable=True)
     documentation_url = Column(String(500), nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Controle
     ativo = Column(Boolean, default=True, nullable=False)

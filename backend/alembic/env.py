@@ -26,13 +26,50 @@ from modules.crm.models import (  # noqa: F401
     ProposalApproval,
 )
 
-from modules.operations.models import (  # noqa: F401
+from modules.operacional.models import (  # noqa: F401
     Post,
     Scale,
     Shift,
     Allocation,
     Substitution,
     TimeBank,
+)
+
+# Diaristas models
+from modules.operacional.diaristas.models import (  # noqa: F401
+    Diarist,
+    DiaristAssignment,
+    DiaristSchedule,
+    DiaristPayment,
+    DiaristEvaluation,
+)
+
+# Diaristas fiscal models
+from modules.operacional.diaristas.models.documento_fiscal import (  # noqa: F401
+    DocumentoFiscal,
+    RetencaoFiscal,
+    EventoESocial,
+    TabelaINSS,
+    TabelaIRRF,
+)
+
+# Campo models
+from modules.campo.models import (  # noqa: F401
+    CampoTecnico,
+    AccessLog,
+    EquipmentStatus,
+    GuardianOccurrence,
+    GuardianSync,
+)
+
+# Campo - OS, Visitas, Checklists
+from modules.campo.models.ordem_servico import OrdemServico  # noqa: F401
+from modules.campo.models.visita import Visita  # noqa: F401
+from modules.campo.models.checklist import (  # noqa: F401
+    ChecklistTemplate,
+    ChecklistItem,
+    ChecklistPreenchido,
+    ChecklistResposta,
 )
 
 # Alembic Config object

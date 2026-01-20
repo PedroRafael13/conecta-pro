@@ -169,7 +169,7 @@ class WebhookConfig(Base):
     auto_disable_on_failures = Column(Integer, nullable=True, default=10)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     notes = Column(Text, nullable=True)
 
     # Auditoria

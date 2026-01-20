@@ -7,8 +7,8 @@ from uuid import uuid4
 
 import pytest
 
-from modules.operations.models.scale import ScaleType
-from modules.operations.services.scale_generator import ScaleGenerator, scale_generator
+from modules.operacional.models.scale import ScaleType
+from modules.operacional.services.scale_generator import ScaleGenerator, scale_generator
 
 
 class TestScaleGenerator:

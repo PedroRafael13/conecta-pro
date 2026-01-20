@@ -17,6 +17,36 @@ class Base(DeclarativeBase):
     __allow_unmapped__ = True
 
 
+class TimestampMixin:
+    """Mixin para campos de timestamp (created_at, updated_at)."""
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class SoftDeleteMixin:
+    """Mixin para soft delete (is_active, deleted_at)."""
+
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+    deleted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+
 class BaseModel(Base):
     """
     Modelo base abstrato com campos comuns.

@@ -1,0 +1,315 @@
+'use client';
+
+import { useState } from 'react';
+import {
+  Plus, Search, Filter, MoreHorizontal, Phone, Mail,
+  User, Building2, TrendingUp, RefreshCw, AlertCircle
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { useLeads, useLeadsStats } from '@/hooks/useLeads';
+import { cn, formatCurrency, formatDate } from '@/lib/utils';
+
+const statusConfig: Record<string, { label: string; color: string }> = {
+  novo: { label: 'Novo', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+  qualificado: { label: 'Qualificado', color: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30' },
+  proposta: { label: 'Proposta', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+  negociacao: { label: 'Negociação', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30' },
+  ganho: { label: 'Ganho', color: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' },
+  perdido: { label: 'Perdido', color: 'bg-red-500/20 text-red-400 border-red-500/30' },
+};
+
+export default function LeadsPage() {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+
+  // Buscar leads do backend real
+  const {
+    data: leadsData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useLeads({
+    search: search || undefined,
+    status: statusFilter,
+  });
+
+  // Buscar estatísticas do backend real
+  const { data: stats } = useLeadsStats();
+
+  const leads = leadsData?.items || [];
+  const total = leadsData?.total || 0;
+
+  // Métricas (do stats ou calculadas)
+  const totalLeads = stats?.total || total;
+  const leadsNovos = stats?.novos || leads.filter(l => l.status === 'novo').length;
+  const valorTotal = stats?.valor_pipeline || leads.reduce((acc, lead) => acc + (lead.valor_estimado || 0), 0);
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[hsl(var(--foreground))]">Leads</h1>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Gerencie seus leads e oportunidades de negócio
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+          </Button>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Lead
+          </Button>
+        </div>
+      </div>
+
+      {/* Métricas */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Total de Leads</p>
+                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
+                  {isLoading ? '...' : totalLeads}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-navy-500/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-navy-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Leads Novos</p>
+                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
+                  {isLoading ? '...' : leadsNovos}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-brand-500/10 flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-brand-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Valor Estimado</p>
+                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
+                  {isLoading ? '...' : formatCurrency(valorTotal)}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-emerald-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1">
+          <Input
+            type="search"
+            placeholder="Buscar leads..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            icon={<Search className="w-4 h-4" />}
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant={statusFilter === undefined ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => setStatusFilter(undefined)}
+          >
+            Todos
+          </Button>
+          {Object.entries(statusConfig).slice(0, 4).map(([key, config]) => (
+            <Button
+              key={key}
+              variant={statusFilter === key ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setStatusFilter(key)}
+              className="hidden sm:inline-flex"
+            >
+              {config.label}
+            </Button>
+          ))}
+          <Button variant="secondary" size="sm" className="sm:hidden">
+            <Filter className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Erro */}
+      {isError && (
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-[hsl(var(--destructive))]/10 border border-[hsl(var(--destructive))]/30">
+          <AlertCircle className="w-5 h-5 text-[hsl(var(--destructive))]" />
+          <div>
+            <p className="font-medium text-[hsl(var(--destructive))]">Erro ao carregar leads</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              {(error as Error)?.message || 'Tente novamente em alguns instantes'}
+            </p>
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => refetch()} className="ml-auto">
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+
+      {/* Lista de leads */}
+      <Card>
+        <CardContent className="p-0">
+          {isLoading ? (
+            // Skeleton loading
+            <div className="divide-y divide-[hsl(var(--border))]">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="p-4 flex items-center gap-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-48 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
+                    <div className="h-3 w-32 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
+                  </div>
+                  <div className="h-6 w-20 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
+                  <div className="h-4 w-24 bg-[hsl(var(--secondary))] rounded animate-shimmer" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[hsl(var(--border))]">
+                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                      Lead
+                    </th>
+                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden md:table-cell">
+                      Contato
+                    </th>
+                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))] hidden lg:table-cell">
+                      Origem
+                    </th>
+                    <th className="text-left p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                      Status
+                    </th>
+                    <th className="text-right p-4 text-sm font-medium text-[hsl(var(--muted-foreground))]">
+                      Valor
+                    </th>
+                    <th className="w-12 p-4"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[hsl(var(--border))]">
+                  {leads.map((lead) => {
+                    const status = statusConfig[lead.status] || statusConfig.novo;
+                    return (
+                      <tr
+                        key={lead.id}
+                        className="hover:bg-[hsl(var(--secondary))]/50 transition-colors cursor-pointer"
+                      >
+                        <td className="p-4">
+                          <div>
+                            <p className="font-medium text-[hsl(var(--foreground))]">
+                              {lead.nome}
+                            </p>
+                            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                              {lead.contato}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="p-4 hidden md:table-cell">
+                          <div className="space-y-1">
+                            {lead.telefone && (
+                              <div className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
+                                <Phone className="w-3 h-3" />
+                                {lead.telefone}
+                              </div>
+                            )}
+                            {lead.email && (
+                              <div className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
+                                <Mail className="w-3 h-3" />
+                                {lead.email}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-4 hidden lg:table-cell">
+                          <span className="text-sm text-[hsl(var(--muted-foreground))]">
+                            {lead.origem || '-'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={cn(
+                            'inline-flex px-2 py-1 text-xs font-medium rounded-full border',
+                            status.color
+                          )}>
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <span className="font-mono text-sm text-[hsl(var(--foreground))]">
+                            {formatCurrency(lead.valor_estimado || 0)}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!isLoading && !isError && leads.length === 0 && (
+            <div className="text-center py-12">
+              <User className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
+                Nenhum lead encontrado
+              </h3>
+              <p className="text-[hsl(var(--muted-foreground))] mt-1">
+                {search || statusFilter
+                  ? 'Tente ajustar os filtros ou adicione um novo lead'
+                  : 'Comece adicionando seu primeiro lead'}
+              </p>
+              {!search && !statusFilter && (
+                <Button className="mt-4">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Lead
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Paginação info */}
+      {!isLoading && leads.length > 0 && (
+        <div className="text-sm text-[hsl(var(--muted-foreground))] text-center">
+          Mostrando {leads.length} de {total} leads
+        </div>
+      )}
+    </div>
+  );
+}

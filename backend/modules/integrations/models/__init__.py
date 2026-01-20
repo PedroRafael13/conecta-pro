@@ -1,6 +1,7 @@
 """
 Models do módulo de Integrações
 Sprint 32: API Gateway / Integrações
+Sprint 33: Integration Framework (Sólides, Bling, Domínio, GOV)
 """
 
 from modules.integrations.models.api_endpoint import (
@@ -38,6 +39,21 @@ from modules.integrations.models.sync_queue import (
     SyncOperationType,
     ExternalSystem,
 )
+# Sprint 33: Integration Framework
+from modules.integrations.models.integration_account import (
+    IntegrationAccount,
+    ConnectorType,
+    AuthType,
+    AccountStatus,
+)
+from modules.integrations.models.sync_run import (
+    SyncRun,
+    SyncRunStatus,
+    SyncRunMode,
+    SyncRunTrigger,
+)
+from modules.integrations.models.sync_state import SyncState
+from modules.integrations.models.id_map import IDMap
 
 __all__ = [
     # API Endpoint
@@ -70,4 +86,15 @@ __all__ = [
     "SyncEntityType",
     "SyncOperationType",
     "ExternalSystem",
+    # Sprint 33: Integration Framework
+    "IntegrationAccount",
+    "ConnectorType",
+    "AuthType",
+    "AccountStatus",
+    "SyncRun",
+    "SyncRunStatus",
+    "SyncRunMode",
+    "SyncRunTrigger",
+    "SyncState",
+    "IDMap",
 ]

@@ -122,7 +122,7 @@ class ServiceReport(Base):
 
     # Metadados
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)

@@ -124,7 +124,7 @@ class Folder(Base):
     color: Mapped[Optional[str]] = mapped_column(String(7), nullable=True)
     order: Mapped[int] = mapped_column(Integer, default=0)
     tags: Mapped[Optional[List[str]]] = mapped_column(ARRAY(String), nullable=True)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
     # Estatísticas
     document_count: Mapped[int] = mapped_column(Integer, default=0)

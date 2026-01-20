@@ -19,7 +19,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers
 revision = "sprint22_payable"
-down_revision = "sprint21_001_employee_portal_tables"
+down_revision = "sprint21_001"
 branch_labels = None
 depends_on = None
 

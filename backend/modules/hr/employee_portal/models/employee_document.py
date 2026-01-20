@@ -178,7 +178,7 @@ class EmployeeDocument(Base):
     related_documents = Column(JSONB, default=list)  # IDs de docs relacionados
 
     # Metadados
-    metadata = Column(JSONB, default=dict)
+    document_extra_metadata = Column(JSONB, default=dict)
     # {
     #   "source": "hr_system",
     #   "generated_by": "auto",

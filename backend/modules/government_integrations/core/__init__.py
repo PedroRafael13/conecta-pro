@@ -268,6 +268,20 @@ from .ecac import (
     TipoDeclaracaoConsulta,
 )
 
+# SEFAZ-AM (Amazonas)
+from .sefaz_am import (
+    SefazAMClient,
+    SefazAMService,
+    AmbienteSEFAZ,
+    TipoEvento,
+    StatusServico,
+    ResultadoConsulta,
+    ResultadoAutorizacao,
+    ResultadoEvento,
+    InformacaoCadastral,
+    ENDPOINTS_SEFAZ_AM,
+)
+
 __all__ = [
     # eSocial
     "EventType",
@@ -468,6 +482,18 @@ __all__ = [
     "SituacaoFiscal",
     "TipoPendencia",
     "TipoDeclaracaoConsulta",
+
+    # SEFAZ-AM (Amazonas)
+    "SefazAMClient",
+    "SefazAMService",
+    "AmbienteSEFAZ",
+    "TipoEvento",
+    "StatusServico",
+    "ResultadoConsulta",
+    "ResultadoAutorizacao",
+    "ResultadoEvento",
+    "InformacaoCadastral",
+    "ENDPOINTS_SEFAZ_AM",
 ]
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"

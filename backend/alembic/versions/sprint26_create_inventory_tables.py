@@ -22,7 +22,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "sprint26_inventory"
-down_revision: Union[str, None] = "sprint25_create_purchase_tables"
+down_revision: Union[str, None] = "sprint25_purchase"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

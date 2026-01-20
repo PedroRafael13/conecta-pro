@@ -149,7 +149,7 @@ class ServiceOrder(Base):
 
     # Metadados
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     internal_notes = Column(Text, nullable=True)
 
     # Auditoria

@@ -7,9 +7,10 @@ import sys
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
-sys.path.insert(0, "/opt/conecta-pro")
 
-from government_integrations import (
+
+# Imports relativos do módulo pai
+from modules.government_integrations.utils import (
     get_sefaz_manager,
     DocumentType,
 )
@@ -45,7 +46,7 @@ class SEFAZService:
             ValueError: Se dados inválidos.
         """
         sefaz = get_sefaz_manager()
-        doc_type = DocumentType(tipo.upper())
+        doc_type = DocumentType(tipo.lower())
 
         resultado = sefaz.emit_document(
             doc_type=doc_type,

@@ -12,7 +12,7 @@ from modules.hr.employee_portal.services import PreferencesService
 from modules.hr.employee_portal.schemas import (
     PreferencesResponse,
     PreferencesUpdate,
-    NotificationSettingsUpdate,
+    NotificationPreferencesUpdate,
     PrivacySettingsUpdate,
     DashboardSettingsUpdate,
     DeviceInfo,
@@ -65,7 +65,7 @@ async def update_preferences(
     summary="Atualizar notificações",
 )
 async def update_notification_settings(
-    data: NotificationSettingsUpdate,
+    data: NotificationPreferencesUpdate,
     db: AsyncSession = Depends(get_async_session),
     current_user: dict = Depends(get_current_user),
 ):

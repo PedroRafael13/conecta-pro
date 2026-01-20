@@ -55,7 +55,7 @@ router = APIRouter(prefix="/contracts", tags=["CRM - Contracts"])
 # ============== Contract Endpoints ==============
 
 
-@router.post("/", response_model=ContractDetailResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ContractDetailResponse, status_code=status.HTTP_201_CREATED)
 async def create_contract(
     data: ContractCreate,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -72,7 +72,7 @@ async def create_contract(
     return ContractDetailResponse.model_validate(contract)
 
 
-@router.get("/", response_model=ContractListResponse)
+@router.get("", response_model=ContractListResponse)
 async def list_contracts(  # pylint: disable=too-many-locals
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),

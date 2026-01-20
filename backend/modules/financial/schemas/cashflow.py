@@ -256,6 +256,17 @@ class BankReconciliationResponse(BankReconciliationBase):
     created_at: datetime
 
 
+class BankReconciliationFilter(BaseModel):
+    """Schema para filtros de listagem de conciliacoes."""
+
+    bank_account_id: Optional[UUID] = None
+    condominio_id: Optional[UUID] = None
+    status: Optional[str] = None
+    period_type: Optional[str] = None
+    period_start_from: Optional[date] = None
+    period_start_to: Optional[date] = None
+
+
 class ReconciliationItemMatch(BaseModel):
     """Schema para conciliar item."""
 

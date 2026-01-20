@@ -1,7 +1,7 @@
 """Sprint 20: Cria tabelas de integração com folha de pagamento.
 
 Revision ID: sprint20_payroll
-Revises: sprint19_analytics
+Revises: sprint19_analytics_dashboard
 Create Date: 2024-12-31
 
 Tabelas criadas:
@@ -18,7 +18,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers
 revision = "sprint20_payroll"
-down_revision = "sprint19_analytics"
+down_revision = "sprint19_analytics_dashboard"
 branch_labels = None
 depends_on = None
 

@@ -122,7 +122,7 @@ class ReportExport(Base):
     # Metadados
     report_title = Column(String(500), nullable=True)
     report_subtitle = Column(String(500), nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Auditoria
     requested_by = Column(UUID(as_uuid=True), nullable=True)

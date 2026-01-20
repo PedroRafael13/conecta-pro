@@ -25,7 +25,7 @@ from alembic import op
 
 # revision identifiers
 revision = "sprint25_purchase"
-down_revision = "c8f5a3b2d1e0_create_cashflow_tables"
+down_revision = "c8f5a3b2d1e0"
 branch_labels = None
 depends_on = None
 

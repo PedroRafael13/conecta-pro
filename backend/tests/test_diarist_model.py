@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from modules.diarists.models.diarist import (
+from modules.operacional.diaristas.models.diarist import (
     Diarist,
     DiaristAssignment,
     DiaristEvaluation,

@@ -94,7 +94,7 @@ class DocumentVersion(Base):
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Metadados
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
     # Estatísticas
     view_count: Mapped[int] = mapped_column(Integer, default=0)

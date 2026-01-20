@@ -16,7 +16,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'sprint30_gestao_clients'
-down_revision: Union[str, None] = 'sprint32_create_diarists_tables'
+down_revision: Union[str, None] = 'sprint32_diarists'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

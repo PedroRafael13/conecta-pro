@@ -157,7 +157,7 @@ class ComplianceRule(Base):
     approval_notes = Column(Text, nullable=True)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     tags = Column(JSONB, nullable=True)
     notes = Column(Text, nullable=True)
 

@@ -56,7 +56,7 @@ def get_ai_service(session: AsyncSession = Depends(get_session)) -> ReceivableAI
 
 
 @router.post(
-    "/",
+    "",
     response_model=ReceivableAccountResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar conta a receber",
@@ -81,7 +81,7 @@ async def create_account(
 
 
 @router.get(
-    "/",
+    "",
     response_model=List[ReceivableAccountListResponse],
     summary="Listar contas a receber",
 )
@@ -128,7 +128,7 @@ async def list_accounts(  # pylint: disable=too-many-locals
     summary="Estatisticas de contas a receber",
 )
 async def get_stats(
-    condominio_id: UUID,
+    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> ReceivableAccountStats:
@@ -142,7 +142,7 @@ async def get_stats(
     summary="Contas vencidas",
 )
 async def get_overdue(
-    condominio_id: UUID,
+    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
     limit: int = Query(100, ge=1, le=500),
     service: ReceivableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -158,7 +158,7 @@ async def get_overdue(
     summary="Contas a vencer",
 )
 async def get_due_soon(
-    condominio_id: UUID,
+    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
     days: int = Query(7, ge=1, le=90, description="Dias para vencimento"),
     limit: int = Query(100, ge=1, le=500),
     service: ReceivableService = Depends(get_service),

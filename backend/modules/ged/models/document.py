@@ -231,7 +231,7 @@ class Document(Base):
     )
 
     # Metadados
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     custom_fields: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     external_reference: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 

@@ -1,0 +1,574 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Users,
+  ArrowLeft,
+  Filter,
+  Eye,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  Ban,
+  Plus,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Modal, ModalFooter } from '@/components/ui/modal';
+import { useAuth } from '@/hooks/useAuth';
+import { useAllocations } from '@/hooks/useAllocations';
+import { usePosts } from '@/hooks/usePosts';
+import { useEmployees } from '@/hooks/useEmployees';
+import { allocationsService } from '@/lib/services/allocations';
+import { getErrorMessage } from '@/lib/api';
+import { AllocationDetailModal } from '@/components/operacional/allocation-detail-modal';
+import { AllocationFormModal } from '@/components/operacional/allocation-form-modal';
+import type { Allocation, AllocationStatus, AllocationTerminate, Employee, Post } from '@/types/operacional';
+import { ALLOCATION_STATUS_LABELS } from '@/types/operacional';
+
+export default function AlocacoesPage() {
+  const router = useRouter();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const {
+    allocations,
+    total,
+    page,
+    pageSize,
+    totalPages,
+    isLoading,
+    error,
+    filters,
+    setFilters,
+    setPage,
+    refresh,
+  } = useAllocations({ initialPageSize: 10 });
+  const { posts } = usePosts({ initialPageSize: 200 });
+  const { employees } = useEmployees({ initialPageSize: 200 });
+
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedAllocation, setSelectedAllocation] = useState<Allocation | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [showTerminateModal, setShowTerminateModal] = useState(false);
+  const [isTerminating, setIsTerminating] = useState(false);
+  const [terminateError, setTerminateError] = useState<string | null>(null);
+  const [terminateData, setTerminateData] = useState<AllocationTerminate>({
+    end_date: '',
+    termination_reason: '',
+    notes: '',
+  });
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  const postMap = useMemo(() => {
+    return posts.reduce<Record<string, Post>>((acc, post) => {
+      acc[post.id] = post;
+      return acc;
+    }, {});
+  }, [posts]);
+
+  const employeeMap = useMemo(() => {
+    return employees.reduce<Record<string, Employee>>((acc, employee) => {
+      acc[employee.id] = employee;
+      return acc;
+    }, {});
+  }, [employees]);
+
+  const getEmployeeLabel = (employeeId: string) => {
+    const employee = employeeMap[employeeId];
+    return (
+      employee?.full_name ||
+      employee?.name ||
+      employee?.email ||
+      employee?.registration ||
+      employeeId
+    );
+  };
+
+  const getPostLabel = (postId: string) => {
+    const post = postMap[postId];
+    return post ? `${post.name} (${post.code})` : postId;
+  };
+
+  const getStatusBadge = (status: AllocationStatus) => {
+    const base = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium';
+    switch (status) {
+      case 'active':
+        return `${base} bg-green-500/10 text-green-500`;
+      case 'pending':
+        return `${base} bg-yellow-500/10 text-yellow-500`;
+      case 'suspended':
+        return `${base} bg-orange-500/10 text-orange-500`;
+      case 'terminated':
+        return `${base} bg-red-500/10 text-red-500`;
+      default:
+        return `${base} bg-gray-500/10 text-gray-500`;
+    }
+  };
+
+  const openDetail = (allocation: Allocation) => {
+    setSelectedAllocation(allocation);
+    setShowDetailModal(true);
+  };
+
+  const openTerminate = (allocation: Allocation) => {
+    setSelectedAllocation(allocation);
+    setTerminateData({ end_date: '', termination_reason: '', notes: '' });
+    setTerminateError(null);
+    setShowTerminateModal(true);
+  };
+
+  const handleTerminate = async () => {
+    if (!selectedAllocation) return;
+
+    if (!terminateData.end_date || !terminateData.termination_reason) {
+      setTerminateError('Informe data e motivo do encerramento.');
+      return;
+    }
+
+    setIsTerminating(true);
+    setTerminateError(null);
+
+    try {
+      await allocationsService.terminate(selectedAllocation.id, terminateData);
+      setShowTerminateModal(false);
+      setSelectedAllocation(null);
+      refresh();
+    } catch (err) {
+      setTerminateError(getErrorMessage(err));
+    } finally {
+      setIsTerminating(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
+        <div className="animate-pulse-slow text-[hsl(var(--primary))]">
+          <Users className="w-12 h-12" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-grid">
+      <header className="sticky top-0 z-50 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <Link href="/modulos/operacional">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Operacional
+                </Button>
+              </Link>
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-green-500" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-[hsl(var(--foreground))]">
+                    Alocacoes
+                  </h1>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                    {total} alocacoes encontradas
+                  </p>
+                </div>
+              </div>
+            </div>
+            <Button variant="primary" size="sm" onClick={() => setShowFormModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Alocacao
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className={showFilters ? 'border-[hsl(var(--primary))]' : ''}
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Filtros
+          </Button>
+          <Button variant="outline" onClick={refresh} disabled={isLoading}>
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+
+        {showFilters && (
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium text-[hsl(var(--foreground))]">Filtros</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFilters({})}
+              >
+                Limpar filtros
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm text-[hsl(var(--muted-foreground))] mb-1 block">
+                  Posto
+                </label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm"
+                  value={filters.post_id || ''}
+                  onChange={(e) =>
+                    setFilters({ ...filters, post_id: e.target.value || undefined })
+                  }
+                >
+                  <option value="">Todos</option>
+                  {posts.map((post) => (
+                    <option key={post.id} value={post.id}>
+                      {post.name} ({post.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-[hsl(var(--muted-foreground))] mb-1 block">
+                  Funcionario
+                </label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm"
+                  value={filters.employee_id || ''}
+                  onChange={(e) =>
+                    setFilters({ ...filters, employee_id: e.target.value || undefined })
+                  }
+                >
+                  <option value="">Todos</option>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {getEmployeeLabel(employee.id)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-[hsl(var(--muted-foreground))] mb-1 block">
+                  Status
+                </label>
+                <select
+                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm"
+                  value={filters.status || ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      status: (e.target.value || undefined) as AllocationStatus | undefined,
+                    })
+                  }
+                >
+                  <option value="">Todos</option>
+                  {Object.entries(ALLOCATION_STATUS_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm text-[hsl(var(--muted-foreground))] mb-1 block">
+                  Vigentes
+                </label>
+                <div className="flex items-center gap-2 h-10">
+                  <input
+                    type="checkbox"
+                    checked={filters.is_current === true}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        is_current: e.target.checked ? true : undefined,
+                      })
+                    }
+                    className="rounded border-[hsl(var(--border))]"
+                  />
+                  <span className="text-sm">Apenas vigentes</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-[hsl(var(--muted-foreground))] mb-1 block">
+                  Inicio de
+                </label>
+                <Input
+                  type="date"
+                  value={filters.start_date_from || ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      start_date_from: e.target.value || undefined,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <label className="text-sm text-[hsl(var(--muted-foreground))] mb-1 block">
+                  Inicio ate
+                </label>
+                <Input
+                  type="date"
+                  value={filters.start_date_to || ''}
+                  onChange={(e) =>
+                    setFilters({
+                      ...filters,
+                      start_date_to: e.target.value || undefined,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500" />
+            <p className="text-red-500">{error}</p>
+            <Button variant="outline" size="sm" onClick={refresh} className="ml-auto">
+              Tentar novamente
+            </Button>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-pulse-slow text-[hsl(var(--primary))]">
+              <Users className="w-8 h-8" />
+            </div>
+          </div>
+        ) : allocations.length === 0 ? (
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-12 text-center">
+            <Users className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-[hsl(var(--foreground))] mb-2">
+              Nenhuma alocacao encontrada
+            </h3>
+            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
+              Crie uma nova alocacao para iniciar o vinculo
+            </p>
+            <Button onClick={() => setShowFormModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Alocacao
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-[hsl(var(--muted))]">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Funcionario
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Posto
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Inicio
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Acoes
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[hsl(var(--border))]">
+                    {allocations.map((allocation) => (
+                      <tr
+                        key={allocation.id}
+                        className="hover:bg-[hsl(var(--muted))]/50 transition-colors cursor-pointer"
+                        onClick={() => openDetail(allocation)}
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                              <Users className="w-4 h-4 text-green-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-[hsl(var(--foreground))]">
+                                {getEmployeeLabel(allocation.employee_id)}
+                              </p>
+                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                {allocation.employee_id}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <p className="text-sm text-[hsl(var(--foreground))]">
+                            {getPostLabel(allocation.post_id)}
+                          </p>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
+                            <span className="text-sm text-[hsl(var(--foreground))]">
+                              {new Date(allocation.start_date).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className={getStatusBadge(allocation.status as AllocationStatus)}>
+                            {ALLOCATION_STATUS_LABELS[allocation.status as AllocationStatus] || allocation.status}
+                          </span>
+                        </td>
+                        <td
+                          className="px-4 py-4 text-right"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => openDetail(allocation)}
+                              title="Visualizar"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {allocation.status === 'active' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openTerminate(allocation)}
+                                title="Encerrar"
+                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                              >
+                                <Ban className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, total)} de {total}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page - 1)}
+                    disabled={page <= 1}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-sm text-[hsl(var(--foreground))]">
+                    Pagina {page} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage(page + 1)}
+                    disabled={page >= totalPages}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </main>
+
+      <AllocationDetailModal
+        allocation={selectedAllocation}
+        isOpen={showDetailModal}
+        onClose={() => {
+          setShowDetailModal(false);
+          setSelectedAllocation(null);
+        }}
+        employeeName={selectedAllocation ? getEmployeeLabel(selectedAllocation.employee_id) : undefined}
+        postName={selectedAllocation ? getPostLabel(selectedAllocation.post_id) : undefined}
+        onTerminate={selectedAllocation?.status === 'active' ? () => openTerminate(selectedAllocation) : undefined}
+      />
+
+      <AllocationFormModal
+        isOpen={showFormModal}
+        onClose={() => setShowFormModal(false)}
+        onSuccess={refresh}
+        posts={posts}
+        employees={employees}
+      />
+
+      <Modal
+        isOpen={showTerminateModal}
+        onClose={() => setShowTerminateModal(false)}
+        title="Encerrar Alocacao"
+        description="Informe data e motivo do encerramento"
+        size="sm"
+      >
+        <div className="space-y-4">
+          {terminateError && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-500 text-sm">
+              {terminateError}
+            </div>
+          )}
+          <div>
+            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+              Data de encerramento *
+            </label>
+            <Input
+              type="date"
+              value={terminateData.end_date}
+              onChange={(e) => setTerminateData({ ...terminateData, end_date: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+              Motivo *
+            </label>
+            <Input
+              value={terminateData.termination_reason}
+              onChange={(e) =>
+                setTerminateData({ ...terminateData, termination_reason: e.target.value })
+              }
+              placeholder="Ex: Substituicao definitiva"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+              Observacoes
+            </label>
+            <textarea
+              value={terminateData.notes || ''}
+              onChange={(e) => setTerminateData({ ...terminateData, notes: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm resize-none"
+            />
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setShowTerminateModal(false)} disabled={isTerminating}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={handleTerminate} disabled={isTerminating}>
+            {isTerminating ? 'Encerrando...' : 'Encerrar'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+    </div>
+  );
+}

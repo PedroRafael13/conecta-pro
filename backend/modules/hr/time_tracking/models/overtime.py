@@ -196,7 +196,7 @@ class Overtime(Base):
     # Observações e metadados
     notes: Mapped[Optional[str]] = mapped_column(Text)
     tags: Mapped[Optional[list]] = mapped_column(JSONB, default=list)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, default=dict)
 
     # Controle
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)

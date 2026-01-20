@@ -1,0 +1,241 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Conecta Mais - Azul Marinho (Principal) */
+  --color-navy-50: #eef4ff;
+  --color-navy-100: #d9e5ff;
+  --color-navy-200: #bcd2ff;
+  --color-navy-300: #8eb6ff;
+  --color-navy-400: #598eff;
+  --color-navy-500: #3366ff;
+  --color-navy-600: #1a47f5;
+  --color-navy-700: #1436e1;
+  --color-navy-800: #172db6;
+  --color-navy-900: #192b8f;
+  --color-navy-950: #111b57;
+
+  /* Conecta Mais - Laranja (Destaque) */
+  --color-brand-50: #fff8eb;
+  --color-brand-100: #ffecc6;
+  --color-brand-200: #ffd688;
+  --color-brand-300: #ffba4a;
+  --color-brand-400: #ff9f20;
+  --color-brand-500: #f97707;
+  --color-brand-600: #dd5502;
+  --color-brand-700: #b73a06;
+  --color-brand-800: #942c0c;
+  --color-brand-900: #7a260d;
+  --color-brand-950: #461102;
+
+  /* Fontes */
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+  /* Sistema de Design */
+  --background: 224 71% 4%;
+  --foreground: 213 31% 91%;
+
+  --card: 224 71% 7%;
+  --card-foreground: 213 31% 91%;
+
+  --popover: 224 71% 7%;
+  --popover-foreground: 213 31% 91%;
+
+  /* Primary = Azul Marinho */
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+
+  /* Accent = Laranja */
+  --accent: 25 95% 53%;
+  --accent-foreground: 226 57% 21%;
+
+  --secondary: 223 47% 11%;
+  --secondary-foreground: 213 31% 91%;
+
+  --muted: 223 47% 11%;
+  --muted-foreground: 215 20% 55%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success: 142 76% 46%;
+  --warning: 25 95% 53%;
+
+  --border: 223 47% 15%;
+  --input: 223 47% 11%;
+  --ring: 221 83% 53%;
+
+  --radius: 0.5rem;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  font-family: var(--font-sans);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar estilizada */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--secondary));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Glow effects - Azul Marinho */
+.glow-primary {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3),
+              0 0 40px hsl(var(--primary) / 0.1);
+}
+
+/* Glow effects - Laranja */
+.glow-accent {
+  box-shadow: 0 0 20px hsl(var(--accent) / 0.3),
+              0 0 40px hsl(var(--accent) / 0.1);
+}
+
+.glow-success {
+  box-shadow: 0 0 20px hsl(var(--success) / 0.3);
+}
+
+.glow-warning {
+  box-shadow: 0 0 20px hsl(var(--warning) / 0.3);
+}
+
+.glow-destructive {
+  box-shadow: 0 0 20px hsl(var(--destructive) / 0.3);
+}
+
+/* Grid pattern background */
+.bg-grid {
+  background-image:
+    linear-gradient(hsl(var(--border) / 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.5) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Noise texture overlay */
+.noise {
+  position: relative;
+}
+
+.noise::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+/* Gradiente azul marinho para laranja */
+.gradient-brand {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+}
+
+.gradient-brand-subtle {
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--accent) / 0.1) 100%);
+}
+
+/* Animações de entrada */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg,
+    hsl(var(--secondary)) 0%,
+    hsl(var(--border)) 50%,
+    hsl(var(--secondary)) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Stagger delays para listas */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay: 100ms; }
+.stagger > *:nth-child(4) { animation-delay: 150ms; }
+.stagger > *:nth-child(5) { animation-delay: 200ms; }
+.stagger > *:nth-child(6) { animation-delay: 250ms; }
+.stagger > *:nth-child(7) { animation-delay: 300ms; }
+.stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+/* Input focus states */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
+}
+
+/* Selection color */
+::selection {
+  background: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
+}
+
+/* Botão com hover laranja */
+.btn-brand {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  transition: all 0.3s ease;
+}
+
+.btn-brand:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}

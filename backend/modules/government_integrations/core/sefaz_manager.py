@@ -12,7 +12,7 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID, uuid4
 import xml.etree.ElementTree as ET
@@ -465,7 +465,24 @@ class NFEXMLBuilder:
         ET.SubElement(ide, "mod").text = "55" if nf.tipo == DocumentType.NFE else "65"
         ET.SubElement(ide, "serie").text = str(nf.serie)
         ET.SubElement(ide, "nNF").text = str(nf.numero)
-        ET.SubElement(ide, "dhEmi").text = nf.data_emissao.strftime("%Y-%m-%dT%H:%M:%S-03:00")
+        # Fuso horário baseado na UF do emitente
+        uf_timezone_offset = {
+            "AC": -5, "AM": -4, "AP": -3, "PA": -3,
+            "RO": -4, "RR": -4, "TO": -3, "MT": -4,
+        }.get(nf.emitente.endereco.uf, -3)
+        uf_timezone_str = f"{uf_timezone_offset:+03d}:00"
+
+        # Se data_emissao é UTC (naive ou aware), converter para hora local
+        data_emissao = nf.data_emissao
+        if data_emissao.tzinfo is None:
+            # datetime naive - assumir UTC e converter para hora local
+            data_emissao = data_emissao + timedelta(hours=uf_timezone_offset)
+        else:
+            # datetime aware - converter para timezone da UF
+            uf_tz = timezone(timedelta(hours=uf_timezone_offset))
+            data_emissao = data_emissao.astimezone(uf_tz)
+
+        ET.SubElement(ide, "dhEmi").text = data_emissao.strftime(f"%Y-%m-%dT%H:%M:%S{uf_timezone_str}")
         ET.SubElement(ide, "tpNF").text = nf.operacao.value
         ET.SubElement(ide, "idDest").text = "1"  # Operacao interna
         ET.SubElement(ide, "cMunFG").text = nf.emitente.endereco.codigo_municipio
@@ -474,7 +491,12 @@ class NFEXMLBuilder:
         ET.SubElement(ide, "cDV").text = nf.chave_acesso[-1]
         ET.SubElement(ide, "tpAmb").text = "2"   # Homologacao
         ET.SubElement(ide, "finNFe").text = "1"  # Normal
-        ET.SubElement(ide, "indFinal").text = "1" if nf.tipo == DocumentType.NFCE else "0"
+        # indFinal: 1 se NFC-e ou destinatário não contribuinte
+        is_consumidor_final = (
+            nf.tipo == DocumentType.NFCE or
+            (nf.destinatario and nf.destinatario.indicador_ie == "9")
+        )
+        ET.SubElement(ide, "indFinal").text = "1" if is_consumidor_final else "0"
         ET.SubElement(ide, "indPres").text = "1"  # Presencial
         ET.SubElement(ide, "procEmi").text = "0"
         ET.SubElement(ide, "verProc").text = "CONECTA_PRO_1.0"
@@ -534,8 +556,10 @@ class NFEXMLBuilder:
         # total
         total = ET.SubElement(inf, "total")
         icms_tot = ET.SubElement(total, "ICMSTot")
-        ET.SubElement(icms_tot, "vBC").text = f"{nf.valor_total_produtos:.2f}"
-        ET.SubElement(icms_tot, "vICMS").text = f"{nf.valor_total_icms:.2f}"
+        # Para Simples Nacional, BC e ICMS são zero
+        is_simples = nf.emitente.regime_tributario in ["1", "2"]  # 1=SN, 2=SN sublimite
+        ET.SubElement(icms_tot, "vBC").text = "0.00" if is_simples else f"{nf.valor_total_produtos:.2f}"
+        ET.SubElement(icms_tot, "vICMS").text = "0.00" if is_simples else f"{nf.valor_total_icms:.2f}"
         ET.SubElement(icms_tot, "vICMSDeson").text = "0.00"
         ET.SubElement(icms_tot, "vFCP").text = "0.00"
         ET.SubElement(icms_tot, "vBCST").text = "0.00"
@@ -570,6 +594,13 @@ class NFEXMLBuilder:
             inf_adic = ET.SubElement(inf, "infAdic")
             ET.SubElement(inf_adic, "infCpl").text = nf.informacoes_adicionais
 
+        # infRespTec - Responsável Técnico (obrigatório)
+        inf_resp = ET.SubElement(inf, "infRespTec")
+        ET.SubElement(inf_resp, "CNPJ").text = re.sub(r'[^\d]', '', nf.emitente.cnpj)
+        ET.SubElement(inf_resp, "xContato").text = "Suporte Tecnico"
+        ET.SubElement(inf_resp, "email").text = "suporte@conectapro.com.br"
+        ET.SubElement(inf_resp, "fone").text = "92999999999"
+
         return self._prettify(root)
 
     def _add_endereco(self, parent: ET.Element, tag: str, endereco: Endereco) -> None:
@@ -590,14 +621,54 @@ class NFEXMLBuilder:
     def _add_icms(self, parent: ET.Element, produto: Produto) -> None:
         """Adiciona ICMS ao XML."""
         icms = ET.SubElement(parent, "ICMS")
-        icms_elem = ET.SubElement(icms, f"ICMS{produto.cst_icms}")
-        ET.SubElement(icms_elem, "orig").text = produto.origem
-        ET.SubElement(icms_elem, "CST").text = produto.cst_icms
-        if produto.cst_icms in ["00", "10", "20", "70"]:
-            ET.SubElement(icms_elem, "modBC").text = "3"
-            ET.SubElement(icms_elem, "vBC").text = f"{produto.valor_total:.2f}"
-            ET.SubElement(icms_elem, "pICMS").text = f"{produto.aliquota_icms:.2f}"
-            ET.SubElement(icms_elem, "vICMS").text = f"{produto.valor_icms:.2f}"
+        cst = produto.cst_icms
+
+        # Simples Nacional (CSOSN 101, 102, 201, 202, 500, 900)
+        if cst in ["101", "102", "103", "201", "202", "203", "300", "400", "500", "900"]:
+            icms_elem = ET.SubElement(icms, f"ICMSSN{cst}")
+            ET.SubElement(icms_elem, "orig").text = produto.origem
+            ET.SubElement(icms_elem, "CSOSN").text = cst
+
+            if cst == "101":
+                # Tributada com permissão de crédito
+                ET.SubElement(icms_elem, "pCredSN").text = f"{produto.aliquota_icms:.2f}"
+                ET.SubElement(icms_elem, "vCredICMSSN").text = f"{produto.valor_icms:.2f}"
+            elif cst in ["201", "202", "203"]:
+                # Com ST
+                ET.SubElement(icms_elem, "modBCST").text = "4"
+                ET.SubElement(icms_elem, "pMVAST").text = "0.00"
+                ET.SubElement(icms_elem, "vBCST").text = "0.00"
+                ET.SubElement(icms_elem, "pICMSST").text = "0.00"
+                ET.SubElement(icms_elem, "vICMSST").text = "0.00"
+                if cst == "201":
+                    ET.SubElement(icms_elem, "pCredSN").text = f"{produto.aliquota_icms:.2f}"
+                    ET.SubElement(icms_elem, "vCredICMSSN").text = f"{produto.valor_icms:.2f}"
+            elif cst == "500":
+                # ICMS cobrado anteriormente por ST
+                ET.SubElement(icms_elem, "vBCSTRet").text = "0.00"
+                ET.SubElement(icms_elem, "pST").text = "0.00"
+                ET.SubElement(icms_elem, "vICMSSubstituto").text = "0.00"
+                ET.SubElement(icms_elem, "vICMSSTRet").text = "0.00"
+            # 102, 103, 300, 400, 900 - apenas orig e CSOSN
+
+        # Regime Normal
+        else:
+            icms_elem = ET.SubElement(icms, f"ICMS{cst}")
+            ET.SubElement(icms_elem, "orig").text = produto.origem
+            ET.SubElement(icms_elem, "CST").text = cst
+
+            if cst in ["00", "10", "20", "70"]:
+                ET.SubElement(icms_elem, "modBC").text = "3"
+                ET.SubElement(icms_elem, "vBC").text = f"{produto.valor_total:.2f}"
+                ET.SubElement(icms_elem, "pICMS").text = f"{produto.aliquota_icms:.2f}"
+                ET.SubElement(icms_elem, "vICMS").text = f"{produto.valor_icms:.2f}"
+            elif cst == "60":
+                # ICMS cobrado anteriormente por ST
+                ET.SubElement(icms_elem, "vBCSTRet").text = "0.00"
+                ET.SubElement(icms_elem, "pST").text = "0.00"
+                ET.SubElement(icms_elem, "vICMSSubstituto").text = "0.00"
+                ET.SubElement(icms_elem, "vICMSSTRet").text = "0.00"
+            # 40, 41, 50, 51 - apenas orig e CST
 
     def _add_pis(self, parent: ET.Element, produto: Produto) -> None:
         """Adiciona PIS ao XML."""

@@ -7,12 +7,12 @@ from uuid import uuid4
 
 import pytest
 
-from modules.operations.models.allocation import AllocationStatus
-from modules.operations.models.post import PostStatus, PostType, ShiftType
-from modules.operations.models.scale import ScaleStatus, ScaleType
-from modules.operations.models.shift import ShiftStatus
-from modules.operations.models.substitution import SubstitutionReason, SubstitutionStatus
-from modules.operations.models.time_bank import TimeBankEntryType, TimeBankStatus
+from modules.operacional.models.allocation import AllocationStatus
+from modules.operacional.models.post import PostStatus, PostType, ShiftType
+from modules.operacional.models.scale import ScaleStatus, ScaleType
+from modules.operacional.models.shift import ShiftStatus
+from modules.operacional.models.substitution import SubstitutionReason, SubstitutionStatus
+from modules.operacional.models.time_bank import TimeBankEntryType, TimeBankStatus
 
 
 @pytest.fixture

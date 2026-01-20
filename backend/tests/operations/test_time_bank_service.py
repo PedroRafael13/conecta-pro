@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 import pytest
 
-from modules.operations.services.time_bank_service import TimeBankService, time_bank_service
+from modules.operacional.services.time_bank_service import TimeBankService, time_bank_service
 
 
 class TestTimeBankService:

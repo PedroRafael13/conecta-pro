@@ -132,7 +132,7 @@ class ReportTemplate(Base):
 
     # Metadados
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Estatísticas
     usage_count = Column(Integer, nullable=False, default=0)

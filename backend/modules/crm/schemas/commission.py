@@ -1,6 +1,7 @@
 """
 Schemas Pydantic para Commission (Comissões de Vendedores).
 """
+from __future__ import annotations
 
 from datetime import date, datetime
 from typing import Optional
@@ -416,3 +417,7 @@ class CommissionRanking(BaseModel):
     period_end: date
     total_commissions: float
     total_sales: float
+
+
+# Resolve forward references para Pydantic v2
+CommissionDetailResponse.model_rebuild()

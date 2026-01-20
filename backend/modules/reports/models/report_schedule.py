@@ -130,7 +130,7 @@ class ReportSchedule(Base):
 
     # Metadados
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Auditoria
     created_by = Column(UUID(as_uuid=True), nullable=True)

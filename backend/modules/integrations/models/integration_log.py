@@ -147,7 +147,7 @@ class IntegrationLog(Base):
     action = Column(String(100), nullable=True)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     tags = Column(JSONB, nullable=True)
 
     # Timestamp

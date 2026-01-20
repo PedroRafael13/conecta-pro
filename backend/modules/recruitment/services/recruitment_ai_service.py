@@ -31,7 +31,7 @@ class RecruitmentAIService:
         SkillLevel.BASICO: 0.25,
         SkillLevel.INTERMEDIARIO: 0.50,
         SkillLevel.AVANCADO: 0.75,
-        SkillLevel.ESPECIALISTA: 1.0,
+        SkillLevel.EXPERT: 1.0,
     }
 
     def __init__(self):

@@ -14,9 +14,10 @@ from modules.crm.controllers import (
     proposal_router,
 )
 
-from modules.operations.controllers import (
+from modules.operacional.controllers import (
     allocation_router,
     post_router,
+    reports_router,
     scale_router,
     shift_router,
     substitution_router,
@@ -54,8 +55,6 @@ from modules.financial.controllers import (
 # ===================================================================
 # MÓDULO AI - INTELIGÊNCIA ARTIFICIAL (Sprints 34-55)
 # ===================================================================
-# Chatbot IA (Sprint 38)
-from modules.ai.chatbot.controllers import router as ai_chatbot_router
 # Análise de Contratos (Sprint 46)
 from modules.ai.contract_analysis.controllers import router as ai_contract_router
 # Qualidade de Dados (Sprint 48)
@@ -82,6 +81,8 @@ from modules.ai.signature.controllers import signature_router as ai_signature_ro
 from modules.ai.voice_recognition.controllers import voice_router as ai_voice_router
 # Otimizador de Workflows (Sprint 55)
 from modules.ai.workflow_optimizer.controllers import router as ai_workflow_router
+# Bartolo - Assistente Inteligente (Sessao 4)
+from modules.ai.bartolo.controllers import bartolo_router
 
 # ===================================================================
 # HR - RECURSOS HUMANOS
@@ -127,7 +128,11 @@ from modules.config.controllers import router as config_router
 # ===================================================================
 # MÓDULO DIARISTS - Gestão de Diaristas
 # ===================================================================
-from modules.diarists.controllers import router as diarist_router
+from modules.operacional.diaristas.controllers import (
+    router as diarist_router,
+    notificacao_router as diarist_notificacao_router,
+    fiscal_router as diarist_fiscal_router,
+)
 
 # ===================================================================
 # MÓDULO DOCUMENT_KITS - Kits Documentais
@@ -145,15 +150,8 @@ from modules.equipment_management.controllers import (
 )
 
 # ===================================================================
-# MÓDULO FACILITIES - Gestão de Facilities
+# MÓDULO FACILITIES - REMOVIDO (Transferido para PLUS)
 # ===================================================================
-from modules.facilities.controllers import (
-    area_router,
-    maintenance_router as facilities_maintenance_router,
-    inspection_router,
-    checklist_router,
-    service_request_router,
-)
 
 # ===================================================================
 # MÓDULO GED - Gestão Eletrônica de Documentos
@@ -173,14 +171,8 @@ from modules.ged.controllers import (
 from modules.integrations.controllers import router as integration_router
 
 # ===================================================================
-# MÓDULO OCCURRENCES - Gestão de Ocorrências
+# MÓDULO OCCURRENCES - REMOVIDO (Transferido para PLUS)
 # ===================================================================
-from modules.occurrences.controllers import (
-    occurrence_router as occurrences_router,
-    category_router as occurrence_category_router,
-    comment_router as occurrence_comment_router,
-    attachment_router as occurrence_attachment_router,
-)
 
 # ===================================================================
 # MÓDULO REPORTS - Relatórios Gerenciais (Sprint 34)
@@ -198,22 +190,27 @@ router = APIRouter(prefix="/api/v1")
 # ROUTERS EXISTENTES
 # ===================================================================
 router.include_router(auth_router)
-router.include_router(lead_router)
-router.include_router(opportunity_router)
-router.include_router(proposal_router)
-router.include_router(commission_router)
-router.include_router(dashboard_router)
-router.include_router(contract_router)
 
 # ===================================================================
-# OPERATIONS - POSTOS E ESCALAS
+# CRM - GESTÃO COMERCIAL
 # ===================================================================
-router.include_router(post_router, prefix="/operations/posts", tags=["Operations - Postos"])
-router.include_router(scale_router, prefix="/operations/scales", tags=["Operations - Escalas"])
-router.include_router(shift_router, prefix="/operations/shifts", tags=["Operations - Turnos"])
-router.include_router(allocation_router, prefix="/operations/allocations", tags=["Operations - Alocações"])
-router.include_router(substitution_router, prefix="/operations/substitutions", tags=["Operations - Substituições"])
-router.include_router(time_bank_router, prefix="/operations/time-bank", tags=["Operations - Banco de Horas"])
+router.include_router(lead_router, prefix="/crm", tags=["CRM - Leads"])
+router.include_router(opportunity_router, prefix="/crm", tags=["CRM - Oportunidades"])
+router.include_router(proposal_router, prefix="/crm", tags=["CRM - Propostas"])
+router.include_router(commission_router, prefix="/crm", tags=["CRM - Comissões"])
+router.include_router(dashboard_router, prefix="/crm", tags=["CRM - Dashboard"])
+router.include_router(contract_router, prefix="/crm", tags=["CRM - Contratos"])
+
+# ===================================================================
+# OPERACIONAL - POSTOS, ESCALAS E GESTÃO DE PESSOAL
+# ===================================================================
+router.include_router(post_router, prefix="/operacional/postos", tags=["Operacional - Postos"])
+router.include_router(scale_router, prefix="/operacional/escalas", tags=["Operacional - Escalas"])
+router.include_router(shift_router, prefix="/operacional/turnos", tags=["Operacional - Turnos"])
+router.include_router(allocation_router, prefix="/operacional/alocacoes", tags=["Operacional - Alocações"])
+router.include_router(substitution_router, prefix="/operacional/substituicoes", tags=["Operacional - Substituições"])
+router.include_router(time_bank_router, prefix="/operacional/banco-horas", tags=["Operacional - Banco de Horas"])
+router.include_router(reports_router, prefix="/operacional", tags=["Operacional - Relatorios"])
 
 # ===================================================================
 # FINANCIAL - GESTÃO FINANCEIRA COMPLETA
@@ -293,9 +290,11 @@ router.include_router(client_router, prefix="/clients", tags=["Clients - Cadastr
 router.include_router(config_router, prefix="/config", tags=["Config - Configurações"])
 
 # ===================================================================
-# DIARISTS - GESTÃO DE DIARISTAS
+# OPERACIONAL - DIARISTAS (Submódulo)
 # ===================================================================
-router.include_router(diarist_router, prefix="/diarists", tags=["Diarists - Gestão de Diaristas"])
+router.include_router(diarist_router, prefix="/operacional/diaristas", tags=["Operacional - Diaristas"])
+router.include_router(diarist_notificacao_router, prefix="/operacional/diaristas/notificacoes", tags=["Operacional - Diaristas Notificações"])
+router.include_router(diarist_fiscal_router, prefix="/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"])
 
 # ===================================================================
 # DOCUMENT KITS - KITS DOCUMENTAIS
@@ -311,13 +310,8 @@ router.include_router(equipment_maintenance_router, prefix="/equipment/maintenan
 router.include_router(comodato_router, prefix="/equipment/comodato", tags=["Equipment - Comodato"])
 
 # ===================================================================
-# FACILITIES - GESTÃO DE FACILITIES
+# FACILITIES - REMOVIDO (Transferido para PLUS)
 # ===================================================================
-router.include_router(area_router, prefix="/facilities/areas", tags=["Facilities - Áreas"])
-router.include_router(facilities_maintenance_router, prefix="/facilities/maintenance", tags=["Facilities - Manutenção"])
-router.include_router(inspection_router, prefix="/facilities/inspections", tags=["Facilities - Inspeções"])
-router.include_router(checklist_router, prefix="/facilities/checklists", tags=["Facilities - Checklists"])
-router.include_router(service_request_router, prefix="/facilities/service-requests", tags=["Facilities - Solicitações de Serviço"])
 
 # ===================================================================
 # GED - GESTÃO ELETRÔNICA DE DOCUMENTOS
@@ -335,12 +329,8 @@ router.include_router(signature_router, prefix="/ged/signatures", tags=["GED - A
 router.include_router(integration_router, prefix="/integrations", tags=["Integrations - API Gateway"])
 
 # ===================================================================
-# OCCURRENCES - GESTÃO DE OCORRÊNCIAS
+# OCCURRENCES - REMOVIDO (Transferido para PLUS)
 # ===================================================================
-router.include_router(occurrences_router, prefix="/occurrences", tags=["Occurrences - Ocorrências"])
-router.include_router(occurrence_category_router, prefix="/occurrences/categories", tags=["Occurrences - Categorias"])
-router.include_router(occurrence_comment_router, prefix="/occurrences/comments", tags=["Occurrences - Comentários"])
-router.include_router(occurrence_attachment_router, prefix="/occurrences/attachments", tags=["Occurrences - Anexos"])
 
 # ===================================================================
 # REPORTS - RELATÓRIOS GERENCIAIS
@@ -355,8 +345,6 @@ router.include_router(service_router, prefix="/services", tags=["Services - Gest
 # ===================================================================
 # AI - INTELIGÊNCIA ARTIFICIAL
 # ===================================================================
-# Chatbot IA
-router.include_router(ai_chatbot_router, prefix="/ai/chatbot", tags=["AI - Chatbot"])
 # Análise de Contratos
 router.include_router(ai_contract_router, prefix="/ai/contracts", tags=["AI - Análise de Contratos"])
 # Qualidade de Dados
@@ -383,6 +371,8 @@ router.include_router(ai_signature_router, prefix="/ai/signatures", tags=["AI - 
 router.include_router(ai_voice_router, prefix="/ai/voice", tags=["AI - Reconhecimento de Voz"])
 # Otimizador de Workflows
 router.include_router(ai_workflow_router, prefix="/ai/workflows", tags=["AI - Otimizador de Workflows"])
+# Bartolo - Assistente Inteligente
+router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
 
 # ===================================================================
 # MONITORING - EARLY WARNING SYSTEM (Fase 0)
@@ -405,14 +395,16 @@ router.include_router(fase5_router, tags=["Fase 5 - Grand Finale"])
 # ===================================================================
 # FASE 3 - SECURITY LGPD (Seguranca e Compliance LGPD)
 # ===================================================================
-from modules.security_lgpd import security_lgpd_router
-router.include_router(security_lgpd_router, prefix="/security", tags=["Security - LGPD Compliance"])
+# TODO: Corrigir PYTHONPATH para incluir /opt/conecta-pro
+# from modules.security_lgpd import security_lgpd_router
+# router.include_router(security_lgpd_router, prefix="/security", tags=["Security - LGPD Compliance"])
 
 # ===================================================================
 # FASE 3 - HEALTH OCCUPATIONAL (Saude Ocupacional NR-4/6/7/9)
 # ===================================================================
-from modules.health_occupational import health_occupational_router
-router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
+# TODO: Corrigir erro de tipo Session no endpoint PCMSO
+# from modules.health_occupational import health_occupational_router
+# router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
 
 # ===================================================================
 # FASE 3 - GOVERNMENT INTEGRATIONS (eSocial, SEFAZ, FGTS/INSS)
@@ -435,3 +427,36 @@ router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding
 router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
 router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
 router.include_router(certificate_router, prefix="/bidding", tags=["Bidding - Certidoes"])
+
+# ===================================================================
+# CAMPO - SERVIÇO DE CAMPO (Equipes Externas, Visitas, OS)
+# ===================================================================
+from modules.campo import (
+    campo_service_router,
+    access_log_router as campo_access_router,
+    occurrence_router as campo_occurrence_router,
+    equipment_status_router as campo_equipment_router,
+    # Novos routers CAMPO v3.0
+    ordem_servico_router,
+    visita_router,
+    checklist_router,
+    roteirizacao_router,
+    estoque_router,
+)
+# Routers legados
+router.include_router(campo_service_router, prefix="/campo", tags=["Campo - Serviços e OS"])
+router.include_router(campo_access_router, prefix="/campo/acessos", tags=["Campo - Logs de Acesso"])
+router.include_router(campo_occurrence_router, prefix="/campo/ocorrencias", tags=["Campo - Ocorrências"])
+router.include_router(campo_equipment_router, prefix="/campo/equipamentos", tags=["Campo - Equipamentos"])
+# Novos routers CAMPO v3.0
+router.include_router(ordem_servico_router, prefix="/campo/os", tags=["Campo - Ordens de Serviço"])
+router.include_router(visita_router, prefix="/campo/visitas", tags=["Campo - Visitas"])
+router.include_router(checklist_router, prefix="/campo/checklists", tags=["Campo - Checklists"])
+router.include_router(roteirizacao_router, prefix="/campo/rotas", tags=["Campo - Roteirização"])
+router.include_router(estoque_router, prefix="/campo/estoque", tags=["Campo - Estoque"])
+
+# ===================================================================
+# CENTRAL DE IA - INTELLIGENCE HUB (Nova Funcionalidade)
+# ===================================================================
+from modules.ai.intelligence_hub.controllers import intelligence_hub_router
+router.include_router(intelligence_hub_router, prefix="/ai", tags=["Intelligence Hub - Central IA"])

@@ -165,7 +165,7 @@ class ExecutiveKPI(Base):
     # Metadados
     tags = Column(JSONB, nullable=True)
     related_kpis = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Auditoria
     last_calculated_at = Column(DateTime, nullable=True)

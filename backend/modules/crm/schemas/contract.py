@@ -32,9 +32,9 @@ class ContractBase(BaseModel):
     name: str = Field(..., min_length=3, max_length=200)
     description: Optional[str] = None
     contract_type: ContractType = ContractType.RECURRING
-    monthly_value: Decimal = Field(..., ge=0, decimal_places=2)
-    total_value: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
-    setup_fee: Decimal = Field(default=Decimal("0"), ge=0, decimal_places=2)
+    monthly_value: Decimal = Field(..., ge=0)
+    total_value: Optional[Decimal] = Field(None, ge=0)
+    setup_fee: Decimal = Field(default=Decimal("0"), ge=0)
     start_date: date
     end_date: Optional[date] = None
     grace_period_days: int = Field(default=0, ge=0)
@@ -289,7 +289,7 @@ class ContractItemCreate(BaseModel):
     service_name: str = Field(..., min_length=3, max_length=200)
     description: Optional[str] = None
     quantity: int = Field(default=1, ge=1)
-    unit_price: Decimal = Field(..., ge=0, decimal_places=2)
+    unit_price: Decimal = Field(..., ge=0)
     notes: Optional[str] = None
 
 

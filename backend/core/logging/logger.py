@@ -120,7 +120,7 @@ def configure_logging() -> None:
     # Adiciona handler para arquivo em produção
     if settings.environment == "production":
         logger.add(
-            "/opt/erp-conecta-mais/logs/app.log",
+            "/app/logs/app.log",
             format=log_format,
             level="INFO",
             filter=sanitizing_filter,
@@ -131,7 +131,7 @@ def configure_logging() -> None:
 
         # Arquivo separado para erros
         logger.add(
-            "/opt/erp-conecta-mais/logs/error.log",
+            "/app/logs/error.log",
             format=log_format,
             level="ERROR",
             filter=sanitizing_filter,

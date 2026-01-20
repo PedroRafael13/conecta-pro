@@ -176,7 +176,7 @@ class SyncQueue(Base):
     reviewed_at = Column(DateTime, nullable=True)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     notes = Column(Text, nullable=True)
     tags = Column(JSONB, nullable=True)
 

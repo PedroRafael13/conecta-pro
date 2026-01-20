@@ -55,7 +55,7 @@ from modules.config.schemas import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/config", tags=["Config"])
+router = APIRouter(prefix="/config", tags=["Config"])
 
 
 # ==================== Tenant Endpoints ====================

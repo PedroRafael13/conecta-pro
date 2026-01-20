@@ -4,8 +4,9 @@ import logging
 from typing import Optional, List
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
 from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel, Field
 
 from core.database import get_db
 from core.auth.dependencies import get_current_user
@@ -19,6 +20,23 @@ from modules.ged.schemas.document_signature import (
     SignatureRefusalRequest,
     SignatureStats,
 )
+
+
+class BulkSignatureRequest(BaseModel):
+    """Request para criação de assinaturas em lote."""
+
+    document_id: str = Field(..., description="ID do documento")
+    signers: List[dict] = Field(..., description="Lista de signatários")
+
+
+class SignatureRequestBody(BaseModel):
+    """Request para solicitação de assinaturas."""
+
+    document_id: str = Field(..., description="ID do documento")
+    signers: List[dict] = Field(..., description="Lista de signatários")
+    sequential: bool = Field(False, description="Assinar em sequência")
+    deadline_days: int = Field(7, ge=1, le=90, description="Prazo em dias")
+    message: Optional[str] = Field(None, description="Mensagem para signatários")
 
 logger = logging.getLogger(__name__)
 
@@ -52,15 +70,14 @@ async def create_signature(
 
 @router.post("/bulk", response_model=List[DocumentSignatureResponse])
 async def create_bulk_signatures(
-    document_id: str = Query(...),
-    signers: List[dict] = Query(...),
+    data: BulkSignatureRequest,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> List[DocumentSignatureResponse]:
     """Cria múltiplas solicitações de assinatura."""
     service = DocumentSignatureService(db)
     try:
-        return await service.create_bulk(document_id, signers, current_user["id"])
+        return await service.create_bulk(data.document_id, data.signers, current_user["id"])
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
@@ -394,11 +411,7 @@ async def get_stats(
 
 @router.post("/request", response_model=List[DocumentSignatureResponse])
 async def request_signatures(
-    document_id: str = Query(...),
-    signers: List[dict] = Query(...),
-    sequential: bool = Query(False),
-    deadline_days: int = Query(7, ge=1, le=90),
-    message: Optional[str] = Query(None),
+    data: SignatureRequestBody,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> List[DocumentSignatureResponse]:
@@ -406,12 +419,12 @@ async def request_signatures(
     service = DocumentSignatureService(db)
     try:
         return await service.request_signatures(
-            document_id=document_id,
-            signers=signers,
+            document_id=data.document_id,
+            signers=data.signers,
             created_by=current_user["id"],
-            sequential=sequential,
-            deadline_days=deadline_days,
-            message=message,
+            sequential=data.sequential,
+            deadline_days=data.deadline_days,
+            message=data.message,
         )
     except ValueError as e:
         raise HTTPException(

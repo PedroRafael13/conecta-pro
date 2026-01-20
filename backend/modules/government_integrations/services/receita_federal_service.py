@@ -7,9 +7,10 @@ import sys
 from datetime import date
 from typing import Dict, Any
 
-sys.path.insert(0, "/opt/conecta-pro")
 
-from government_integrations import (
+
+# Imports relativos do módulo pai
+from modules.government_integrations.utils import (
     get_receita_service,
     validar_cpf,
     validar_cnpj,

@@ -7,9 +7,10 @@ import sys
 
 from fastapi import APIRouter, HTTPException, status
 
-sys.path.insert(0, "/opt/conecta-pro")
 
-from government_integrations import CalculoError
+
+# Imports relativos do módulo pai
+from modules.government_integrations.utils import CalculoError
 
 from ..schemas.common import StandardResponse
 from ..schemas.fgts_inss import CalculoFGTSRequest, CalculoINSSRequest

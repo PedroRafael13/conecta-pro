@@ -1,7 +1,7 @@
 """Sprint 21 - Portal do Funcionário: tabelas base.
 
 Revision ID: sprint21_001
-Revises: sprint20_003
+Revises: sprint20_payroll
 Create Date: 2025-01-12
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers
 revision: str = 'sprint21_001'
-down_revision: Union[str, None] = 'sprint20_003'
+down_revision: Union[str, None] = 'sprint20_payroll'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

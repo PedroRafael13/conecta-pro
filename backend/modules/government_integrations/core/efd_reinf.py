@@ -34,6 +34,7 @@ from enum import Enum
 import xml.etree.ElementTree as ET
 import hashlib
 
+from typing import Optional as OptCert
 from .certificate_manager import CertificateManager
 from .xml_signer import XMLSigner
 
@@ -152,22 +153,22 @@ class EFDReinfManager:
 
     def __init__(
         self,
-        certificate_manager: CertificateManager,
-        ambiente: TipoAmbiente = TipoAmbiente.PRODUCAO,
+        certificate_manager: Optional[CertificateManager] = None,
+        ambiente: TipoAmbiente = TipoAmbiente.PRODUCAO_RESTRITA,
         cnpj: str = "",
     ):
         """
         Inicializa o gerenciador.
 
         Args:
-            certificate_manager: Gerenciador de certificados
+            certificate_manager: Gerenciador de certificados (opcional)
             ambiente: Ambiente (produção ou produção restrita)
             cnpj: CNPJ do contribuinte
         """
         self.cert_manager = certificate_manager
         self.ambiente = ambiente
         self.cnpj = cnpj.replace(".", "").replace("/", "").replace("-", "")
-        self.xml_signer = XMLSigner(certificate_manager)
+        self.xml_signer = XMLSigner(certificate_manager) if certificate_manager else None
 
         self.url = (
             self.URL_PRODUCAO if ambiente == TipoAmbiente.PRODUCAO
@@ -239,7 +240,9 @@ class EFDReinfManager:
             ET.SubElement(contato, "email").text = info.email
 
         xml_str = ET.tostring(reinf, encoding="unicode")
-        return self.xml_signer.assinar_xml(xml_str, "evtInfoContri")
+        if self.xml_signer:
+            return self.xml_signer.sign(xml_str, "evtInfoContri")
+        return xml_str
 
     def gerar_r2010(
         self,
@@ -312,7 +315,9 @@ class EFDReinfManager:
                     ET.SubElement(info_tpserv, "vlrRetSub").text = str(ret.valor_retencao_adicional)
 
         xml_str = ET.tostring(reinf, encoding="unicode")
-        return self.xml_signer.assinar_xml(xml_str, "evtServTom")
+        if self.xml_signer:
+            return self.xml_signer.sign(xml_str, "evtServTom")
+        return xml_str
 
     def gerar_r4010(
         self,
@@ -366,7 +371,9 @@ class EFDReinfManager:
                 ET.SubElement(info_pgto, "vlrIR").text = str(pag.valor_irrf)
 
         xml_str = ET.tostring(reinf, encoding="unicode")
-        return self.xml_signer.assinar_xml(xml_str, "evt4010")
+        if self.xml_signer:
+            return self.xml_signer.sign(xml_str, "evt4010")
+        return xml_str
 
     def gerar_r4020(
         self,
@@ -425,7 +432,9 @@ class EFDReinfManager:
             ET.SubElement(retencoes, "vlrPP").text = str(pag.valor_pis)
 
         xml_str = ET.tostring(reinf, encoding="unicode")
-        return self.xml_signer.assinar_xml(xml_str, "evt4020")
+        if self.xml_signer:
+            return self.xml_signer.sign(xml_str, "evt4020")
+        return xml_str
 
     def gerar_r2099(
         self,
@@ -478,7 +487,9 @@ class EFDReinfManager:
         ET.SubElement(info_fech, "evtPgtos").text = "N"
 
         xml_str = ET.tostring(reinf, encoding="unicode")
-        return self.xml_signer.assinar_xml(xml_str, "evtFechaEvPer")
+        if self.xml_signer:
+            return self.xml_signer.sign(xml_str, "evtFechaEvPer")
+        return xml_str
 
     def enviar_lote(self, eventos: List[str]) -> Dict[str, Any]:
         """

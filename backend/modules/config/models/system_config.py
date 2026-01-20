@@ -97,7 +97,7 @@ class SystemConfig(Base):
 
     # Metadados
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Controle
     ativo = Column(Boolean, default=True, nullable=False)

@@ -21,9 +21,10 @@ from enum import Enum
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509.oid import NameOID
-from OpenSSL import crypto
+# OpenSSL.crypto está depreciado para PKCS12, usamos cryptography diretamente
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,11 @@ class CertificateInfo:
         """Verifica se expira em menos de 30 dias."""
         return self.days_until_expiry < 30
 
+    @property
+    def cpf_cnpj(self) -> Optional[str]:
+        """Alias para subject_cpf_cnpj (compatibilidade)."""
+        return self.subject_cpf_cnpj
+
     def to_dict(self) -> Dict[str, Any]:
         """Converte para dicionário."""
         return {
@@ -137,14 +143,10 @@ class CertificateManager:
         self._pfx_data = pfx_data
         self._password = password.encode() if password else None
 
-        # OpenSSL objects
-        self._pkcs12: Optional[crypto.PKCS12] = None
-        self._certificate: Optional[crypto.X509] = None
-        self._private_key: Optional[crypto.PKey] = None
-
-        # Cryptography objects (para operações modernas)
+        # Cryptography objects (API moderna)
         self._x509_cert: Optional[x509.Certificate] = None
         self._private_key_crypto: Optional[rsa.RSAPrivateKey] = None
+        self._additional_certs: list = []
 
         # Info cache
         self._info: Optional[CertificateInfo] = None
@@ -173,24 +175,20 @@ class CertificateManager:
             else:
                 raise ValueError("Certificado não especificado (pfx_path ou pfx_data)")
 
-            # Carregar PKCS12 com OpenSSL
-            self._pkcs12 = crypto.load_pkcs12(pfx_bytes, self._password)
-            self._certificate = self._pkcs12.get_certificate()
-            self._private_key = self._pkcs12.get_privatekey()
+            # Carregar PKCS12 com cryptography (API moderna)
+            # self._password já é bytes (convertido no __init__)
+            password_bytes = self._password
+            self._private_key_crypto, self._x509_cert, additional_certs = pkcs12.load_key_and_certificates(
+                pfx_bytes,
+                password_bytes,
+                default_backend()
+            )
 
-            if not self._certificate or not self._private_key:
+            if not self._x509_cert or not self._private_key_crypto:
                 raise ValueError("Certificado ou chave privada não encontrados no arquivo")
 
-            # Carregar com cryptography (para operações modernas)
-            cert_pem = crypto.dump_certificate(crypto.FILETYPE_PEM, self._certificate)
-            key_pem = crypto.dump_privatekey(crypto.FILETYPE_PEM, self._private_key)
-
-            self._x509_cert = x509.load_pem_x509_certificate(cert_pem, default_backend())
-            self._private_key_crypto = serialization.load_pem_private_key(
-                key_pem,
-                password=None,
-                backend=default_backend()
-            )
+            # Salvar certs adicionais (cadeia)
+            self._additional_certs = additional_certs or []
 
             # Extrair informações
             self._info = self._extract_info()
@@ -203,7 +201,7 @@ class CertificateManager:
 
             return True
 
-        except crypto.Error as e:
+        except ValueError as e:
             logger.error(f"Erro ao carregar certificado (senha incorreta?): {e}")
             raise ValueError(f"Erro ao carregar certificado: {e}")
         except Exception as e:
@@ -319,18 +317,18 @@ class CertificateManager:
         return self._info
 
     @property
-    def certificate(self) -> crypto.X509:
-        """Retorna certificado OpenSSL."""
+    def certificate(self) -> x509.Certificate:
+        """Retorna certificado (alias para x509_certificate)."""
         if not self._loaded:
             self.load()
-        return self._certificate
+        return self._x509_cert
 
     @property
-    def private_key(self) -> crypto.PKey:
-        """Retorna chave privada OpenSSL."""
+    def private_key(self) -> rsa.RSAPrivateKey:
+        """Retorna chave privada (alias para private_key_crypto)."""
         if not self._loaded:
             self.load()
-        return self._private_key
+        return self._private_key_crypto
 
     @property
     def x509_certificate(self) -> x509.Certificate:
@@ -350,18 +348,28 @@ class CertificateManager:
         """Retorna certificado em formato PEM."""
         if not self._loaded:
             self.load()
-        return crypto.dump_certificate(crypto.FILETYPE_PEM, self._certificate)
+        return self._x509_cert.public_bytes(serialization.Encoding.PEM)
 
     def get_certificate_der(self) -> bytes:
         """Retorna certificado em formato DER."""
         if not self._loaded:
             self.load()
-        return crypto.dump_certificate(crypto.FILETYPE_ASN1, self._certificate)
+        return self._x509_cert.public_bytes(serialization.Encoding.DER)
 
     def get_certificate_base64(self) -> str:
         """Retorna certificado em base64 (para XML)."""
         der = self.get_certificate_der()
         return base64.b64encode(der).decode('ascii')
+
+    def get_private_key_pem(self) -> bytes:
+        """Retorna chave privada em formato PEM."""
+        if not self._loaded:
+            self.load()
+        return self._private_key_crypto.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
 
     def sign_data(self, data: bytes, algorithm: str = "sha256") -> bytes:
         """
@@ -463,6 +471,38 @@ class CertificateManager:
 
         return True, "Certificado válido"
 
+    def get_certificate_for_request(self) -> Tuple[str, str]:
+        """
+        Retorna tupla (cert_path, key_path) para uso em requisições HTTP.
+
+        Cria arquivos temporários PEM para uso com httpx/requests.
+        Os arquivos são criados em /tmp e devem ser limpos pelo chamador.
+
+        Returns:
+            Tupla (cert_pem_path, key_pem_path)
+        """
+        import tempfile
+
+        if not self._loaded:
+            self.load()
+
+        # Criar diretório temporário para os arquivos
+        temp_dir = tempfile.mkdtemp(prefix="cert_")
+
+        # Salvar certificado PEM
+        cert_path = os.path.join(temp_dir, "cert.pem")
+        with open(cert_path, "wb") as f:
+            f.write(self.get_certificate_pem())
+
+        # Salvar chave privada PEM
+        key_path = os.path.join(temp_dir, "key.pem")
+        with open(key_path, "wb") as f:
+            f.write(self.get_private_key_pem())
+
+        logger.debug(f"Certificado temporário criado em {temp_dir}")
+
+        return (cert_path, key_path)
+
 
 class CertificateStore:
     """
@@ -509,9 +549,27 @@ class CertificateStore:
 
         return manager.info
 
-    def get_certificate(self, identifier: str) -> Optional[CertificateManager]:
+    def add(self, identifier: str, manager: "CertificateManager") -> str:
+        """
+        Adiciona CertificateManager ja carregado ao store.
+
+        Args:
+            identifier: Identificador unico
+            manager: CertificateManager ja carregado
+
+        Returns:
+            Identificador do certificado
+        """
+        self._certificates[identifier] = manager
+        return identifier
+
+    def get_certificate(self, identifier: str) -> Optional["CertificateManager"]:
         """Retorna certificado pelo identificador."""
         return self._certificates.get(identifier)
+
+    def get(self, identifier: str) -> Optional["CertificateManager"]:
+        """Alias para get_certificate."""
+        return self.get_certificate(identifier)
 
     def remove_certificate(self, identifier: str) -> bool:
         """Remove certificado do store."""
@@ -525,12 +583,20 @@ class CertificateStore:
             return True
         return False
 
+    def remove(self, identifier: str) -> bool:
+        """Alias para remove_certificate."""
+        return self.remove_certificate(identifier)
+
     def list_certificates(self) -> Dict[str, CertificateInfo]:
         """Lista todos os certificados."""
         return {
             identifier: manager.info
             for identifier, manager in self._certificates.items()
         }
+
+    def list_all(self):
+        """Alias para listar certificados como items."""
+        return self._certificates.items()
 
     def _save_certificate(self, identifier: str, pfx_data: bytes, password: str):
         """Salva certificado em disco (criptografado)."""

@@ -229,7 +229,7 @@ class CostAllocation(Base):
     # Observações
     notes = Column(Text, nullable=True)
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
@@ -253,7 +253,6 @@ class CostAllocation(Base):
     )
     activity: Optional["CostActivity"] = relationship(
         "CostActivity",
-        back_populates="allocations",
         foreign_keys=[activity_id],
     )
     cost_object: Optional["CostObject"] = relationship(

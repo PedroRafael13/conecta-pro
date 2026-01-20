@@ -27,7 +27,7 @@ from modules.clients.models.client import ClientType, ClientStatus, ClientSegmen
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v1/clients", tags=["Clients"])
+router = APIRouter(prefix="/clients", tags=["Clients"])
 
 
 def get_service(db: Session = Depends(get_db)) -> ClientService:

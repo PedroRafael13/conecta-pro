@@ -16,6 +16,7 @@ from modules.financial.models.bank_reconciliation import (
     ReconciliationPeriodType,
 )
 from modules.financial.models.bank_reconciliation import (
+    ReconciliationStatus,
     ReconciliationStatus as BankReconciliationStatus,
 )
 from modules.financial.models.bank_transaction import BankTransaction
@@ -334,6 +335,7 @@ __all__ = [
     # BankReconciliation
     "BankReconciliation",
     "ReconciliationPeriodType",
+    "ReconciliationStatus",
     "BankReconciliationStatus",
     # CashFlowEntry
     "CashFlowEntry",

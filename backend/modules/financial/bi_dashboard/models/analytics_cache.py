@@ -104,7 +104,7 @@ class AnalyticsCache(Base):
 
     # Metadados
     tags = Column(JSONB, default=list)
-    metadata = Column(JSONB, default=dict)
+    extra_metadata = Column(JSONB, default=dict)
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

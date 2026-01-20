@@ -158,7 +158,7 @@ class DocumentSignature(Base):
     created_by: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
 
     # Metadados
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
     # Relacionamentos
     document: Mapped["Document"] = relationship("Document", back_populates="signatures")

@@ -7,9 +7,10 @@ import sys
 from datetime import datetime
 from typing import Dict, Any, List
 
-sys.path.insert(0, "/opt/conecta-pro")
 
-from government_integrations import (
+
+# Imports relativos do módulo pai
+from modules.government_integrations.utils import (
     get_esocial_transmitter,
     ESocialEnvironment,
 )
@@ -87,7 +88,7 @@ class ESocialService:
             ValueError: Se dados inválidos.
         """
         esocial = get_esocial_transmitter()
-        ambiente_enum = ESocialEnvironment(ambiente.upper())
+        ambiente_enum = ESocialEnvironment[ambiente.upper()]
 
         resultado = esocial.transmit_event(
             event_type=tipo_evento,

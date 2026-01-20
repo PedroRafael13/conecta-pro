@@ -187,7 +187,7 @@ class ScheduledReport(Base):
 
     # Metadados
     tags = Column(JSONB, default=list)
-    metadata = Column(JSONB, default=dict)
+    extra_metadata = Column(JSONB, default=dict)
 
     # Auditoria
     created_by = Column(PGUUID(as_uuid=True), ForeignKey("users.id"))

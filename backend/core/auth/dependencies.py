@@ -1,5 +1,5 @@
 """
-Dependências de autenticação para FastAPI.
+Dependências de autenticação para FastAPI - VERSÃO OTIMIZADA.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .jwt import TokenError, verify_access_token
+from core.database import get_db
 
 if TYPE_CHECKING:
     from core.models import User
@@ -24,15 +25,6 @@ async def get_current_user_id(
 ) -> str:
     """
     Extrai e valida o user_id do token JWT.
-
-    Args:
-        credentials: Credenciais do header Authorization
-
-    Returns:
-        ID do usuário autenticado
-
-    Raises:
-        HTTPException: Se o token for inválido
     """
     try:
         payload = verify_access_token(credentials.credentials)
@@ -61,66 +53,74 @@ CurrentUserId = Annotated[str, Depends(get_current_user_id)]
 
 async def get_current_user(
     user_id: CurrentUserId,
-    _db: AsyncSession = Depends(lambda: None),  # Placeholder, usa get_db interno
-) -> User:
+    db: AsyncSession = Depends(get_db),  # Usar dependência correta
+) -> "User":
     """
     Busca o usuario atual no banco de dados.
-
-    Args:
-        user_id: ID do usuario autenticado
-        db: Sessao do banco de dados
-
-    Returns:
-        Objeto User do banco
-
-    Raises:
-        HTTPException: Se usuario nao encontrado
     """
-    # Import local para evitar circular import
-    from core.database import get_db
+    # Import local APENAS quando necessário
     from core.models import User
 
-    # Obter sessao real do banco
-    async for session in get_db():
-        result = await session.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one_or_none()
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
 
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Usuario nao encontrado",
-            )
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario nao encontrado",
+        )
 
-        return user
-
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Erro ao obter sessao do banco",
-    )
+    return user
 
 
 async def get_current_active_user(
     user_id: CurrentUserId,
-) -> User:
+    db: AsyncSession = Depends(get_db),  # Usar dependência correta
+) -> "User":
     """
     Busca o usuario atual e verifica se esta ativo.
-
-    Args:
-        user_id: ID do usuario autenticado
-
-    Returns:
-        Objeto User ativo
-
-    Raises:
-        HTTPException: Se usuario inativo ou nao encontrado
     """
-    # Import local para evitar circular import
-    from core.database import get_db
+    # Import local APENAS quando necessário
     from core.models import User
 
-    # Obter sessao real do banco
-    async for session in get_db():
-        result = await session.execute(select(User).where(User.id == user_id))
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuario nao encontrado",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario inativo",
+        )
+
+    return user
+
+
+# Type aliases otimizados
+CurrentUser = Annotated["User", Depends(get_current_user)]
+CurrentActiveUser = Annotated["User", Depends(get_current_active_user)]
+
+
+def require_permission(permission: str):
+    """
+    Dependency factory que verifica se o usuario tem uma permissao especifica.
+
+    Uso:
+        @router.get("/admin", dependencies=[Depends(require_permission("admin"))])
+        async def admin_endpoint(): ...
+    """
+    async def permission_checker(
+        user_id: CurrentUserId,
+        db: AsyncSession = Depends(get_db),
+    ) -> "User":
+        from core.models import User
+
+        result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
 
         if not user:
@@ -135,194 +135,112 @@ async def get_current_active_user(
                 detail="Usuario inativo",
             )
 
-        return user
+        # Admin tem todas as permissoes
+        if user.role == "admin":
+            return user
 
-    raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail="Erro ao obter sessao do banco",
-    )
-
-
-# Type aliases - usar string literal para evitar import circular
-CurrentUser = Annotated["User", Depends(get_current_user)]
-CurrentActiveUser = Annotated["User", Depends(get_current_active_user)]
-
-
-def require_permissions(*permissions: str):
-    """
-    Cria uma dependência que verifica se o usuário tem as permissões requeridas.
-
-    Args:
-        *permissions: Lista de permissões requeridas (qualquer uma delas)
-
-    Returns:
-        Dependência do FastAPI para verificação de permissões
-
-    Example:
-        @router.get("/admin", dependencies=[Depends(require_permissions("admin", "manager"))])
-        async def admin_endpoint():
-            ...
-    """
-
-    async def permission_checker(
-        credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    ) -> None:
-        """Verifica se o usuário tem as permissões necessárias."""
-        # Import local para evitar circular import
-        from core.database import get_db
-        from core.models import User
-        from core.models.user import UserRole
-
-        try:
-            payload = verify_access_token(credentials.credentials)
-            user_id = payload.get("sub")
-
-            if not user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token inválido: subject não encontrado",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-
-            # Obter usuário do banco
-            async for session in get_db():
-                result = await session.execute(select(User).where(User.id == user_id))
-                user = result.scalar_one_or_none()
-
-                if not user:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Usuário não encontrado",
-                    )
-
-                if not user.is_active:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Usuário inativo",
-                    )
-
-                # Super admin tem todas as permissões
-                if user.role == UserRole.SUPER_ADMIN.value:
-                    return
-
-                # Verificar permissões por role
-                role_permissions = {
-                    UserRole.ADMIN.value: ["admin", "manager", "supervisor", "operator", "viewer"],
-                    UserRole.MANAGER.value: ["manager", "supervisor", "operator", "viewer"],
-                    UserRole.SUPERVISOR.value: ["supervisor", "operator", "viewer"],
-                    UserRole.OPERATOR.value: ["operator", "viewer"],
-                    UserRole.CLIENT.value: ["client", "viewer"],
-                    UserRole.VIEWER.value: ["viewer"],
-                }
-
-                user_role_permissions = role_permissions.get(user.role, [])
-                user_explicit_permissions = user.permissions or []
-
-                # Verificar se tem alguma das permissões requeridas
-                all_user_permissions = set(user_role_permissions) | set(user_explicit_permissions)
-
-                if not any(perm in all_user_permissions for perm in permissions):
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail=f"Permissão negada. Requer: {', '.join(permissions)}",
-                    )
-
-                return
-
+        # Verificar permissao especifica
+        user_permissions = getattr(user, 'permissions', []) or []
+        if permission not in user_permissions and "*" not in user_permissions:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erro ao obter sessão do banco",
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Permissao '{permission}' requerida",
             )
 
-        except TokenError as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=str(e),
-                headers={"WWW-Authenticate": "Bearer"},
-            ) from e
+        return user
 
     return permission_checker
 
 
+# Alias para compatibilidade (plural)
+require_permissions = require_permission
+
+
 def require_roles(*roles: str):
     """
-    Cria uma dependência que verifica se o usuário tem um dos roles requeridos.
+    Dependency factory que verifica se o usuario tem uma das roles especificadas.
 
-    Args:
-        *roles: Lista de roles aceitos
-
-    Returns:
-        Dependência do FastAPI para verificação de roles
-
-    Example:
-        @router.delete("/user/{id}", dependencies=[Depends(require_roles("admin", "super_admin"))])
-        async def delete_user(id: str):
-            ...
+    Uso:
+        @router.get("/admin", dependencies=[Depends(require_roles("admin", "manager"))])
+        async def admin_endpoint(): ...
     """
-
     async def role_checker(
-        credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
-    ) -> None:
-        """Verifica se o usuário tem um dos roles necessários."""
-        # Import local para evitar circular import
-        from core.database import get_db
+        user_id: CurrentUserId,
+        db: AsyncSession = Depends(get_db),
+    ) -> "User":
         from core.models import User
-        from core.models.user import ROLE_HIERARCHY, UserRole
 
-        try:
-            payload = verify_access_token(credentials.credentials)
-            user_id = payload.get("sub")
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
 
-            if not user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Token inválido: subject não encontrado",
-                    headers={"WWW-Authenticate": "Bearer"},
-                )
-
-            # Obter usuário do banco
-            async for session in get_db():
-                result = await session.execute(select(User).where(User.id == user_id))
-                user = result.scalar_one_or_none()
-
-                if not user:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Usuário não encontrado",
-                    )
-
-                if not user.is_active:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Usuário inativo",
-                    )
-
-                # Verificar role hierárquico
-                user_level = ROLE_HIERARCHY.get(UserRole(user.role), 0)
-
-                # Encontrar o menor nível requerido entre os roles aceitos
-                min_required_level = min(
-                    ROLE_HIERARCHY.get(UserRole(r), 100) for r in roles if r in [e.value for e in UserRole]
-                )
-
-                if user_level < min_required_level:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail=f"Role insuficiente. Requer: {', '.join(roles)}",
-                    )
-
-                return
-
+        if not user:
             raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erro ao obter sessão do banco",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario nao encontrado",
             )
 
-        except TokenError as e:
+        if not user.is_active:
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=str(e),
-                headers={"WWW-Authenticate": "Bearer"},
-            ) from e
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuario inativo",
+            )
+
+        # Verificar se o usuario tem uma das roles
+        if user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Role requerida: {', '.join(roles)}",
+            )
+
+        return user
 
     return role_checker
+
+
+# Alias para compatibilidade
+require_role = require_roles
+
+
+def require_any_permission(*permissions: str):
+    """
+    Dependency factory que verifica se o usuario tem pelo menos uma das permissoes.
+    """
+    async def permission_checker(
+        user_id: CurrentUserId,
+        db: AsyncSession = Depends(get_db),
+    ) -> "User":
+        from core.models import User
+
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario nao encontrado",
+            )
+
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Usuario inativo",
+            )
+
+        # Admin tem todas as permissoes
+        if user.role == "admin":
+            return user
+
+        # Verificar se tem alguma das permissoes
+        user_permissions = getattr(user, 'permissions', []) or []
+        if "*" in user_permissions:
+            return user
+
+        if not any(p in user_permissions for p in permissions):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Uma das permissoes requeridas: {', '.join(permissions)}",
+            )
+
+        return user
+
+    return permission_checker

@@ -45,7 +45,7 @@ def get_service(session: AsyncSession = Depends(get_session)) -> PayableService:
 
 
 @router.post(
-    "/",
+    "",
     response_model=PayableAccountResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Criar conta a pagar",
@@ -70,7 +70,7 @@ async def create_account(
 
 
 @router.get(
-    "/",
+    "",
     response_model=List[PayableAccountListResponse],
     summary="Listar contas a pagar",
 )
@@ -117,7 +117,7 @@ async def list_accounts(  # pylint: disable=too-many-locals
     summary="Estatísticas de contas a pagar",
 )
 async def get_stats(
-    condominio_id: UUID,
+    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> PayableAccountStats:
@@ -131,7 +131,7 @@ async def get_stats(
     summary="Contas vencidas",
 )
 async def get_overdue(
-    condominio_id: UUID,
+    condominio_id: Optional[UUID] = Query(None, description="ID do condomínio (opcional)"),
     limit: int = Query(100, ge=1, le=500),
     service: PayableService = Depends(get_service),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument

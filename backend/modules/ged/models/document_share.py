@@ -124,7 +124,7 @@ class DocumentShare(Base):
     access_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Metadados
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    extra_metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

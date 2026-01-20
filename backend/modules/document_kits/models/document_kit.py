@@ -175,7 +175,7 @@ class DocumentKit(Base):
 
     # Metadados
     tags = Column(JSONB, default=list)
-    metadata = Column(JSONB, default=dict)
+    extra_metadata = Column(JSONB, default=dict)
 
     # Auditoria
     created_by = Column(PGUUID(as_uuid=True), ForeignKey("users.id"))
@@ -295,7 +295,7 @@ class DocumentKitItem(Base):
 
     # Metadados
     tags = Column(JSONB, default=list)
-    metadata = Column(JSONB, default=dict)
+    extra_metadata = Column(JSONB, default=dict)
 
     # Auditoria
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -383,7 +383,7 @@ class DocumentKitAssignment(Base):
     notificacoes_count = Column(Integer, default=0)
 
     # Metadados
-    metadata = Column(JSONB, default=dict)
+    extra_metadata = Column(JSONB, default=dict)
 
     # Auditoria
     created_by = Column(PGUUID(as_uuid=True), ForeignKey("users.id"))

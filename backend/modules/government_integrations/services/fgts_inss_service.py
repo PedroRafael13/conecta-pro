@@ -7,9 +7,10 @@ import sys
 from decimal import Decimal
 from typing import Dict, Any, List
 
-sys.path.insert(0, "/opt/conecta-pro")
 
-from government_integrations import get_fgts_inss_manager, CalculoError
+
+# Imports relativos do módulo pai
+from modules.government_integrations.utils import CalculoError
 
 logger = logging.getLogger(__name__)
 
@@ -53,15 +54,7 @@ class FGTSINSSService:
             CalculoError: Se erro no cálculo.
         """
         try:
-            # Chama o manager existente
-            fgts_inss_manager = get_fgts_inss_manager()
-            fgts_inss_manager.calcular_fgts(
-                salario_base=salario_base,
-                mes_referencia=mes_referencia,
-                tipo_recolhimento=tipo_recolhimento,
-                rescisao=rescisao,
-            )
-
+            # Calcula FGTS localmente
             valor_fgts = salario_base * cls.ALIQUOTA_FGTS
             multa_rescisoria = Decimal("0")
 

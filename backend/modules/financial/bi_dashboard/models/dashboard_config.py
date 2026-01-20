@@ -126,7 +126,7 @@ class FinancialDashboard(Base):
     # Metadados
     version = Column(Integer, default=1, nullable=False)
     tags = Column(JSONB, default=list)
-    metadata = Column(JSONB, default=dict)
+    extra_metadata = Column(JSONB, default=dict)
 
     # Estatisticas
     view_count = Column(Integer, default=0, nullable=False)

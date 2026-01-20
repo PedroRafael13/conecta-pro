@@ -1,8 +1,37 @@
 # Dependencies
 node_modules
+.pnp
+.pnp.js
 
-# Build output (keep dist for production)
-# dist
+# Testing
+coverage
+
+# Next.js
+.next
+out
+
+# Production
+build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+.env
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
 
 # IDE
 .idea
@@ -13,28 +42,3 @@ node_modules
 # Git
 .git
 .gitignore
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Testing
-coverage
-
-# Environment
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Misc
-*.md
-!README.md
-docs
-.eslintcache

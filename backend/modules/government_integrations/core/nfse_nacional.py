@@ -1,28 +1,64 @@
 """
-NFS-e Padrão Nacional - Preparação para Migração.
+Module: NFSeNacional
+Description: Integração com o Sistema Nacional NFS-e (Padrão Nacional)
+             Obrigatório para todos municípios a partir de 01/01/2026
+             Lei Complementar 214/2025
+Author: Conecta PRO
+Date: 2026-01-17
 
-O Padrão Nacional de NFS-e está substituindo gradualmente os padrões municipais
-(como ABRASF usado em Manaus). A migração está prevista para 2026.
+Portal: https://www.nfse.gov.br
+Documentação: https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica
+Swagger: https://www.nfse.gov.br/swagger/contribuintesissqn/
 
-Portal: https://www.gov.br/nfse
-Documentação: https://www.gov.br/nfse/pt-br/acesso-a-informacao/manuais
-
-Características do Padrão Nacional:
-- Ambiente único de dados (AUD)
-- Webservice REST/JSON (não mais SOAP/XML)
-- Autenticação via certificado digital e Gov.br
+Características:
+- API REST (não mais SOAP)
+- Autenticação mTLS com certificado ICP-Brasil
+- XML assinado, compactado (GZip) e codificado (Base64)
+- Respostas em JSON
 - Número único nacional da NFS-e
-- Integração com eSocial e DCTFWeb
 """
 
+import base64
+import gzip
+import json
+import hashlib
+import ssl
+import re
 import logging
-from datetime import datetime
+import tempfile
+from datetime import datetime, date, timedelta, timezone
 from decimal import Decimal
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass, field
 from enum import Enum
+from uuid import UUID, uuid4
+import xml.etree.ElementTree as ET
+from xml.dom import minidom
+
+try:
+    import httpx
+    HTTPX_AVAILABLE = True
+except ImportError:
+    HTTPX_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+
+# Endpoints do Sistema Nacional NFS-e
+NFSE_NACIONAL_ENDPOINTS = {
+    "producao": {
+        "base_url": "https://www.nfse.gov.br",
+        "api_url": "https://www.nfse.gov.br/api",
+        "portal": "https://www.nfse.gov.br/EmissorNacional",
+        "swagger": "https://www.nfse.gov.br/swagger/contribuintesissqn/",
+    },
+    "homologacao": {
+        "base_url": "https://www.producaorestrita.nfse.gov.br",
+        "api_url": "https://www.producaorestrita.nfse.gov.br/api",
+        "portal": "https://www.producaorestrita.nfse.gov.br/EmissorNacional",
+        "swagger": "https://www.producaorestrita.nfse.gov.br/swagger/",
+    }
+}
 
 
 class AmbienteNacional(str, Enum):
@@ -367,3 +403,310 @@ MAPEAMENTO_SERVICOS_VIGILANCIA = {
         "descricao": "Serviços de transporte de valores",
     },
 }
+
+
+@dataclass
+class NFSeNacionalResult:
+    """Resultado de operação com NFS-e Nacional."""
+    sucesso: bool
+    mensagem: str
+    codigo: Optional[str] = None
+    chave_acesso: Optional[str] = None
+    numero_nfse: Optional[int] = None
+    codigo_verificacao: Optional[str] = None
+    link_nfse: Optional[str] = None
+    xml_nfse: Optional[str] = None
+    pdf_danfse: Optional[bytes] = None
+    dados_retorno: Optional[Dict[str, Any]] = None
+    tempo_resposta: float = 0.0
+
+
+class NFSeNacionalClient:
+    """
+    Cliente para integração com o Sistema Nacional NFS-e.
+
+    Utiliza API REST com autenticação mTLS (certificado digital).
+
+    Endpoints:
+    - Produção: https://www.nfse.gov.br/api
+    - Homologação: https://www.producaorestrita.nfse.gov.br/api
+
+    Rotas principais:
+    - POST /dps - Enviar DPS (gera NFS-e)
+    - GET /dps/{id} - Consultar DPS
+    - GET /nfse/{chaveAcesso} - Consultar NFS-e
+    - GET /danfse/{chaveAcesso} - Baixar DANFSE (PDF)
+    - POST /nfse/{chaveAcesso}/eventos - Registrar eventos (cancelamento, etc)
+    """
+
+    def __init__(
+        self,
+        ambiente: str = "2",
+        cert_path: Optional[str] = None,
+        cert_password: Optional[str] = None,
+    ):
+        """
+        Inicializa o cliente NFS-e Nacional.
+
+        Args:
+            ambiente: 1=Produção, 2=Homologação
+            cert_path: Caminho do certificado PFX/P12
+            cert_password: Senha do certificado
+        """
+        if not HTTPX_AVAILABLE:
+            raise ImportError("httpx é necessário para NFSeNacionalClient. Instale com: pip install httpx")
+
+        self.ambiente = ambiente
+        env_key = "producao" if ambiente == "1" else "homologacao"
+        self.endpoints = NFSE_NACIONAL_ENDPOINTS[env_key]
+        self.api_url = self.endpoints["api_url"]
+
+        self.cert_path = cert_path
+        self.cert_password = cert_password
+
+        self._client: Optional[httpx.AsyncClient] = None
+        self._cert_pem_path: Optional[str] = None
+        self._key_pem_path: Optional[str] = None
+
+        logger.info(f"NFSeNacionalClient inicializado: Ambiente={'Produção' if ambiente == '1' else 'Homologação'}")
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Obtém cliente HTTP com certificado mTLS."""
+        if self._client is None:
+            ssl_context = ssl.create_default_context()
+
+            if self.cert_path:
+                from .certificate_manager import CertificateManager
+                cert_manager = CertificateManager(
+                    pfx_path=self.cert_path,
+                    password=self.cert_password
+                )
+                cert_manager.load()
+
+                # Exportar para arquivos temporários PEM
+                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as cert_file:
+                    cert_file.write(cert_manager.get_certificate_pem())
+                    self._cert_pem_path = cert_file.name
+
+                with tempfile.NamedTemporaryFile(mode='wb', suffix='.pem', delete=False) as key_file:
+                    key_file.write(cert_manager.get_private_key_pem())
+                    self._key_pem_path = key_file.name
+
+                ssl_context.load_cert_chain(self._cert_pem_path, self._key_pem_path)
+
+            self._client = httpx.AsyncClient(
+                base_url=self.api_url,
+                verify=ssl_context,
+                timeout=60.0,
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                }
+            )
+
+        return self._client
+
+    async def close(self):
+        """Fecha o cliente HTTP e limpa arquivos temporários."""
+        if self._client:
+            await self._client.aclose()
+            self._client = None
+
+        # Limpar arquivos temporários
+        import os
+        if self._cert_pem_path and os.path.exists(self._cert_pem_path):
+            os.unlink(self._cert_pem_path)
+        if self._key_pem_path and os.path.exists(self._key_pem_path):
+            os.unlink(self._key_pem_path)
+
+    def _compress_and_encode_xml(self, xml: str) -> str:
+        """Compacta (GZip) e codifica (Base64) o XML."""
+        xml_bytes = xml.encode('utf-8')
+        compressed = gzip.compress(xml_bytes)
+        return base64.b64encode(compressed).decode('ascii')
+
+    def _decode_and_decompress_xml(self, encoded: str) -> str:
+        """Decodifica (Base64) e descompacta (GZip) o XML."""
+        compressed = base64.b64decode(encoded)
+        xml_bytes = gzip.decompress(compressed)
+        return xml_bytes.decode('utf-8')
+
+    async def enviar_dps(self, dps: DPSNacional) -> NFSeNacionalResult:
+        """
+        Envia um DPS para gerar NFS-e.
+
+        Args:
+            dps: Declaração de Prestação de Serviços
+
+        Returns:
+            Resultado da operação
+        """
+        import time
+        start_time = time.time()
+
+        try:
+            client = await self._get_client()
+
+            # Montar payload JSON (formato da API Nacional)
+            dps.calcular_valores()
+
+            payload = {
+                "infDPS": {
+                    "tpAmb": int(self.ambiente),
+                    "dhEmi": datetime.now(timezone.utc).isoformat(),
+                    "verAplic": "CONECTA_PRO_1.0",
+                    "dCompet": dps.data_competencia.strftime("%Y-%m"),
+                    "prest": dps.prestador.to_dict() if hasattr(dps.prestador, 'to_dict') else {
+                        "CNPJ": re.sub(r'[^\d]', '', dps.prestador.cnpj),
+                        "IM": dps.prestador.inscricao_municipal,
+                    },
+                    "serv": {
+                        "cServ": dps.servico.codigo_tributacao_nacional,
+                        "xDescServ": dps.servico.descricao,
+                    },
+                    "valores": {
+                        "vServPrest": float(dps.servico.valor_servico),
+                        "vISS": float(dps.valor_iss or 0),
+                    }
+                }
+            }
+
+            if dps.tomador:
+                payload["infDPS"]["toma"] = {
+                    "CPF" if len(re.sub(r'[^\d]', '', dps.tomador.cpf_cnpj)) == 11 else "CNPJ": re.sub(r'[^\d]', '', dps.tomador.cpf_cnpj),
+                    "xNome": dps.tomador.razao_social,
+                }
+
+            response = await client.post("/dps", json=payload)
+            tempo_resposta = time.time() - start_time
+
+            if response.status_code in [200, 201]:
+                data = response.json()
+                return NFSeNacionalResult(
+                    sucesso=True,
+                    mensagem="DPS enviado com sucesso",
+                    chave_acesso=data.get("chaveAcesso"),
+                    numero_nfse=data.get("numero"),
+                    codigo_verificacao=data.get("codigoVerificacao"),
+                    link_nfse=data.get("link"),
+                    dados_retorno=data,
+                    tempo_resposta=tempo_resposta
+                )
+            else:
+                data = response.json() if "application/json" in response.headers.get("content-type", "") else {}
+                return NFSeNacionalResult(
+                    sucesso=False,
+                    mensagem=data.get("message", f"Erro HTTP {response.status_code}"),
+                    codigo=str(response.status_code),
+                    dados_retorno=data,
+                    tempo_resposta=tempo_resposta
+                )
+
+        except Exception as e:
+            logger.error(f"Erro ao enviar DPS: {e}")
+            return NFSeNacionalResult(
+                sucesso=False,
+                mensagem=str(e),
+                tempo_resposta=time.time() - start_time
+            )
+
+    async def consultar_nfse(self, chave_acesso: str) -> NFSeNacionalResult:
+        """Consulta uma NFS-e pela chave de acesso."""
+        import time
+        start_time = time.time()
+
+        try:
+            client = await self._get_client()
+            response = await client.get(f"/nfse/{chave_acesso}")
+            tempo_resposta = time.time() - start_time
+
+            if response.status_code == 200:
+                data = response.json()
+                xml_nfse = None
+                if "xmlNFSe" in data:
+                    xml_nfse = self._decode_and_decompress_xml(data["xmlNFSe"])
+
+                return NFSeNacionalResult(
+                    sucesso=True,
+                    mensagem="NFS-e encontrada",
+                    chave_acesso=chave_acesso,
+                    numero_nfse=data.get("numero"),
+                    xml_nfse=xml_nfse,
+                    dados_retorno=data,
+                    tempo_resposta=tempo_resposta
+                )
+            else:
+                return NFSeNacionalResult(
+                    sucesso=False,
+                    mensagem=f"Erro HTTP {response.status_code}",
+                    codigo=str(response.status_code),
+                    tempo_resposta=tempo_resposta
+                )
+
+        except Exception as e:
+            logger.error(f"Erro ao consultar NFS-e: {e}")
+            return NFSeNacionalResult(
+                sucesso=False,
+                mensagem=str(e),
+                tempo_resposta=time.time() - start_time
+            )
+
+    async def baixar_danfse(self, chave_acesso: str) -> NFSeNacionalResult:
+        """Baixa o DANFSE (PDF) de uma NFS-e."""
+        import time
+        start_time = time.time()
+
+        try:
+            client = await self._get_client()
+            response = await client.get(f"/danfse/{chave_acesso}")
+            tempo_resposta = time.time() - start_time
+
+            if response.status_code == 200:
+                return NFSeNacionalResult(
+                    sucesso=True,
+                    mensagem="DANFSE baixado",
+                    chave_acesso=chave_acesso,
+                    pdf_danfse=response.content,
+                    tempo_resposta=tempo_resposta
+                )
+            else:
+                return NFSeNacionalResult(
+                    sucesso=False,
+                    mensagem=f"Erro HTTP {response.status_code}",
+                    tempo_resposta=tempo_resposta
+                )
+
+        except Exception as e:
+            return NFSeNacionalResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
+
+    async def cancelar_nfse(self, chave_acesso: str, codigo: str, motivo: str) -> NFSeNacionalResult:
+        """Registra evento de cancelamento de NFS-e."""
+        import time
+        start_time = time.time()
+
+        try:
+            client = await self._get_client()
+            payload = {"tipoEvento": "cancelamento", "codigoCancelamento": codigo, "motivo": motivo}
+            response = await client.post(f"/nfse/{chave_acesso}/eventos", json=payload)
+            tempo_resposta = time.time() - start_time
+
+            if response.status_code in [200, 201]:
+                return NFSeNacionalResult(
+                    sucesso=True,
+                    mensagem="NFS-e cancelada",
+                    chave_acesso=chave_acesso,
+                    dados_retorno=response.json(),
+                    tempo_resposta=tempo_resposta
+                )
+            else:
+                return NFSeNacionalResult(
+                    sucesso=False,
+                    mensagem=f"Erro HTTP {response.status_code}",
+                    tempo_resposta=tempo_resposta
+                )
+
+        except Exception as e:
+            return NFSeNacionalResult(sucesso=False, mensagem=str(e), tempo_resposta=time.time() - start_time)
+
+
+logger.info("Módulo NFSeNacional carregado")

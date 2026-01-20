@@ -149,7 +149,7 @@ class ComplianceCheck(Base):
     next_check_at = Column(DateTime, nullable=True)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     tags = Column(JSONB, nullable=True)
     notes = Column(Text, nullable=True)
 

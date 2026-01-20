@@ -149,7 +149,7 @@ class APIEndpoint(Base):
     circuit_breaker_enabled = Column(Boolean, nullable=False, default=False)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Auditoria
     ativo = Column(Boolean, nullable=False, default=True)

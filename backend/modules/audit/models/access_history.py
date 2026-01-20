@@ -161,7 +161,7 @@ class AccessHistory(Base):
     review_notes = Column(Text, nullable=True)
 
     # Metadados
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
     tags = Column(JSONB, nullable=True)
 
     # Timestamp

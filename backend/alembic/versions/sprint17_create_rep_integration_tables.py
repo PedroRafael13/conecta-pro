@@ -17,7 +17,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'sprint17_rep_integration'
-down_revision = 'sprint16_create_time_tracking_tables'
+down_revision = 'sprint16_time_tracking'
 branch_labels = None
 depends_on = None
 

@@ -32,7 +32,9 @@ from fastapi import (
     status,
 )
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy import func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from core.auth.dependencies import get_current_user
@@ -45,6 +47,7 @@ from modules.integrations.connectors.solides.connector import SolidesConnector
 from modules.integrations.connectors.solides.models import (
     ConflictStatus,
     ConflictStrategy,
+    SolidesEmployee,
     SolidesCredential,
     SolidesEntityMapping,
     SolidesIntegrationConfig,
@@ -283,7 +286,100 @@ class IntegrationStatusResponse(BaseModel):
     pending_items: int = 0
 
 
+class SolidesEmployeeResponse(BaseModel):
+    """Schema de resposta para colaborador do Sólides."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    solides_id: str
+    nome: str
+    email: Optional[str] = None
+    cpf: Optional[str] = None
+    matricula: Optional[str] = None
+    cargo_nome: Optional[str] = None
+    departamento_nome: Optional[str] = None
+    situacao: Optional[str] = None
+    telefone: Optional[str] = None
+    celular: Optional[str] = None
+    data_admissao: Optional[datetime] = None
+    foto_url: Optional[str] = None
+
+
+class SolidesEmployeeListResponse(BaseModel):
+    """Schema para listagem paginada de colaboradores do Sólides."""
+
+    items: List[SolidesEmployeeResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
+
 # ==================== ENDPOINT DE WEBHOOK (PÚBLICO) ====================
+
+
+@router.get(
+    "/employees",
+    response_model=SolidesEmployeeListResponse,
+    summary="Listar colaboradores sincronizados",
+    description="Lista colaboradores sincronizados do Sólides com filtros e paginação.",
+)
+async def list_solides_employees(
+    db: AsyncSession = Depends(get_db),
+    current_user: Any = Depends(get_current_user),
+    page: int = Query(1, ge=1, description="Página atual"),
+    page_size: int = Query(20, ge=1, le=200, description="Itens por página"),
+    search: Optional[str] = Query(None, description="Buscar por nome, email ou matricula"),
+    situacao: Optional[str] = Query(None, description="Filtrar por situacao"),
+    include_inactive: bool = Query(False, description="Incluir registros inativos"),
+) -> SolidesEmployeeListResponse:
+    """
+    Lista colaboradores sincronizados do Sólides.
+    """
+    filters = []
+    condominio_id = getattr(current_user, "condominio_id", None)
+    if condominio_id:
+        filters.append(SolidesEmployee.condominio_id == condominio_id)
+
+    if not include_inactive:
+        filters.append(SolidesEmployee.is_active.is_(True))
+
+    if situacao:
+        filters.append(SolidesEmployee.situacao == situacao)
+
+    if search:
+        like_term = f"%{search}%"
+        filters.append(
+            or_(
+                SolidesEmployee.nome.ilike(like_term),
+                SolidesEmployee.email.ilike(like_term),
+                SolidesEmployee.matricula.ilike(like_term),
+            )
+        )
+
+    total_result = await db.execute(
+        select(func.count()).select_from(SolidesEmployee).where(*filters)
+    )
+    total = total_result.scalar_one() or 0
+    total_pages = (total + page_size - 1) // page_size
+
+    items_result = await db.execute(
+        select(SolidesEmployee)
+        .where(*filters)
+        .order_by(SolidesEmployee.nome.asc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    items = items_result.scalars().all()
+
+    return SolidesEmployeeListResponse(
+        items=[SolidesEmployeeResponse.model_validate(item) for item in items],
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+    )
 
 
 @router.post(

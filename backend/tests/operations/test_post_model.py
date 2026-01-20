@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pytest
 
-from modules.operations.models.post import PostStatus, PostType, ShiftType
+from modules.operacional.models.post import PostStatus, PostType, ShiftType
 
 
 class TestPostEnums:

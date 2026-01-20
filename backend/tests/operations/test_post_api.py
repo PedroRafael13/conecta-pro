@@ -127,8 +127,8 @@ class TestPostAPIValidation:
     def test_post_name_required(self):
         """Verifica que name é obrigatório."""
         from pydantic import ValidationError
-        from modules.operations.schemas.post import PostCreate
-        from modules.operations.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
+        from modules.operacional.models.post import PostType, ShiftType
 
         with pytest.raises(ValidationError):
             PostCreate(
@@ -139,7 +139,7 @@ class TestPostAPIValidation:
     def test_post_type_validation(self):
         """Verifica validação de tipo de posto."""
         from pydantic import ValidationError
-        from modules.operations.schemas.post import PostCreate
+        from modules.operacional.schemas.post import PostCreate
 
         # Tipo inválido deve falhar
         with pytest.raises(ValidationError):
@@ -152,8 +152,8 @@ class TestPostAPIValidation:
     def test_state_max_length(self):
         """Verifica limite de caracteres do estado."""
         from pydantic import ValidationError
-        from modules.operations.schemas.post import PostCreate
-        from modules.operations.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
+        from modules.operacional.models.post import PostType, ShiftType
 
         with pytest.raises(ValidationError):
             PostCreate(
@@ -166,8 +166,8 @@ class TestPostAPIValidation:
     def test_headcount_positive(self):
         """Verifica que headcount deve ser positivo."""
         from pydantic import ValidationError
-        from modules.operations.schemas.post import PostCreate
-        from modules.operations.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
+        from modules.operacional.models.post import PostType, ShiftType
 
         with pytest.raises(ValidationError):
             PostCreate(
@@ -179,8 +179,8 @@ class TestPostAPIValidation:
 
     def test_valid_post_create(self):
         """Testa criação de post válido."""
-        from modules.operations.schemas.post import PostCreate
-        from modules.operations.models.post import PostType, ShiftType
+        from modules.operacional.schemas.post import PostCreate
+        from modules.operacional.models.post import PostType, ShiftType
 
         post = PostCreate(
             name="Posto Teste",
@@ -203,7 +203,7 @@ class TestPostAPIResponse:
     def test_post_response_serialization(self, sample_post_data):
         """Testa serialização da resposta."""
         from datetime import datetime
-        from modules.operations.schemas.post import PostResponse
+        from modules.operacional.schemas.post import PostResponse
 
         # Adicionar campos calculados
         data = {
@@ -223,7 +223,7 @@ class TestPostAPIResponse:
 
     def test_post_list_response(self, sample_post_data):
         """Testa resposta de listagem."""
-        from modules.operations.schemas.post import PostListResponse
+        from modules.operacional.schemas.post import PostListResponse
 
         list_response = PostListResponse(
             items=[],
@@ -238,7 +238,7 @@ class TestPostAPIResponse:
 
     def test_post_stats_response(self):
         """Testa resposta de estatísticas."""
-        from modules.operations.schemas.post import PostStats
+        from modules.operacional.schemas.post import PostStats
 
         stats = PostStats(
             total=10,

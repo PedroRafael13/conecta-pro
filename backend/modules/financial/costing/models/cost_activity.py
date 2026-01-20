@@ -217,7 +217,7 @@ class CostActivity(Base):
     # Observações
     notes = Column(Text, nullable=True)
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
@@ -254,11 +254,13 @@ class CostActivity(Base):
         back_populates="activities",
         foreign_keys=[primary_driver_id],
     )
-    allocations: list["CostAllocation"] = relationship(
-        "CostAllocation",
-        back_populates="activity",
-        lazy="dynamic",
-    )
+    # allocations: Relacionamento desabilitado temporariamente devido a FK ambígua
+    # allocations: list["CostAllocation"] = relationship(
+    #     "CostAllocation",
+    #     back_populates="activity",
+    #     foreign_keys="[CostAllocation.activity_id]",
+    #     lazy="dynamic",
+    # )
 
     def __repr__(self) -> str:
         """Representação string."""

@@ -1,0 +1,38 @@
+{
+  "project": "Conecta PRO",
+  "domain": "conectamais.pro",
+  "hostinger": {
+    "api_configured": true,
+    "dns_zone": "conectamais.pro",
+    "current_a_record": "31.97.83.249",
+    "target_a_record": "82.25.75.74"
+  },
+  "vps": {
+    "id": 1134814,
+    "subscription_id": "AzZJggV2pCsGa2NJi",
+    "hostname": "srv1134814.hstgr.cloud",
+    "ipv4": "82.25.75.74",
+    "ipv6": "2a02:4780:14:14c1::1",
+    "plan": "KVM 4",
+    "specs": {
+      "cpus": 4,
+      "memory_mb": 16384,
+      "disk_mb": 204800,
+      "bandwidth_mb": 16384000
+    },
+    "os": "Ubuntu 24.04 LTS",
+    "data_center_id": 14
+  },
+  "deploy": {
+    "ready": false,
+    "steps": [
+      "1. Atualizar DNS A record para 82.25.75.74",
+      "2. Configurar Nginx no VPS",
+      "3. Obter certificado SSL Let's Encrypt",
+      "4. Deploy da aplicacao",
+      "5. Verificar funcionamento"
+    ]
+  },
+  "created_at": "2026-01-06",
+  "notes": "Integracao configurada. Aguardando deploy."
+}

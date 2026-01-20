@@ -163,7 +163,7 @@ class NotificationTemplate(Base):
     # Metadados
     category = Column(String(100), nullable=True)
     tags = Column(JSONB, nullable=True)
-    metadata = Column(JSONB, nullable=True)
+    extra_metadata = Column(JSONB, nullable=True)
 
     # Controle
     ativo = Column(Boolean, default=True, nullable=False)

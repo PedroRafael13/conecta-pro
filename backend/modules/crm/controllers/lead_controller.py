@@ -26,7 +26,7 @@ from modules.crm.services.lead_service import lead_service
 router = APIRouter(prefix="/leads", tags=["CRM - Leads"])
 
 
-@router.post("/", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=LeadResponse, status_code=status.HTTP_201_CREATED)
 async def create_lead(
     data: LeadCreate,
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
@@ -53,7 +53,7 @@ async def create_lead(
     return LeadResponse.model_validate(lead)
 
 
-@router.get("/", response_model=LeadListResponse)
+@router.get("", response_model=LeadListResponse)
 async def list_leads(  # pylint: disable=too-many-locals
     current_user: CurrentActiveUser,  # pylint: disable=unused-argument
     db: AsyncSession = Depends(get_db),

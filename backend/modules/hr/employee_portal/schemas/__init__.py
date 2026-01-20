@@ -52,6 +52,10 @@ from modules.hr.employee_portal.schemas.preferences import (
     DashboardConfigSchema,
     PrivacyConfigSchema,
     SecurityConfigSchema,
+    PrivacySettingsUpdate,
+    DashboardSettingsUpdate,
+    DeviceInfo,
+    TwoFactorSetupResponse,
 )
 
 __all__ = [
@@ -103,4 +107,8 @@ __all__ = [
     "DashboardConfigSchema",
     "PrivacyConfigSchema",
     "SecurityConfigSchema",
+    "PrivacySettingsUpdate",
+    "DashboardSettingsUpdate",
+    "DeviceInfo",
+    "TwoFactorSetupResponse",
 ]
