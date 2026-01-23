@@ -8,11 +8,13 @@ from datetime import date, datetime
 from typing import List, Optional
 from uuid import uuid4
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
 from modules.operacional.models.allocation import Allocation, AllocationStatus
+from modules.operacional.models.post import Post
+from modules.operacional.models.employee import Employee
 from modules.operacional.schemas.allocation import (
     AllocationCreate,
     AllocationFilter,
@@ -25,6 +27,29 @@ class AllocationRepository:
 
     def __init__(self, db: AsyncSession) -> None:
         self.db = db
+
+    async def _update_post_headcount(self, post_id: str) -> None:
+        """
+        Atualiza o current_headcount de um posto baseado nas alocações ativas.
+
+        Args:
+            post_id: ID do posto
+        """
+        count_query = select(func.count(Allocation.id)).where(
+            Allocation.post_id == post_id,
+            Allocation.is_active.is_(True),
+            Allocation.status == AllocationStatus.ACTIVE.value,
+        )
+        result = await self.db.execute(count_query)
+        count = result.scalar_one()
+
+        update_stmt = (
+            update(Post)
+            .where(Post.id == post_id)
+            .values(current_headcount=count)
+        )
+        await self.db.execute(update_stmt)
+        logger.debug(f"Post {post_id} current_headcount atualizado para {count}")
 
     async def create(self, data: AllocationCreate, created_by: Optional[str] = None) -> Allocation:
         """
@@ -58,6 +83,10 @@ class AllocationRepository:
         self.db.add(allocation)
         await self.db.commit()
         await self.db.refresh(allocation)
+
+        # Atualizar contador do posto
+        await self._update_post_headcount(allocation.post_id)
+        await self.db.commit()
 
         logger.info(f"Allocation criada: {allocation.id}")
         return allocation
@@ -128,7 +157,8 @@ class AllocationRepository:
         filters: Optional[AllocationFilter] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> tuple[list[Allocation], int]:
+        include_names: bool = True,
+    ) -> tuple[list[dict], int]:
         """
         Lista alocações com filtros e paginação.
 
@@ -136,9 +166,10 @@ class AllocationRepository:
             filters: Filtros de busca
             page: Página atual
             page_size: Itens por página
+            include_names: Se deve incluir nomes de funcionário e posto
 
         Returns:
-            Tupla (alocações, total)
+            Tupla (alocações com dados enriquecidos, total)
         """
         query = select(Allocation).where(Allocation.is_active.is_(True))
 
@@ -160,7 +191,90 @@ class AllocationRepository:
         result = await self.db.execute(query)
         allocations = list(result.scalars().all())
 
-        return allocations, total
+        if not include_names:
+            return allocations, total
+
+        # Enriquecer com dados de funcionário e posto
+        enriched = await self._enrich_allocations(allocations)
+        return enriched, total
+
+    async def _enrich_allocations(self, allocations: List[Allocation]) -> List[dict]:
+        """
+        Enriquece alocações com dados de funcionário e posto.
+
+        Args:
+            allocations: Lista de alocações
+
+        Returns:
+            Lista de dicts com dados enriquecidos
+        """
+        if not allocations:
+            return []
+
+        # Coletar IDs únicos
+        employee_ids = list(set(str(a.employee_id) for a in allocations if a.employee_id))
+        post_ids = list(set(str(a.post_id) for a in allocations if a.post_id))
+
+        # Buscar funcionários
+        employees_map = {}
+        if employee_ids:
+            emp_result = await self.db.execute(
+                select(Employee).where(Employee.id.in_(employee_ids))
+            )
+            for emp in emp_result.scalars().all():
+                employees_map[str(emp.id)] = {
+                    "name": emp.nome,
+                    "matricula": emp.matricula,
+                    "cargo": emp.cargo,
+                }
+
+        # Buscar postos
+        posts_map = {}
+        if post_ids:
+            post_result = await self.db.execute(
+                select(Post).where(Post.id.in_(post_ids))
+            )
+            for post in post_result.scalars().all():
+                posts_map[str(post.id)] = {
+                    "name": post.name,
+                    "code": post.code,
+                }
+
+        # Enriquecer dados
+        enriched = []
+        for alloc in allocations:
+            alloc_dict = {
+                "id": str(alloc.id),
+                "post_id": str(alloc.post_id),
+                "employee_id": str(alloc.employee_id),
+                "status": alloc.status,
+                "start_date": alloc.start_date,
+                "end_date": alloc.end_date,
+                "is_primary": alloc.is_primary,
+                "is_temporary": alloc.is_temporary,
+                "hourly_rate": alloc.hourly_rate,
+                "monthly_salary": alloc.monthly_salary,
+                "additional_benefits": alloc.additional_benefits,
+                "role": alloc.role,
+                "qualifications": alloc.qualifications,
+                "notes": alloc.notes,
+                "termination_reason": alloc.termination_reason,
+                "is_active": alloc.is_active,
+                "created_at": alloc.created_at,
+                "updated_at": alloc.updated_at,
+                "is_current": alloc.is_current,
+                "days_allocated": alloc.days_allocated,
+                "total_monthly_cost": alloc.total_monthly_cost,
+                # Dados enriquecidos
+                "employee_name": employees_map.get(str(alloc.employee_id), {}).get("name"),
+                "employee_matricula": employees_map.get(str(alloc.employee_id), {}).get("matricula"),
+                "employee_cargo": employees_map.get(str(alloc.employee_id), {}).get("cargo"),
+                "post_name": posts_map.get(str(alloc.post_id), {}).get("name"),
+                "post_code": posts_map.get(str(alloc.post_id), {}).get("code"),
+            }
+            enriched.append(alloc_dict)
+
+        return enriched
 
     def _apply_filters(self, query, filters: AllocationFilter):
         """Aplica filtros à query."""
@@ -211,6 +325,7 @@ class AllocationRepository:
         if not allocation:
             return None
 
+        old_post_id = allocation.post_id
         update_data = data.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
@@ -223,6 +338,12 @@ class AllocationRepository:
 
         await self.db.commit()
         await self.db.refresh(allocation)
+
+        # Atualizar contador do(s) posto(s) afetado(s)
+        await self._update_post_headcount(allocation.post_id)
+        if old_post_id != allocation.post_id:
+            await self._update_post_headcount(old_post_id)
+        await self.db.commit()
 
         logger.info(f"Allocation atualizada: {allocation.id}")
         return allocation
@@ -260,6 +381,10 @@ class AllocationRepository:
         await self.db.commit()
         await self.db.refresh(allocation)
 
+        # Atualizar contador do posto
+        await self._update_post_headcount(allocation.post_id)
+        await self.db.commit()
+
         logger.info(f"Allocation encerrada: {allocation.id}")
         return allocation
 
@@ -277,9 +402,14 @@ class AllocationRepository:
         if not allocation:
             return False
 
+        post_id = allocation.post_id
         allocation.is_active = False
         allocation.updated_at = datetime.utcnow()
 
+        await self.db.commit()
+
+        # Atualizar contador do posto
+        await self._update_post_headcount(post_id)
         await self.db.commit()
 
         logger.info(f"Allocation deletada (soft): {allocation.id}")

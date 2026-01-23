@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PageGuard } from '@/components/ui/permission-guard';
 import { useAuth } from '@/hooks/useAuth';
+import { Permission } from '@/hooks/usePermission';
 import { useEmployees } from '@/hooks/useEmployees';
 import { usePosts } from '@/hooks/usePosts';
 import { reportsService } from '@/lib/services/reports';
@@ -39,7 +41,7 @@ const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 export default function RelatoriosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
-  const { posts } = usePosts({ initialPageSize: 200 });
+  const { posts } = usePosts({ initialPageSize: 100 });
   const { employees } = useEmployees({ initialPageSize: 200 });
 
   const now = useMemo(() => new Date(), []);

@@ -22,7 +22,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PermissionGuard } from '@/components/ui/permission-guard';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermission, Permission } from '@/hooks/usePermission';
 import { useScales, useScaleOperations } from '@/hooks/useScales';
 import { usePosts } from '@/hooks/usePosts';
 import { ConfirmModal } from '@/components/ui/modal';
@@ -33,6 +35,7 @@ import { SCALE_TYPE_LABELS, SCALE_STATUS_LABELS } from '@/types/operacional';
 export default function EscalasPage() {
   const router = useRouter();
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const { canManageScales, canApproveScales, hasPermission } = usePermission();
   const {
     scales,
     total,

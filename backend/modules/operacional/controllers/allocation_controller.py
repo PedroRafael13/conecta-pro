@@ -12,6 +12,7 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.allocation import AllocationStatus
+from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.allocation_repository import AllocationRepository
 from modules.operacional.schemas.allocation import (
     AllocationCreate,
@@ -25,10 +26,15 @@ from modules.operacional.schemas.allocation import (
 router = APIRouter(prefix="/allocations", tags=["Operations - Allocations"])
 
 
-@router.post("/", response_model=AllocationResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=AllocationResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_CREATE)],
+)
 async def create_allocation(
     data: AllocationCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -46,9 +52,13 @@ async def create_allocation(
     return AllocationResponse.model_validate(allocation)
 
 
-@router.get("/", response_model=AllocationListResponse)
+@router.get(
+    "/",
+    response_model=AllocationListResponse,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
+)
 async def list_allocations(  # pylint: disable=too-many-locals
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -89,9 +99,13 @@ async def list_allocations(  # pylint: disable=too-many-locals
     )
 
 
-@router.get("/current", response_model=list[AllocationResponse])
+@router.get(
+    "/current",
+    response_model=list[AllocationResponse],
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
+)
 async def get_current_allocations(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> list[AllocationResponse]:
@@ -111,11 +125,14 @@ async def get_current_allocations(
     return [AllocationResponse.model_validate(a) for a in allocations]
 
 
-@router.get("/available-employees")
+@router.get(
+    "/available-employees",
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
+)
 async def get_available_employees(
     post_id: str,
     target_date: date,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     """
@@ -127,10 +144,14 @@ async def get_available_employees(
     return employees
 
 
-@router.get("/post/{post_id}", response_model=list[AllocationResponse])
+@router.get(
+    "/post/{post_id}",
+    response_model=list[AllocationResponse],
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
+)
 async def get_allocations_by_post(
     post_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     include_inactive: bool = Query(False, description="Incluir inativos"),
 ) -> list[AllocationResponse]:
@@ -149,10 +170,14 @@ async def get_allocations_by_post(
     return [AllocationResponse.model_validate(a) for a in allocations]
 
 
-@router.get("/employee/{employee_id}", response_model=list[AllocationResponse])
+@router.get(
+    "/employee/{employee_id}",
+    response_model=list[AllocationResponse],
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
+)
 async def get_allocations_by_employee(
     employee_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     include_inactive: bool = Query(False, description="Incluir inativos"),
 ) -> list[AllocationResponse]:
@@ -171,10 +196,14 @@ async def get_allocations_by_employee(
     return [AllocationResponse.model_validate(a) for a in allocations]
 
 
-@router.get("/{allocation_id}", response_model=AllocationResponse)
+@router.get(
+    "/{allocation_id}",
+    response_model=AllocationResponse,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_VIEW)],
+)
 async def get_allocation(
     allocation_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -192,11 +221,15 @@ async def get_allocation(
     return AllocationResponse.model_validate(allocation)
 
 
-@router.patch("/{allocation_id}", response_model=AllocationResponse)
+@router.patch(
+    "/{allocation_id}",
+    response_model=AllocationResponse,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
+)
 async def update_allocation(
     allocation_id: str,
     data: AllocationUpdate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -215,11 +248,15 @@ async def update_allocation(
     return AllocationResponse.model_validate(allocation)
 
 
-@router.post("/{allocation_id}/terminate", response_model=AllocationResponse)
+@router.post(
+    "/{allocation_id}/terminate",
+    response_model=AllocationResponse,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
+)
 async def terminate_allocation(
     allocation_id: str,
     data: AllocationTerminate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> AllocationResponse:
     """
@@ -243,10 +280,14 @@ async def terminate_allocation(
     return AllocationResponse.model_validate(allocation)
 
 
-@router.delete("/{allocation_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{allocation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
+)
 async def delete_allocation(
     allocation_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

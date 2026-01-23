@@ -85,6 +85,15 @@ class AllocationResponse(BaseModel):
     days_allocated: int
     total_monthly_cost: float
 
+    # Dados denormalizados do funcionário
+    employee_name: Optional[str] = None
+    employee_matricula: Optional[str] = None
+    employee_cargo: Optional[str] = None
+
+    # Dados denormalizados do posto
+    post_name: Optional[str] = None
+    post_code: Optional[str] = None
+
 
 class AllocationListResponse(BaseModel):
     """Schema para listagem paginada de Allocations."""

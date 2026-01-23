@@ -1,59 +1,25 @@
-"""Schemas do modulo de Ocorrencias."""
+"""Schemas para Occurrences."""
 
-from .occurrence_schemas import (
-    # Base
+from .occurrence import (
+    AttachmentSchema,
     OccurrenceBase,
-    # Create
     OccurrenceCreate,
     OccurrenceUpdate,
-    AttachmentCreate,
-    CommentCreate,
-    CategoryConfigCreate,
-    CategoryConfigUpdate,
-    # Response
+    OccurrenceResolve,
     OccurrenceResponse,
     OccurrenceListResponse,
-    OccurrenceSummaryResponse,
-    AttachmentResponse,
-    CommentResponse,
-    CategoryConfigResponse,
-    # Filter
     OccurrenceFilter,
-    # Actions
-    EscalateRequest,
-    ResolveRequest,
-    ReopenRequest,
-    # Dashboard
-    DashboardStats,
-    SLABreachItem,
-    PendingOccurrenceItem,
+    OccurrenceStats,
 )
 
 __all__ = [
-    # Base
+    "AttachmentSchema",
     "OccurrenceBase",
-    # Create
     "OccurrenceCreate",
     "OccurrenceUpdate",
-    "AttachmentCreate",
-    "CommentCreate",
-    "CategoryConfigCreate",
-    "CategoryConfigUpdate",
-    # Response
+    "OccurrenceResolve",
     "OccurrenceResponse",
     "OccurrenceListResponse",
-    "OccurrenceSummaryResponse",
-    "AttachmentResponse",
-    "CommentResponse",
-    "CategoryConfigResponse",
-    # Filter
     "OccurrenceFilter",
-    # Actions
-    "EscalateRequest",
-    "ResolveRequest",
-    "ReopenRequest",
-    # Dashboard
-    "DashboardStats",
-    "SLABreachItem",
-    "PendingOccurrenceItem",
+    "OccurrenceStats",
 ]

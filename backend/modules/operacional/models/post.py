@@ -15,6 +15,7 @@ from core.models.base import Base
 
 if TYPE_CHECKING:
     from .allocation import Allocation
+    from modules.operacional.occurrences.models import Occurrence
     from .scale import Scale
 
 
@@ -29,6 +30,10 @@ class PostType(str, Enum):
     LIDER = "lider"
     RONDANTE = "rondante"
     MONITORAMENTO = "monitoramento"
+    MANUTENCAO = "manutencao"
+    SERVICOS_GERAIS = "servicos_gerais"
+    JARDINAGEM = "jardinagem"
+    PORTARIA = "portaria"
 
 
 class PostStatus(str, Enum):
@@ -189,6 +194,11 @@ class Post(Base):
     )
     scales: Mapped[List["Scale"]] = relationship(
         "Scale",
+        back_populates="post",
+        lazy="noload",
+    )
+    occurrences: Mapped[List["Occurrence"]] = relationship(
+        "Occurrence",
         back_populates="post",
         lazy="noload",
     )

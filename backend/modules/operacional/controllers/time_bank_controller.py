@@ -12,6 +12,7 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.time_bank import TimeBankEntryType, TimeBankStatus
+from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.time_bank_repository import TimeBankRepository
 from modules.operacional.schemas.time_bank import (
     TimeBankApprove,
@@ -30,10 +31,15 @@ from modules.operacional.services.time_bank_service import time_bank_service
 router = APIRouter(prefix="/time-bank", tags=["Operations - Time Bank"])
 
 
-@router.post("/", response_model=TimeBankResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=TimeBankResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE)],
+)
 async def create_entry(
     data: TimeBankCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -56,9 +62,13 @@ async def create_entry(
     return TimeBankResponse.model_validate(entry)
 
 
-@router.get("/", response_model=TimeBankListResponse)
+@router.get(
+    "/",
+    response_model=TimeBankListResponse,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
+)
 async def list_entries(  # pylint: disable=too-many-locals
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -101,9 +111,13 @@ async def list_entries(  # pylint: disable=too-many-locals
     )
 
 
-@router.get("/pending", response_model=list[TimeBankResponse])
+@router.get(
+    "/pending",
+    response_model=list[TimeBankResponse],
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_APPROVE)],
+)
 async def get_pending_entries(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     employee_id: Optional[str] = None,
 ) -> list[TimeBankResponse]:
@@ -122,9 +136,13 @@ async def get_pending_entries(
     return [TimeBankResponse.model_validate(e) for e in entries]
 
 
-@router.get("/expiring", response_model=list[TimeBankResponse])
+@router.get(
+    "/expiring",
+    response_model=list[TimeBankResponse],
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL)],
+)
 async def get_expiring_entries(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     days: int = Query(30, ge=1, le=90, description="Dias até expiração"),
 ) -> list[TimeBankResponse]:
@@ -149,10 +167,14 @@ async def get_expiring_entries(
     return [TimeBankResponse.model_validate(e) for e in expiring]
 
 
-@router.get("/summary/{employee_id}", response_model=TimeBankSummary)
+@router.get(
+    "/summary/{employee_id}",
+    response_model=TimeBankSummary,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
+)
 async def get_employee_summary(
     employee_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankSummary:
     """
@@ -170,9 +192,13 @@ async def get_employee_summary(
     return summary
 
 
-@router.get("/stats", response_model=TimeBankStats)
+@router.get(
+    "/stats",
+    response_model=TimeBankStats,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL)],
+)
 async def get_stats(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankStats:
     """
@@ -182,9 +208,12 @@ async def get_stats(
     return await repo.get_stats()
 
 
-@router.get("/alerts")
+@router.get(
+    "/alerts",
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL)],
+)
 async def get_expiration_alerts(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     """
@@ -213,10 +242,14 @@ async def get_expiration_alerts(
     return alerts
 
 
-@router.get("/{entry_id}", response_model=TimeBankResponse)
+@router.get(
+    "/{entry_id}",
+    response_model=TimeBankResponse,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
+)
 async def get_entry(
     entry_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -234,11 +267,15 @@ async def get_entry(
     return TimeBankResponse.model_validate(entry)
 
 
-@router.patch("/{entry_id}", response_model=TimeBankResponse)
+@router.patch(
+    "/{entry_id}",
+    response_model=TimeBankResponse,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE)],
+)
 async def update_entry(
     entry_id: str,
     data: TimeBankUpdate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -259,11 +296,15 @@ async def update_entry(
     return TimeBankResponse.model_validate(entry)
 
 
-@router.post("/{entry_id}/approve", response_model=TimeBankResponse)
+@router.post(
+    "/{entry_id}/approve",
+    response_model=TimeBankResponse,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_APPROVE)],
+)
 async def approve_entry(
     entry_id: str,
     data: TimeBankApprove,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -282,7 +323,11 @@ async def approve_entry(
     return TimeBankResponse.model_validate(entry)
 
 
-@router.post("/{entry_id}/reject", response_model=TimeBankResponse)
+@router.post(
+    "/{entry_id}/reject",
+    response_model=TimeBankResponse,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_APPROVE)],
+)
 async def reject_entry(
     entry_id: str,
     data: TimeBankReject,
@@ -305,11 +350,15 @@ async def reject_entry(
     return TimeBankResponse.model_validate(entry)
 
 
-@router.post("/compensate/{employee_id}", response_model=TimeBankResponse)
+@router.post(
+    "/compensate/{employee_id}",
+    response_model=TimeBankResponse,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE)],
+)
 async def compensate_hours(
     employee_id: str,
     data: TimeBankCompensate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankResponse:
     """
@@ -356,12 +405,15 @@ async def compensate_hours(
     return TimeBankResponse.model_validate(entry)
 
 
-@router.get("/monthly-summary/{employee_id}")
+@router.get(
+    "/monthly-summary/{employee_id}",
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
+)
 async def get_monthly_summary(
     employee_id: str,
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020, le=2100),
-    current_user: CurrentActiveUser = None,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """
@@ -389,10 +441,13 @@ async def get_monthly_summary(
     return summary
 
 
-@router.get("/recommendations/{employee_id}")
+@router.get(
+    "/recommendations/{employee_id}",
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL, Permission.TIMEBANK_VIEW_OWN)],
+)
 async def get_recommendations(
     employee_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> list[str]:
     """
@@ -417,10 +472,14 @@ async def get_recommendations(
     return recommendations
 
 
-@router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{entry_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_operacional_permission(Permission.TIMEBANK_CREATE)],
+)
 async def delete_entry(
     entry_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

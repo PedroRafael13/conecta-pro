@@ -12,6 +12,7 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.shift import ShiftStatus
+from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.shift_repository import ShiftRepository
 from modules.operacional.schemas.shift import (
     ShiftCheckIn,
@@ -26,10 +27,15 @@ from modules.operacional.schemas.shift import (
 router = APIRouter(prefix="/shifts", tags=["Operations - Shifts"])
 
 
-@router.post("/", response_model=ShiftResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=ShiftResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CREATE)],
+)
 async def create_shift(
     data: ShiftCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -42,9 +48,13 @@ async def create_shift(
     return ShiftResponse.model_validate(shift)
 
 
-@router.get("/", response_model=ShiftListResponse)
+@router.get(
+    "/",
+    response_model=ShiftListResponse,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_VIEW_ALL, Permission.SHIFTS_VIEW_OWN)],
+)
 async def list_shifts(  # pylint: disable=too-many-locals
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(50, ge=1, le=200, description="Itens por página"),
@@ -91,9 +101,12 @@ async def list_shifts(  # pylint: disable=too-many-locals
     )
 
 
-@router.get("/today")
+@router.get(
+    "/today",
+    dependencies=[require_operacional_permission(Permission.SHIFTS_VIEW_ALL, Permission.SHIFTS_VIEW_OWN)],
+)
 async def get_today_shifts(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> ShiftListResponse:
@@ -120,10 +133,14 @@ async def get_today_shifts(
     )
 
 
-@router.get("/scale/{scale_id}", response_model=list[ShiftResponse])
+@router.get(
+    "/scale/{scale_id}",
+    response_model=list[ShiftResponse],
+    dependencies=[require_operacional_permission(Permission.SHIFTS_VIEW_ALL, Permission.SHIFTS_VIEW_OWN)],
+)
 async def get_shifts_by_scale(
     scale_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> list[ShiftResponse]:
     """
@@ -135,10 +152,14 @@ async def get_shifts_by_scale(
     return [ShiftResponse.model_validate(shift) for shift in shifts]
 
 
-@router.get("/{shift_id}", response_model=ShiftResponse)
+@router.get(
+    "/{shift_id}",
+    response_model=ShiftResponse,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_VIEW_ALL, Permission.SHIFTS_VIEW_OWN)],
+)
 async def get_shift(
     shift_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -156,11 +177,15 @@ async def get_shift(
     return ShiftResponse.model_validate(shift)
 
 
-@router.patch("/{shift_id}", response_model=ShiftResponse)
+@router.patch(
+    "/{shift_id}",
+    response_model=ShiftResponse,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CREATE)],
+)
 async def update_shift(
     shift_id: str,
     data: ShiftUpdate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -179,11 +204,15 @@ async def update_shift(
     return ShiftResponse.model_validate(shift)
 
 
-@router.post("/{shift_id}/check-in", response_model=ShiftResponse)
+@router.post(
+    "/{shift_id}/check-in",
+    response_model=ShiftResponse,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CHECKIN)],
+)
 async def check_in(
     shift_id: str,
     data: ShiftCheckIn,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -202,11 +231,15 @@ async def check_in(
     return ShiftResponse.model_validate(shift)
 
 
-@router.post("/{shift_id}/check-out", response_model=ShiftResponse)
+@router.post(
+    "/{shift_id}/check-out",
+    response_model=ShiftResponse,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CHECKIN)],
+)
 async def check_out(
     shift_id: str,
     data: ShiftCheckOut,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ShiftResponse:
     """
@@ -230,10 +263,14 @@ async def check_out(
     return ShiftResponse.model_validate(shift)
 
 
-@router.post("/{shift_id}/mark-missed", response_model=ShiftResponse)
+@router.post(
+    "/{shift_id}/mark-missed",
+    response_model=ShiftResponse,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_MARK_MISSED)],
+)
 async def mark_as_missed(
     shift_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     reason: Optional[str] = Query(None, description="Motivo da falta"),
 ) -> ShiftResponse:
@@ -253,10 +290,14 @@ async def mark_as_missed(
     return ShiftResponse.model_validate(shift)
 
 
-@router.delete("/{shift_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{shift_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CREATE)],
+)
 async def delete_shift(
     shift_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

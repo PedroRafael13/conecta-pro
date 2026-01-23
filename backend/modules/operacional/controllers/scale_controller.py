@@ -11,6 +11,7 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.scale import ScaleStatus, ScaleType
+from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.scale_repository import ScaleRepository
 from modules.operacional.repositories.shift_repository import ShiftRepository
 from modules.operacional.schemas.scale import (
@@ -28,10 +29,15 @@ from modules.operacional.services.scale_generator import scale_generator
 router = APIRouter(prefix="/scales", tags=["Operations - Scales"])
 
 
-@router.post("/", response_model=ScaleResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=ScaleResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
+)
 async def create_scale(
     data: ScaleCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -55,10 +61,15 @@ async def create_scale(
     return ScaleResponse.model_validate(scale)
 
 
-@router.post("/generate", response_model=ScaleResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/generate",
+    response_model=ScaleResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
+)
 async def generate_scale(
     data: ScaleGenerateRequest,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -112,9 +123,13 @@ async def generate_scale(
     return ScaleResponse.model_validate(scale)
 
 
-@router.get("/", response_model=ScaleListResponse)
+@router.get(
+    "/",
+    response_model=ScaleListResponse,
+    dependencies=[require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)],
+)
 async def list_scales(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -151,10 +166,14 @@ async def list_scales(
     )
 
 
-@router.get("/{scale_id}", response_model=ScaleResponse)
+@router.get(
+    "/{scale_id}",
+    response_model=ScaleResponse,
+    dependencies=[require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)],
+)
 async def get_scale(
     scale_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -172,11 +191,15 @@ async def get_scale(
     return ScaleResponse.model_validate(scale)
 
 
-@router.patch("/{scale_id}", response_model=ScaleResponse)
+@router.patch(
+    "/{scale_id}",
+    response_model=ScaleResponse,
+    dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
+)
 async def update_scale(
     scale_id: str,
     data: ScaleUpdate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -197,10 +220,14 @@ async def update_scale(
     return ScaleResponse.model_validate(scale)
 
 
-@router.post("/{scale_id}/submit", response_model=ScaleResponse)
+@router.post(
+    "/{scale_id}/submit",
+    response_model=ScaleResponse,
+    dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
+)
 async def submit_scale_for_approval(
     scale_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -228,11 +255,15 @@ async def submit_scale_for_approval(
     return ScaleResponse.model_validate(scale)
 
 
-@router.post("/{scale_id}/approve", response_model=ScaleResponse)
+@router.post(
+    "/{scale_id}/approve",
+    response_model=ScaleResponse,
+    dependencies=[require_operacional_permission(Permission.SCALES_APPROVE)],
+)
 async def approve_scale(
     scale_id: str,
     data: ScaleApproveRequest,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -251,11 +282,15 @@ async def approve_scale(
     return ScaleResponse.model_validate(scale)
 
 
-@router.post("/{scale_id}/publish", response_model=ScaleResponse)
+@router.post(
+    "/{scale_id}/publish",
+    response_model=ScaleResponse,
+    dependencies=[require_operacional_permission(Permission.SCALES_PUBLISH)],
+)
 async def publish_scale(
     scale_id: str,
     data: ScalePublishRequest,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleResponse:
     """
@@ -280,10 +315,14 @@ async def publish_scale(
     return ScaleResponse.model_validate(scale)
 
 
-@router.delete("/{scale_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{scale_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
+)
 async def delete_scale(
     scale_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

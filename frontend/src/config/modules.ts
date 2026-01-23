@@ -38,7 +38,7 @@ export const modules: Module[] = [
   {
     id: 'operacional',
     title: 'Operacional',
-    description: 'Escalas, postos e gestão de vigilantes',
+    description: 'Escalas, postos e gestão de agentes',
     icon: 'Shield',
     href: '/modulos/operacional',
     color: 'green',
@@ -47,7 +47,7 @@ export const modules: Module[] = [
     subModules: [
       { id: 'escalas', title: 'Escalas', href: '/modulos/operacional/escalas', icon: 'CalendarDays', permissions: ['operacional:escalas'] },
       { id: 'postos', title: 'Postos', href: '/modulos/operacional/postos', icon: 'MapPin', permissions: ['operacional:postos'] },
-      { id: 'vigilantes', title: 'Vigilantes', href: '/modulos/operacional/vigilantes', icon: 'UserCheck', permissions: ['operacional:vigilantes'] },
+      { id: 'colaboradores', title: 'Colaboradores', href: '/modulos/operacional/agentes', icon: 'UserCheck', permissions: ['operacional:colaboradores'] },
       { id: 'ocorrencias', title: 'Ocorrências', href: '/modulos/operacional/ocorrencias', icon: 'AlertTriangle', permissions: ['operacional:ocorrencias'] },
       { id: 'rondas', title: 'Rondas', href: '/modulos/operacional/rondas', icon: 'Route', permissions: ['operacional:rondas'] },
     ],

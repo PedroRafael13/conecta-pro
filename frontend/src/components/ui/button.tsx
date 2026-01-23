@@ -4,8 +4,8 @@ import { ButtonHTMLAttributes, forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline' | 'destructive' | 'default';
+  size?: 'sm' | 'md' | 'lg' | 'icon';
   isLoading?: boolean;
 }
 
@@ -25,6 +25,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         hover:brightness-110 focus:ring-[hsl(var(--primary))]
         glow-primary
       `,
+      default: `
+        bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]
+        hover:brightness-110 focus:ring-[hsl(var(--primary))]
+      `,
       secondary: `
         bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))]
         hover:bg-[hsl(var(--secondary))]/80 focus:ring-[hsl(var(--secondary))]
@@ -39,6 +43,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         hover:brightness-110 focus:ring-[hsl(var(--destructive))]
         glow-destructive
       `,
+      destructive: `
+        bg-[hsl(var(--destructive))] text-white
+        hover:brightness-110 focus:ring-[hsl(var(--destructive))]
+      `,
       outline: `
         bg-transparent text-[hsl(var(--primary))]
         border border-[hsl(var(--primary))]
@@ -50,6 +58,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       sm: 'h-8 px-3 text-sm rounded-md',
       md: 'h-10 px-4 text-sm rounded-lg',
       lg: 'h-12 px-6 text-base rounded-lg',
+      icon: 'h-10 w-10 rounded-lg',
     };
 
     return (

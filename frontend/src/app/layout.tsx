@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/contexts/providers';
+import { Toaster } from '@/components/ui/toaster';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-[hsl(var(--background))] antialiased">
         <Providers>
           {children}
+          <Toaster />
         </Providers>
       </body>
     </html>

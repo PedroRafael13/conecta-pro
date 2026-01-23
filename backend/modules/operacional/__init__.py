@@ -70,6 +70,9 @@ from .disciplinary import disciplinary_router
 # Comunicacao
 from .communication import communication_router
 
+# Rondas de Inspecao
+from .inspection_rounds import inspection_round_router
+
 # =============================================================================
 # ROUTER PRINCIPAL
 # =============================================================================
@@ -115,6 +118,9 @@ operacional_router.include_router(
 )
 operacional_router.include_router(
     communication_router, tags=["Operacional - Comunicacao"]
+)
+operacional_router.include_router(
+    inspection_round_router, prefix="/rondas", tags=["Operacional - Rondas de Inspecao"]
 )
 
 # Alias para compatibilidade
@@ -207,26 +213,16 @@ from .diaristas import (
 from .occurrences import (
     # Models
     Occurrence,
-    OccurrenceAttachment,
-    OccurrenceComment,
-    OccurrenceCategoryConfig,
     OccurrenceStatus,
     OccurrenceCategory,
     OccurrenceSeverity,
     OccurrenceType,
-    OccurrencePriority,
-    ResolutionType,
-    AttachmentType,
-    DEFAULT_SLA_HOURS,
     # Schemas
     OccurrenceCreate,
     OccurrenceUpdate,
     OccurrenceResponse,
     OccurrenceListResponse,
     OccurrenceFilter,
-    # Services
-    OccurrenceService,
-    OccurrenceAIAnalyzer,
     # Repository
     OccurrenceRepository,
 )
@@ -355,6 +351,27 @@ from .reports import (
 )
 
 # =============================================================================
+# INSPECTION ROUNDS SUBMODULE
+# =============================================================================
+
+from .inspection_rounds import (
+    # Models
+    InspectionRound,
+    InspectionRoundStatus,
+    InspectorRole,
+    InspectionCheckpoint,
+    CheckpointType,
+    CheckpointStatus,
+    # Schemas
+    InspectionRoundCreate,
+    InspectionRoundResponse,
+    # Services
+    InspectionRoundService,
+    # Repositories
+    InspectionRoundRepository,
+)
+
+# =============================================================================
 # EXPORTS
 # =============================================================================
 
@@ -379,6 +396,7 @@ __all__ = [
     "occurrence_router",
     "disciplinary_router",
     "communication_router",
+    "inspection_round_router",
     # =========================================================================
     # CORE MODELS
     # =========================================================================
@@ -446,24 +464,15 @@ __all__ = [
     # OCCURRENCES
     # =========================================================================
     "Occurrence",
-    "OccurrenceAttachment",
-    "OccurrenceComment",
-    "OccurrenceCategoryConfig",
     "OccurrenceStatus",
     "OccurrenceCategory",
     "OccurrenceSeverity",
     "OccurrenceType",
-    "OccurrencePriority",
-    "ResolutionType",
-    "AttachmentType",
-    "DEFAULT_SLA_HOURS",
     "OccurrenceCreate",
     "OccurrenceUpdate",
     "OccurrenceResponse",
     "OccurrenceListResponse",
     "OccurrenceFilter",
-    "OccurrenceService",
-    "OccurrenceAIAnalyzer",
     "OccurrenceRepository",
     # =========================================================================
     # DISCIPLINARY
@@ -557,6 +566,19 @@ __all__ = [
     "DisciplinaryStats",
     "EmployeeDisciplinary",
     "ReasonBreakdown",
+    # =========================================================================
+    # INSPECTION ROUNDS
+    # =========================================================================
+    "InspectionRound",
+    "InspectionRoundStatus",
+    "InspectorRole",
+    "InspectionCheckpoint",
+    "CheckpointType",
+    "CheckpointStatus",
+    "InspectionRoundCreate",
+    "InspectionRoundResponse",
+    "InspectionRoundService",
+    "InspectionRoundRepository",
 ]
 
-__version__ = "3.0.0"
+__version__ = "3.1.0"

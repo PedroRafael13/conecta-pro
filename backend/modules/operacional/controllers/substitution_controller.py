@@ -12,6 +12,7 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.substitution import SubstitutionReason, SubstitutionStatus
+from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.substitution_repository import SubstitutionRepository
 from modules.operacional.schemas.substitution import (
     SubstituteSuggestion,
@@ -24,13 +25,19 @@ from modules.operacional.schemas.substitution import (
     SubstitutionSuggestRequest,
     SubstitutionUpdate,
 )
+
 router = APIRouter(prefix="/substitutions", tags=["Operations - Substitutions"])
 
 
-@router.post("/", response_model=SubstitutionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=SubstitutionResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE)],
+)
 async def create_substitution(
     data: SubstitutionCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -48,9 +55,13 @@ async def create_substitution(
     return SubstitutionResponse.model_validate(substitution)
 
 
-@router.get("/", response_model=SubstitutionListResponse)
+@router.get(
+    "/",
+    response_model=SubstitutionListResponse,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE, Permission.SUBSTITUTIONS_APPROVE)],
+)
 async def list_substitutions(  # pylint: disable=too-many-locals
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -95,9 +106,13 @@ async def list_substitutions(  # pylint: disable=too-many-locals
     )
 
 
-@router.get("/pending", response_model=list[SubstitutionResponse])
+@router.get(
+    "/pending",
+    response_model=list[SubstitutionResponse],
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE)],
+)
 async def get_pending_substitutions(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> list[SubstitutionResponse]:
@@ -116,10 +131,14 @@ async def get_pending_substitutions(
     return [SubstitutionResponse.model_validate(s) for s in substitutions]
 
 
-@router.post("/suggest", response_model=list[SubstituteSuggestion])
+@router.post(
+    "/suggest",
+    response_model=list[SubstituteSuggestion],
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE)],
+)
 async def suggest_substitutes(
     data: SubstitutionSuggestRequest,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),  # pylint: disable=unused-argument
 ) -> list[SubstituteSuggestion]:
     """
@@ -141,10 +160,14 @@ async def suggest_substitutes(
     return []
 
 
-@router.get("/by-date/{target_date}", response_model=list[SubstitutionResponse])
+@router.get(
+    "/by-date/{target_date}",
+    response_model=list[SubstitutionResponse],
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE, Permission.SUBSTITUTIONS_APPROVE)],
+)
 async def get_substitutions_by_date(
     target_date: date,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     post_id: Optional[str] = None,
 ) -> list[SubstitutionResponse]:
@@ -164,10 +187,14 @@ async def get_substitutions_by_date(
     return [SubstitutionResponse.model_validate(s) for s in substitutions]
 
 
-@router.get("/{substitution_id}", response_model=SubstitutionResponse)
+@router.get(
+    "/{substitution_id}",
+    response_model=SubstitutionResponse,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE, Permission.SUBSTITUTIONS_APPROVE)],
+)
 async def get_substitution(
     substitution_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -185,11 +212,15 @@ async def get_substitution(
     return SubstitutionResponse.model_validate(substitution)
 
 
-@router.patch("/{substitution_id}", response_model=SubstitutionResponse)
+@router.patch(
+    "/{substitution_id}",
+    response_model=SubstitutionResponse,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE)],
+)
 async def update_substitution(
     substitution_id: str,
     data: SubstitutionUpdate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -208,11 +239,15 @@ async def update_substitution(
     return SubstitutionResponse.model_validate(substitution)
 
 
-@router.post("/{substitution_id}/confirm", response_model=SubstitutionResponse)
+@router.post(
+    "/{substitution_id}/confirm",
+    response_model=SubstitutionResponse,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE)],
+)
 async def confirm_substitution(
     substitution_id: str,
     data: SubstitutionConfirm,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -239,11 +274,15 @@ async def confirm_substitution(
     return SubstitutionResponse.model_validate(substitution)
 
 
-@router.post("/{substitution_id}/reject", response_model=SubstitutionResponse)
+@router.post(
+    "/{substitution_id}/reject",
+    response_model=SubstitutionResponse,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE)],
+)
 async def reject_substitution(
     substitution_id: str,
     data: SubstitutionReject,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> SubstitutionResponse:
     """
@@ -262,10 +301,14 @@ async def reject_substitution(
     return SubstitutionResponse.model_validate(substitution)
 
 
-@router.post("/{substitution_id}/complete", response_model=SubstitutionResponse)
+@router.post(
+    "/{substitution_id}/complete",
+    response_model=SubstitutionResponse,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_APPROVE)],
+)
 async def complete_substitution(
     substitution_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     overtime_hours: float = Query(0, ge=0, description="Horas extras realizadas"),
     additional_cost: float = Query(0, ge=0, description="Custo adicional"),
@@ -290,10 +333,14 @@ async def complete_substitution(
     return SubstitutionResponse.model_validate(substitution)
 
 
-@router.delete("/{substitution_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{substitution_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_operacional_permission(Permission.SUBSTITUTIONS_CREATE)],
+)
 async def delete_substitution(
     substitution_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """

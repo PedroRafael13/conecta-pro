@@ -1,24 +1,24 @@
 """
 Module: occurrences
-Description: Modulo de Gestao de Ocorrencias Operacionais
-Author: Conecta PRO Team
-Date: 2026-01-18
+Description: Modulo de Gestao de Ocorrencias Disciplinares/Fiscalizacao
+Author: Conecta PRO Team - Refatorado 2026-01-23
 Quality Score Target: 99+/100
 
 Este modulo fornece:
-- Registro e gestao de ocorrencias operacionais
-- Classificacao automatica por IA
-- Controle de SLA e escalacao
-- Anexos e comentarios
-- Dashboard e metricas
-- Integracao com medidas administrativas
+- Registro de ocorrências disciplinares (não conformidades)
+- Controle de infrações dos funcionários
+- Histórico disciplinar
+- Ações corretivas
+- Dashboard e métricas
+
+CONTEXTO: Ocorrências são registradas por SUPERVISORES/GESTORES durante
+fiscalizações e rondas nos postos. NÃO é para funcionários reportarem problemas.
 
 Estrutura:
 - models/: Modelos SQLAlchemy
-- schemas/: Schemas Pydantic para validacao
-- services/: Logica de negocio
-- controllers/: Endpoints FastAPI
+- schemas/: Schemas Pydantic para validação
 - repositories/: Acesso a dados
+- controllers/: Endpoints FastAPI
 """
 
 from fastapi import APIRouter
@@ -26,47 +26,22 @@ from fastapi import APIRouter
 # Models
 from .models import (
     Occurrence,
-    OccurrenceAttachment,
-    OccurrenceComment,
-    OccurrenceCategoryConfig,
     OccurrenceStatus,
     OccurrenceCategory,
     OccurrenceSeverity,
     OccurrenceType,
-    OccurrencePriority,
-    ResolutionType,
-    AttachmentType,
-    DEFAULT_SLA_HOURS,
 )
 
 # Schemas
 from .schemas import (
     OccurrenceCreate,
     OccurrenceUpdate,
+    OccurrenceResolve,
     OccurrenceResponse,
     OccurrenceListResponse,
     OccurrenceFilter,
-    AttachmentCreate,
-    AttachmentResponse,
-    CommentCreate,
-    CommentResponse,
-    EscalateRequest,
-    ResolveRequest,
-    ReopenRequest,
-    DashboardStats,
-    CategoryConfigCreate,
-    CategoryConfigResponse,
-)
-
-# Services
-from .services import (
-    OccurrenceService,
-    OccurrenceServiceError,
-    OccurrenceNotFoundError,
-    OccurrenceValidationError,
-    OccurrenceAIAnalyzer,
-    ClassificationResult,
-    PatternAnalysis,
+    OccurrenceStats,
+    AttachmentSchema,
 )
 
 # Repository
@@ -80,45 +55,22 @@ __all__ = [
     "occurrence_router",
     # Models
     "Occurrence",
-    "OccurrenceAttachment",
-    "OccurrenceComment",
-    "OccurrenceCategoryConfig",
     # Enums
     "OccurrenceStatus",
     "OccurrenceCategory",
     "OccurrenceSeverity",
     "OccurrenceType",
-    "OccurrencePriority",
-    "ResolutionType",
-    "AttachmentType",
-    # Constants
-    "DEFAULT_SLA_HOURS",
     # Schemas
     "OccurrenceCreate",
     "OccurrenceUpdate",
+    "OccurrenceResolve",
     "OccurrenceResponse",
     "OccurrenceListResponse",
     "OccurrenceFilter",
-    "AttachmentCreate",
-    "AttachmentResponse",
-    "CommentCreate",
-    "CommentResponse",
-    "EscalateRequest",
-    "ResolveRequest",
-    "ReopenRequest",
-    "DashboardStats",
-    "CategoryConfigCreate",
-    "CategoryConfigResponse",
-    # Services
-    "OccurrenceService",
-    "OccurrenceServiceError",
-    "OccurrenceNotFoundError",
-    "OccurrenceValidationError",
-    "OccurrenceAIAnalyzer",
-    "ClassificationResult",
-    "PatternAnalysis",
+    "OccurrenceStats",
+    "AttachmentSchema",
     # Repository
     "OccurrenceRepository",
 ]
 
-__version__ = "1.0.0"
+__version__ = "2.0.0-disciplinar"

@@ -46,7 +46,7 @@ export default function AlocacoesPage() {
     setPage,
     refresh,
   } = useAllocations({ initialPageSize: 10 });
-  const { posts } = usePosts({ initialPageSize: 200 });
+  const { posts } = usePosts({ initialPageSize: 100 });
   const { employees } = useEmployees({ initialPageSize: 200 });
 
   const [showFilters, setShowFilters] = useState(false);
@@ -82,20 +82,37 @@ export default function AlocacoesPage() {
     }, {});
   }, [employees]);
 
-  const getEmployeeLabel = (employeeId: string) => {
-    const employee = employeeMap[employeeId];
+  const getEmployeeLabel = (allocation: Allocation) => {
+    // Usar dados denormalizados da API se disponíveis
+    if (allocation.employee_name) {
+      return allocation.employee_name;
+    }
+    // Fallback para lookup no map
+    const employee = employeeMap[allocation.employee_id];
     return (
       employee?.full_name ||
       employee?.name ||
       employee?.email ||
       employee?.registration ||
-      employeeId
+      allocation.employee_id.substring(0, 8) + '...'
     );
   };
 
-  const getPostLabel = (postId: string) => {
-    const post = postMap[postId];
-    return post ? `${post.name} (${post.code})` : postId;
+  const getPostLabel = (allocation: Allocation) => {
+    // Usar dados denormalizados da API se disponíveis
+    if (allocation.post_name) {
+      return allocation.post_code
+        ? `${allocation.post_name} (${allocation.post_code})`
+        : allocation.post_name;
+    }
+    // Fallback para lookup no map
+    const post = postMap[allocation.post_id];
+    return post ? `${post.name} (${post.code})` : allocation.post_id.substring(0, 8) + '...';
+  };
+
+  // Helper para dropdown de funcionários (sem objeto Allocation)
+  const getEmployeeName = (employee: Employee) => {
+    return employee?.full_name || employee?.name || employee?.email || employee?.registration || employee.id.substring(0, 8) + '...';
   };
 
   const getStatusBadge = (status: AllocationStatus) => {
@@ -254,7 +271,7 @@ export default function AlocacoesPage() {
                   <option value="">Todos</option>
                   {employees.map((employee) => (
                     <option key={employee.id} value={employee.id}>
-                      {getEmployeeLabel(employee.id)}
+                      {getEmployeeName(employee)}
                     </option>
                   ))}
                 </select>
@@ -402,17 +419,19 @@ export default function AlocacoesPage() {
                             </div>
                             <div>
                               <p className="font-medium text-[hsl(var(--foreground))]">
-                                {getEmployeeLabel(allocation.employee_id)}
+                                {getEmployeeLabel(allocation)}
                               </p>
-                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                                {allocation.employee_id}
-                              </p>
+                              {allocation.employee_matricula && (
+                                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                  Mat: {allocation.employee_matricula}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-4">
                           <p className="text-sm text-[hsl(var(--foreground))]">
-                            {getPostLabel(allocation.post_id)}
+                            {getPostLabel(allocation)}
                           </p>
                         </td>
                         <td className="px-4 py-4">
@@ -500,8 +519,8 @@ export default function AlocacoesPage() {
           setShowDetailModal(false);
           setSelectedAllocation(null);
         }}
-        employeeName={selectedAllocation ? getEmployeeLabel(selectedAllocation.employee_id) : undefined}
-        postName={selectedAllocation ? getPostLabel(selectedAllocation.post_id) : undefined}
+        employeeName={selectedAllocation ? getEmployeeLabel(selectedAllocation) : undefined}
+        postName={selectedAllocation ? getPostLabel(selectedAllocation) : undefined}
         onTerminate={selectedAllocation?.status === 'active' ? () => openTerminate(selectedAllocation) : undefined}
       />
 

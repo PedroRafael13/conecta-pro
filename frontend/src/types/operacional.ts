@@ -167,6 +167,13 @@ export interface Allocation {
   is_current: boolean;
   days_allocated: number;
   total_monthly_cost: number;
+  // Dados denormalizados do funcionário
+  employee_name?: string | null;
+  employee_matricula?: string | null;
+  employee_cargo?: string | null;
+  // Dados denormalizados do posto
+  post_name?: string | null;
+  post_code?: string | null;
 }
 
 export interface AllocationCreate {
@@ -274,7 +281,7 @@ export interface ShiftCreate {
   planned_end_time: string;
   planned_break_minutes?: number;
   is_off_day?: boolean;
-  notes?: string;
+  notes?: string | null;
   is_holiday?: boolean;
   is_night_shift?: boolean;
   is_overtime?: boolean;
@@ -395,7 +402,7 @@ export interface PaginatedResponse<T> {
 
 // Labels para display
 export const POST_TYPE_LABELS: Record<PostType, string> = {
-  vigilante: 'Vigilante',
+  vigilante: 'Agente de Portaria',
   porteiro: 'Porteiro',
   recepcionista: 'Recepcionista',
   controlador_acesso: 'Controlador de Acesso',
@@ -570,4 +577,368 @@ export const SCALE_STATUS_LABELS: Record<ScaleStatus, string> = {
   in_progress: 'Em Andamento',
   completed: 'Concluída',
   cancelled: 'Cancelada',
+};
+
+// ===========================
+// Occurrences (Ocorrências Disciplinares)
+// ===========================
+
+export type OccurrenceType =
+  | 'abandono_posto'
+  | 'falta_uniforme'
+  | 'falta_epi'
+  | 'dormindo_servico'
+  | 'uso_celular'
+  | 'falta_limpeza'
+  | 'postura_inadequada'
+  | 'atraso'
+  | 'falta_injustificada'
+  | 'nao_conformidade_documental'
+  | 'embriaguez'
+  | 'desrespeito'
+  | 'negligencia'
+  | 'insubordinacao'
+  | 'outros';
+
+export type OccurrenceSeverity = 'leve' | 'moderada' | 'grave' | 'gravissima';
+
+export type OccurrenceCategory =
+  | 'disciplinar'
+  | 'seguranca'
+  | 'operacional'
+  | 'administrativa'
+  | 'tecnica';
+
+export type OccurrenceStatus =
+  | 'aberta'
+  | 'em_analise'
+  | 'resolvida'
+  | 'encerrada'
+  | 'cancelada';
+
+export interface Occurrence {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  occurrence_type: OccurrenceType;
+  severity: OccurrenceSeverity;
+  category: OccurrenceCategory;
+  status: OccurrenceStatus;
+  // Envolvidos
+  employee_id: string;
+  employee_name?: string;
+  inspector_id: string;
+  inspector_name?: string;
+  post_id: string;
+  post_name?: string;
+  patrol_round_id: string | null;
+  // Datas
+  occurred_at: string;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Resolução
+  resolved_by_id: string | null;
+  resolved_by_name?: string | null;
+  resolution_notes: string | null;
+  corrective_action: string | null;
+  // Anexos e evidências
+  attachments: OccurrenceAttachment[];
+  witnesses: string | null;
+  // Flags
+  is_active: boolean;
+}
+
+export interface OccurrenceAttachment {
+  type: 'photo' | 'video' | 'document' | 'audio';
+  url: string;
+  name?: string;
+  size?: number;
+  uploaded_at?: string;
+}
+
+export interface OccurrenceCreate {
+  title: string;
+  description: string;
+  occurrence_type: OccurrenceType;
+  severity: OccurrenceSeverity;
+  category: OccurrenceCategory;
+  employee_id: string;
+  post_id: string;
+  patrol_round_id?: string | null;
+  occurred_at?: string;
+  witnesses?: string | null;
+}
+
+export interface OccurrenceUpdate {
+  title?: string;
+  description?: string;
+  occurrence_type?: OccurrenceType;
+  severity?: OccurrenceSeverity;
+  category?: OccurrenceCategory;
+  status?: OccurrenceStatus;
+  witnesses?: string | null;
+}
+
+export interface OccurrenceResolve {
+  resolution_notes: string;
+  corrective_action?: string;
+}
+
+export interface OccurrenceFilter {
+  occurrence_type?: OccurrenceType;
+  severity?: OccurrenceSeverity;
+  category?: OccurrenceCategory;
+  status?: OccurrenceStatus;
+  employee_id?: string;
+  inspector_id?: string;
+  post_id?: string;
+  patrol_round_id?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+}
+
+export interface OccurrenceStats {
+  total: number;
+  by_status: Record<string, number>;
+  by_severity: Record<string, number>;
+  by_category: Record<string, number>;
+  by_type: Record<string, number>;
+  pending_resolution: number;
+  resolved_this_month: number;
+  avg_resolution_time_hours: number;
+}
+
+// Labels para display
+export const OCCURRENCE_TYPE_LABELS: Record<OccurrenceType, string> = {
+  abandono_posto: 'Abandono de Posto',
+  falta_uniforme: 'Falta de Uniforme',
+  falta_epi: 'Falta de EPI',
+  dormindo_servico: 'Dormindo em Serviço',
+  uso_celular: 'Uso Indevido de Celular',
+  falta_limpeza: 'Falta de Limpeza',
+  postura_inadequada: 'Postura Inadequada',
+  atraso: 'Atraso',
+  falta_injustificada: 'Falta Injustificada',
+  nao_conformidade_documental: 'Não Conformidade Documental',
+  embriaguez: 'Embriaguez',
+  desrespeito: 'Desrespeito',
+  negligencia: 'Negligência',
+  insubordinacao: 'Insubordinação',
+  outros: 'Outros',
+};
+
+export const OCCURRENCE_SEVERITY_LABELS: Record<OccurrenceSeverity, string> = {
+  leve: 'Leve (Advertência Verbal)',
+  moderada: 'Moderada (Advertência Escrita)',
+  grave: 'Grave (Suspensão)',
+  gravissima: 'Gravíssima (Demissão)',
+};
+
+export const OCCURRENCE_CATEGORY_LABELS: Record<OccurrenceCategory, string> = {
+  disciplinar: 'Disciplinar',
+  seguranca: 'Segurança',
+  operacional: 'Operacional',
+  administrativa: 'Administrativa',
+  tecnica: 'Técnica',
+};
+
+export const OCCURRENCE_STATUS_LABELS: Record<OccurrenceStatus, string> = {
+  aberta: 'Aberta',
+  em_analise: 'Em Análise',
+  resolvida: 'Resolvida',
+  encerrada: 'Encerrada',
+  cancelada: 'Cancelada',
+};
+
+// ===========================
+// Patrol Rounds (Rondas de Inspeção)
+// ===========================
+
+export type PatrolRoundStatus =
+  | 'agendada'
+  | 'em_andamento'
+  | 'pausada'
+  | 'concluida'
+  | 'cancelada';
+
+export type InspectorRole =
+  | 'gerente_operacional'
+  | 'supervisor_operacional'
+  | 'inspetor_operacional'
+  | 'lider_servico';
+
+export type CheckpointType =
+  | 'verificacao_posto'
+  | 'verificacao_funcionario'
+  | 'registro_ocorrencia'
+  | 'medida_disciplinar'
+  | 'observacao_geral'
+  | 'foto_evidencia';
+
+export type CheckpointStatus =
+  | 'conforme'
+  | 'nao_conforme'
+  | 'pendente'
+  | 'com_ocorrencia';
+
+export interface PatrolCheckpoint {
+  id: string;
+  inspection_round_id: string;
+  post_id: string | null;
+  post_name: string | null;
+  client_id: string | null;
+  client_name: string | null;
+  checkpoint_type: CheckpointType;
+  status: CheckpointStatus;
+  employee_id: string | null;
+  employee_name: string | null;
+  employee_cpf: string | null;
+  employee_position: string | null;
+  occurrence_id: string | null;
+  occurrence_code: string | null;
+  disciplinary_action_id: string | null;
+  disciplinary_action_code: string | null;
+  disciplinary_action_type: string | null;
+  title: string | null;
+  description: string | null;
+  observations: string | null;
+  infraction_category: string | null;
+  infraction_severity: string | null;
+  photos: Array<{ type: string; url: string; name?: string }> | null;
+  latitude: number | null;
+  longitude: number | null;
+  sequence: number;
+  created_at: string;
+}
+
+export interface PatrolRound {
+  id: string;
+  code: string;
+  tenant_id: string;
+  inspector_id: string;
+  inspector_name: string;
+  inspector_role: InspectorRole;
+  status: PatrolRoundStatus;
+  scheduled_date: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  duration_minutes: number | null;
+  posts_to_visit: string[] | null;
+  posts_visited: string[] | null;
+  total_checkpoints: number;
+  total_occurrences: number;
+  total_disciplinary_actions: number;
+  total_employees_checked: number;
+  observations: string | null;
+  summary: string | null;
+  start_latitude: number | null;
+  start_longitude: number | null;
+  end_latitude: number | null;
+  end_longitude: number | null;
+  total_distance_km: number | null;
+  progress_percentage: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  checkpoints?: PatrolCheckpoint[];
+}
+
+export interface PatrolRoundCreate {
+  tenant_id: string;
+  inspector_id: string;
+  inspector_name: string;
+  inspector_role?: InspectorRole;
+  scheduled_date?: string;
+  posts_to_visit?: string[];
+  observations?: string;
+}
+
+export interface PatrolRoundUpdate {
+  scheduled_date?: string;
+  posts_to_visit?: string[];
+  observations?: string;
+  summary?: string;
+}
+
+export interface PatrolRoundFilter {
+  inspector_id?: string;
+  inspector_role?: InspectorRole;
+  status?: PatrolRoundStatus;
+  post_id?: string;
+  start_date?: string;
+  end_date?: string;
+  has_occurrences?: boolean;
+  has_disciplinary_actions?: boolean;
+}
+
+export interface PatrolRoundStats {
+  total_rounds: number;
+  rounds_in_progress: number;
+  rounds_completed: number;
+  rounds_scheduled: number;
+  total_occurrences: number;
+  occurrences_pending: number;
+  occurrences_resolved: number;
+  total_disciplinary_actions: number;
+  warnings_count: number;
+  suspensions_count: number;
+  rounds_today: number;
+  rounds_this_week: number;
+  rounds_this_month: number;
+}
+
+export interface CheckpointCreate {
+  post_id?: string | null;
+  post_name?: string | null;
+  client_id?: string | null;
+  client_name?: string | null;
+  checkpoint_type?: CheckpointType;
+  status?: CheckpointStatus;
+  employee_id?: string | null;
+  employee_name?: string | null;
+  employee_cpf?: string | null;
+  employee_position?: string | null;
+  title?: string | null;
+  description?: string | null;
+  observations?: string | null;
+  infraction_category?: string | null;
+  infraction_severity?: string | null;
+  photos?: Array<{ type: string; url: string; name?: string }> | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+// Labels para display
+export const PATROL_ROUND_STATUS_LABELS: Record<PatrolRoundStatus, string> = {
+  agendada: 'Agendada',
+  em_andamento: 'Em Andamento',
+  pausada: 'Pausada',
+  concluida: 'Concluída',
+  cancelada: 'Cancelada',
+};
+
+export const INSPECTOR_ROLE_LABELS: Record<InspectorRole, string> = {
+  gerente_operacional: 'Gerente Operacional',
+  supervisor_operacional: 'Supervisor Operacional',
+  inspetor_operacional: 'Inspetor Operacional',
+  lider_servico: 'Líder de Serviço',
+};
+
+export const CHECKPOINT_TYPE_LABELS: Record<CheckpointType, string> = {
+  verificacao_posto: 'Verificação de Posto',
+  verificacao_funcionario: 'Verificação de Funcionário',
+  registro_ocorrencia: 'Registro de Ocorrência',
+  medida_disciplinar: 'Medida Disciplinar',
+  observacao_geral: 'Observação Geral',
+  foto_evidencia: 'Foto/Evidência',
+};
+
+export const CHECKPOINT_STATUS_LABELS: Record<CheckpointStatus, string> = {
+  conforme: 'Conforme',
+  nao_conforme: 'Não Conforme',
+  pendente: 'Pendente',
+  com_ocorrencia: 'Com Ocorrência',
 };

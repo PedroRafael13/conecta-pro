@@ -11,6 +11,7 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.post import PostStatus, PostType, ShiftType
+from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.post_repository import PostRepository
 from modules.operacional.schemas.post import (
     PostCreate,
@@ -24,10 +25,15 @@ from modules.operacional.schemas.post import (
 router = APIRouter(prefix="/posts", tags=["Operations - Posts"])
 
 
-@router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=PostResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.POSTS_CREATE)],
+)
 async def create_post(
     data: PostCreate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """
@@ -42,9 +48,13 @@ async def create_post(
     return PostResponse.model_validate(post)
 
 
-@router.get("/", response_model=PostListResponse)
+@router.get(
+    "/",
+    response_model=PostListResponse,
+    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+)
 async def list_posts(  # pylint: disable=too-many-locals
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
@@ -91,9 +101,13 @@ async def list_posts(  # pylint: disable=too-many-locals
     )
 
 
-@router.get("/stats", response_model=PostStats)
+@router.get(
+    "/stats",
+    response_model=PostStats,
+    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+)
 async def get_post_stats(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> PostStats:
     """
@@ -103,10 +117,14 @@ async def get_post_stats(
     return await repo.get_stats()
 
 
-@router.get("/{post_id}", response_model=PostResponse)
+@router.get(
+    "/{post_id}",
+    response_model=PostResponse,
+    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+)
 async def get_post(
     post_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """
@@ -124,11 +142,15 @@ async def get_post(
     return PostResponse.model_validate(post)
 
 
-@router.patch("/{post_id}", response_model=PostResponse)
+@router.patch(
+    "/{post_id}",
+    response_model=PostResponse,
+    dependencies=[require_operacional_permission(Permission.POSTS_EDIT)],
+)
 async def update_post(
     post_id: str,
     data: PostUpdate,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> PostResponse:
     """
@@ -147,10 +169,14 @@ async def update_post(
     return PostResponse.model_validate(post)
 
 
-@router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{post_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[require_operacional_permission(Permission.POSTS_DELETE)],
+)
 async def delete_post(
     post_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """
@@ -168,10 +194,14 @@ async def delete_post(
     logger.info(f"Post deletado por {current_user.email}: {post_id}")
 
 
-@router.get("/contract/{contract_id}", response_model=list[PostResponse])
+@router.get(
+    "/contract/{contract_id}",
+    response_model=list[PostResponse],
+    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+)
 async def get_posts_by_contract(
     contract_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> list[PostResponse]:
     """
@@ -183,10 +213,14 @@ async def get_posts_by_contract(
     return [PostResponse.model_validate(post) for post in posts]
 
 
-@router.get("/client/{client_id}", response_model=list[PostResponse])
+@router.get(
+    "/client/{client_id}",
+    response_model=list[PostResponse],
+    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+)
 async def get_posts_by_client(
     client_id: str,
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> list[PostResponse]:
     """

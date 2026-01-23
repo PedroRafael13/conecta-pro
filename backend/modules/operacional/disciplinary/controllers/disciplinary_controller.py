@@ -90,6 +90,15 @@ from modules.operacional.disciplinary.services.signature_service import (
 router = APIRouter(tags=["Operacional - Medidas Administrativas"])
 
 
+# Helper para obter tenant_id de forma segura (compatibilidade)
+DEFAULT_TENANT_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+
+def get_tenant_id(user) -> str:
+    """Obtem tenant_id do usuario ou usa padrao."""
+    return getattr(user, 'tenant_id', None) or getattr(user, 'condominio_id', None) or DEFAULT_TENANT_ID
+
+
 # =============================================================================
 # MEDIDAS DISCIPLINARES - CRUD
 # =============================================================================
@@ -112,7 +121,7 @@ async def create_disciplinary_action(
         service = get_disciplinary_service(db)
         action = await service.create(
             data=data,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             created_by=current_user.id,
         )
 
@@ -121,7 +130,7 @@ async def create_disciplinary_action(
             extra={
                 "action_id": action.id,
                 "user_id": current_user.id,
-                "tenant_id": current_user.tenant_id,
+                "tenant_id": get_tenant_id(current_user),
             },
         )
 
@@ -176,7 +185,7 @@ async def list_disciplinary_actions(
     )
 
     return await service.list(
-        tenant_id=current_user.tenant_id,
+        tenant_id=get_tenant_id(current_user),
         filters=filters,
         page=page,
         page_size=page_size,
@@ -195,7 +204,7 @@ async def get_disciplinary_stats(
 ) -> DisciplinaryStats:
     """Obtem estatisticas de medidas disciplinares."""
     service = get_disciplinary_service(db)
-    return await service.get_stats(current_user.tenant_id)
+    return await service.get_stats(get_tenant_id(current_user))
 
 
 @router.get(
@@ -210,7 +219,7 @@ async def get_pending_approval(
 ) -> List[DisciplinaryActionResponse]:
     """Lista medidas pendentes de aprovacao."""
     service = get_disciplinary_service(db)
-    actions = await service.get_pending_approval(current_user.tenant_id)
+    actions = await service.get_pending_approval(get_tenant_id(current_user))
     return [DisciplinaryActionResponse.model_validate(a) for a in actions]
 
 
@@ -227,7 +236,7 @@ async def get_employee_history(
 ) -> List[DisciplinaryActionResponse]:
     """Lista historico disciplinar de um funcionario."""
     service = get_disciplinary_service(db)
-    actions = await service.get_employee_history(employee_id, current_user.tenant_id)
+    actions = await service.get_employee_history(employee_id, get_tenant_id(current_user))
     return [DisciplinaryActionResponse.model_validate(a) for a in actions]
 
 
@@ -245,7 +254,7 @@ async def get_disciplinary_action(
     """Busca medida disciplinar por ID."""
     try:
         service = get_disciplinary_service(db)
-        action = await service.get_by_id(action_id, current_user.tenant_id)
+        action = await service.get_by_id(action_id, get_tenant_id(current_user))
         return DisciplinaryActionDetailResponse.model_validate(action)
 
     except DisciplinaryNotFoundError:
@@ -272,7 +281,7 @@ async def update_disciplinary_action(
         service = get_disciplinary_service(db)
         action = await service.update(
             action_id=action_id,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             data=data,
         )
 
@@ -309,7 +318,7 @@ async def delete_disciplinary_action(
     """Remove uma medida disciplinar."""
     try:
         service = get_disciplinary_service(db)
-        await service.delete(action_id, current_user.tenant_id)
+        await service.delete(action_id, get_tenant_id(current_user))
 
         logger.info(
             f"Medida disciplinar removida: {action_id}",
@@ -350,7 +359,7 @@ async def submit_for_approval(
         service = get_disciplinary_service(db)
         action = await service.submit_for_approval(
             action_id=action_id,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             submitted_by=current_user.id,
             notes=request.notes if request else None,
         )
@@ -386,7 +395,7 @@ async def approve_action(
         service = get_disciplinary_service(db)
         action = await service.approve(
             action_id=action_id,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             approved_by=current_user.id,
             request=request,
         )
@@ -422,7 +431,7 @@ async def reject_action(
         service = get_disciplinary_service(db)
         action = await service.reject(
             action_id=action_id,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             rejected_by=current_user.id,
             request=request,
         )
@@ -458,9 +467,9 @@ async def sign_document(
         service = get_signature_service(db)
         signature = await service.sign_document(
             action_id=action_id,
-            tenant_id=current_user.tenant_id,
-            signer_id=current_user.id,
-            signer_name=current_user.full_name or current_user.email,
+            tenant_id=get_tenant_id(current_user),
+            signer_id=str(current_user.id),
+            signer_name=current_user.name or current_user.email,
             signer_cpf=getattr(current_user, "cpf", None),
             request=request,
         )
@@ -491,7 +500,7 @@ async def refuse_signature(
         service = get_signature_service(db)
         action = await service.refuse_signature(
             action_id=action_id,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             request=request,
         )
 
@@ -521,7 +530,7 @@ async def generate_document(
         service = get_disciplinary_service(db)
         return await service.generate_document(
             action_id=action_id,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             request=request,
         )
 
@@ -556,7 +565,7 @@ async def list_templates(
     """Lista templates de documentos."""
     service = get_template_service(db)
     return await service.list(
-        tenant_id=current_user.tenant_id,
+        tenant_id=get_tenant_id(current_user),
         action_type=action_type.value if action_type else None,
     )
 
@@ -577,7 +586,7 @@ async def create_template(
     service = get_template_service(db)
     template = await service.create(
         data=data,
-        tenant_id=current_user.tenant_id,
+        tenant_id=get_tenant_id(current_user),
         created_by=current_user.id,
     )
     return TemplateResponse.model_validate(template)
@@ -597,7 +606,7 @@ async def get_template(
     """Busca template por ID."""
     try:
         service = get_template_service(db)
-        template = await service.get_by_id(template_id, current_user.tenant_id)
+        template = await service.get_by_id(template_id, get_tenant_id(current_user))
         return TemplateResponse.model_validate(template)
 
     except TemplateNotFoundError:
@@ -624,7 +633,7 @@ async def update_template(
         service = get_template_service(db)
         template = await service.update(
             template_id=template_id,
-            tenant_id=current_user.tenant_id,
+            tenant_id=get_tenant_id(current_user),
             data=data,
         )
         return TemplateResponse.model_validate(template)
@@ -650,7 +659,7 @@ async def delete_template(
     """Remove um template."""
     try:
         service = get_template_service(db)
-        await service.delete(template_id, current_user.tenant_id)
+        await service.delete(template_id, get_tenant_id(current_user))
 
     except TemplateNotFoundError:
         raise HTTPException(
@@ -678,7 +687,7 @@ async def verify_signature(
     """Verifica validade de assinatura."""
     try:
         service = get_signature_service(db)
-        return await service.verify_signature(request, current_user.tenant_id)
+        return await service.verify_signature(request, get_tenant_id(current_user))
 
     except SignatureNotFoundError:
         raise HTTPException(
@@ -701,7 +710,7 @@ async def get_signature(
     """Busca assinatura por ID."""
     try:
         service = get_signature_service(db)
-        signature = await service.get_by_id(signature_id, current_user.tenant_id)
+        signature = await service.get_by_id(signature_id, get_tenant_id(current_user))
         return SignatureResponse.model_validate(signature)
 
     except SignatureNotFoundError:
@@ -724,7 +733,7 @@ async def get_document_signatures(
 ) -> List[SignatureResponse]:
     """Lista assinaturas de um documento."""
     service = get_signature_service(db)
-    signatures = await service.get_by_document(document_id, current_user.tenant_id)
+    signatures = await service.get_by_document(document_id, get_tenant_id(current_user))
     return [SignatureResponse.model_validate(s) for s in signatures]
 
 
@@ -746,7 +755,7 @@ async def get_recommendation(
 ) -> RecommendationResponse:
     """Obtem recomendacao de medida disciplinar."""
     advisor = get_disciplinary_advisor(db)
-    return await advisor.recommend_action(request, current_user.tenant_id)
+    return await advisor.recommend_action(request, get_tenant_id(current_user))
 
 
 @router.post(
@@ -762,7 +771,7 @@ async def validate_compliance(
 ) -> LegalComplianceResponse:
     """Valida conformidade legal da medida."""
     advisor = get_disciplinary_advisor(db)
-    return await advisor.validate_legal_compliance(request, current_user.tenant_id)
+    return await advisor.validate_legal_compliance(request, get_tenant_id(current_user))
 
 
 @router.post(

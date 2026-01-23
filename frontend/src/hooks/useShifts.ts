@@ -116,3 +116,106 @@ export function useTodayShifts(postId?: string): UseTodayShiftsReturn {
 
   return { shifts, isLoading, error, refresh: loadToday };
 }
+
+/**
+ * Hook para operações com turnos (CRUD)
+ */
+interface UseShiftOperationsReturn {
+  isLoading: boolean;
+  error: string | null;
+  createShift: (data: import('@/types/operacional').ShiftCreate) => Promise<Shift | null>;
+  updateShift: (id: string, data: import('@/types/operacional').ShiftUpdate) => Promise<Shift | null>;
+  deleteShift: (id: string) => Promise<boolean>;
+  checkIn: (id: string, data: import('@/types/operacional').ShiftCheckIn) => Promise<Shift | null>;
+  checkOut: (id: string, data: import('@/types/operacional').ShiftCheckOut) => Promise<Shift | null>;
+}
+
+export function useShiftOperations(): UseShiftOperationsReturn {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const createShift = useCallback(async (data: import('@/types/operacional').ShiftCreate): Promise<Shift | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const shift = await shiftsService.create(data);
+      return shift;
+    } catch (err) {
+      const message = getErrorMessage(err);
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const updateShift = useCallback(async (id: string, data: import('@/types/operacional').ShiftUpdate): Promise<Shift | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const shift = await shiftsService.update(id, data);
+      return shift;
+    } catch (err) {
+      const message = getErrorMessage(err);
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const deleteShift = useCallback(async (id: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await shiftsService.delete(id);
+      return true;
+    } catch (err) {
+      const message = getErrorMessage(err);
+      setError(message);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const checkIn = useCallback(async (id: string, data: import('@/types/operacional').ShiftCheckIn): Promise<Shift | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const shift = await shiftsService.checkIn(id, data);
+      return shift;
+    } catch (err) {
+      const message = getErrorMessage(err);
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const checkOut = useCallback(async (id: string, data: import('@/types/operacional').ShiftCheckOut): Promise<Shift | null> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const shift = await shiftsService.checkOut(id, data);
+      return shift;
+    } catch (err) {
+      const message = getErrorMessage(err);
+      setError(message);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    isLoading,
+    error,
+    createShift,
+    updateShift,
+    deleteShift,
+    checkIn,
+    checkOut,
+  };
+}

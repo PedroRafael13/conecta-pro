@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { scalesService } from '@/lib/services/scales';
-import type { Scale, ScaleFilter, ScaleGenerateRequest, PaginatedResponse } from '@/types/operacional';
+import type { Scale, ScaleFilter, ScaleGenerateRequest, ScaleStats, PaginatedResponse } from '@/types/operacional';
 
 /**
  * Hook para listar escalas com paginação e filtros
@@ -240,5 +240,39 @@ export function useCurrentMonthScales() {
     isLoading,
     error,
     refresh: fetchScales,
+  };
+}
+
+/**
+ * Hook para estatísticas de escalas
+ */
+export function useScaleStats() {
+  const [stats, setStats] = useState<ScaleStats | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await scalesService.getStats();
+      setStats(data);
+    } catch (err) {
+      console.error('Erro ao buscar estatísticas de escalas:', err);
+      setError('Erro ao carregar estatísticas');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  return {
+    stats,
+    isLoading,
+    error,
+    refresh: fetchStats,
   };
 }

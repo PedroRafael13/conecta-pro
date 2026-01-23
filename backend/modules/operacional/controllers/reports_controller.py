@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
+from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.reports_repository import ReportsRepository
 from modules.operacional.schemas.reports import (
     CoverageReportResponse,
@@ -27,9 +28,13 @@ def _default_dates() -> tuple[date, date]:
     return start, today
 
 
-@router.get("/coverage", response_model=CoverageReportResponse)
+@router.get(
+    "/coverage",
+    response_model=CoverageReportResponse,
+    dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
+)
 async def coverage_report(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
@@ -65,9 +70,13 @@ async def coverage_report(
     )
 
 
-@router.get("/hours", response_model=HoursReportResponse)
+@router.get(
+    "/hours",
+    response_model=HoursReportResponse,
+    dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
+)
 async def hours_report(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
@@ -101,9 +110,13 @@ async def hours_report(
     )
 
 
-@router.get("/costs", response_model=CostsReportResponse)
+@router.get(
+    "/costs",
+    response_model=CostsReportResponse,
+    dependencies=[require_operacional_permission(Permission.REPORTS_VIEW)],
+)
 async def costs_report(
-    current_user: CurrentActiveUser,  # pylint: disable=unused-argument
+    current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),

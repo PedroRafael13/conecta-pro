@@ -208,7 +208,7 @@ export function AllocationFormModal({
               name="role"
               value={formData.role || ''}
               onChange={handleChange}
-              placeholder="Ex: Vigilante"
+              placeholder="Ex: Agente de Portaria"
             />
           </div>
 

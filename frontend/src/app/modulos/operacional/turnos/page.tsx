@@ -33,9 +33,9 @@ const toLocalDateKey = (date: Date) => {
 export default function TurnosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
-  const { posts } = usePosts({ initialPageSize: 200 });
+  const { posts } = usePosts({ initialPageSize: 100 });
   const { employees } = useEmployees({ initialPageSize: 200 });
-  const { scales } = useScales(1, 200);
+  const { scales } = useScales(1, 100);
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week'>('month');
@@ -342,6 +342,7 @@ export default function TurnosPage() {
             onSelectDate={setSelectedDate}
             view={view}
             onViewChange={setView}
+            employeeMap={employeeMap}
           />
           <div className="space-y-4">
             <div>

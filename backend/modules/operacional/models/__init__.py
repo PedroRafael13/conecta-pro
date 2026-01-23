@@ -7,6 +7,7 @@ from .shift import Shift, ShiftStatus
 from .allocation import Allocation, AllocationStatus
 from .substitution import Substitution, SubstitutionReason, SubstitutionStatus
 from .time_bank import TimeBank, TimeBankEntryType, TimeBankStatus
+# Occurrence foi movido para modules/operacional/occurrences/models/
 
 __all__ = [
     # Post
@@ -32,4 +33,5 @@ __all__ = [
     "TimeBank",
     "TimeBankEntryType",
     "TimeBankStatus",
+    # Occurrence (movido para occurrences/models/)
 ]
