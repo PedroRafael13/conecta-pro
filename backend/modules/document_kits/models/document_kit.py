@@ -31,6 +31,7 @@ class KitType(str, Enum):
     TRANSFERENCIA = "TRANSFERENCIA"
     CONTRATO_CLIENTE = "CONTRATO_CLIENTE"
     ENCERRAMENTO_CONTRATO = "ENCERRAMENTO_CONTRATO"
+    MENSAL = "MENSAL"  # Kit de documentos mensais (holerite, vale transporte, etc.)
     TREINAMENTO = "TREINAMENTO"
     CERTIFICACAO = "CERTIFICACAO"
     VIGILANTE = "VIGILANTE"
@@ -128,7 +129,7 @@ class DocumentKit(Base):
     id = Column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     condominio_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )
@@ -252,7 +253,7 @@ class DocumentKitItem(Base):
     )
     condominio_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )
@@ -335,7 +336,7 @@ class DocumentKitAssignment(Base):
     )
     condominio_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )
@@ -486,7 +487,7 @@ class DocumentKitItemStatus(Base):
     )
     condominio_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey("condominios.id"),
+        ForeignKey("condominiums.id"),
         nullable=False,
         index=True,
     )

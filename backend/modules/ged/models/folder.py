@@ -78,10 +78,12 @@ class Folder(Base):
 
     # Classificação
     folder_type: Mapped[FolderType] = mapped_column(
-        SQLEnum(FolderType), default=FolderType.CONDOMINIO
+        SQLEnum(FolderType, native_enum=False, create_constraint=False),
+        default=FolderType.CONDOMINIO
     )
     status: Mapped[FolderStatus] = mapped_column(
-        SQLEnum(FolderStatus), default=FolderStatus.ATIVA
+        SQLEnum(FolderStatus, native_enum=False, create_constraint=False),
+        default=FolderStatus.ATIVA
     )
 
     # Vínculo com entidades

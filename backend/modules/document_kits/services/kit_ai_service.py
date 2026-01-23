@@ -1,10 +1,10 @@
-"""Service de IA para Kits Documentais."""
+"""Service de IA para Kits Documentais - Versão Async."""
 
 from datetime import datetime, timedelta
 from typing import List
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.document_kits.models.document_kit import (
     DocumentKit,
@@ -20,19 +20,19 @@ from modules.document_kits.repositories.kit_repository import DocumentKitReposit
 class DocumentKitAIService:
     """Service de IA para Kits Documentais."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         """Inicializa service."""
         self.db = db
         self.repository = DocumentKitRepository(db)
 
-    def suggest_kits_for_entity(
+    async def suggest_kits_for_entity(
         self,
         condominio_id: UUID,
         entity_type: EntityType,
         entity_data: dict,
     ) -> List[dict]:
         """Sugere kits para uma entidade baseado em seu perfil."""
-        kits = self.repository.list_kits(
+        kits = await self.repository.list_kits(
             condominio_id=condominio_id,
             status=KitStatus.ATIVO,
         )
@@ -125,14 +125,14 @@ class DocumentKitAIService:
             return "Kit marcado como obrigatorio"
         return "Kit recomendado baseado no perfil"
 
-    def analyze_compliance_risk(
+    async def analyze_compliance_risk(
         self,
         condominio_id: UUID,
         entity_type: EntityType,
         entity_id: UUID,
     ) -> dict:
         """Analisa risco de conformidade de uma entidade."""
-        assignments = self.repository.list_assignments(
+        assignments = await self.repository.list_assignments(
             condominio_id=condominio_id,
             entity_type=entity_type,
             entity_id=entity_id,
@@ -249,7 +249,7 @@ class DocumentKitAIService:
 
         return recommendations
 
-    def predict_completion_date(
+    async def predict_completion_date(
         self,
         assignment: DocumentKitAssignment,
     ) -> dict:
@@ -287,6 +287,7 @@ class DocumentKitAIService:
             days_remaining = remaining / rate
             predicted = datetime.utcnow() + timedelta(days=days_remaining)
         else:
+            days_remaining = 0
             predicted = None
 
         confidence = min(assignment.percentual_completo, 90)
@@ -305,13 +306,13 @@ class DocumentKitAIService:
             "current_rate": round(rate, 2),
         }
 
-    def get_priority_assignments(
+    async def get_priority_assignments(
         self,
         condominio_id: UUID,
         limit: int = 10,
     ) -> List[dict]:
         """Retorna atribuicoes prioritarias baseado em analise."""
-        assignments = self.repository.list_assignments(
+        assignments = await self.repository.list_assignments(
             condominio_id=condominio_id,
             status=None,
             limit=500,
@@ -373,12 +374,12 @@ class DocumentKitAIService:
 
         return min(score, 100.0)
 
-    def analyze_kit_usage(
+    async def analyze_kit_usage(
         self,
         condominio_id: UUID,
     ) -> dict:
         """Analisa uso dos kits."""
-        kits = self.repository.list_kits(
+        kits = await self.repository.list_kits(
             condominio_id=condominio_id,
             status=KitStatus.ATIVO,
         )
@@ -392,7 +393,7 @@ class DocumentKitAIService:
 
         usage = []
         for kit in kits:
-            assignments = self.repository.list_assignments(
+            assignments = await self.repository.list_assignments(
                 condominio_id=condominio_id,
                 kit_id=kit.id,
             )
@@ -439,13 +440,13 @@ class DocumentKitAIService:
             "recommendations": recommendations,
         }
 
-    def get_expiring_documents(
+    async def get_expiring_documents(
         self,
         condominio_id: UUID,
         days_ahead: int = 30,
     ) -> List[dict]:
         """Lista documentos proximos do vencimento."""
-        assignments = self.repository.list_assignments(
+        assignments = await self.repository.list_assignments(
             condominio_id=condominio_id,
             status=AssignmentStatus.COMPLETO,
         )
@@ -454,7 +455,7 @@ class DocumentKitAIService:
         expiring = []
 
         for assignment in assignments:
-            item_statuses = self.repository.list_item_statuses_by_assignment(
+            item_statuses = await self.repository.list_item_statuses_by_assignment(
                 assignment_id=assignment.id,
                 condominio_id=condominio_id,
             )

@@ -16,6 +16,7 @@ from modules.crm.controllers import (
 
 from modules.operacional.controllers import (
     allocation_router,
+    employee_router,
     post_router,
     reports_router,
     scale_router,
@@ -23,6 +24,12 @@ from modules.operacional.controllers import (
     substitution_router,
     time_bank_router,
 )
+
+# Occurrence router now comes from occurrences module
+from modules.operacional.occurrences import occurrence_router
+
+# Disciplinary - Medidas Administrativas
+from modules.operacional.disciplinary import router as disciplinary_router
 
 # ===================================================================
 # MÓDULO FINANCIAL - Gestão Financeira Completa
@@ -208,9 +215,12 @@ router.include_router(post_router, prefix="/operacional/postos", tags=["Operacio
 router.include_router(scale_router, prefix="/operacional/escalas", tags=["Operacional - Escalas"])
 router.include_router(shift_router, prefix="/operacional/turnos", tags=["Operacional - Turnos"])
 router.include_router(allocation_router, prefix="/operacional/alocacoes", tags=["Operacional - Alocações"])
+router.include_router(employee_router, prefix="/operacional", tags=["Operacional - Funcionarios"])
+router.include_router(occurrence_router, prefix="/operacional", tags=["Operacional - Ocorrências"])
 router.include_router(substitution_router, prefix="/operacional/substituicoes", tags=["Operacional - Substituições"])
 router.include_router(time_bank_router, prefix="/operacional/banco-horas", tags=["Operacional - Banco de Horas"])
 router.include_router(reports_router, prefix="/operacional", tags=["Operacional - Relatorios"])
+router.include_router(disciplinary_router, prefix="/operacional", tags=["Operacional - Medidas Administrativas"])
 
 # ===================================================================
 # FINANCIAL - GESTÃO FINANCEIRA COMPLETA
@@ -460,3 +470,9 @@ router.include_router(estoque_router, prefix="/campo/estoque", tags=["Campo - Es
 # ===================================================================
 from modules.ai.intelligence_hub.controllers import intelligence_hub_router
 router.include_router(intelligence_hub_router, prefix="/ai", tags=["Intelligence Hub - Central IA"])
+
+# ===================================================================
+# REIMBURSEMENT - MÓDULO DE REEMBOLSO DE DESPESAS
+# ===================================================================
+from modules.reimbursement import reimbursement_router
+router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])

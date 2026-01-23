@@ -1,10 +1,10 @@
-"""Service de Kits Documentais."""
+"""Service de Kits Documentais - Versão Async."""
 
 from datetime import datetime, timedelta
 from typing import List, Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.document_kits.models.document_kit import (
     DocumentKit,
@@ -31,14 +31,14 @@ from modules.document_kits.schemas.kit_schemas import (
 class DocumentKitService:
     """Service para operacoes de Kits Documentais."""
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         """Inicializa service."""
         self.db = db
         self.repository = DocumentKitRepository(db)
 
     # === DocumentKit Operations ===
 
-    def create_kit(
+    async def create_kit(
         self,
         data: DocumentKitCreate,
         created_by: UUID,
@@ -63,17 +63,17 @@ class DocumentKitService:
             status=KitStatus.RASCUNHO,
             created_by=created_by,
         )
-        return self.repository.create_kit(kit)
+        return await self.repository.create_kit(kit)
 
-    def get_kit(
+    async def get_kit(
         self,
         kit_id: UUID,
         condominio_id: UUID,
     ) -> Optional[DocumentKit]:
         """Busca kit por ID."""
-        return self.repository.get_kit_by_id(kit_id, condominio_id)
+        return await self.repository.get_kit_by_id(kit_id, condominio_id)
 
-    def list_kits(
+    async def list_kits(
         self,
         condominio_id: UUID,
         tipo: Optional[KitType] = None,
@@ -84,7 +84,7 @@ class DocumentKitService:
         limit: int = 100,
     ) -> List[DocumentKit]:
         """Lista kits."""
-        return self.repository.list_kits(
+        return await self.repository.list_kits(
             condominio_id=condominio_id,
             tipo=tipo,
             status=status,
@@ -94,7 +94,20 @@ class DocumentKitService:
             limit=limit,
         )
 
-    def update_kit(
+    async def count_kits(
+        self,
+        condominio_id: UUID,
+        tipo: Optional[KitType] = None,
+        status: Optional[KitStatus] = None,
+    ) -> int:
+        """Conta kits."""
+        return await self.repository.count_kits(
+            condominio_id=condominio_id,
+            tipo=tipo,
+            status=status,
+        )
+
+    async def update_kit(
         self,
         kit: DocumentKit,
         data: DocumentKitUpdate,
@@ -107,24 +120,24 @@ class DocumentKitService:
             setattr(kit, field, value)
 
         kit.updated_by = updated_by
-        return self.repository.update_kit(kit)
+        return await self.repository.update_kit(kit)
 
-    def activate_kit(self, kit: DocumentKit) -> DocumentKit:
+    async def activate_kit(self, kit: DocumentKit) -> DocumentKit:
         """Ativa kit."""
         kit.ativar()
-        return self.repository.update_kit(kit)
+        return await self.repository.update_kit(kit)
 
-    def deactivate_kit(self, kit: DocumentKit) -> DocumentKit:
+    async def deactivate_kit(self, kit: DocumentKit) -> DocumentKit:
         """Desativa kit."""
         kit.desativar()
-        return self.repository.update_kit(kit)
+        return await self.repository.update_kit(kit)
 
-    def archive_kit(self, kit: DocumentKit) -> DocumentKit:
+    async def archive_kit(self, kit: DocumentKit) -> DocumentKit:
         """Arquiva kit."""
         kit.arquivar()
-        return self.repository.update_kit(kit)
+        return await self.repository.update_kit(kit)
 
-    def duplicate_kit(
+    async def duplicate_kit(
         self,
         kit: DocumentKit,
         new_codigo: str,
@@ -151,7 +164,7 @@ class DocumentKitService:
             status=KitStatus.RASCUNHO,
             created_by=created_by,
         )
-        new_kit = self.repository.create_kit(new_kit)
+        new_kit = await self.repository.create_kit(new_kit)
 
         for item in kit.itens:
             new_item = DocumentKitItem(
@@ -174,18 +187,18 @@ class DocumentKitService:
                 exemplo_url=item.exemplo_url,
                 tags=item.tags,
             )
-            self.repository.create_item(new_item)
+            await self.repository.create_item(new_item)
 
         new_kit.atualizar_contadores()
-        return self.repository.update_kit(new_kit)
+        return await self.repository.update_kit(new_kit)
 
-    def delete_kit(self, kit: DocumentKit) -> None:
+    async def delete_kit(self, kit: DocumentKit) -> None:
         """Remove kit."""
-        self.repository.delete_kit(kit)
+        await self.repository.delete_kit(kit)
 
     # === DocumentKitItem Operations ===
 
-    def add_item(
+    async def add_item(
         self,
         kit: DocumentKit,
         data: DocumentKitItemCreate,
@@ -212,35 +225,35 @@ class DocumentKitService:
             depende_de=data.depende_de,
             tags=data.tags,
         )
-        item = self.repository.create_item(item)
+        item = await self.repository.create_item(item)
 
         kit.atualizar_contadores()
-        self.repository.update_kit(kit)
+        await self.repository.update_kit(kit)
 
         return item
 
-    def get_item(
+    async def get_item(
         self,
         item_id: UUID,
         condominio_id: UUID,
     ) -> Optional[DocumentKitItem]:
         """Busca item por ID."""
-        return self.repository.get_item_by_id(item_id, condominio_id)
+        return await self.repository.get_item_by_id(item_id, condominio_id)
 
-    def list_kit_items(
+    async def list_kit_items(
         self,
         kit_id: UUID,
         condominio_id: UUID,
         only_active: bool = True,
     ) -> List[DocumentKitItem]:
         """Lista itens de um kit."""
-        return self.repository.list_items_by_kit(
+        return await self.repository.list_items_by_kit(
             kit_id=kit_id,
             condominio_id=condominio_id,
             only_active=only_active,
         )
 
-    def update_item(
+    async def update_item(
         self,
         item: DocumentKitItem,
         data: DocumentKitItemUpdate,
@@ -251,37 +264,37 @@ class DocumentKitService:
         for field, value in update_data.items():
             setattr(item, field, value)
 
-        return self.repository.update_item(item)
+        return await self.repository.update_item(item)
 
-    def delete_item(self, item: DocumentKitItem) -> None:
+    async def delete_item(self, item: DocumentKitItem) -> None:
         """Remove item."""
-        kit = self.repository.get_kit_by_id(
+        kit = await self.repository.get_kit_by_id(
             item.kit_id, item.condominio_id
         )
-        self.repository.delete_item(item)
+        await self.repository.delete_item(item)
 
         if kit:
             kit.atualizar_contadores()
-            self.repository.update_kit(kit)
+            await self.repository.update_kit(kit)
 
-    def reorder_items(
+    async def reorder_items(
         self,
         kit_id: UUID,
         condominio_id: UUID,
         item_orders: List[dict],
     ) -> None:
         """Reordena itens."""
-        self.repository.reorder_items(kit_id, condominio_id, item_orders)
+        await self.repository.reorder_items(kit_id, condominio_id, item_orders)
 
     # === DocumentKitAssignment Operations ===
 
-    def assign_kit(
+    async def assign_kit(
         self,
         data: DocumentKitAssignmentCreate,
         created_by: UUID,
     ) -> DocumentKitAssignment:
         """Atribui kit a uma entidade."""
-        kit = self.repository.get_kit_by_id(data.kit_id, data.condominio_id)
+        kit = await self.repository.get_kit_by_id(data.kit_id, data.condominio_id)
         if not kit:
             raise ValueError("Kit nao encontrado")
 
@@ -304,9 +317,9 @@ class DocumentKitService:
             status=AssignmentStatus.PENDENTE,
             created_by=created_by,
         )
-        assignment = self.repository.create_assignment(assignment)
+        assignment = await self.repository.create_assignment(assignment)
 
-        items = self.repository.list_items_by_kit(
+        items = await self.repository.list_items_by_kit(
             kit_id=kit.id,
             condominio_id=data.condominio_id,
             only_active=True,
@@ -324,26 +337,26 @@ class DocumentKitService:
             item_statuses.append(status)
 
         if item_statuses:
-            self.repository.create_item_statuses_bulk(item_statuses)
+            await self.repository.create_item_statuses_bulk(item_statuses)
 
         assignment.total_itens = len(items)
         assignment.itens_pendentes = len(items)
-        self.repository.update_assignment(assignment)
+        await self.repository.update_assignment(assignment)
 
         kit.incrementar_uso()
-        self.repository.update_kit(kit)
+        await self.repository.update_kit(kit)
 
         return assignment
 
-    def get_assignment(
+    async def get_assignment(
         self,
         assignment_id: UUID,
         condominio_id: UUID,
     ) -> Optional[DocumentKitAssignment]:
         """Busca atribuicao por ID."""
-        return self.repository.get_assignment_by_id(assignment_id, condominio_id)
+        return await self.repository.get_assignment_by_id(assignment_id, condominio_id)
 
-    def list_assignments(
+    async def list_assignments(
         self,
         condominio_id: UUID,
         kit_id: Optional[UUID] = None,
@@ -355,7 +368,7 @@ class DocumentKitService:
         limit: int = 100,
     ) -> List[DocumentKitAssignment]:
         """Lista atribuicoes."""
-        return self.repository.list_assignments(
+        return await self.repository.list_assignments(
             condominio_id=condominio_id,
             kit_id=kit_id,
             entity_type=entity_type,
@@ -366,7 +379,18 @@ class DocumentKitService:
             limit=limit,
         )
 
-    def update_assignment(
+    async def count_assignments(
+        self,
+        condominio_id: UUID,
+        status: Optional[AssignmentStatus] = None,
+    ) -> int:
+        """Conta atribuicoes."""
+        return await self.repository.count_assignments(
+            condominio_id=condominio_id,
+            status=status,
+        )
+
+    async def update_assignment(
         self,
         assignment: DocumentKitAssignment,
         data: DocumentKitAssignmentUpdate,
@@ -377,64 +401,64 @@ class DocumentKitService:
         for field, value in update_data.items():
             setattr(assignment, field, value)
 
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
-    def start_assignment(
+    async def start_assignment(
         self,
         assignment: DocumentKitAssignment,
     ) -> DocumentKitAssignment:
         """Inicia atribuicao."""
         assignment.iniciar()
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
-    def approve_assignment(
+    async def approve_assignment(
         self,
         assignment: DocumentKitAssignment,
         approved_by: UUID,
     ) -> DocumentKitAssignment:
         """Aprova atribuicao."""
         assignment.aprovar(str(approved_by))
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
-    def reject_assignment(
+    async def reject_assignment(
         self,
         assignment: DocumentKitAssignment,
         motivo: str,
     ) -> DocumentKitAssignment:
         """Reprova atribuicao."""
         assignment.reprovar(motivo)
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
-    def complete_assignment(
+    async def complete_assignment(
         self,
         assignment: DocumentKitAssignment,
     ) -> DocumentKitAssignment:
         """Completa atribuicao."""
         assignment.completar()
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
-    def cancel_assignment(
+    async def cancel_assignment(
         self,
         assignment: DocumentKitAssignment,
     ) -> DocumentKitAssignment:
         """Cancela atribuicao."""
         assignment.cancelar()
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
-    def send_notification(
+    async def send_notification(
         self,
         assignment: DocumentKitAssignment,
     ) -> DocumentKitAssignment:
         """Registra notificacao enviada."""
         assignment.registrar_notificacao()
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
-    def recalculate_progress(
+    async def recalculate_progress(
         self,
         assignment: DocumentKitAssignment,
     ) -> DocumentKitAssignment:
         """Recalcula progresso da atribuicao."""
-        statuses = self.repository.list_item_statuses_by_assignment(
+        statuses = await self.repository.list_item_statuses_by_assignment(
             assignment_id=assignment.id,
             condominio_id=assignment.condominio_id,
         )
@@ -455,32 +479,32 @@ class DocumentKitService:
             assignment.status = AssignmentStatus.COMPLETO
             assignment.data_conclusao = datetime.utcnow()
 
-        return self.repository.update_assignment(assignment)
+        return await self.repository.update_assignment(assignment)
 
     # === DocumentKitItemStatus Operations ===
 
-    def get_item_status(
+    async def get_item_status(
         self,
         status_id: UUID,
         condominio_id: UUID,
     ) -> Optional[DocumentKitItemStatus]:
         """Busca status de item."""
-        return self.repository.get_item_status_by_id(status_id, condominio_id)
+        return await self.repository.get_item_status_by_id(status_id, condominio_id)
 
-    def list_assignment_statuses(
+    async def list_assignment_statuses(
         self,
         assignment_id: UUID,
         condominio_id: UUID,
         status: Optional[ItemStatusEnum] = None,
     ) -> List[DocumentKitItemStatus]:
         """Lista status de itens de uma atribuicao."""
-        return self.repository.list_item_statuses_by_assignment(
+        return await self.repository.list_item_statuses_by_assignment(
             assignment_id=assignment_id,
             condominio_id=condominio_id,
             status=status,
         )
 
-    def submit_document(
+    async def submit_document(
         self,
         item_status: DocumentKitItemStatus,
         arquivo_url: str,
@@ -498,94 +522,51 @@ class DocumentKitService:
         if data_validade:
             item_status.data_validade = data_validade
 
-        item_status = self.repository.update_item_status(item_status)
+        return await self.repository.update_item_status(item_status)
 
-        assignment = self.repository.get_assignment_by_id(
-            item_status.assignment_id,
-            item_status.condominio_id,
-        )
-        if assignment:
-            self.recalculate_progress(assignment)
-
-        return item_status
-
-    def analyze_document(
+    async def approve_document(
         self,
         item_status: DocumentKitItemStatus,
-    ) -> DocumentKitItemStatus:
-        """Marca documento como em analise."""
-        item_status.analisar()
-        return self.repository.update_item_status(item_status)
-
-    def approve_document(
-        self,
-        item_status: DocumentKitItemStatus,
-        analisado_por: UUID,
+        approved_by: UUID,
         observacoes: Optional[str] = None,
     ) -> DocumentKitItemStatus:
         """Aprova documento."""
-        item_status.aprovar(str(analisado_por), observacoes)
-        item_status = self.repository.update_item_status(item_status)
+        item_status.aprovar(str(approved_by), observacoes)
+        return await self.repository.update_item_status(item_status)
 
-        assignment = self.repository.get_assignment_by_id(
-            item_status.assignment_id,
-            item_status.condominio_id,
-        )
-        if assignment:
-            self.recalculate_progress(assignment)
-
-        return item_status
-
-    def reject_document(
+    async def reject_document(
         self,
         item_status: DocumentKitItemStatus,
-        analisado_por: UUID,
         motivo: str,
     ) -> DocumentKitItemStatus:
         """Reprova documento."""
-        item_status.reprovar(str(analisado_por), motivo)
-        item_status = self.repository.update_item_status(item_status)
+        item_status.reprovar(motivo)
+        return await self.repository.update_item_status(item_status)
 
-        assignment = self.repository.get_assignment_by_id(
-            item_status.assignment_id,
-            item_status.condominio_id,
-        )
-        if assignment:
-            self.recalculate_progress(assignment)
-
-        return item_status
-
-    def mark_not_applicable(
+    async def mark_not_applicable(
         self,
         item_status: DocumentKitItemStatus,
-        motivo: Optional[str] = None,
+        motivo: str,
     ) -> DocumentKitItemStatus:
         """Marca item como nao aplicavel."""
         item_status.marcar_nao_aplicavel(motivo)
-        item_status = self.repository.update_item_status(item_status)
+        return await self.repository.update_item_status(item_status)
 
-        assignment = self.repository.get_assignment_by_id(
-            item_status.assignment_id,
-            item_status.condominio_id,
-        )
-        if assignment:
-            self.recalculate_progress(assignment)
+    # === Stats Operations ===
 
-        return item_status
-
-    # === Statistics ===
-
-    def get_stats(self, condominio_id: UUID) -> dict:
+    async def get_stats(self, condominio_id: UUID) -> dict:
         """Retorna estatisticas."""
-        return self.repository.get_stats(condominio_id)
+        return await self.repository.get_stats(condominio_id)
 
-    def get_entity_compliance(
+    async def get_entity_compliance(
         self,
         condominio_id: UUID,
         entity_type: EntityType,
         entity_id: UUID,
     ) -> dict:
-        """Retorna conformidade de uma entidade."""
-        return self.repository.get_entity_compliance(
-            condominio_id, entity_type, entity_id
+        """Retorna conformidade de entidade."""
+        return await self.repository.get_entity_compliance(
+            condominio_id=condominio_id,
+            entity_type=entity_type,
+            entity_id=entity_id,
         )

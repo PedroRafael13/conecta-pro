@@ -60,10 +60,12 @@ class DocumentVersion(Base):
         String(50), nullable=True
     )  # Ex: "1.0.0", "v2"
     version_type: Mapped[VersionType] = mapped_column(
-        SQLEnum(VersionType), default=VersionType.MINOR
+        SQLEnum(VersionType, native_enum=False, create_constraint=False),
+        default=VersionType.MINOR
     )
     status: Mapped[VersionStatus] = mapped_column(
-        SQLEnum(VersionStatus), default=VersionStatus.ATIVA
+        SQLEnum(VersionStatus, native_enum=False, create_constraint=False),
+        default=VersionStatus.ATIVA
     )
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
 

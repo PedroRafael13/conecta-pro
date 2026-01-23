@@ -142,23 +142,28 @@ class Document(Base):
 
     # Classificação
     document_type: Mapped[DocumentType] = mapped_column(
-        SQLEnum(DocumentType), default=DocumentType.OUTRO
+        SQLEnum(DocumentType, native_enum=False, create_constraint=False),
+        default=DocumentType.OUTRO
     )
     category: Mapped[DocumentCategory] = mapped_column(
-        SQLEnum(DocumentCategory), default=DocumentCategory.OUTRO
+        SQLEnum(DocumentCategory, native_enum=False, create_constraint=False),
+        default=DocumentCategory.OUTRO
     )
     status: Mapped[DocumentStatus] = mapped_column(
-        SQLEnum(DocumentStatus), default=DocumentStatus.RASCUNHO
+        SQLEnum(DocumentStatus, native_enum=False, create_constraint=False),
+        default=DocumentStatus.RASCUNHO
     )
     confidentiality: Mapped[DocumentConfidentiality] = mapped_column(
-        SQLEnum(DocumentConfidentiality), default=DocumentConfidentiality.INTERNO
+        SQLEnum(DocumentConfidentiality, native_enum=False, create_constraint=False),
+        default=DocumentConfidentiality.INTERNO
     )
 
     # Arquivo
     file_name: Mapped[str] = mapped_column(String(255), nullable=False)
     file_extension: Mapped[str] = mapped_column(String(20), nullable=False)
     file_type: Mapped[FileType] = mapped_column(
-        SQLEnum(FileType), default=FileType.OUTRO
+        SQLEnum(FileType, native_enum=False, create_constraint=False),
+        default=FileType.OUTRO
     )
     file_path: Mapped[str] = mapped_column(String(1000), nullable=False)
     file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)

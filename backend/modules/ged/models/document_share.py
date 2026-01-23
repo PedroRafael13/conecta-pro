@@ -68,7 +68,8 @@ class DocumentShare(Base):
 
     # Tipo e destinatário
     share_type: Mapped[ShareType] = mapped_column(
-        SQLEnum(ShareType), default=ShareType.USUARIO
+        SQLEnum(ShareType, native_enum=False, create_constraint=False),
+        default=ShareType.USUARIO
     )
     shared_with_id: Mapped[Optional[str]] = mapped_column(
         UUID(as_uuid=False), nullable=True
@@ -86,7 +87,8 @@ class DocumentShare(Base):
 
     # Status
     status: Mapped[ShareStatus] = mapped_column(
-        SQLEnum(ShareStatus), default=ShareStatus.ATIVO
+        SQLEnum(ShareStatus, native_enum=False, create_constraint=False),
+        default=ShareStatus.ATIVO
     )
 
     # Link externo

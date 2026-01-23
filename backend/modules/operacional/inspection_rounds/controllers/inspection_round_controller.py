@@ -64,7 +64,7 @@ async def create_round(
 ) -> InspectionRoundResponse:
     """Cria uma nova ronda."""
     try:
-        inspection_round = service.create(data)
+        inspection_round = await service.create(data)
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundValidationError as e:
         raise HTTPException(
@@ -109,7 +109,7 @@ async def list_rounds(
         has_disciplinary_actions=has_disciplinary_actions,
     )
 
-    rounds, total = service.list(str(tenant_id), skip, limit, filters)
+    rounds, total = await service.list(str(tenant_id), skip, limit, filters)
 
     pages = (total + limit - 1) // limit if limit > 0 else 0
     page = (skip // limit) + 1 if limit > 0 else 1
@@ -136,7 +136,7 @@ async def get_dashboard(
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionDashboardStats:
     """Retorna estatisticas do dashboard."""
-    return service.get_dashboard_stats(str(tenant_id), start_date, end_date)
+    return await service.get_dashboard_stats(str(tenant_id))
 
 
 @router.get(
@@ -168,7 +168,7 @@ async def get_round(
 ) -> InspectionRoundResponse:
     """Busca ronda por ID."""
     try:
-        inspection_round = service.get_by_id(str(round_id))
+        inspection_round = await service.get_by_id(str(round_id))
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -190,7 +190,7 @@ async def update_round(
 ) -> InspectionRoundResponse:
     """Atualiza uma ronda."""
     try:
-        inspection_round = service.update(str(round_id), data)
+        inspection_round = await service.update(str(round_id), data)
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -216,7 +216,7 @@ async def delete_round(
 ):
     """Remove uma ronda."""
     try:
-        service.delete(str(round_id))
+        await service.delete(str(round_id))
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -247,7 +247,7 @@ async def start_round(
 ) -> InspectionRoundResponse:
     """Inicia uma ronda."""
     try:
-        inspection_round = service.start_round(str(round_id), data)
+        inspection_round = await service.start_round(str(round_id), data)
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -273,7 +273,7 @@ async def pause_round(
 ) -> InspectionRoundResponse:
     """Pausa uma ronda."""
     try:
-        inspection_round = service.pause_round(str(round_id))
+        inspection_round = await service.pause_round(str(round_id))
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -299,7 +299,7 @@ async def resume_round(
 ) -> InspectionRoundResponse:
     """Retoma uma ronda pausada."""
     try:
-        inspection_round = service.resume_round(str(round_id))
+        inspection_round = await service.resume_round(str(round_id))
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -326,7 +326,7 @@ async def complete_round(
 ) -> InspectionRoundResponse:
     """Conclui uma ronda."""
     try:
-        inspection_round = service.complete_round(str(round_id), data)
+        inspection_round = await service.complete_round(str(round_id), data)
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -353,7 +353,7 @@ async def cancel_round(
 ) -> InspectionRoundResponse:
     """Cancela uma ronda."""
     try:
-        inspection_round = service.cancel_round(str(round_id), reason)
+        inspection_round = await service.cancel_round(str(round_id), reason)
         return InspectionRoundResponse.model_validate(inspection_round)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -386,7 +386,7 @@ async def create_checkpoint(
 ) -> CheckpointResponse:
     """Cria um checkpoint."""
     try:
-        checkpoint = service.create_checkpoint(str(round_id), data)
+        checkpoint = await service.create_checkpoint(str(round_id), data)
         return CheckpointResponse.model_validate(checkpoint)
     except InspectionRoundNotFoundError as e:
         raise HTTPException(
@@ -412,7 +412,7 @@ async def get_checkpoints(
 ) -> List[CheckpointResponse]:
     """Lista checkpoints de uma ronda."""
     try:
-        checkpoints = service.get_checkpoints(str(round_id))
+        checkpoints = await service.get_checkpoints(str(round_id))
         return [CheckpointResponse.model_validate(c) for c in checkpoints]
     except InspectionRoundNotFoundError as e:
         raise HTTPException(

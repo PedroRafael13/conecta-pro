@@ -37,8 +37,8 @@ class FolderBase(BaseModel):
 class FolderCreate(FolderBase):
     """Schema para criar Folder."""
 
-    owner_id: str
-    created_by: str
+    owner_id: Optional[str] = None
+    created_by: Optional[str] = None
 
 
 class FolderUpdate(BaseModel):

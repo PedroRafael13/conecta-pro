@@ -33,12 +33,19 @@ class UserListResponse(BaseModel):
 
 # Roles validos no sistema
 VALID_ROLES = [
+    # Roles gerais
     "admin",       # Acesso total ao ERP
     "gestor",      # Dashboard, relatorios, operacoes
-    "supervisor",  # Escalas, equipes, ocorrencias
     "operador",    # Operacoes basicas
     "funcionario", # Portal do Funcionario (ponto, escalas, docs)
     "pending",     # Aguardando aprovacao
+    # Roles do modulo operacional
+    "administrador",        # Poder total no operacional
+    "gerente_operacional",  # Gestao completa do operacional
+    "supervisor",           # Aprova escalas, coordena
+    "inspetor",             # Fiscaliza, visualiza relatorios
+    "lider",                # Coordena equipe local
+    "agente",               # Apenas propria escala + check-in/out
 ]
 
 
@@ -122,12 +129,19 @@ async def list_roles(
     """Lista roles disponiveis no sistema."""
     return {
         "roles": [
+            # Roles gerais
             {"value": "admin", "label": "Administrador", "description": "Acesso total ao ERP"},
             {"value": "gestor", "label": "Gestor", "description": "Dashboard, relatórios, operações"},
-            {"value": "supervisor", "label": "Supervisor", "description": "Escalas, equipes, ocorrências"},
             {"value": "operador", "label": "Operador", "description": "Operações básicas"},
             {"value": "funcionario", "label": "Funcionário", "description": "Portal do Funcionário"},
             {"value": "pending", "label": "Pendente", "description": "Aguardando aprovação"},
+            # Roles do modulo operacional
+            {"value": "administrador", "label": "Administrador Operacional", "description": "Poder total no módulo operacional"},
+            {"value": "gerente_operacional", "label": "Gerente Operacional", "description": "Gestão completa do operacional"},
+            {"value": "supervisor", "label": "Supervisor", "description": "Aprova escalas, coordena equipes"},
+            {"value": "inspetor", "label": "Inspetor", "description": "Fiscaliza postos, visualiza relatórios"},
+            {"value": "lider", "label": "Líder", "description": "Coordena equipe local"},
+            {"value": "agente", "label": "Agente", "description": "Acesso à própria escala e check-in/out"},
         ]
     }
 

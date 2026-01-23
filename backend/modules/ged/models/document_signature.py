@@ -80,15 +80,18 @@ class DocumentSignature(Base):
     )  # CPF/CNPJ
     signer_phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     signer_role: Mapped[SignatureRole] = mapped_column(
-        SQLEnum(SignatureRole), default=SignatureRole.PARTE
+        SQLEnum(SignatureRole, native_enum=False, create_constraint=False),
+        default=SignatureRole.PARTE
     )
 
     # Tipo e Status
     signature_type: Mapped[SignatureType] = mapped_column(
-        SQLEnum(SignatureType), default=SignatureType.ELETRONICA
+        SQLEnum(SignatureType, native_enum=False, create_constraint=False),
+        default=SignatureType.ELETRONICA
     )
     status: Mapped[SignatureStatus] = mapped_column(
-        SQLEnum(SignatureStatus), default=SignatureStatus.PENDENTE
+        SQLEnum(SignatureStatus, native_enum=False, create_constraint=False),
+        default=SignatureStatus.PENDENTE
     )
 
     # Ordem de assinatura

@@ -182,6 +182,7 @@ try:
         scale_router,
         shift_router,
         allocation_router,
+        employee_router,
         substitution_router,
         time_bank_router,
         reports_router,
@@ -191,12 +192,21 @@ try:
     api_router.include_router(scale_router, prefix="/operacional", tags=["Operacional - Escalas"])
     api_router.include_router(shift_router, prefix="/operacional", tags=["Operacional - Turnos"])
     api_router.include_router(allocation_router, prefix="/operacional", tags=["Operacional - Alocacoes"])
+    api_router.include_router(employee_router, prefix="/operacional", tags=["Operacional - Funcionarios"])
     api_router.include_router(substitution_router, prefix="/operacional", tags=["Operacional - Substituicoes"])
     api_router.include_router(time_bank_router, prefix="/operacional", tags=["Operacional - Banco de Horas"])
     api_router.include_router(reports_router, prefix="/operacional", tags=["Operacional - Relatorios"])
     logger.info("Modulo Operations: OK")
 except Exception as e:
     logger.warning(f"Modulo Operations: {e}")
+
+# Operations - Occurrences (Ocorrencias Disciplinares)
+try:
+    from modules.operacional.occurrences import occurrence_router
+    api_router.include_router(occurrence_router, prefix="/operacional", tags=["Operacional - Ocorrencias"])
+    logger.info("Modulo Operations Occurrences: OK")
+except Exception as e:
+    logger.warning(f"Modulo Operations Occurrences: {e}")
 
 # Financial (sem costing que tem dependencias)
 try:
@@ -347,6 +357,15 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Document Kits: {e}")
 
+# Document Kits - Operational Integration
+try:
+    from modules.document_kits.controllers.operational_controller import router as operational_router
+    # Router já tem prefix="/document-kits-operational"
+    api_router.include_router(operational_router)
+    logger.info("Modulo Document Kits Operational: OK")
+except Exception as e:
+    logger.warning(f"Modulo Document Kits Operational: {e}")
+
 # Government Integrations
 try:
     from modules.government_integrations import government_integrations_router
@@ -384,6 +403,30 @@ try:
     logger.info("Modulo Campo (OS/Visitas/Checklists): OK")
 except Exception as e:
     logger.warning(f"Modulo Campo: {e}")
+
+# REEMBOLSO - Reembolso de Despesas
+try:
+    from modules.reimbursement import reimbursement_router
+    api_router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])
+    logger.info("Modulo Reimbursement: OK")
+except Exception as e:
+    logger.warning(f"Modulo Reimbursement: {e}")
+
+# DISCIPLINARY - Medidas Administrativas (Advertencias, Suspensoes, Demissoes)
+try:
+    from modules.operacional.disciplinary import router as disciplinary_router
+    api_router.include_router(disciplinary_router, prefix="/operacional", tags=["Operacional - Medidas Administrativas"])
+    logger.info("Modulo Disciplinary: OK")
+except Exception as e:
+    logger.warning(f"Modulo Disciplinary: {e}")
+
+# INSPECTION ROUNDS - Rondas de Inspecao
+try:
+    from modules.operacional.inspection_rounds import inspection_round_router
+    api_router.include_router(inspection_round_router, prefix="/operacional/rondas", tags=["Operacional - Rondas de Inspecao"])
+    logger.info("Modulo Inspection Rounds: OK")
+except Exception as e:
+    logger.warning(f"Modulo Inspection Rounds: {e}")
 
 
 # Incluir router principal

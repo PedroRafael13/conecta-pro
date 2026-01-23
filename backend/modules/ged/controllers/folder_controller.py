@@ -34,7 +34,9 @@ async def create_folder(
     """Cria uma nova pasta."""
     service = FolderService(db)
     try:
-        data.created_by = current_user["id"]
+        user_id = str(current_user.id) if hasattr(current_user, 'id') else current_user.get("id", current_user.get("sub"))
+        data.owner_id = user_id
+        data.created_by = user_id
         return await service.create(data)
     except ValueError as e:
         raise HTTPException(

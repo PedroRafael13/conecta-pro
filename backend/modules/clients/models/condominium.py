@@ -72,7 +72,8 @@ class Condominium(Base):
 
     # Dados básicos
     name = Column(String(200), nullable=False)
-    type = Column(Enum(CondominiumType), nullable=False, default=CondominiumType.RESIDENCIAL)
+    # REMOVED: type field (não existe no banco de dados)
+    # type = Column(Enum(CondominiumType), nullable=False, default=CondominiumType.RESIDENCIAL)
     status = Column(
         Enum(CondominiumStatus), nullable=False, default=CondominiumStatus.EM_IMPLANTACAO
     )
@@ -186,7 +187,8 @@ class Condominium(Base):
     __table_args__ = (
         Index("ix_condominiums_client_status", "client_id", "status"),
         Index("ix_condominiums_city_state", "address_city", "address_state"),
-        Index("ix_condominiums_type", "type"),
+        # REMOVED: Index for "type" field (field doesn't exist in database)
+        # Index("ix_condominiums_type", "type"),
     )
 
     def __repr__(self) -> str:
