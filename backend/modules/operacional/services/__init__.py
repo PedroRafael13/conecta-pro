@@ -6,6 +6,7 @@ Date: 2026-01-18
 """
 
 from .scale_generator import ScaleGenerator, scale_generator
+from .scale_template_service import ScaleTemplateService
 from .substitution_service import SubstitutionService, substitution_service
 from .time_bank_service import TimeBankService, time_bank_service
 from .integration_service import IntegrationService, get_integration_service
@@ -22,6 +23,8 @@ __all__ = [
     # Scale Generator
     "ScaleGenerator",
     "scale_generator",
+    # Scale Template Service
+    "ScaleTemplateService",
     # Substitution Service
     "SubstitutionService",
     "substitution_service",

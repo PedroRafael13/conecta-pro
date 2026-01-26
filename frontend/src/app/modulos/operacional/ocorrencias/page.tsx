@@ -42,6 +42,7 @@ import {
 import { OccurrenceFormModal } from '@/components/operacional/occurrence-form-modal';
 import { OccurrenceDetailModal } from '@/components/operacional/occurrence-detail-modal';
 import { OccurrenceResolveModal } from '@/components/operacional/occurrence-resolve-modal';
+import { ExportButton } from '@/components/ui/export-button';
 
 // Cores dos status
 const STATUS_COLORS: Record<OccurrenceStatus, string> = {
@@ -201,6 +202,22 @@ export default function OcorrenciasPage() {
     }
   };
 
+  // Preparar dados para exportação
+  const exportData = occurrences.map((occ) => ({
+    'Código': occ.code || '-',
+    'Tipo': OCCURRENCE_TYPE_LABELS[occ.occurrence_type as OccurrenceType] || occ.occurrence_type,
+    'Categoria': OCCURRENCE_CATEGORY_LABELS[occ.category as OccurrenceCategory] || occ.category,
+    'Gravidade': OCCURRENCE_SEVERITY_LABELS[occ.severity as OccurrenceSeverity] || occ.severity,
+    'Status': OCCURRENCE_STATUS_LABELS[occ.status as OccurrenceStatus] || occ.status,
+    'Título': occ.title,
+    'Descrição': occ.description?.substring(0, 100) || '-',
+    'Colaborador': occ.employee_name || '-',
+    'Inspetor': occ.inspector_name || '-',
+    'Posto': occ.post_name || '-',
+    'Data Ocorrência': new Date(occ.occurred_at).toLocaleDateString('pt-BR'),
+    'Data Criação': new Date(occ.created_at).toLocaleDateString('pt-BR'),
+  }));
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
@@ -239,6 +256,15 @@ export default function OcorrenciasPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ExportButton
+                data={exportData}
+                filename="ocorrencias"
+                pdfTitle="Relatório de Ocorrências Disciplinares"
+                formats={['excel', 'pdf', 'csv']}
+                size="sm"
+                variant="outline"
+                buttonText="Exportar"
+              />
               <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar

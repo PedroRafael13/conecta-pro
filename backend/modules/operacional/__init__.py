@@ -47,6 +47,7 @@ from fastapi import APIRouter
 from .controllers import (
     post_router,
     scale_router,
+    scale_template_router,
     shift_router,
     allocation_router,
     substitution_router,
@@ -85,6 +86,9 @@ operacional_router.include_router(
 )
 operacional_router.include_router(
     scale_router, prefix="/escalas", tags=["Operacional - Escalas"]
+)
+operacional_router.include_router(
+    scale_template_router, tags=["Operacional - Templates de Escalas"]
 )
 operacional_router.include_router(
     shift_router, prefix="/turnos", tags=["Operacional - Turnos"]
@@ -139,6 +143,7 @@ from .models import (
     Scale,
     ScaleType,
     ScaleStatus,
+    ScaleTemplate,
     Shift,
     ShiftStatus,
     Allocation,
@@ -158,6 +163,7 @@ from .models import (
 from .services import (
     ScaleGenerator,
     scale_generator,
+    ScaleTemplateService,
     SubstitutionService,
     substitution_service,
     TimeBankService,
@@ -184,6 +190,7 @@ from .services import (
 from .repositories import (
     PostRepository,
     ScaleRepository,
+    ScaleTemplateRepository,
     ShiftRepository,
     AllocationRepository,
     SubstitutionRepository,
@@ -385,6 +392,7 @@ __all__ = [
     # Core routers
     "post_router",
     "scale_router",
+    "scale_template_router",
     "shift_router",
     "allocation_router",
     "substitution_router",
@@ -407,6 +415,7 @@ __all__ = [
     "Scale",
     "ScaleType",
     "ScaleStatus",
+    "ScaleTemplate",
     "Shift",
     "ShiftStatus",
     "Allocation",
@@ -422,6 +431,7 @@ __all__ = [
     # =========================================================================
     "ScaleGenerator",
     "scale_generator",
+    "ScaleTemplateService",
     "SubstitutionService",
     "substitution_service",
     "TimeBankService",
@@ -444,6 +454,7 @@ __all__ = [
     # =========================================================================
     "PostRepository",
     "ScaleRepository",
+    "ScaleTemplateRepository",
     "ShiftRepository",
     "AllocationRepository",
     "SubstitutionRepository",

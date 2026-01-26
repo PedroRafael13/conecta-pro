@@ -49,16 +49,17 @@ class InspectionRoundRepository:
 
     async def list(
         self,
-        tenant_id: str,
+        tenant_id: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
         filters: Optional[InspectionRoundFilter] = None,
     ) -> Tuple[List[InspectionRound], int]:
         """Lista rondas com filtros e paginacao."""
-        conditions = [
-            InspectionRound.tenant_id == tenant_id,
-            InspectionRound.is_active == True,
-        ]
+        conditions = [InspectionRound.is_active == True]
+
+        # Filtrar por tenant se fornecido
+        if tenant_id:
+            conditions.append(InspectionRound.tenant_id == tenant_id)
 
         if filters:
             if filters.inspector_id:
@@ -141,39 +142,46 @@ class InspectionRoundRepository:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_rounds_in_progress(self, tenant_id: str) -> List[InspectionRound]:
+    async def get_rounds_in_progress(self, tenant_id: Optional[str] = None) -> List[InspectionRound]:
         """Retorna rondas em andamento."""
-        query = select(InspectionRound).where(
-            InspectionRound.tenant_id == tenant_id,
+        conditions = [
             InspectionRound.status == InspectionRoundStatus.EM_ANDAMENTO.value,
             InspectionRound.is_active == True,
-        )
+        ]
+        if tenant_id:
+            conditions.append(InspectionRound.tenant_id == tenant_id)
+
+        query = select(InspectionRound).where(and_(*conditions))
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def get_rounds_scheduled_today(self, tenant_id: str) -> List[InspectionRound]:
+    async def get_rounds_scheduled_today(self, tenant_id: Optional[str] = None) -> List[InspectionRound]:
         """Retorna rondas agendadas para hoje."""
         today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        query = select(InspectionRound).where(
-            InspectionRound.tenant_id == tenant_id,
+        conditions = [
             InspectionRound.status == InspectionRoundStatus.AGENDADA.value,
             InspectionRound.scheduled_date >= today_start,
             InspectionRound.scheduled_date <= today_end,
             InspectionRound.is_active == True,
-        )
+        ]
+        if tenant_id:
+            conditions.append(InspectionRound.tenant_id == tenant_id)
+
+        query = select(InspectionRound).where(and_(*conditions))
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def count_by_status(self, tenant_id: str) -> dict:
+    async def count_by_status(self, tenant_id: Optional[str] = None) -> dict:
         """Conta rondas por status."""
+        conditions = [InspectionRound.is_active == True]
+        if tenant_id:
+            conditions.append(InspectionRound.tenant_id == tenant_id)
+
         query = (
             select(InspectionRound.status, func.count(InspectionRound.id))
-            .where(
-                InspectionRound.tenant_id == tenant_id,
-                InspectionRound.is_active == True,
-            )
+            .where(and_(*conditions))
             .group_by(InspectionRound.status)
         )
         result = await self.db.execute(query)

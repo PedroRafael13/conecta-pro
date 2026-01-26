@@ -22,6 +22,7 @@ from modules.operacional.schemas.scale import (
     ScaleListResponse,
     ScalePublishRequest,
     ScaleResponse,
+    ScaleStats,
     ScaleUpdate,
 )
 from modules.operacional.services.scale_generator import scale_generator
@@ -164,6 +165,22 @@ async def list_scales(
         page_size=page_size,
         total_pages=total_pages,
     )
+
+
+@router.get(
+    "/stats",
+    response_model=ScaleStats,
+    dependencies=[require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)],
+)
+async def get_scale_stats(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> ScaleStats:
+    """
+    Obtém estatísticas de escalas.
+    """
+    repo = ScaleRepository(db)
+    return await repo.get_stats()
 
 
 @router.get(

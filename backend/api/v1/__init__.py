@@ -16,10 +16,13 @@ from modules.crm.controllers import (
 
 from modules.operacional.controllers import (
     allocation_router,
+    dashboard_router as operacional_dashboard_router,
     employee_router,
+    kpi_trends_router,
     post_router,
     reports_router,
     scale_router,
+    scale_template_router,
     shift_router,
     substitution_router,
     time_bank_router,
@@ -213,6 +216,7 @@ router.include_router(contract_router, prefix="/crm", tags=["CRM - Contratos"])
 # ===================================================================
 router.include_router(post_router, prefix="/operacional/postos", tags=["Operacional - Postos"])
 router.include_router(scale_router, prefix="/operacional/escalas", tags=["Operacional - Escalas"])
+router.include_router(scale_template_router, prefix="/operacional/scales/templates", tags=["Operacional - Templates de Escalas"])
 router.include_router(shift_router, prefix="/operacional/turnos", tags=["Operacional - Turnos"])
 router.include_router(allocation_router, prefix="/operacional/alocacoes", tags=["Operacional - Alocações"])
 router.include_router(employee_router, prefix="/operacional", tags=["Operacional - Funcionarios"])
@@ -220,6 +224,8 @@ router.include_router(occurrence_router, prefix="/operacional", tags=["Operacion
 router.include_router(substitution_router, prefix="/operacional/substituicoes", tags=["Operacional - Substituições"])
 router.include_router(time_bank_router, prefix="/operacional/banco-horas", tags=["Operacional - Banco de Horas"])
 router.include_router(reports_router, prefix="/operacional", tags=["Operacional - Relatorios"])
+router.include_router(operacional_dashboard_router, prefix="/operacional", tags=["Operacional - Dashboard"])
+router.include_router(kpi_trends_router, prefix="/operacional", tags=["Operacional - KPI Trends"])
 router.include_router(disciplinary_router, prefix="/operacional", tags=["Operacional - Medidas Administrativas"])
 
 # ===================================================================
@@ -476,3 +482,9 @@ router.include_router(intelligence_hub_router, prefix="/ai", tags=["Intelligence
 # ===================================================================
 from modules.reimbursement import reimbursement_router
 router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])
+
+# ===================================================================
+# SEARCH - BUSCA GLOBAL
+# ===================================================================
+from modules.search import search_router
+router.include_router(search_router, tags=["Search - Busca Global"])

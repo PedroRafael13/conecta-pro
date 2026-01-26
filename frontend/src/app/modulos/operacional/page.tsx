@@ -32,6 +32,10 @@ import { usePostStats } from '@/hooks/usePosts';
 import { useScaleStats } from '@/hooks/useScales';
 import { useOccurrenceStats } from '@/hooks/useOccurrences';
 import { useTodayShifts } from '@/hooks/useShifts';
+import { useKPITrends } from '@/hooks/useKPITrends';
+import { KPIWidget, KPIWidgetSkeleton } from '@/components/ui/kpi-widget';
+import { OperacionalTourProvider } from '@/features/onboarding/components/OperacionalTourProvider';
+import { TourTrigger } from '@/features/onboarding/components/TourTrigger';
 
 // Sub-módulos do Operacional
 const subModules = [
@@ -107,6 +111,7 @@ export default function OperacionalPage() {
   const { stats: scaleStats, isLoading: scaleStatsLoading } = useScaleStats();
   const { stats: occurrenceStats, isLoading: occurrenceStatsLoading } = useOccurrenceStats();
   const { shifts: todayShifts, isLoading: shiftsLoading } = useTodayShifts();
+  const { data: trendsData, isLoading: trendsLoading } = useKPITrends({ period: '7d' });
 
   const moduleStats = {
     postos: stats?.total,
@@ -148,6 +153,7 @@ export default function OperacionalPage() {
   }
 
   return (
+    <OperacionalTourProvider userRole="USUARIO" autoStart={true} showNotification={true}>
     <div className="min-h-screen bg-grid">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">
@@ -174,6 +180,10 @@ export default function OperacionalPage() {
                 </div>
               </div>
             </div>
+            {/* Tour trigger button */}
+            <div className="flex items-center gap-2">
+              <TourTrigger variant="menu-item" />
+            </div>
           </div>
         </div>
       </header>
@@ -181,117 +191,133 @@ export default function OperacionalPage() {
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* KPIs Estratégicos */}
-        <div className="mb-8">
+        <div className="mb-8" data-tour="dashboard-kpis">
           <h2 className="text-lg font-semibold text-[hsl(var(--foreground))] mb-4">
             KPIs Estratégicos
           </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Taxa de Cobertura */}
-            <Link href="/modulos/operacional/postos">
-              <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 hover:border-[hsl(var(--primary))] hover:shadow-lg transition-all duration-200 cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    coverageRate >= 90 ? 'bg-green-500/10' : coverageRate >= 70 ? 'bg-yellow-500/10' : 'bg-red-500/10'
-                  }`}>
-                    <Activity className={`w-5 h-5 ${
-                      coverageRate >= 90 ? 'text-green-500' : coverageRate >= 70 ? 'text-yellow-500' : 'text-red-500'
-                    }`} />
-                  </div>
-                  {coverageRate >= 80 ? (
-                    <TrendingUp className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4 text-red-500" />
-                  )}
-                </div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {coverageRate}%
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Cobertura de Postos
-                </p>
-              </div>
-            </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {/* Postos Ativos */}
+            {statsLoading || trendsLoading ? (
+              <KPIWidgetSkeleton />
+            ) : (
+              <KPIWidget
+                title="Postos Ativos"
+                value={stats?.total || 0}
+                icon={MapPin}
+                iconColor="text-cyan-500"
+                iconBgColor="bg-cyan-500/10"
+                onClick={() => router.push('/modulos/operacional/postos')}
+                sparklineData={trendsData?.postos_ativos}
+                sparklineColor="#06b6d4"
+              />
+            )}
 
-            {/* Horas Trabalhadas */}
-            <Link href="/modulos/operacional/escalas">
-              <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 hover:border-[hsl(var(--primary))] hover:shadow-lg transition-all duration-200 cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-blue-500" />
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {monthlyHours.toLocaleString()}h
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Horas do Mês
-                </p>
-              </div>
-            </Link>
-
-            {/* Ocorrências Pendentes */}
-            <Link href="/modulos/operacional/ocorrencias">
-              <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 hover:border-[hsl(var(--primary))] hover:shadow-lg transition-all duration-200 cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    pendingOccurrences === 0 ? 'bg-green-500/10' : pendingOccurrences < 5 ? 'bg-yellow-500/10' : 'bg-red-500/10'
-                  }`}>
-                    <FileText className={`w-5 h-5 ${
-                      pendingOccurrences === 0 ? 'text-green-500' : pendingOccurrences < 5 ? 'text-yellow-500' : 'text-red-500'
-                    }`} />
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {pendingOccurrences}
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Ocorrências Pendentes
-                </p>
-              </div>
-            </Link>
+            {/* Colaboradores Ativos */}
+            {statsLoading || trendsLoading ? (
+              <KPIWidgetSkeleton />
+            ) : (
+              <KPIWidget
+                title="Colaboradores Ativos"
+                value={stats?.total_allocated || 0}
+                icon={UserCheck}
+                iconColor="text-purple-500"
+                iconBgColor="bg-purple-500/10"
+                onClick={() => router.push('/modulos/operacional/colaboradores')}
+                sparklineData={trendsData?.colaboradores_ativos}
+                sparklineColor="#a855f7"
+              />
+            )}
 
             {/* Escalas em Andamento */}
-            <Link href="/modulos/operacional/escalas">
-              <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 hover:border-[hsl(var(--primary))] hover:shadow-lg transition-all duration-200 cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <CalendarCheck className="w-5 h-5 text-purple-500" />
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {activeScales}
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Escalas em Andamento
-                </p>
-              </div>
-            </Link>
+            {scaleStatsLoading || trendsLoading ? (
+              <KPIWidgetSkeleton />
+            ) : (
+              <KPIWidget
+                title="Escalas em Andamento"
+                value={activeScales}
+                icon={CalendarCheck}
+                iconColor="text-blue-500"
+                iconBgColor="bg-blue-500/10"
+                onClick={() => router.push('/modulos/operacional/escalas')}
+                sparklineData={trendsData?.escalas_em_andamento}
+                sparklineColor="#3b82f6"
+              />
+            )}
 
-            {/* Turnos com Alerta */}
-            <Link href="/modulos/operacional/turnos">
-              <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 hover:border-[hsl(var(--primary))] hover:shadow-lg transition-all duration-200 cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    shiftsNeedingSubstitution === 0 ? 'bg-green-500/10' : 'bg-red-500/10'
-                  }`}>
-                    <AlertTriangle className={`w-5 h-5 ${
-                      shiftsNeedingSubstitution === 0 ? 'text-green-500' : 'text-red-500'
-                    }`} />
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {shiftsNeedingSubstitution}
-                </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Alertas de Turnos
-                </p>
-              </div>
-            </Link>
+            {/* Ocorrências Pendentes */}
+            {occurrenceStatsLoading || trendsLoading ? (
+              <KPIWidgetSkeleton />
+            ) : (
+              <KPIWidget
+                title="Ocorrências Pendentes"
+                value={pendingOccurrences}
+                icon={FileText}
+                iconColor={
+                  pendingOccurrences === 0
+                    ? 'text-green-500'
+                    : pendingOccurrences < 5
+                    ? 'text-yellow-500'
+                    : 'text-red-500'
+                }
+                iconBgColor={
+                  pendingOccurrences === 0
+                    ? 'bg-green-500/10'
+                    : pendingOccurrences < 5
+                    ? 'bg-yellow-500/10'
+                    : 'bg-red-500/10'
+                }
+                onClick={() => router.push('/modulos/operacional/ocorrencias')}
+                sparklineData={trendsData?.ocorrencias_mes}
+                sparklineColor={
+                  pendingOccurrences === 0
+                    ? '#22c55e'
+                    : pendingOccurrences < 5
+                    ? '#eab308'
+                    : '#ef4444'
+                }
+              />
+            )}
+
+            {/* Taxa de Cobertura */}
+            {statsLoading || trendsLoading ? (
+              <KPIWidgetSkeleton />
+            ) : (
+              <KPIWidget
+                title="Cobertura de Postos"
+                value={`${coverageRate}%`}
+                change={5}
+                changeType={coverageRate >= 80 ? 'positive' : 'negative'}
+                icon={Activity}
+                iconColor={
+                  coverageRate >= 90
+                    ? 'text-green-500'
+                    : coverageRate >= 70
+                    ? 'text-yellow-500'
+                    : 'text-red-500'
+                }
+                iconBgColor={
+                  coverageRate >= 90
+                    ? 'bg-green-500/10'
+                    : coverageRate >= 70
+                    ? 'bg-yellow-500/10'
+                    : 'bg-red-500/10'
+                }
+                onClick={() => router.push('/modulos/operacional/postos')}
+                sparklineData={trendsData?.cobertura_percentual}
+                sparklineColor={
+                  coverageRate >= 90
+                    ? '#22c55e'
+                    : coverageRate >= 70
+                    ? '#eab308'
+                    : '#ef4444'
+                }
+              />
+            )}
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="mb-8">
+        <div className="mb-8" data-tour="analytics-charts">
           <h2 className="text-lg font-semibold text-[hsl(var(--foreground))] mb-4">
             Visão Geral Rápida
           </h2>
@@ -363,7 +389,7 @@ export default function OperacionalPage() {
         </div>
 
         {/* Sub-modules Grid */}
-        <div className="mb-8">
+        <div className="mb-8" data-tour="team-panel" data-tour-operations="operations-panel">
           <h2 className="text-lg font-semibold text-[hsl(var(--foreground))] mb-4">
             Módulos Operacionais
           </h2>
@@ -465,5 +491,6 @@ export default function OperacionalPage() {
         )}
       </main>
     </div>
+    </OperacionalTourProvider>
   );
 }

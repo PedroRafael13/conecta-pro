@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { postsService } from '@/lib/services/posts';
 import type { Post, PostFilter, PostStats, PaginatedResponse } from '@/types/operacional';
 import { getErrorMessage } from '@/lib/api';
@@ -21,7 +21,7 @@ interface UsePostsReturn {
   isLoading: boolean;
   error: string | null;
   filters: PostFilter;
-  setFilters: (filters: PostFilter) => void;
+  setFilters: React.Dispatch<React.SetStateAction<PostFilter>>;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   refresh: () => Promise<void>;

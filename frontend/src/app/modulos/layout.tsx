@@ -11,12 +11,17 @@ import {
   Receipt, CheckCircle2, FileSpreadsheet, FileCode,
   Award, File, Folder, Package, Repeat, Settings,
   Camera, Fingerprint, Video, Webhook, LayoutDashboard,
-  ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database
+  ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
+  Clock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { getModuleByPath, modules } from '@/config/modules';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { SearchTrigger } from '@/components/SearchTrigger';
+import { NotificationBell } from '@/features/notifications';
+import { QuickActions } from '@/components/QuickActions';
 
 // Mapeamento de ícones para submódulos
 const iconMap: Record<string, React.ElementType> = {
@@ -27,7 +32,8 @@ const iconMap: Record<string, React.ElementType> = {
   Receipt, CheckCircle2, FileSpreadsheet, FileCode,
   Award, File, Folder, Package, Repeat, Settings,
   Camera, Fingerprint, Video, Webhook, LayoutDashboard,
-  ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database
+  ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
+  Clock
 };
 
 export default function ModulosLayout({
@@ -119,7 +125,7 @@ export default function ModulosLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        <nav className="flex-1 overflow-y-auto py-4" data-tour="sidebar-nav">
           <ul className="space-y-1 px-2">
             {currentModule.subModules.map((subModule) => {
               const Icon = iconMap[subModule.icon] || FileText;
@@ -156,6 +162,14 @@ export default function ModulosLayout({
             })}
           </ul>
         </nav>
+
+        {/* Footer com ThemeToggle */}
+        <div className={cn(
+          'p-4 border-t border-[hsl(var(--border))]',
+          !sidebarOpen && 'flex justify-center'
+        )}>
+          <ThemeToggle />
+        </div>
       </aside>
 
       {/* Mobile menu overlay */}
@@ -245,18 +259,37 @@ export default function ModulosLayout({
           sidebarOpen ? 'lg:ml-64' : 'lg:ml-16'
         )}
       >
-        {/* Header mobile */}
-        <header className="lg:hidden sticky top-0 z-30 h-14 flex items-center gap-4 px-4 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">
+        {/* Header - Desktop e Mobile */}
+        <header className="sticky top-0 z-30 h-14 flex items-center gap-3 px-4 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">
+          {/* Mobile menu toggle */}
           <Button
             variant="ghost"
             size="sm"
+            className="lg:hidden"
             onClick={() => setMobileMenuOpen(true)}
           >
             <Menu className="w-5 h-5" />
           </Button>
-          <span className="font-medium text-[hsl(var(--foreground))]">
+
+          {/* Title mobile */}
+          <span className="font-medium text-[hsl(var(--foreground))] flex-1 lg:hidden">
             {currentModule.title}
           </span>
+
+          {/* Search trigger - sempre visível */}
+          <div className="hidden sm:block flex-1 max-w-md" data-tour="global-search">
+            <SearchTrigger />
+          </div>
+
+          {/* Spacer para desktop */}
+          <div className="hidden lg:block flex-1" />
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <QuickActions />
+            <NotificationBell />
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Page content */}

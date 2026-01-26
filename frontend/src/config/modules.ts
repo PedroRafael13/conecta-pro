@@ -45,9 +45,11 @@ export const modules: Module[] = [
     permissions: ['operacional:read'],
     enabled: true,
     subModules: [
-      { id: 'escalas', title: 'Escalas', href: '/modulos/operacional/escalas', icon: 'CalendarDays', permissions: ['operacional:escalas'] },
       { id: 'postos', title: 'Postos', href: '/modulos/operacional/postos', icon: 'MapPin', permissions: ['operacional:postos'] },
-      { id: 'colaboradores', title: 'Colaboradores', href: '/modulos/operacional/agentes', icon: 'UserCheck', permissions: ['operacional:colaboradores'] },
+      { id: 'colaboradores', title: 'Colaboradores', href: '/modulos/operacional/colaboradores', icon: 'UserCheck', permissions: ['operacional:colaboradores'] },
+      { id: 'escalas', title: 'Escalas', href: '/modulos/operacional/escalas', icon: 'CalendarDays', permissions: ['operacional:escalas'] },
+      { id: 'alocacoes', title: 'Alocações', href: '/modulos/operacional/alocacoes', icon: 'Users', permissions: ['operacional:alocacoes'] },
+      { id: 'turnos', title: 'Turnos', href: '/modulos/operacional/turnos', icon: 'Clock', permissions: ['operacional:turnos'] },
       { id: 'ocorrencias', title: 'Ocorrências', href: '/modulos/operacional/ocorrencias', icon: 'AlertTriangle', permissions: ['operacional:ocorrencias'] },
       { id: 'rondas', title: 'Rondas', href: '/modulos/operacional/rondas', icon: 'Route', permissions: ['operacional:rondas'] },
     ],

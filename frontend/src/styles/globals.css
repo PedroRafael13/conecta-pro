@@ -71,6 +71,88 @@
   --radius: 0.5rem;
 }
 
+/* Dark Mode - Tema padrão (mantém as mesmas cores) */
+[data-theme="dark"],
+.dark {
+  --background: 224 71% 4%;
+  --foreground: 213 31% 91%;
+
+  --card: 224 71% 7%;
+  --card-foreground: 213 31% 91%;
+
+  --popover: 224 71% 7%;
+  --popover-foreground: 213 31% 91%;
+
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+
+  --accent: 25 95% 53%;
+  --accent-foreground: 226 57% 21%;
+
+  --secondary: 223 47% 11%;
+  --secondary-foreground: 213 31% 91%;
+
+  --muted: 223 47% 11%;
+  --muted-foreground: 215 20% 55%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success: 142 76% 46%;
+  --warning: 25 95% 53%;
+
+  --border: 223 47% 15%;
+  --input: 223 47% 11%;
+  --ring: 221 83% 53%;
+}
+
+/* Light Mode - Tema claro */
+[data-theme="light"],
+.light {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  --primary: 221 83% 53%;
+  --primary-foreground: 210 40% 98%;
+
+  --accent: 25 95% 53%;
+  --accent-foreground: 0 0% 100%;
+
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 20% 45%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+
+  --success: 142 76% 36%;
+  --warning: 25 95% 53%;
+
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 221 83% 53%;
+}
+
+/* Transições suaves entre temas */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* Remover transição de transform e opacity para não afetar animações */
+*:where(:not(:has(> *))) {
+  transition-property: background-color, border-color, color, fill, stroke;
+}
+
 * {
   border-color: hsl(var(--border));
 }

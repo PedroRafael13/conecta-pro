@@ -43,6 +43,7 @@ import {
   INSPECTOR_ROLE_LABELS,
 } from '@/types/operacional';
 import { PatrolRoundDetailModal } from '@/components/operacional/patrol-round-detail-modal';
+import { ExportButton } from '@/components/ui/export-button';
 
 // Cores dos status
 const STATUS_COLORS: Record<PatrolRoundStatus, string> = {
@@ -172,6 +173,23 @@ export default function RondasPage() {
     }
   };
 
+  // Preparar dados para exportação
+  const exportData = patrolRounds.map((round) => ({
+    'Código': round.code || '-',
+    'Status': PATROL_ROUND_STATUS_LABELS[round.status as PatrolRoundStatus] || round.status,
+    'Inspetor': round.inspector_name || '-',
+    'Função': INSPECTOR_ROLE_LABELS[round.inspector_role as InspectorRole] || round.inspector_role,
+    'Data Agendada': round.scheduled_date ? new Date(round.scheduled_date).toLocaleDateString('pt-BR') : '-',
+    'Início': round.started_at ? new Date(round.started_at).toLocaleString('pt-BR') : '-',
+    'Conclusão': round.completed_at ? new Date(round.completed_at).toLocaleString('pt-BR') : '-',
+    'Duração (min)': round.duration_minutes || '-',
+    'Checkpoints': round.total_checkpoints,
+    'Ocorrências': round.total_occurrences,
+    'Ações Disciplinares': round.total_disciplinary_actions,
+    'Colaboradores': round.total_employees_checked,
+    'Progresso': `${round.progress_percentage}%`,
+  }));
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
@@ -210,6 +228,15 @@ export default function RondasPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ExportButton
+                data={exportData}
+                filename="rondas"
+                pdfTitle="Relatório de Rondas de Inspeção"
+                formats={['excel', 'pdf', 'csv']}
+                size="sm"
+                variant="outline"
+                buttonText="Exportar"
+              />
               <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar

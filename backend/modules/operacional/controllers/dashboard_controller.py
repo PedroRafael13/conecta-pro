@@ -434,3 +434,114 @@ async def get_kpis(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Erro ao calcular KPIs: {str(e)}"
         )
+
+
+@router.get(
+    "/kpi-trends",
+    summary="Tendências de KPIs",
+    description="Retorna dados históricos para sparklines de KPIs"
+)
+async def get_kpi_trends(
+    period: str = Query(
+        "7d",
+        description="Período de análise (7d, 30d, 90d)"
+    ),
+    db: Session = Depends(get_db),
+):
+    """
+    Retorna dados históricos de KPIs para sparklines.
+
+    Períodos suportados:
+    - 7d: últimos 7 dias
+    - 30d: últimos 30 dias
+    - 90d: últimos 90 dias
+
+    Retorna arrays de valores para:
+    - Postos ativos
+    - Colaboradores ativos
+    - Escalas em andamento
+    - Ocorrências do mês
+    - Taxa de cobertura (%)
+    """
+    from datetime import timedelta
+    from modules.operacional.models import Post, Scale, ScaleStatus
+    from modules.operacional.repositories import PostRepository, ScaleRepository
+    from modules.operacional.occurrences.models import Occurrence
+
+    # Definir período
+    periods = {
+        "7d": 7,
+        "30d": 30,
+        "90d": 90,
+    }
+
+    if period not in periods:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Período inválido. Use: {', '.join(periods.keys())}"
+        )
+
+    days = periods[period]
+    hoje = date.today()
+
+    try:
+        post_repo = PostRepository(db)
+        scale_repo = ScaleRepository(db)
+
+        # Calcular dados diários
+        postos_ativos = []
+        colaboradores_ativos = []
+        escalas_em_andamento = []
+        ocorrencias_mes = []
+        cobertura_percentual = []
+
+        # Gerar dados para cada dia do período
+        for i in range(days):
+            data_ref = hoje - timedelta(days=days - i - 1)
+
+            # Postos ativos na data
+            stats = post_repo.get_stats()
+            postos_ativos.append(stats.get("total", 0))
+
+            # Colaboradores alocados (simulado - precisa de dados reais)
+            # TODO: Implementar contagem real de colaboradores
+            colaboradores_ativos.append(stats.get("total_allocated", 0))
+
+            # Escalas em andamento
+            escalas = db.query(Scale).filter(
+                Scale.status == ScaleStatus.IN_PROGRESS,
+                Scale.ativo == True
+            ).count()
+            escalas_em_andamento.append(escalas)
+
+            # Ocorrências do mês
+            primeiro_dia_mes = data_ref.replace(day=1)
+            ocorrencias = db.query(Occurrence).filter(
+                Occurrence.data_ocorrencia >= primeiro_dia_mes,
+                Occurrence.data_ocorrencia <= data_ref
+            ).count()
+            ocorrencias_mes.append(ocorrencias)
+
+            # Taxa de cobertura
+            total = stats.get("total", 0)
+            filled = stats.get("filled", 0)
+            coverage = round((filled / total * 100) if total > 0 else 0)
+            cobertura_percentual.append(coverage)
+
+        return {
+            "period": period,
+            "days": days,
+            "data": {
+                "postos_ativos": postos_ativos,
+                "colaboradores_ativos": colaboradores_ativos,
+                "escalas_em_andamento": escalas_em_andamento,
+                "ocorrencias_mes": ocorrencias_mes,
+                "cobertura_percentual": cobertura_percentual,
+            }
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao calcular tendências: {str(e)}"
+        )

@@ -3,6 +3,7 @@
 # Post deve ser importado primeiro (dependência de Allocation e Scale)
 from .post import Post, PostStatus, PostType, ShiftType
 from .scale import Scale, ScaleStatus, ScaleType
+from .scale_template import ScaleTemplate
 from .shift import Shift, ShiftStatus
 from .allocation import Allocation, AllocationStatus
 from .substitution import Substitution, SubstitutionReason, SubstitutionStatus
@@ -19,6 +20,8 @@ __all__ = [
     "Scale",
     "ScaleType",
     "ScaleStatus",
+    # ScaleTemplate
+    "ScaleTemplate",
     # Shift
     "Shift",
     "ShiftStatus",

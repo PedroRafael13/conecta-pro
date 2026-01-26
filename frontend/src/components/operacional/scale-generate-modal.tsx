@@ -1,12 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Calendar, Users, Settings, AlertCircle } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RestoreAlert } from '@/components/ui/restore-alert';
+import { SaveIndicator } from '@/components/ui/save-indicator';
 import { useScaleOperations } from '@/hooks/useScales';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import type { Employee, Post, ScaleType, ScaleGenerateRequest } from '@/types/operacional';
 import { SCALE_TYPE_LABELS } from '@/types/operacional';
 
@@ -43,6 +46,53 @@ export function ScaleGenerateModal({
   // Validation
   const [validationError, setValidationError] = useState<string | null>(null);
   const [employeeSearch, setEmployeeSearch] = useState('');
+  const [showRestoreAlert, setShowRestoreAlert] = useState(false);
+
+  // Preparar dados para auto-save
+  const formData = useMemo(() => ({
+    postId,
+    month,
+    year,
+    scaleType,
+    employeeIds,
+    config,
+  }), [postId, month, year, scaleType, employeeIds, config]);
+
+  // Auto-save hook
+  const autoSave = useAutoSave({
+    key: 'escala_form',
+    data: formData,
+    debounceMs: 2000,
+    enabled: isOpen,
+  });
+
+  // Verificar rascunho ao abrir modal
+  useEffect(() => {
+    if (isOpen && autoSave.hasDraft) {
+      setShowRestoreAlert(true);
+    } else {
+      setShowRestoreAlert(false);
+    }
+  }, [isOpen, autoSave.hasDraft]);
+
+  // Funcoes para restaurar e descartar rascunho
+  const handleRestoreDraft = () => {
+    const draft = autoSave.restore();
+    if (draft) {
+      if (draft.postId) setPostId(draft.postId);
+      if (draft.month) setMonth(draft.month);
+      if (draft.year) setYear(draft.year);
+      if (draft.scaleType) setScaleType(draft.scaleType);
+      if (draft.employeeIds) setEmployeeIds(draft.employeeIds);
+      if (draft.config) setConfig(draft.config);
+      setShowRestoreAlert(false);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    autoSave.clear();
+    setShowRestoreAlert(false);
+  };
 
   // Month names
   const monthNames = [
@@ -75,6 +125,9 @@ export function ScaleGenerateModal({
 
     const result = await generateScale(data);
     if (result) {
+      // Limpar rascunho
+      autoSave.clear();
+
       // Reset form
       setPostId('');
       setMonth(currentDate.getMonth() + 1);
@@ -118,11 +171,31 @@ export function ScaleGenerateModal({
       size="lg"
     >
       <div className="space-y-6">
+        {/* Restore Alert */}
+        {showRestoreAlert && (
+          <RestoreAlert
+            onRestore={handleRestoreDraft}
+            onDiscard={handleDiscardDraft}
+            savedAt={autoSave.lastSaved}
+          />
+        )}
+
         {/* Error message */}
         {(validationError || error) && (
           <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{validationError || error}</span>
+          </div>
+        )}
+
+        {/* Save Indicator */}
+        {isOpen && (
+          <div className="flex justify-end">
+            <SaveIndicator
+              saving={autoSave.saving}
+              lastSaved={autoSave.lastSaved}
+              error={autoSave.error}
+            />
           </div>
         )}
 

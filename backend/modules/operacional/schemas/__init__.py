@@ -16,6 +16,15 @@ from .scale import (
     ScaleResponse,
     ScaleUpdate,
 )
+from .scale_template import (
+    ScaleTemplateApplyRequest,
+    ScaleTemplateCreate,
+    ScaleTemplateCreateFromScale,
+    ScaleTemplateListResponse,
+    ScaleTemplateResponse,
+    ScaleTemplateStats,
+    ScaleTemplateUpdate,
+)
 from .shift import ShiftCreate, ShiftFilter, ShiftListResponse, ShiftResponse, ShiftUpdate
 from .substitution import (
     SubstitutionCreate,
@@ -48,6 +57,14 @@ __all__ = [
     "ScaleListResponse",
     "ScaleFilter",
     "ScaleGenerateRequest",
+    # ScaleTemplate
+    "ScaleTemplateCreate",
+    "ScaleTemplateUpdate",
+    "ScaleTemplateResponse",
+    "ScaleTemplateListResponse",
+    "ScaleTemplateStats",
+    "ScaleTemplateApplyRequest",
+    "ScaleTemplateCreateFromScale",
     # Shift
     "ShiftCreate",
     "ShiftUpdate",

@@ -60,3 +60,46 @@ async def init_db() -> None:
 async def close_db() -> None:
     """Fecha conexões do banco de dados."""
     await engine.dispose()
+
+
+# ============================================================================
+# Sessão Síncrona para Celery Tasks
+# ============================================================================
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from contextlib import contextmanager
+
+# Engine síncrono para Celery
+sync_engine = create_engine(
+    settings.database_url.replace("+asyncpg", ""),  # Remove asyncpg para usar psycopg2
+    pool_size=settings.database_pool_size,
+    max_overflow=settings.database_max_overflow,
+    echo=settings.debug,
+)
+
+# Session factory síncrona
+SyncSessionLocal = sessionmaker(
+    bind=sync_engine,
+    autocommit=False,
+    autoflush=False,
+)
+
+
+@contextmanager
+def get_sync_db():
+    """Context manager para sessão síncrona do banco (para Celery tasks).
+
+    Example:
+        with get_sync_db() as db:
+            items = db.query(Item).all()
+    """
+    session = SyncSessionLocal()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

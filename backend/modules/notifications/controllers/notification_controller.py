@@ -39,6 +39,7 @@ from modules.notifications.schemas import (
     TemplateUpdate,
 )
 from modules.notifications.services import ChannelDispatcher, NotificationService
+from modules.notifications.services.push_service import PushNotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -717,3 +718,147 @@ async def track_click(
         db.commit()
 
     return RedirectResponse(url=url)
+
+
+# =============================================================================
+# Push Notifications
+# =============================================================================
+
+
+@router.post("/push/subscribe", status_code=status.HTTP_200_OK)
+async def subscribe_push(
+    device_token: str,
+    platform: str,
+    device_info: Optional[dict] = None,
+    current_user: CurrentActiveUser = Depends(),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Registra dispositivo para receber notificações push."""
+    tenant_id = get_tenant_id(current_user)
+
+    service = PushNotificationService(db, tenant_id)
+    result = service.subscribe_device(
+        user_id=current_user.id,
+        device_token=device_token,
+        platform=platform,
+        device_info=device_info,
+    )
+
+    return result
+
+
+@router.post("/push/unsubscribe", status_code=status.HTTP_200_OK)
+async def unsubscribe_push(
+    device_token: str,
+    current_user: CurrentActiveUser = Depends(),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Remove registro de dispositivo."""
+    tenant_id = get_tenant_id(current_user)
+
+    service = PushNotificationService(db, tenant_id)
+    result = service.unsubscribe_device(
+        user_id=current_user.id,
+        device_token=device_token,
+    )
+
+    return result
+
+
+@router.get("/push", status_code=status.HTTP_200_OK)
+async def list_push_notifications(
+    unread_only: bool = False,
+    limit: int = 50,
+    offset: int = 0,
+    current_user: CurrentActiveUser = Depends(),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Lista notificações push do usuário."""
+    tenant_id = get_tenant_id(current_user)
+
+    service = PushNotificationService(db, tenant_id)
+    notifications = service.get_user_notifications(
+        user_id=current_user.id,
+        unread_only=unread_only,
+        limit=limit,
+        offset=offset,
+    )
+
+    unread_count = service.get_unread_count(current_user.id)
+
+    return {
+        "notifications": notifications,
+        "unread_count": unread_count,
+        "total": len(notifications),
+    }
+
+
+@router.patch("/push/{notification_id}/read", status_code=status.HTTP_200_OK)
+async def mark_push_as_read(
+    notification_id: UUID,
+    current_user: CurrentActiveUser = Depends(),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Marca notificação como lida."""
+    tenant_id = get_tenant_id(current_user)
+
+    service = PushNotificationService(db, tenant_id)
+    result = service.mark_as_read(
+        notification_id=notification_id,
+        user_id=current_user.id,
+    )
+
+    return result
+
+
+@router.post("/push/read-all", status_code=status.HTTP_200_OK)
+async def mark_all_push_as_read(
+    current_user: CurrentActiveUser = Depends(),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Marca todas as notificações como lidas."""
+    tenant_id = get_tenant_id(current_user)
+
+    service = PushNotificationService(db, tenant_id)
+    result = service.mark_all_as_read(user_id=current_user.id)
+
+    return result
+
+
+@router.get("/push/unread-count", status_code=status.HTTP_200_OK)
+async def get_push_unread_count(
+    current_user: CurrentActiveUser = Depends(),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Retorna quantidade de notificações não lidas."""
+    tenant_id = get_tenant_id(current_user)
+
+    service = PushNotificationService(db, tenant_id)
+    count = service.get_unread_count(user_id=current_user.id)
+
+    return {"unread_count": count}
+
+
+@router.post("/push/send", status_code=status.HTTP_202_ACCEPTED)
+async def send_push_notification(
+    title: str,
+    body: str,
+    user_id: UUID,
+    data: Optional[dict] = None,
+    action_url: Optional[str] = None,
+    current_user: CurrentActiveUser = Depends(),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Envia notificação push para usuário (admin apenas)."""
+    tenant_id = get_tenant_id(current_user)
+
+    service = PushNotificationService(db, tenant_id)
+    result = service.send_push_notification(
+        user_id=user_id,
+        title=title,
+        body=body,
+        data=data,
+        action_url=action_url,
+    )
+
+    return result

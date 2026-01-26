@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Trash2,
   CalendarDays,
+  FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,8 +28,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { usePermission, Permission } from '@/hooks/usePermission';
 import { useScales, useScaleOperations } from '@/hooks/useScales';
 import { usePosts } from '@/hooks/usePosts';
-import { ConfirmModal } from '@/components/ui/modal';
+import { ConfirmModal, Modal } from '@/components/ui/modal';
 import { ScaleGenerateModal } from '@/components/operacional/scale-generate-modal';
+import { TemplateManager } from '@/features/escalas/components/TemplateManager';
+import { ExportButton } from '@/components/ui/export-button';
 import type { Scale, ScaleStatus, ScaleType, Post } from '@/types/operacional';
 import { SCALE_TYPE_LABELS, SCALE_STATUS_LABELS } from '@/types/operacional';
 
@@ -53,6 +56,7 @@ export default function EscalasPage() {
   // Modal states
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [selectedScale, setSelectedScale] = useState<Scale | null>(null);
 
   // Filter states
@@ -158,6 +162,22 @@ export default function EscalasPage() {
     if (result) refresh();
   };
 
+  // Preparar dados para exportação
+  const exportData = scales.map((scale) => ({
+    'Nome': scale.name || '-',
+    'Mês': monthNames[scale.month - 1] || '-',
+    'Ano': scale.year,
+    'Tipo': SCALE_TYPE_LABELS[scale.scale_type as ScaleType] || scale.scale_type,
+    'Status': SCALE_STATUS_LABELS[scale.status as ScaleStatus] || scale.status,
+    'Posto': getPostName(scale.post_id),
+    'Total de Turnos': scale.total_shifts,
+    'Turnos Preenchidos': scale.filled_shifts,
+    'Total de Horas': scale.total_hours,
+    'Horas Extras': scale.overtime_hours,
+    'Custo Estimado': `R$ ${scale.estimated_cost.toFixed(2)}`,
+    'Criado em': new Date(scale.created_at).toLocaleDateString('pt-BR'),
+  }));
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
@@ -195,10 +215,28 @@ export default function EscalasPage() {
                 </div>
               </div>
             </div>
-            <Button onClick={() => setShowGenerateModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Gerar Escala
-            </Button>
+            <div className="flex items-center gap-2">
+              <ExportButton
+                data={exportData}
+                filename="escalas"
+                pdfTitle="Relatório de Escalas"
+                formats={['excel', 'pdf', 'csv']}
+                size="sm"
+                variant="outline"
+                buttonText="Exportar"
+              />
+              <Button
+                variant="outline"
+                onClick={() => setShowTemplatesModal(true)}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Templates
+              </Button>
+              <Button onClick={() => setShowGenerateModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Gerar Escala
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -452,6 +490,17 @@ export default function EscalasPage() {
         variant="danger"
         isLoading={operationLoading}
       />
+
+      {/* Templates Modal */}
+      <Modal
+        isOpen={showTemplatesModal}
+        onClose={() => setShowTemplatesModal(false)}
+        title=""
+        size="full"
+        showCloseButton={true}
+      >
+        <TemplateManager />
+      </Modal>
     </div>
   );
 }

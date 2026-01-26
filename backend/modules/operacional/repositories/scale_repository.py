@@ -336,3 +336,71 @@ class ScaleRepository:
         await self.db.refresh(scale)
 
         return scale
+
+    async def get_stats(self) -> dict:
+        """
+        Retorna estatísticas de escalas.
+
+        Returns:
+            Dict com estatísticas
+        """
+        from modules.operacional.schemas.scale import ScaleStats
+
+        # Total de escalas ativas
+        total_result = await self.db.execute(
+            select(func.count(Scale.id)).where(Scale.is_active.is_(True))
+        )
+        total = total_result.scalar() or 0
+
+        # Por status
+        status_result = await self.db.execute(
+            select(Scale.status, func.count(Scale.id))
+            .where(Scale.is_active.is_(True))
+            .group_by(Scale.status)
+        )
+        by_status = {row[0]: row[1] for row in status_result.fetchall()}
+
+        # Por tipo
+        type_result = await self.db.execute(
+            select(Scale.scale_type, func.count(Scale.id))
+            .where(Scale.is_active.is_(True))
+            .group_by(Scale.scale_type)
+        )
+        by_type = {row[0]: row[1] for row in type_result.fetchall()}
+
+        # Totais de horas e custos
+        totals_result = await self.db.execute(
+            select(
+                func.coalesce(func.sum(Scale.total_hours), 0),
+                func.coalesce(func.sum(Scale.overtime_hours), 0),
+                func.coalesce(func.sum(Scale.estimated_cost), 0),
+            ).where(Scale.is_active.is_(True))
+        )
+        totals = totals_result.fetchone()
+        total_hours = float(totals[0]) if totals else 0.0
+        total_overtime = float(totals[1]) if totals else 0.0
+        total_cost = float(totals[2]) if totals else 0.0
+
+        # Taxa média de preenchimento
+        from sqlalchemy import case
+        fill_result = await self.db.execute(
+            select(
+                func.avg(
+                    case(
+                        (Scale.total_shifts > 0, Scale.filled_shifts * 100.0 / Scale.total_shifts),
+                        else_=0,
+                    )
+                )
+            ).where(Scale.is_active.is_(True))
+        )
+        avg_fill_rate = float(fill_result.scalar() or 0)
+
+        return ScaleStats(
+            total=total,
+            by_status=by_status,
+            by_type=by_type,
+            total_hours=total_hours,
+            total_overtime_hours=total_overtime,
+            total_estimated_cost=total_cost,
+            avg_fill_rate=avg_fill_rate,
+        )

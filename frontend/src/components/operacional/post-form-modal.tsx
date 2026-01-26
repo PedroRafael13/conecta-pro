@@ -5,11 +5,14 @@ import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Stepper, type Step } from '@/components/ui/stepper';
+import { RestoreAlert } from '@/components/ui/restore-alert';
+import { SaveIndicator } from '@/components/ui/save-indicator';
 import { postsService } from '@/lib/services/posts';
 import { getErrorMessage } from '@/lib/api';
 import type { Post, PostCreate, PostUpdate, PostType, ShiftType } from '@/types/operacional';
 import { POST_TYPE_LABELS, SHIFT_TYPE_LABELS } from '@/types/operacional';
 import { AlertCircle, Loader2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 interface PostFormModalProps {
   post?: Post | null;
@@ -49,6 +52,7 @@ export function PostFormModal({
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [showRestoreAlert, setShowRestoreAlert] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<PostCreate>({
@@ -75,6 +79,23 @@ export function PostFormModal({
     emergency_phone: '',
     notes: '',
   });
+
+  // Auto-save hook (apenas quando criando novo, nao ao editar)
+  const autoSave = useAutoSave({
+    key: 'posto_form',
+    data: formData,
+    debounceMs: 2000,
+    enabled: isOpen && !isEditing,
+  });
+
+  // Verificar rascunho ao abrir modal (apenas ao criar novo)
+  useEffect(() => {
+    if (isOpen && !isEditing && autoSave.hasDraft) {
+      setShowRestoreAlert(true);
+    } else {
+      setShowRestoreAlert(false);
+    }
+  }, [isOpen, isEditing, autoSave.hasDraft]);
 
   // Populate form when editing
   useEffect(() => {
@@ -153,6 +174,20 @@ export function PostFormModal({
     setError(null);
     setCepError(null);
   }, [post, isOpen, templateData]);
+
+  // Funcoes para restaurar e descartar rascunho
+  const handleRestoreDraft = () => {
+    const draft = autoSave.restore();
+    if (draft) {
+      setFormData({ ...formData, ...draft });
+      setShowRestoreAlert(false);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    autoSave.clear();
+    setShowRestoreAlert(false);
+  };
 
   // Funcao para aplicar mascara no CEP
   const formatCep = (value: string): string => {
@@ -287,6 +322,11 @@ export function PostFormModal({
         await postsService.update(post.id, cleanData as PostUpdate);
       } else {
         await postsService.create(cleanData);
+      }
+
+      // Limpar rascunho apos sucesso
+      if (!isEditing) {
+        autoSave.clear();
       }
 
       onSuccess();
@@ -763,10 +803,30 @@ export function PostFormModal({
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Restore Alert */}
+        {showRestoreAlert && (
+          <RestoreAlert
+            onRestore={handleRestoreDraft}
+            onDiscard={handleDiscardDraft}
+            savedAt={autoSave.lastSaved}
+          />
+        )}
+
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2 text-red-500 text-sm">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-2 text-red-500 text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span className="flex-1">{error}</span>
+          </div>
+        )}
+
+        {/* Save Indicator */}
+        {!isEditing && isOpen && (
+          <div className="flex justify-end">
+            <SaveIndicator
+              saving={autoSave.saving}
+              lastSaved={autoSave.lastSaved}
+              error={autoSave.error}
+            />
           </div>
         )}
 

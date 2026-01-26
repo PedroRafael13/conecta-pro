@@ -27,6 +27,7 @@ import { allocationsService } from '@/lib/services/allocations';
 import { getErrorMessage } from '@/lib/api';
 import { AllocationDetailModal } from '@/components/operacional/allocation-detail-modal';
 import { AllocationFormModal } from '@/components/operacional/allocation-form-modal';
+import { ExportButton } from '@/components/ui/export-button';
 import type { Allocation, AllocationStatus, AllocationTerminate, Employee, Post } from '@/types/operacional';
 import { ALLOCATION_STATUS_LABELS } from '@/types/operacional';
 
@@ -166,6 +167,16 @@ export default function AlocacoesPage() {
     }
   };
 
+  // Preparar dados para exportação
+  const exportData = allocations.map((alloc) => ({
+    'Colaborador': alloc.employee_name || '-',
+    'Posto': alloc.post_name || '-',
+    'Status': ALLOCATION_STATUS_LABELS[alloc.status as AllocationStatus] || alloc.status,
+    'Data Início': new Date(alloc.start_date).toLocaleDateString('pt-BR'),
+    'Data Fim': alloc.end_date ? new Date(alloc.end_date).toLocaleDateString('pt-BR') : 'Indeterminado',
+    'Criado em': new Date(alloc.created_at).toLocaleDateString('pt-BR'),
+  }));
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
@@ -202,10 +213,21 @@ export default function AlocacoesPage() {
                 </div>
               </div>
             </div>
-            <Button variant="primary" size="sm" onClick={() => setShowFormModal(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Alocacao
-            </Button>
+            <div className="flex items-center gap-2">
+              <ExportButton
+                data={exportData}
+                filename="alocacoes"
+                pdfTitle="Relatório de Alocações"
+                formats={['excel', 'pdf', 'csv']}
+                size="sm"
+                variant="outline"
+                buttonText="Exportar"
+              />
+              <Button variant="primary" size="sm" onClick={() => setShowFormModal(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Alocacao
+              </Button>
+            </div>
           </div>
         </div>
       </header>

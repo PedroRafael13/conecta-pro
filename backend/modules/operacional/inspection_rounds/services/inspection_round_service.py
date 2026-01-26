@@ -105,7 +105,7 @@ class InspectionRoundService:
 
     async def list(
         self,
-        tenant_id: str,
+        tenant_id: Optional[str] = None,
         skip: int = 0,
         limit: int = 100,
         filters: Optional[InspectionRoundFilter] = None,
@@ -298,7 +298,7 @@ class InspectionRoundService:
     # ESTATISTICAS
     # ==========================================================================
 
-    async def get_dashboard_stats(self, tenant_id: str) -> InspectionDashboardStats:
+    async def get_dashboard_stats(self, tenant_id: Optional[str] = None) -> InspectionDashboardStats:
         """Retorna estatisticas do dashboard."""
         status_counts = await self.repository.count_by_status(tenant_id)
         in_progress = await self.repository.get_rounds_in_progress(tenant_id)
@@ -306,16 +306,25 @@ class InspectionRoundService:
 
         total = sum(status_counts.values())
         completed = status_counts.get(InspectionRoundStatus.CONCLUIDA.value, 0)
-        cancelled = status_counts.get(InspectionRoundStatus.CANCELADA.value, 0)
+        scheduled = status_counts.get(InspectionRoundStatus.AGENDADA.value, 0)
 
         return InspectionDashboardStats(
             total_rounds=total,
             rounds_in_progress=len(in_progress),
-            rounds_scheduled_today=len(scheduled_today),
             rounds_completed=completed,
-            rounds_cancelled=cancelled,
+            rounds_scheduled=scheduled,
             total_occurrences=0,
+            occurrences_pending=0,
+            occurrences_resolved=0,
             total_disciplinary_actions=0,
+            warnings_count=0,
+            suspensions_count=0,
+            rounds_today=len(scheduled_today),
+            rounds_this_week=0,
+            rounds_this_month=total,
+            top_inspectors=[],
+            most_visited_posts=[],
+            top_infraction_categories=[],
         )
 
     async def get_inspector_stats(self, tenant_id: str, limit: int = 10) -> List[InspectorStats]:

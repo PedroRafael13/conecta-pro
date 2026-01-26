@@ -25,6 +25,7 @@ app = Celery(
         "modules.government_integrations.jobs.sync_tasks",
         "modules.government_integrations.jobs.monitoring_tasks",
         "modules.integrations.connectors.solides.tasks",
+        "modules.operacional.tasks",
     ]
 )
 
@@ -32,6 +33,7 @@ app = Celery(
 government_exchange = Exchange("government", type="direct")
 government_priority_exchange = Exchange("government_priority", type="direct")
 integrations_exchange = Exchange("integrations", type="direct")
+operacional_exchange = Exchange("operacional", type="direct")
 
 # Filas
 app.conf.task_queues = [
@@ -64,6 +66,10 @@ app.conf.task_queues = [
           queue_arguments={"x-max-priority": 8}),
     Queue("maintenance", integrations_exchange, routing_key="maintenance",
           queue_arguments={"x-max-priority": 3}),
+
+    # Operacional - Notificações Push
+    Queue("operacional", operacional_exchange, routing_key="operacional",
+          queue_arguments={"x-max-priority": 7}),
 ]
 
 # Roteamento de tasks
@@ -91,6 +97,10 @@ app.conf.task_routes = {
     "solides.retry_failed_webhooks": {"queue": "integrations"},
     "solides.cleanup_old_logs": {"queue": "maintenance"},
     "solides.cleanup_old_webhooks": {"queue": "maintenance"},
+
+    # Operacional - Notificações Push
+    "operacional.check_late_employees": {"queue": "operacional"},
+    "operacional.check_pending_approvals": {"queue": "operacional"},
 }
 
 # Configurações gerais
@@ -197,6 +207,22 @@ app.conf.beat_schedule = {
         "schedule": 86400.0,  # 24 horas
         "args": (7,),  # manter 7 dias
         "options": {"queue": "maintenance"},
+    },
+
+    # =========================================================================
+    # OPERACIONAL - NOTIFICAÇÕES PUSH
+    # =========================================================================
+    # Verifica colaboradores atrasados a cada 5 minutos
+    "operacional-check-late-employees": {
+        "task": "operacional.check_late_employees",
+        "schedule": 300.0,  # 5 minutos
+        "options": {"queue": "operacional"},
+    },
+    # Verifica aprovações pendentes a cada 1 hora
+    "operacional-check-pending-approvals": {
+        "task": "operacional.check_pending_approvals",
+        "schedule": 3600.0,  # 1 hora
+        "options": {"queue": "operacional"},
     },
 }
 

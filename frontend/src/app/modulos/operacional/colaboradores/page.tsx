@@ -33,6 +33,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { employeesService } from '@/lib/services/employees';
+import { ExportButton } from '@/components/ui/export-button';
 
 // Tipo para funcionário
 interface Employee {
@@ -137,6 +138,18 @@ export default function ColaboradoresPage() {
     }
   };
 
+  // Preparar dados para exportação
+  const exportData = filteredEmployees.map((emp) => ({
+    'Matrícula': emp.registration || '-',
+    'Nome': emp.full_name || emp.name || '-',
+    'Email': emp.email || '-',
+    'Cargo': emp.cargo || '-',
+    'Departamento': emp.departamento || '-',
+    'Telefone': emp.telefone || '-',
+    'Data Admissão': formatDate(emp.data_admissao),
+    'Status': emp.status || '-',
+  }));
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -156,6 +169,15 @@ export default function ColaboradoresPage() {
               Fonte: {source === 'solides' ? 'Solides DP' : 'Sistema Local'}
             </Badge>
           )}
+          <ExportButton
+            data={exportData}
+            filename="colaboradores"
+            pdfTitle="Relatório de Colaboradores"
+            formats={['excel', 'pdf', 'csv']}
+            size="sm"
+            variant="outline"
+            buttonText="Exportar"
+          />
           <Button variant="outline" onClick={loadEmployees} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Atualizar

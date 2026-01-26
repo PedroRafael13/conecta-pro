@@ -180,22 +180,26 @@ try:
     from modules.operacional.controllers import (
         post_router,
         scale_router,
+        scale_template_router,
         shift_router,
         allocation_router,
         employee_router,
         substitution_router,
         time_bank_router,
         reports_router,
+        kpi_trends_router,
     )
     # Routers já têm seu próprio prefix (/posts, /scales, etc)
     api_router.include_router(post_router, prefix="/operacional", tags=["Operacional - Postos"])
     api_router.include_router(scale_router, prefix="/operacional", tags=["Operacional - Escalas"])
+    api_router.include_router(scale_template_router, prefix="/operacional", tags=["Operacional - Templates de Escalas"])
     api_router.include_router(shift_router, prefix="/operacional", tags=["Operacional - Turnos"])
     api_router.include_router(allocation_router, prefix="/operacional", tags=["Operacional - Alocacoes"])
     api_router.include_router(employee_router, prefix="/operacional", tags=["Operacional - Funcionarios"])
     api_router.include_router(substitution_router, prefix="/operacional", tags=["Operacional - Substituicoes"])
     api_router.include_router(time_bank_router, prefix="/operacional", tags=["Operacional - Banco de Horas"])
     api_router.include_router(reports_router, prefix="/operacional", tags=["Operacional - Relatorios"])
+    api_router.include_router(kpi_trends_router, prefix="/operacional", tags=["Operacional - KPI Trends"])
     logger.info("Modulo Operations: OK")
 except Exception as e:
     logger.warning(f"Modulo Operations: {e}")
@@ -427,6 +431,14 @@ try:
     logger.info("Modulo Inspection Rounds: OK")
 except Exception as e:
     logger.warning(f"Modulo Inspection Rounds: {e}")
+
+# SEARCH - Busca Global
+try:
+    from modules.search import search_router
+    api_router.include_router(search_router, tags=["Search - Busca Global"])
+    logger.info("Modulo Search: OK")
+except Exception as e:
+    logger.warning(f"Modulo Search: {e}")
 
 
 # Incluir router principal

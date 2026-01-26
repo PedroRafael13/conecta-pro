@@ -86,7 +86,9 @@ async def create_round(
     description="Lista rondas com filtros e paginacao.",
 )
 async def list_rounds(
-    tenant_id: UUID = Query(..., description="ID do tenant"),
+    tenant_id: Optional[UUID] = Query(None, description="ID do tenant (opcional)"),
+    page: int = Query(1, ge=1, description="Página atual"),
+    page_size: int = Query(10, ge=1, le=100, description="Itens por página"),
     skip: int = Query(0, ge=0, description="Registros a pular"),
     limit: int = Query(100, ge=1, le=500, description="Limite de registros"),
     inspector_id: Optional[UUID] = Query(None, description="Filtrar por inspetor"),
@@ -109,18 +111,37 @@ async def list_rounds(
         has_disciplinary_actions=has_disciplinary_actions,
     )
 
-    rounds, total = await service.list(str(tenant_id), skip, limit, filters)
+    # Calcular skip a partir de page/page_size se fornecidos
+    actual_skip = (page - 1) * page_size if page > 0 else skip
+    actual_limit = page_size if page_size > 0 else limit
 
-    pages = (total + limit - 1) // limit if limit > 0 else 0
-    page = (skip // limit) + 1 if limit > 0 else 1
+    tenant_str = str(tenant_id) if tenant_id else None
+    rounds, total = await service.list(tenant_str, actual_skip, actual_limit, filters)
+
+    total_pages = (total + actual_limit - 1) // actual_limit if actual_limit > 0 else 0
 
     return InspectionRoundListResponse(
         items=[InspectionRoundSummary.model_validate(r) for r in rounds],
         total=total,
         page=page,
-        page_size=limit,
-        pages=pages,
+        page_size=actual_limit,
+        pages=total_pages,
     )
+
+
+@router.get(
+    "/stats",
+    response_model=InspectionDashboardStats,
+    summary="Estatísticas de rondas",
+    description="Retorna estatísticas de rondas de inspeção.",
+)
+async def get_stats(
+    tenant_id: Optional[UUID] = Query(None, description="ID do tenant (opcional)"),
+    service: InspectionRoundService = Depends(get_inspection_service),
+) -> InspectionDashboardStats:
+    """Retorna estatísticas de rondas."""
+    tenant_str = str(tenant_id) if tenant_id else None
+    return await service.get_dashboard_stats(tenant_str)
 
 
 @router.get(
@@ -130,13 +151,14 @@ async def list_rounds(
     description="Retorna estatisticas do dashboard de rondas.",
 )
 async def get_dashboard(
-    tenant_id: UUID = Query(..., description="ID do tenant"),
+    tenant_id: Optional[UUID] = Query(None, description="ID do tenant (opcional)"),
     start_date: Optional[datetime] = Query(None, description="Data inicial"),
     end_date: Optional[datetime] = Query(None, description="Data final"),
     service: InspectionRoundService = Depends(get_inspection_service),
 ) -> InspectionDashboardStats:
     """Retorna estatisticas do dashboard."""
-    return await service.get_dashboard_stats(str(tenant_id))
+    tenant_str = str(tenant_id) if tenant_id else None
+    return await service.get_dashboard_stats(tenant_str)
 
 
 @router.get(

@@ -1,7 +1,12 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
+import { ThemeProvider } from './ThemeContext';
+import { ProductivityProvider } from '@/components/ProductivityProvider';
+import { DraftCleanupProvider } from '@/components/providers/draft-cleanup-provider';
+import { PushNotificationProvider } from '@/features/notifications';
+import { cleanupExpiredDrafts } from '@/hooks/useAutoSave';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -25,9 +30,22 @@ export function Providers({ children }: ProvidersProps) {
       })
   );
 
+  // Limpar rascunhos expirados na inicialização
+  useEffect(() => {
+    cleanupExpiredDrafts();
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <ThemeProvider defaultTheme="dark" storageKey="conecta-pro-theme">
+      <QueryClientProvider client={queryClient}>
+        <PushNotificationProvider>
+          <DraftCleanupProvider>
+            <ProductivityProvider>
+              {children}
+            </ProductivityProvider>
+          </DraftCleanupProvider>
+        </PushNotificationProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }

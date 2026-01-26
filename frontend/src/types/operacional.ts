@@ -942,3 +942,56 @@ export const CHECKPOINT_STATUS_LABELS: Record<CheckpointStatus, string> = {
   pendente: 'Pendente',
   com_ocorrencia: 'Com Ocorrência',
 };
+
+// ===========================
+// Scale Templates (Templates de Escalas)
+// ===========================
+
+export interface ScaleTemplate {
+  id: string;
+  tenant_id: string;
+  name: string;
+  description: string | null;
+  scale_type: ScaleType;
+  post_id: string | null;
+  post_name?: string | null;
+  source_scale_id: string;
+  // Metadados
+  total_employees: number;
+  coverage_percentage: number;
+  pattern_days: number;
+  // Estatísticas de uso
+  times_used: number;
+  last_used_at: string | null;
+  // Audit
+  created_by: string | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+}
+
+export interface ScaleTemplateCreate {
+  name: string;
+  description?: string | null;
+  source_scale_id: string;
+}
+
+export interface ScaleTemplateUpdate {
+  name?: string;
+  description?: string | null;
+  is_active?: boolean;
+}
+
+export interface ScaleTemplateApply {
+  month: number;
+  year: number;
+  post_id?: string | null;
+  employee_substitutions?: Record<string, string>;
+}
+
+export interface ScaleTemplateFilter {
+  scale_type?: ScaleType;
+  post_id?: string;
+  search?: string;
+}

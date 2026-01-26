@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RestoreAlert } from '@/components/ui/restore-alert';
+import { SaveIndicator } from '@/components/ui/save-indicator';
 import { occurrencesService } from '@/lib/services/occurrences';
 import { getErrorMessage } from '@/lib/api';
 import {
@@ -19,6 +21,7 @@ import {
 import { AlertCircle, Loader2, Save, User, MapPin } from 'lucide-react';
 import { usePosts } from '@/hooks/usePosts';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 interface OccurrenceFormModalProps {
   isOpen: boolean;
@@ -60,9 +63,20 @@ export function OccurrenceFormModal({
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRestoreAlert, setShowRestoreAlert] = useState(false);
 
   const { posts, isLoading: postsLoading } = usePosts({ autoLoad: isOpen });
   const { employees, isLoading: employeesLoading, refresh: refreshEmployees } = useEmployees({ autoLoad: false });
+
+  const isEditing = !!editData;
+
+  // Auto-save hook
+  const autoSave = useAutoSave({
+    key: 'ocorrencia_form',
+    data: formData,
+    debounceMs: 2000,
+    enabled: isOpen && !isEditing,
+  });
 
   // Carregar funcionários quando o modal abre
   useEffect(() => {
@@ -71,7 +85,14 @@ export function OccurrenceFormModal({
     }
   }, [isOpen, employees.length, employeesLoading, refreshEmployees]);
 
-  const isEditing = !!editData;
+  // Verificar rascunho ao abrir modal
+  useEffect(() => {
+    if (isOpen && !isEditing && autoSave.hasDraft) {
+      setShowRestoreAlert(true);
+    } else {
+      setShowRestoreAlert(false);
+    }
+  }, [isOpen, isEditing, autoSave.hasDraft]);
 
   useEffect(() => {
     if (editData) {
@@ -98,6 +119,20 @@ export function OccurrenceFormModal({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError(null);
+  };
+
+  // Funcoes para restaurar e descartar rascunho
+  const handleRestoreDraft = () => {
+    const draft = autoSave.restore();
+    if (draft) {
+      setFormData({ ...formData, ...draft });
+      setShowRestoreAlert(false);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    autoSave.clear();
+    setShowRestoreAlert(false);
   };
 
   const validateForm = (): boolean => {
@@ -156,6 +191,11 @@ export function OccurrenceFormModal({
         await occurrencesService.create(dataToSend);
       }
 
+      // Limpar rascunho apos sucesso
+      if (!isEditing) {
+        autoSave.clear();
+      }
+
       onSuccess();
       onClose();
     } catch (err) {
@@ -174,10 +214,30 @@ export function OccurrenceFormModal({
       size="xl"
     >
       <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-6">
+        {/* Restore Alert */}
+        {showRestoreAlert && (
+          <RestoreAlert
+            onRestore={handleRestoreDraft}
+            onDiscard={handleDiscardDraft}
+            savedAt={autoSave.lastSaved}
+          />
+        )}
+
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2 text-red-500 text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
+          </div>
+        )}
+
+        {/* Save Indicator */}
+        {!isEditing && isOpen && (
+          <div className="flex justify-end">
+            <SaveIndicator
+              saving={autoSave.saving}
+              lastSaved={autoSave.lastSaved}
+              error={autoSave.error}
+            />
           </div>
         )}
 

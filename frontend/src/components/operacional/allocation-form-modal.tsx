@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { RestoreAlert } from '@/components/ui/restore-alert';
+import { SaveIndicator } from '@/components/ui/save-indicator';
 import { allocationsService } from '@/lib/services/allocations';
 import { getErrorMessage } from '@/lib/api';
 import type { AllocationCreate, Employee, Post } from '@/types/operacional';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { useAutoSave } from '@/hooks/useAutoSave';
 
 interface AllocationFormModalProps {
   isOpen: boolean;
@@ -26,6 +29,7 @@ export function AllocationFormModal({
 }: AllocationFormModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRestoreAlert, setShowRestoreAlert] = useState(false);
 
   const [formData, setFormData] = useState<AllocationCreate>({
     post_id: '',
@@ -40,6 +44,23 @@ export function AllocationFormModal({
     role: '',
     notes: '',
   });
+
+  // Auto-save hook
+  const autoSave = useAutoSave({
+    key: 'alocacao_form',
+    data: formData,
+    debounceMs: 2000,
+    enabled: isOpen,
+  });
+
+  // Verificar rascunho ao abrir modal
+  useEffect(() => {
+    if (isOpen && autoSave.hasDraft) {
+      setShowRestoreAlert(true);
+    } else {
+      setShowRestoreAlert(false);
+    }
+  }, [isOpen, autoSave.hasDraft]);
 
   useEffect(() => {
     if (isOpen) {
@@ -59,6 +80,20 @@ export function AllocationFormModal({
       setError(null);
     }
   }, [isOpen]);
+
+  // Funcoes para restaurar e descartar rascunho
+  const handleRestoreDraft = () => {
+    const draft = autoSave.restore();
+    if (draft) {
+      setFormData({ ...formData, ...draft });
+      setShowRestoreAlert(false);
+    }
+  };
+
+  const handleDiscardDraft = () => {
+    autoSave.clear();
+    setShowRestoreAlert(false);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -99,6 +134,10 @@ export function AllocationFormModal({
       };
 
       await allocationsService.create(payload);
+
+      // Limpar rascunho apos sucesso
+      autoSave.clear();
+
       onSuccess();
       onClose();
     } catch (err) {
@@ -127,10 +166,30 @@ export function AllocationFormModal({
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Restore Alert */}
+        {showRestoreAlert && (
+          <RestoreAlert
+            onRestore={handleRestoreDraft}
+            onDiscard={handleDiscardDraft}
+            savedAt={autoSave.lastSaved}
+          />
+        )}
+
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2 text-red-500 text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
+          </div>
+        )}
+
+        {/* Save Indicator */}
+        {isOpen && (
+          <div className="flex justify-end">
+            <SaveIndicator
+              saving={autoSave.saving}
+              lastSaved={autoSave.lastSaved}
+              error={autoSave.error}
+            />
           </div>
         )}
 

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   MapPin,
   Search,
@@ -19,39 +19,23 @@ import {
   AlertCircle,
   CheckCircle,
   RefreshCw,
-  Download,
-  Grid,
-  List,
-  TrendingUp,
-  TrendingDown,
-  Copy,
-  FileText,
-  Save,
-  FolderOpen,
-  MoreVertical,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ConfirmModal } from "@/components/ui/modal";
-import { PermissionGuard } from "@/components/ui/permission-guard";
-import { useAuth } from "@/hooks/useAuth";
-import { usePermission, Permission } from "@/hooks/usePermission";
-import { usePosts, usePostStats } from "@/hooks/usePosts";
-import { postsService, postTemplatesService, type PostTemplate } from "@/lib/services/posts";
-import { getErrorMessage } from "@/lib/api";
-import { PostDetailModal } from "@/components/operacional/post-detail-modal";
-import { PostFormModal } from "@/components/operacional/post-form-modal";
-import type {
-  Post,
-  PostType,
-  PostStatus,
-  ShiftType,
-} from "@/types/operacional";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ConfirmModal } from '@/components/ui/modal';
+import { useAuth } from '@/hooks/useAuth';
+import { usePosts, usePostStats } from '@/hooks/usePosts';
+import { postsService } from '@/lib/services/posts';
+import { getErrorMessage } from '@/lib/api';
+import { PostDetailModal } from '@/components/operacional/post-detail-modal';
+import { PostFormModal } from '@/components/operacional/post-form-modal';
+import { ResponsiveTable, Column } from '@/components/ResponsiveTable';
+import type { Post, PostType, PostStatus, ShiftType } from '@/types/operacional';
 import {
   POST_TYPE_LABELS,
   POST_STATUS_LABELS,
   SHIFT_TYPE_LABELS,
-} from "@/types/operacional";
+} from '@/types/operacional';
 
 export default function PostosPage() {
   const router = useRouter();
@@ -71,13 +55,8 @@ export default function PostosPage() {
   } = usePosts({ initialPageSize: 10 });
   const { stats, refresh: refreshStats } = usePostStats();
 
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-
-  // View preferences
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
-  const [sortField, setSortField] = useState<keyof Post | null>(null);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Modal states
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -87,29 +66,10 @@ export default function PostosPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Duplicação e Templates
-  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [duplicateName, setDuplicateName] = useState("");
-  const [isDuplicating, setIsDuplicating] = useState(false);
-  const [duplicateError, setDuplicateError] = useState<string | null>(null);
-
-  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
-  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
-  const [templates, setTemplates] = useState<PostTemplate[]>([]);
-  const [templateName, setTemplateName] = useState("");
-  const [templateDescription, setTemplateDescription] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState<PostTemplate | null>(null);
-  const [templateFormData, setTemplateFormData] = useState<Partial<Post> | null>(null);
-
-  // Carregar templates
-  useEffect(() => {
-    setTemplates(postTemplatesService.list());
-  }, []);
-
   // Redirecionar se nao autenticado
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push("/login");
+      router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
 
@@ -168,144 +128,6 @@ export default function PostosPage() {
     refreshStats();
   };
 
-  // Handlers de Duplicação
-  const handleDuplicate = (post: Post) => {
-    setSelectedPost(post);
-    setDuplicateName(`${post.name} (Cópia)`);
-    setDuplicateError(null);
-    setShowDuplicateModal(true);
-  };
-
-  const confirmDuplicate = async () => {
-    if (!selectedPost) return;
-
-    setIsDuplicating(true);
-    setDuplicateError(null);
-
-    try {
-      await postsService.duplicate(selectedPost.id, duplicateName);
-      setShowDuplicateModal(false);
-      setSelectedPost(null);
-      setDuplicateName("");
-      refresh();
-      refreshStats();
-    } catch (err) {
-      setDuplicateError(getErrorMessage(err));
-    } finally {
-      setIsDuplicating(false);
-    }
-  };
-
-  // Handlers de Templates
-  const handleSaveAsTemplate = (post: Post) => {
-    setSelectedPost(post);
-    setTemplateName(`Template - ${post.post_type}`);
-    setTemplateDescription("");
-    setShowSaveTemplateModal(true);
-  };
-
-  const confirmSaveTemplate = () => {
-    if (!selectedPost || !templateName.trim()) return;
-
-    postTemplatesService.saveFromPost(selectedPost, templateName.trim(), templateDescription.trim() || undefined);
-    setTemplates(postTemplatesService.list());
-    setShowSaveTemplateModal(false);
-    setSelectedPost(null);
-    setTemplateName("");
-    setTemplateDescription("");
-  };
-
-  const handleCreateFromTemplate = (template: PostTemplate) => {
-    setTemplateFormData(template.data as Partial<Post>);
-    setShowTemplatesModal(false);
-    setShowFormModal(true);
-  };
-
-  const handleDeleteTemplate = (id: string) => {
-    postTemplatesService.delete(id);
-    setTemplates(postTemplatesService.list());
-  };
-
-  // Exportação para CSV
-  const handleExportCSV = () => {
-    try {
-      const csvData = posts.map((post) => ({
-        Código: post.code,
-        Nome: post.name,
-        Tipo: POST_TYPE_LABELS[post.post_type as PostType] || post.post_type,
-        Status: POST_STATUS_LABELS[post.status as PostStatus] || post.status,
-        Efetivo: `${post.current_headcount}/${post.required_headcount}`,
-        Cidade: post.city || "",
-      }));
-
-      const headers = Object.keys(csvData[0] || {});
-      const csvContent = [
-        headers.join(","),
-        ...csvData.map((row) =>
-          headers
-            .map((h) => {
-              const val = row[h as keyof typeof row];
-              return typeof val === "string" && val.includes(",")
-                ? `"${val}"`
-                : val;
-            })
-            .join(","),
-        ),
-      ].join("\n");
-
-      const blob = new Blob(["\ufeff" + csvContent], {
-        type: "text/csv;charset=utf-8;",
-      });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `postos-${new Date().toISOString().split("T")[0]}.csv`;
-      link.click();
-    } catch (error) {
-      console.error("Erro ao exportar CSV:", error);
-    }
-  };
-
-  // Ordenação
-  const handleSort = (field: keyof Post) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
-  };
-
-  const sortedPosts = [...posts].sort((a, b) => {
-    if (!sortField) return 0;
-    const aVal = a[sortField];
-    const bVal = b[sortField];
-    if (aVal === null || aVal === undefined) return 1;
-    if (bVal === null || bVal === undefined) return -1;
-    let cmp = 0;
-    if (typeof aVal === "string" && typeof bVal === "string") {
-      cmp = aVal.localeCompare(bVal, "pt-BR");
-    } else if (typeof aVal === "number" && typeof bVal === "number") {
-      cmp = aVal - bVal;
-    } else {
-      cmp = String(aVal).localeCompare(String(bVal), "pt-BR");
-    }
-    return sortOrder === "asc" ? cmp : -cmp;
-  });
-
-  const renderSortIcon = (field: keyof Post) => {
-    if (sortField !== field) return null;
-    return sortOrder === "asc" ? (
-      <TrendingUp className="w-3 h-3 ml-1 inline" />
-    ) : (
-      <TrendingDown className="w-3 h-3 ml-1 inline" />
-    );
-  };
-
-  const handleViewModeChange = (mode: "table" | "cards") => {
-    setViewMode(mode);
-    localStorage.setItem("posts-view-mode", mode);
-  };
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
@@ -318,16 +140,16 @@ export default function PostosPage() {
 
   const getStatusColor = (status: PostStatus) => {
     switch (status) {
-      case "active":
-        return "bg-green-500/10 text-green-500";
-      case "inactive":
-        return "bg-gray-500/10 text-gray-500";
-      case "temporary":
-        return "bg-blue-500/10 text-blue-500";
-      case "suspended":
-        return "bg-red-500/10 text-red-500";
+      case 'active':
+        return 'bg-green-500/10 text-green-500';
+      case 'inactive':
+        return 'bg-gray-500/10 text-gray-500';
+      case 'temporary':
+        return 'bg-blue-500/10 text-blue-500';
+      case 'suspended':
+        return 'bg-red-500/10 text-red-500';
       default:
-        return "bg-gray-500/10 text-gray-500";
+        return 'bg-gray-500/10 text-gray-500';
     }
   };
 
@@ -358,23 +180,10 @@ export default function PostosPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {templates.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowTemplatesModal(true)}
-                  title="Usar Template"
-                >
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  Templates ({templates.length})
-                </Button>
-              )}
-              <Button variant="primary" size="sm" onClick={handleCreate}>
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Posto
-              </Button>
-            </div>
+            <Button variant="primary" size="sm" onClick={handleCreate}>
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Posto
+            </Button>
           </div>
         </div>
       </header>
@@ -392,9 +201,7 @@ export default function PostosPage() {
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                   {stats?.total || 0}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Total de Postos
-                </p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Total de Postos</p>
               </div>
             </div>
           </div>
@@ -408,9 +215,7 @@ export default function PostosPage() {
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                   {stats?.filled || 0}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Preenchidos
-                </p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Preenchidos</p>
               </div>
             </div>
           </div>
@@ -424,9 +229,7 @@ export default function PostosPage() {
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                   {stats?.with_vacancy || 0}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Com vagas
-                </p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Com vagas</p>
               </div>
             </div>
           </div>
@@ -440,9 +243,7 @@ export default function PostosPage() {
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                   {stats?.total_headcount || 0}
                 </p>
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Vagas totais
-                </p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Vagas totais</p>
               </div>
             </div>
           </div>
@@ -462,26 +263,18 @@ export default function PostosPage() {
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className={showFilters ? "border-[hsl(var(--primary))]" : ""}
+            className={showFilters ? 'border-[hsl(var(--primary))]' : ''}
           >
             <Filter className="w-4 h-4 mr-2" />
             Filtros
-            {Object.keys(filters).filter(
-              (k) => k !== "search" && filters[k as keyof typeof filters],
-            ).length > 0 && (
+            {Object.keys(filters).filter((k) => k !== 'search' && filters[k as keyof typeof filters]).length > 0 && (
               <span className="ml-2 w-5 h-5 rounded-full bg-[hsl(var(--primary))] text-white text-xs flex items-center justify-center">
-                {
-                  Object.keys(filters).filter(
-                    (k) => k !== "search" && filters[k as keyof typeof filters],
-                  ).length
-                }
+                {Object.keys(filters).filter((k) => k !== 'search' && filters[k as keyof typeof filters]).length}
               </span>
             )}
           </Button>
           <Button variant="outline" onClick={refresh} disabled={isLoading}>
-            <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-            />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
 
@@ -489,15 +282,13 @@ export default function PostosPage() {
         {showFilters && (
           <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-medium text-[hsl(var(--foreground))]">
-                Filtros
-              </h3>
+              <h3 className="font-medium text-[hsl(var(--foreground))]">Filtros</h3>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
                   setFilters({});
-                  setSearchTerm("");
+                  setSearchTerm('');
                 }}
               >
                 Limpar filtros
@@ -510,14 +301,9 @@ export default function PostosPage() {
                 </label>
                 <select
                   className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-                  value={filters.post_type || ""}
+                  value={filters.post_type || ''}
                   onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      post_type: (e.target.value || undefined) as
-                        | PostType
-                        | undefined,
-                    })
+                    setFilters({ ...filters, post_type: (e.target.value || undefined) as PostType | undefined })
                   }
                 >
                   <option value="">Todos</option>
@@ -534,14 +320,9 @@ export default function PostosPage() {
                 </label>
                 <select
                   className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-                  value={filters.status || ""}
+                  value={filters.status || ''}
                   onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      status: (e.target.value || undefined) as
-                        | PostStatus
-                        | undefined,
-                    })
+                    setFilters({ ...filters, status: (e.target.value || undefined) as PostStatus | undefined })
                   }
                 >
                   <option value="">Todos</option>
@@ -558,14 +339,9 @@ export default function PostosPage() {
                 </label>
                 <select
                   className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
-                  value={filters.shift_type || ""}
+                  value={filters.shift_type || ''}
                   onChange={(e) =>
-                    setFilters({
-                      ...filters,
-                      shift_type: (e.target.value || undefined) as
-                        | ShiftType
-                        | undefined,
-                    })
+                    setFilters({ ...filters, shift_type: (e.target.value || undefined) as ShiftType | undefined })
                   }
                 >
                   <option value="">Todos</option>
@@ -586,10 +362,7 @@ export default function PostosPage() {
                       type="checkbox"
                       checked={filters.requires_armed === true}
                       onChange={(e) =>
-                        setFilters({
-                          ...filters,
-                          requires_armed: e.target.checked ? true : undefined,
-                        })
+                        setFilters({ ...filters, requires_armed: e.target.checked ? true : undefined })
                       }
                       className="rounded border-[hsl(var(--border))]"
                     />
@@ -600,10 +373,7 @@ export default function PostosPage() {
                       type="checkbox"
                       checked={filters.requires_vehicle === true}
                       onChange={(e) =>
-                        setFilters({
-                          ...filters,
-                          requires_vehicle: e.target.checked ? true : undefined,
-                        })
+                        setFilters({ ...filters, requires_vehicle: e.target.checked ? true : undefined })
                       }
                       className="rounded border-[hsl(var(--border))]"
                     />
@@ -620,12 +390,7 @@ export default function PostosPage() {
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={refresh}
-              className="ml-auto"
-            >
+            <Button variant="outline" size="sm" onClick={refresh} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -640,207 +405,159 @@ export default function PostosPage() {
           </div>
         )}
 
-        {/* Posts Table/Cards */}
+        {/* Posts Table */}
         {!isLoading && !error && (
           <>
-            {viewMode === "table" ? (
-              <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-[hsl(var(--muted))]">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                          Posto
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                          Tipo
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                          Turno
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                          Efetivo
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
-                          Acoes
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[hsl(var(--border))]">
-                      {posts.map((post) => (
-                        <tr
-                          key={post.id}
-                          className="hover:bg-[hsl(var(--muted))]/50 transition-colors cursor-pointer"
-                          onClick={() => handleView(post)}
-                        >
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
-                                <MapPin className="w-5 h-5 text-cyan-500" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-[hsl(var(--foreground))]">
-                                  {post.name}
-                                </p>
-                                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                                  {post.code}
-                                </p>
-                              </div>
+            <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-[hsl(var(--muted))]">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Posto
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Tipo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Turno
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Efetivo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-[hsl(var(--muted-foreground))] uppercase tracking-wider">
+                        Acoes
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[hsl(var(--border))]">
+                    {posts.map((post) => (
+                      <tr
+                        key={post.id}
+                        className="hover:bg-[hsl(var(--muted))]/50 transition-colors cursor-pointer"
+                        onClick={() => handleView(post)}
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+                              <MapPin className="w-5 h-5 text-cyan-500" />
                             </div>
-                          </td>
-                          <td className="px-4 py-4">
+                            <div>
+                              <p className="font-medium text-[hsl(var(--foreground))]">
+                                {post.name}
+                              </p>
+                              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                                {post.code}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-sm text-[hsl(var(--foreground))]">
+                            {POST_TYPE_LABELS[post.post_type as PostType] || post.post_type}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
                             <span className="text-sm text-[hsl(var(--foreground))]">
-                              {POST_TYPE_LABELS[post.post_type as PostType] ||
-                                post.post_type}
+                              {SHIFT_TYPE_LABELS[post.shift_type as ShiftType] || post.shift_type}
                             </span>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                              <span className="text-sm text-[hsl(var(--foreground))]">
-                                {SHIFT_TYPE_LABELS[
-                                  post.shift_type as ShiftType
-                                ] || post.shift_type}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <div className="flex items-center gap-2">
-                              <Users className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
-                              <span
-                                className={`text-sm font-medium ${
-                                  post.vacancy_count > 0
-                                    ? "text-orange-500"
-                                    : "text-green-500"
-                                }`}
-                              >
-                                {post.current_headcount}/
-                                {post.required_headcount}
-                              </span>
-                              {post.vacancy_count > 0 && (
-                                <span className="text-xs text-orange-500">
-                                  ({post.vacancy_count} vagas)
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-4 h-4 text-[hsl(var(--muted-foreground))]" />
                             <span
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                                post.status as PostStatus,
-                              )}`}
+                              className={`text-sm font-medium ${
+                                post.vacancy_count > 0
+                                  ? 'text-orange-500'
+                                  : 'text-green-500'
+                              }`}
                             >
-                              {POST_STATUS_LABELS[post.status as PostStatus] ||
-                                post.status}
+                              {post.current_headcount}/{post.required_headcount}
                             </span>
-                          </td>
-                          <td
-                            className="px-4 py-4 text-right"
-                            onClick={(e) => e.stopPropagation()}
+                            {post.vacancy_count > 0 && (
+                              <span className="text-xs text-orange-500">
+                                ({post.vacancy_count} vagas)
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                              post.status as PostStatus
+                            )}`}
                           >
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleView(post)}
-                                title="Visualizar"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <PermissionGuard
-                                permission={Permission.POSTS_EDIT}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleEdit(post)}
-                                  title="Editar"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </Button>
-                              </PermissionGuard>
-                              <PermissionGuard
-                                permission={Permission.POSTS_CREATE}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDuplicate(post)}
-                                  title="Duplicar"
-                                  className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </Button>
-                              </PermissionGuard>
-                              <PermissionGuard
-                                permission={Permission.POSTS_CREATE}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleSaveAsTemplate(post)}
-                                  title="Salvar como Template"
-                                  className="text-purple-500 hover:text-purple-600 hover:bg-purple-500/10"
-                                >
-                                  <Save className="w-4 h-4" />
-                                </Button>
-                              </PermissionGuard>
-                              <PermissionGuard
-                                permission={Permission.POSTS_DELETE}
-                              >
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDelete(post)}
-                                  title="Excluir"
-                                  className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </PermissionGuard>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Empty state */}
-                {posts.length === 0 && !isLoading && (
-                  <div className="text-center py-12">
-                    <MapPin className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                      Nenhum posto encontrado
-                    </h3>
-                    <p className="text-[hsl(var(--muted-foreground))] mt-1 mb-4">
-                      {searchTerm || Object.keys(filters).length > 1
-                        ? "Tente ajustar os filtros de busca"
-                        : "Comece criando um novo posto de trabalho"}
-                    </p>
-                    {!searchTerm && Object.keys(filters).length <= 1 && (
-                      <PermissionGuard permission={Permission.POSTS_CREATE}>
-                        <Button variant="primary" onClick={handleCreate}>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Criar Primeiro Posto
-                        </Button>
-                      </PermissionGuard>
-                    )}
-                  </div>
-                )}
+                            {POST_STATUS_LABELS[post.status as PostStatus] || post.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleView(post)}
+                              title="Visualizar"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(post)}
+                              title="Editar"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(post)}
+                              title="Excluir"
+                              className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              <div>Cards view - Coming soon</div>
-            )}
+
+              {/* Empty state */}
+              {posts.length === 0 && !isLoading && (
+                <div className="text-center py-12">
+                  <MapPin className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
+                    Nenhum posto encontrado
+                  </h3>
+                  <p className="text-[hsl(var(--muted-foreground))] mt-1 mb-4">
+                    {searchTerm || Object.keys(filters).length > 1
+                      ? 'Tente ajustar os filtros de busca'
+                      : 'Comece criando um novo posto de trabalho'}
+                  </p>
+                  {!searchTerm && Object.keys(filters).length <= 1 && (
+                    <Button variant="primary" onClick={handleCreate}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Criar Primeiro Posto
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-4">
                 <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                  Mostrando {(page - 1) * pageSize + 1} a{" "}
+                  Mostrando {(page - 1) * pageSize + 1} a{' '}
                   {Math.min(page * pageSize, total)} de {total} postos
                 </p>
                 <div className="flex items-center gap-2">
@@ -887,10 +604,8 @@ export default function PostosPage() {
         onClose={() => {
           setShowFormModal(false);
           setSelectedPost(null);
-          setTemplateFormData(null);
         }}
         onSuccess={handleFormSuccess}
-        templateData={templateFormData}
       />
 
       <ConfirmModal
@@ -912,192 +627,6 @@ export default function PostosPage() {
         variant="danger"
         isLoading={isDeleting}
       />
-
-      {/* Modal de Duplicação */}
-      {showDuplicateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowDuplicateModal(false)}
-          />
-          <div className="relative bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
-            <h2 className="text-lg font-semibold text-[hsl(var(--foreground))] mb-4 flex items-center gap-2">
-              <Copy className="w-5 h-5 text-blue-500" />
-              Duplicar Posto
-            </h2>
-            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
-              Uma cópia do posto "{selectedPost?.name}" será criada com status inativo para revisão.
-            </p>
-            <div className="mb-4">
-              <label className="text-sm font-medium text-[hsl(var(--foreground))] mb-1 block">
-                Nome do novo posto
-              </label>
-              <Input
-                value={duplicateName}
-                onChange={(e) => setDuplicateName(e.target.value)}
-                placeholder="Digite o nome do novo posto"
-              />
-            </div>
-            {duplicateError && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
-                {duplicateError}
-              </div>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDuplicateModal(false)}
-                disabled={isDuplicating}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={confirmDuplicate}
-                disabled={isDuplicating || !duplicateName.trim()}
-              >
-                {isDuplicating ? "Duplicando..." : "Duplicar"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Salvar Template */}
-      {showSaveTemplateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowSaveTemplateModal(false)}
-          />
-          <div className="relative bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
-            <h2 className="text-lg font-semibold text-[hsl(var(--foreground))] mb-4 flex items-center gap-2">
-              <Save className="w-5 h-5 text-purple-500" />
-              Salvar como Template
-            </h2>
-            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
-              Salve as configurações do posto "{selectedPost?.name}" como template para reutilização.
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-[hsl(var(--foreground))] mb-1 block">
-                  Nome do template *
-                </label>
-                <Input
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="Ex: Portaria 12x36"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-[hsl(var(--foreground))] mb-1 block">
-                  Descrição (opcional)
-                </label>
-                <textarea
-                  value={templateDescription}
-                  onChange={(e) => setTemplateDescription(e.target.value)}
-                  placeholder="Descreva quando usar este template..."
-                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm resize-none"
-                  rows={3}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setShowSaveTemplateModal(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={confirmSaveTemplate}
-                disabled={!templateName.trim()}
-              >
-                Salvar Template
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Templates */}
-      {showTemplatesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowTemplatesModal(false)}
-          />
-          <div className="relative bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-6 w-full max-w-lg mx-4 shadow-xl max-h-[80vh] overflow-hidden flex flex-col">
-            <h2 className="text-lg font-semibold text-[hsl(var(--foreground))] mb-4 flex items-center gap-2">
-              <FolderOpen className="w-5 h-5 text-cyan-500" />
-              Templates de Postos
-            </h2>
-            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
-              Selecione um template para criar um novo posto com configurações predefinidas.
-            </p>
-
-            <div className="flex-1 overflow-y-auto space-y-2">
-              {templates.length === 0 ? (
-                <div className="text-center py-8 text-[hsl(var(--muted-foreground))]">
-                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum template salvo.</p>
-                  <p className="text-sm">Salve um posto como template para começar.</p>
-                </div>
-              ) : (
-                templates.map((template) => (
-                  <div
-                    key={template.id}
-                    className="p-4 border border-[hsl(var(--border))] rounded-lg hover:bg-[hsl(var(--muted))]/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-[hsl(var(--foreground))]">
-                          {template.name}
-                        </h3>
-                        {template.description && (
-                          <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-                            {template.description}
-                          </p>
-                        )}
-                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">
-                          Criado em {new Date(template.created_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 ml-4">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleCreateFromTemplate(template)}
-                        >
-                          Usar
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteTemplate(template.id)}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="flex justify-end mt-4 pt-4 border-t border-[hsl(var(--border))]">
-              <Button
-                variant="outline"
-                onClick={() => setShowTemplatesModal(false)}
-              >
-                Fechar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

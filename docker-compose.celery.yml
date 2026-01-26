@@ -23,6 +23,12 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d priority@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - conecta-pro-network
     volumes:
@@ -48,6 +54,12 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d sefaz@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - conecta-pro-network
     volumes:
@@ -73,6 +85,12 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d nfse@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - conecta-pro-network
     volumes:
@@ -98,6 +116,12 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d batch@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - conecta-pro-network
     volumes:
@@ -125,11 +149,47 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d integrations@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - conecta-pro-network
     volumes:
       - ./logs/celery:/app/logs
       - ./credentials:/opt/conecta-pro/credentials:ro
+
+  # ==========================================================================
+  # Celery Worker - Operacional (Notificações Push)
+  # ==========================================================================
+  celery-operacional:
+    image: conecta-pro-backend:latest
+    container_name: conecta-pro-celery-operacional
+    restart: unless-stopped
+    command: celery -A celery_app worker --hostname=operacional@%h --queues=operacional --concurrency=2 --loglevel=INFO
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-conecta_pro}
+      REDIS_URL: redis://redis:6379/1
+      LOG_LEVEL: INFO
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A celery_app inspect ping -d operacional@$$HOSTNAME || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - conecta-pro-network
+    volumes:
+      - ./logs/celery:/app/logs
 
   # ==========================================================================
   # Celery Beat - Scheduler
@@ -152,6 +212,12 @@ services:
         condition: service_healthy
       celery-batch:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep 'celery.*beat' | grep -v grep || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - conecta-pro-network
     volumes:
