@@ -1,0 +1,1930 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - Analytics Module",
+    "description": "Módulo de Analytics, BI e Predictive Analytics com Machine Learning",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/v1/analytics/executive/dashboard": {
+      "get": {
+        "tags": [
+          "Analytics - Executive Dashboard",
+          "Executive Dashboard"
+        ],
+        "summary": "Dashboard Executivo Completo",
+        "description": "Retorna dashboard executivo com KPIs, alertas e insights preditivos",
+        "operationId": "get_executive_dashboard_api_v1_analytics_executive_dashboard_get",
+        "parameters": [
+          {
+            "name": "refresh",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Forçar atualização dos dados",
+              "default": false,
+              "title": "Refresh"
+            },
+            "description": "Forçar atualização dos dados"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Executive Dashboard Api V1 Analytics Executive Dashboard Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/executive/kpis/{category}": {
+      "get": {
+        "tags": [
+          "Analytics - Executive Dashboard",
+          "Executive Dashboard"
+        ],
+        "summary": "KPIs por Categoria",
+        "description": "Retorna KPIs filtrados por categoria específica",
+        "operationId": "get_kpis_by_category_api_v1_analytics_executive_kpis__category__get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Kpis By Category Api V1 Analytics Executive Kpis  Category  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/executive/alerts/active": {
+      "get": {
+        "tags": [
+          "Analytics - Executive Dashboard",
+          "Executive Dashboard"
+        ],
+        "summary": "Alertas Ativos",
+        "description": "Retorna alertas ativos que requerem atenção",
+        "operationId": "get_active_alerts_api_v1_analytics_executive_alerts_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Active Alerts Api V1 Analytics Executive Alerts Active Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/executive/insights/predictive": {
+      "get": {
+        "tags": [
+          "Analytics - Executive Dashboard",
+          "Executive Dashboard"
+        ],
+        "summary": "Insights Preditivos",
+        "description": "Retorna insights preditivos gerados por IA",
+        "operationId": "get_predictive_insights_api_v1_analytics_executive_insights_predictive_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Predictive Insights Api V1 Analytics Executive Insights Predictive Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/executive/summary": {
+      "get": {
+        "tags": [
+          "Analytics - Executive Dashboard",
+          "Executive Dashboard"
+        ],
+        "summary": "Resumo Executivo",
+        "description": "Retorna resumo executivo consolidado",
+        "operationId": "get_executive_summary_api_v1_analytics_executive_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Executive Summary Api V1 Analytics Executive Summary Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/executive/export": {
+      "get": {
+        "tags": [
+          "Analytics - Executive Dashboard",
+          "Executive Dashboard"
+        ],
+        "summary": "Exportar Dashboard",
+        "description": "Exporta dados do dashboard em diferentes formatos",
+        "operationId": "export_dashboard_api_v1_analytics_executive_export_get",
+        "parameters": [
+          {
+            "name": "format_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Formato: json, csv",
+              "default": "json",
+              "title": "Format Type"
+            },
+            "description": "Formato: json, csv"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Export Dashboard Api V1 Analytics Executive Export Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/executive/health": {
+      "get": {
+        "tags": [
+          "Analytics - Executive Dashboard",
+          "Executive Dashboard"
+        ],
+        "summary": "Health Check Dashboard",
+        "description": "Verifica saúde do sistema de dashboard",
+        "operationId": "dashboard_health_check_api_v1_analytics_executive_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Dashboard Health Check Api V1 Analytics Executive Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/churn/predict": {
+      "post": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Predizer churn de usuário",
+        "description": "Prediz probabilidade de churn para um usuário específico.\n\nRetorna:\n- Probabilidade de churn (0-1)\n- Nível de risco\n- Fatores contribuintes\n- Ações de retenção recomendadas",
+        "operationId": "predict_churn_api_v1_analytics_churn_predict_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChurnPredictionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChurnPredictionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/churn/high-risk": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Listar usuários com alto risco de churn",
+        "description": "Lista usuários com alto risco de churn ordenados por probabilidade.",
+        "operationId": "get_high_risk_users_api_v1_analytics_churn_high_risk_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "min_risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "high",
+              "title": "Min Risk"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/churn/analytics": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Analytics de churn",
+        "description": "Obtém métricas agregadas de churn.",
+        "operationId": "get_churn_analytics_api_v1_analytics_churn_analytics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/forecast/sales": {
+      "post": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Previsão de vendas",
+        "description": "Gera previsão de vendas/receita.\n\nParâmetros:\n- periods: Número de períodos a prever\n- granularity: daily, weekly, monthly\n- entity_type: revenue, units, etc.",
+        "operationId": "forecast_sales_api_v1_analytics_forecast_sales_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForecastRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/forecast/scenarios": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Cenários de previsão",
+        "description": "Gera múltiplos cenários de previsão (pessimista, base, otimista).",
+        "operationId": "get_forecast_scenarios_api_v1_analytics_forecast_scenarios_get",
+        "parameters": [
+          {
+            "name": "periods",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "default": 30,
+              "title": "Periods"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/forecast/accuracy": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Relatório de acurácia do forecast",
+        "description": "Obtém relatório de acurácia das previsões históricas.",
+        "operationId": "get_forecast_accuracy_api_v1_analytics_forecast_accuracy_get",
+        "parameters": [
+          {
+            "name": "lookback_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "default": 90,
+              "title": "Lookback Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/fraud/analyze": {
+      "post": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Analisar transação para fraude",
+        "description": "Analisa uma transação em tempo real para detecção de fraude.\n\nRetorna:\n- Score de risco (0-100)\n- Nível de risco\n- Indicadores de fraude\n- Ações recomendadas",
+        "operationId": "analyze_transaction_api_v1_analytics_fraud_analyze_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FraudAlertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/fraud/alerts": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Listar alertas de fraude",
+        "description": "Lista alertas de fraude filtrados.",
+        "operationId": "get_fraud_alerts_api_v1_analytics_fraud_alerts_get",
+        "parameters": [
+          {
+            "name": "min_risk",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Risk"
+            }
+          },
+          {
+            "name": "acknowledged",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Acknowledged"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/fraud/alerts/{alert_id}/status": {
+      "put": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Atualizar status de alerta",
+        "description": "Atualiza o status de um alerta de fraude.",
+        "operationId": "update_alert_status_api_v1_analytics_fraud_alerts__alert_id__status_put",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alert Id"
+            }
+          },
+          {
+            "name": "new_status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "New Status"
+            }
+          },
+          {
+            "name": "notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/fraud/analytics": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Analytics de fraude",
+        "description": "Obtém métricas agregadas de fraude.",
+        "operationId": "get_fraud_analytics_api_v1_analytics_fraud_analytics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/fraud/user/{user_id}/risk": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Perfil de risco de usuário",
+        "description": "Obtém perfil de risco de um usuário específico.",
+        "operationId": "get_user_risk_profile_api_v1_analytics_fraud_user__user_id__risk_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/leads/score": {
+      "post": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Calcular score de lead",
+        "description": "Calcula score de um lead para priorização de vendas.\n\nRetorna:\n- Score total (0-100)\n- Qualidade (hot, warm, cold, etc.)\n- Probabilidade de conversão\n- Próxima melhor ação",
+        "operationId": "score_lead_api_v1_analytics_leads_score_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadScoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadScoreResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/leads/top": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Top leads por score",
+        "description": "Lista os leads com melhor score.",
+        "operationId": "get_top_leads_api_v1_analytics_leads_top_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "min_quality",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "warm",
+              "title": "Min Quality"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/leads/analytics": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Analytics de lead scoring",
+        "description": "Obtém métricas agregadas de lead scoring.",
+        "operationId": "get_scoring_analytics_api_v1_analytics_leads_analytics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/models": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Listar modelos registrados",
+        "description": "Lista todos os modelos no registry.",
+        "operationId": "list_models_api_v1_analytics_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/models/{model_name}/versions": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Listar versões de um modelo",
+        "description": "Lista versões de um modelo específico.",
+        "operationId": "list_model_versions_api_v1_analytics_models__model_name__versions_get",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Name"
+            }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stage"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/models/{model_name}/compare": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Comparar versões de modelo",
+        "description": "Compara métricas entre duas versões de um modelo.",
+        "operationId": "compare_model_versions_api_v1_analytics_models__model_name__compare_get",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Name"
+            }
+          },
+          {
+            "name": "version1",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version1"
+            }
+          },
+          {
+            "name": "version2",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version2"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/models/{model_name}/promote": {
+      "post": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Promover modelo para produção",
+        "description": "Promove uma versão do modelo para um novo estágio.",
+        "operationId": "promote_model_api_v1_analytics_models__model_name__promote_post",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Name"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Version"
+            }
+          },
+          {
+            "name": "target_stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "production",
+              "title": "Target Stage"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/monitoring/dashboard": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Dashboard de monitoramento",
+        "description": "Obtém dashboard de monitoramento de todos os modelos.",
+        "operationId": "get_monitoring_dashboard_api_v1_analytics_monitoring_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/monitoring/models/{model_name}/health": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Saúde de um modelo específico",
+        "description": "Obtém status de saúde detalhado de um modelo.",
+        "operationId": "get_model_health_api_v1_analytics_monitoring_models__model_name__health_get",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Model Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelHealthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/monitoring/alerts": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Listar alertas de monitoramento",
+        "description": "Lista alertas de drift e degradação.",
+        "operationId": "get_monitoring_alerts_api_v1_analytics_monitoring_alerts_get",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Name"
+            }
+          },
+          {
+            "name": "acknowledged",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Acknowledged"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/monitoring/alerts/{alert_id}/acknowledge": {
+      "put": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Reconhecer alerta",
+        "description": "Reconhece um alerta de monitoramento.",
+        "operationId": "acknowledge_monitoring_alert_api_v1_analytics_monitoring_alerts__alert_id__acknowledge_put",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/features/user/{user_id}": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Features de um usuário",
+        "description": "Obtém features calculadas de um usuário.",
+        "operationId": "get_user_features_api_v1_analytics_features_user__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "features",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Features"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/features/available": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Listar features disponíveis",
+        "description": "Lista todas as features disponíveis no Feature Store.",
+        "operationId": "list_available_features_api_v1_analytics_features_available_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/features/{feature_name}/metadata": {
+      "get": {
+        "tags": [
+          "Analytics - Predictive",
+          "Predictive Analytics"
+        ],
+        "summary": "Metadados de uma feature",
+        "description": "Obtém metadados de uma feature específica.",
+        "operationId": "get_feature_metadata_api_v1_analytics_features__feature_name__metadata_get",
+        "parameters": [
+          {
+            "name": "feature_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Feature Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ChurnPredictionRequest": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id"
+        ],
+        "title": "ChurnPredictionRequest",
+        "description": "Request para predição de churn."
+      },
+      "ChurnPredictionResponse": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "churn_probability": {
+            "type": "number",
+            "title": "Churn Probability"
+          },
+          "risk_level": {
+            "type": "string",
+            "title": "Risk Level"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "contributing_factors": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Contributing Factors"
+          },
+          "retention_actions": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Retention Actions"
+          },
+          "predicted_churn_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Predicted Churn Date"
+          },
+          "lifetime_value_at_risk": {
+            "type": "number",
+            "title": "Lifetime Value At Risk"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "churn_probability",
+          "risk_level",
+          "confidence",
+          "contributing_factors",
+          "retention_actions",
+          "predicted_churn_date",
+          "lifetime_value_at_risk"
+        ],
+        "title": "ChurnPredictionResponse",
+        "description": "Response de predição de churn."
+      },
+      "ForecastRequest": {
+        "properties": {
+          "periods": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Periods",
+            "default": 30
+          },
+          "granularity": {
+            "type": "string",
+            "title": "Granularity",
+            "default": "daily"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type",
+            "default": "revenue"
+          }
+        },
+        "type": "object",
+        "title": "ForecastRequest",
+        "description": "Request para forecast de vendas."
+      },
+      "ForecastResponse": {
+        "properties": {
+          "forecast_type": {
+            "type": "string",
+            "title": "Forecast Type"
+          },
+          "granularity": {
+            "type": "string",
+            "title": "Granularity"
+          },
+          "start_date": {
+            "type": "string",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "title": "End Date"
+          },
+          "predictions": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Predictions"
+          },
+          "total_forecast": {
+            "type": "number",
+            "title": "Total Forecast"
+          },
+          "accuracy_metrics": {
+            "type": "object",
+            "title": "Accuracy Metrics"
+          },
+          "insights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Insights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "forecast_type",
+          "granularity",
+          "start_date",
+          "end_date",
+          "predictions",
+          "total_forecast",
+          "accuracy_metrics",
+          "insights"
+        ],
+        "title": "ForecastResponse",
+        "description": "Response de forecast."
+      },
+      "FraudAlertResponse": {
+        "properties": {
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id"
+          },
+          "risk_score": {
+            "type": "number",
+            "title": "Risk Score"
+          },
+          "risk_level": {
+            "type": "string",
+            "title": "Risk Level"
+          },
+          "fraud_type": {
+            "type": "string",
+            "title": "Fraud Type"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "indicators": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Indicators"
+          },
+          "recommended_actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommended Actions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transaction_id",
+          "risk_score",
+          "risk_level",
+          "fraud_type",
+          "confidence",
+          "indicators",
+          "recommended_actions"
+        ],
+        "title": "FraudAlertResponse",
+        "description": "Response de análise de fraude."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LeadScoreRequest": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "company_size": {
+            "type": "integer",
+            "title": "Company Size",
+            "default": 0
+          },
+          "industry_fit": {
+            "type": "number",
+            "title": "Industry Fit",
+            "default": 0.5
+          },
+          "budget_range": {
+            "type": "number",
+            "title": "Budget Range",
+            "default": 0
+          },
+          "decision_timeline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Timeline"
+          },
+          "website_visits": {
+            "type": "integer",
+            "title": "Website Visits",
+            "default": 0
+          },
+          "page_views": {
+            "type": "integer",
+            "title": "Page Views",
+            "default": 0
+          },
+          "time_on_site": {
+            "type": "integer",
+            "title": "Time On Site",
+            "default": 0
+          },
+          "email_opens": {
+            "type": "integer",
+            "title": "Email Opens",
+            "default": 0
+          },
+          "email_clicks": {
+            "type": "integer",
+            "title": "Email Clicks",
+            "default": 0
+          },
+          "content_downloads": {
+            "type": "integer",
+            "title": "Content Downloads",
+            "default": 0
+          },
+          "demo_requests": {
+            "type": "integer",
+            "title": "Demo Requests",
+            "default": 0
+          },
+          "form_submissions": {
+            "type": "integer",
+            "title": "Form Submissions",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "LeadScoreRequest",
+        "description": "Request para scoring de lead."
+      },
+      "LeadScoreResponse": {
+        "properties": {
+          "lead_id": {
+            "type": "string",
+            "title": "Lead Id"
+          },
+          "total_score": {
+            "type": "number",
+            "title": "Total Score"
+          },
+          "quality": {
+            "type": "string",
+            "title": "Quality"
+          },
+          "conversion_probability": {
+            "type": "number",
+            "title": "Conversion Probability"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "factors": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Factors"
+          },
+          "insights": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Insights"
+          },
+          "next_best_action": {
+            "type": "string",
+            "title": "Next Best Action"
+          },
+          "estimated_value": {
+            "type": "number",
+            "title": "Estimated Value"
+          },
+          "time_to_conversion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time To Conversion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lead_id",
+          "total_score",
+          "quality",
+          "conversion_probability",
+          "stage",
+          "factors",
+          "insights",
+          "next_best_action",
+          "estimated_value",
+          "time_to_conversion"
+        ],
+        "title": "LeadScoreResponse",
+        "description": "Response de lead scoring."
+      },
+      "ModelHealthResponse": {
+        "properties": {
+          "model_name": {
+            "type": "string",
+            "title": "Model Name"
+          },
+          "model_version": {
+            "type": "string",
+            "title": "Model Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "overall_score": {
+            "type": "number",
+            "title": "Overall Score"
+          },
+          "metrics": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Metrics"
+          },
+          "predictions_last_hour": {
+            "type": "integer",
+            "title": "Predictions Last Hour"
+          },
+          "avg_latency_ms": {
+            "type": "number",
+            "title": "Avg Latency Ms"
+          },
+          "error_rate": {
+            "type": "number",
+            "title": "Error Rate"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_name",
+          "model_version",
+          "status",
+          "overall_score",
+          "metrics",
+          "predictions_last_hour",
+          "avg_latency_ms",
+          "error_rate",
+          "recommendations"
+        ],
+        "title": "ModelHealthResponse",
+        "description": "Response de saúde do modelo."
+      },
+      "TransactionAnalysisRequest": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "hour": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hour"
+          },
+          "device_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Id"
+          },
+          "ip_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ip Address"
+          },
+          "recent_transactions_count": {
+            "type": "integer",
+            "title": "Recent Transactions Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "TransactionAnalysisRequest",
+        "description": "Request para análise de transação."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
