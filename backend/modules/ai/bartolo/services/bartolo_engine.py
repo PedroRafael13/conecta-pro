@@ -9,8 +9,33 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 from uuid import UUID, uuid4
+
+# Agentes especializados (importação condicional)
+try:
+    from ..agents import EscalaAgent, SubstituicaoAgent, AlertaAgent
+    from ..agents.escala_agent import EscalaIntent
+    from ..agents.substituicao_agent import SubstituicaoIntent
+    from ..agents.alerta_agent import AlertaIntent
+    AGENTS_AVAILABLE = True
+except ImportError:
+    AGENTS_AVAILABLE = False
+    EscalaAgent = None
+    SubstituicaoAgent = None
+    AlertaAgent = None
+
+# Skills (importação condicional)
+try:
+    from ..skills import get_skill, list_skills, SKILL_REGISTRY
+    SKILLS_AVAILABLE = True
+except ImportError:
+    SKILLS_AVAILABLE = False
+    get_skill = None
+    list_skills = None
+    SKILL_REGISTRY = {}
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.ai.bartolo.config.identity import (
     BARTOLO_IDENTITY,
@@ -31,9 +56,12 @@ from modules.ai.bartolo.config.user_profiles import (
     get_profile_modules,
     get_communication_style,
 )
+from modules.ai.bartolo.config.system_prompt import build_full_system_prompt
 from modules.ai.bartolo.services.profile_service import ProfileService, UserContext
 from modules.ai.bartolo.services.data_connector import DataConnector
+from modules.ai.bartolo.services.llm_fallback_classifier import LLMFallbackClassifier, FallbackResult
 from modules.ai.bartolo.wizards.wizard_manager import WizardManager
+from modules.ai.bartolo.actions import ActionDetector, ActionExecutor, ActionPreview
 from modules.ai.conversation.services.llm_provider import LLMProvider
 from modules.ai.conversation.services.intent_classifier import IntentClassifier
 from modules.ai.conversation.services.context_manager import ContextManager
@@ -54,6 +82,7 @@ class BartoloResponse:
     actions: list = field(default_factory=list)
     wizard_response: Optional[dict] = None
     data_results: Optional[dict] = None
+    action_preview: Optional[ActionPreview] = None  # NOVO: Preview de ação executiva
     processing_time_ms: int = 0
     model_used: str = ""
     bartolo_mood: str = "professional"
@@ -89,6 +118,31 @@ class BartoloEngine:
         self.data_connector = DataConnector()
         self.wizard_manager = WizardManager()
 
+        # LLM Fallback Classifier (Fase 3 do refinamento)
+        self.llm_fallback_classifier = LLMFallbackClassifier(llm_provider=self.llm_provider)
+
+        # Sistema de ações executivas
+        self.action_detector = ActionDetector()
+        self.action_executor: Optional[ActionExecutor] = None  # Inicializado com db
+
+        # Agentes especializados (inicializados sob demanda com db)
+        self.escala_agent = None
+        self.substituicao_agent = None
+        self.alerta_agent = None
+
+        # Mapa de agentes por domínio (keywords -> agent_name)
+        self.specialized_agents_map = {
+            "escala": "escala",
+            "scale": "escala",
+            "turno": "escala",
+            "substituicao": "substituicao",
+            "substituto": "substituicao",
+            "cobrir": "substituicao",
+            "alerta": "alerta",
+            "alertas": "alerta",
+            "urgente": "alerta",
+        }
+
         # Cache de sessoes
         self._session_cache: dict[str, dict] = {}
 
@@ -102,38 +156,191 @@ class BartoloEngine:
         module: Optional[str] = None,
         additional_context: Optional[str] = None,
     ) -> str:
-        """Constroi prompt de sistema completo."""
-        parts = [BARTOLO_IDENTITY]
+        """
+        Constroi prompt de sistema completo usando o system prompt rico.
 
-        # Adiciona contexto do usuario
+        Este metodo usa o novo system_prompt.py que contem conhecimento
+        COMPLETO do sistema Conecta PRO.
+        """
+        # Formata contexto do usuario
+        user_ctx_str = None
         if user_context:
-            parts.append(f"\n{user_context.to_prompt_context()}")
+            user_ctx_str = user_context.to_prompt_context()
 
-        # Adiciona prompt do modulo
-        if module:
-            module_prompt = get_module_prompt(module)
-            if module_prompt:
-                parts.append(f"\nMODULO ATUAL:\n{module_prompt}")
-
-        # Adiciona contexto adicional
-        if additional_context:
-            parts.append(f"\nCONTEXTO ADICIONAL:\n{additional_context}")
-
-        # Adiciona instrucoes finais
-        parts.append("""
-INSTRUCOES FINAIS:
-- Sempre se apresente como Bartolo quando for a primeira interacao
-- Use o nome do usuario quando disponivel
-- Ofereca sugestoes proativas quando apropriado
-- Se detectar que o usuario precisa de um wizard, ofereca para iniciar
-- Mantenha respostas objetivas mas completas
-""")
-
-        return "\n".join(parts)
+        # Usa o builder do system_prompt.py
+        return build_full_system_prompt(
+            user_context=user_ctx_str,
+            module=module,
+            additional_context=additional_context,
+        )
 
     def _detect_wizard_intent(self, message: str) -> Optional[str]:
         """Detecta se mensagem indica necessidade de wizard."""
         return self.wizard_manager.detect_wizard_type(message)
+
+    async def _check_skill_command(self, message: str, user_id: int) -> Optional[Dict[str, Any]]:
+        """
+        Verifica se a mensagem é um comando de skill.
+
+        Skills são comandos iniciados com / que executam ações específicas.
+        Exemplo: /escala visualizar, /relatorio mensal
+
+        Args:
+            message: Mensagem do usuário
+            user_id: ID do usuário
+
+        Returns:
+            Resultado do skill ou None se não for comando de skill
+        """
+        if not SKILLS_AVAILABLE or not message.startswith("/"):
+            return None
+
+        parts = message[1:].split()
+        if not parts:
+            return None
+
+        skill_name = parts[0].lower()
+        skill = get_skill(skill_name)
+
+        if skill:
+            command = parts[1] if len(parts) > 1 else ""
+            args = parts[2:] if len(parts) > 2 else []
+
+            try:
+                result = await skill.execute(command, args, {"user_id": user_id})
+                return result
+            except Exception as e:
+                logger.error(f"Erro ao executar skill {skill_name}: {e}")
+                return {
+                    "response": f"Erro ao executar comando /{skill_name}: {str(e)}",
+                    "intent": "skill_error",
+                    "suggestions": [f"Tente /{skill_name} ajuda para ver comandos disponíveis"],
+                }
+
+        # Skill não encontrado - lista skills disponíveis
+        available = list_skills() if list_skills else []
+        return {
+            "response": f"Comando /{skill_name} não reconhecido.",
+            "intent": "skill_not_found",
+            "suggestions": [f"/{s}" for s in available[:5]] if available else [],
+        }
+
+    def _init_specialized_agents(self, db=None) -> None:
+        """
+        Inicializa agentes especializados.
+
+        Args:
+            db: Sessão do banco de dados (opcional)
+        """
+        if not AGENTS_AVAILABLE:
+            return
+
+        # Inicializa agentes (funcionam com ou sem db)
+        if self.escala_agent is None and EscalaAgent:
+            self.escala_agent = EscalaAgent(db=db)
+        if self.substituicao_agent is None and SubstituicaoAgent:
+            self.substituicao_agent = SubstituicaoAgent(db=db)
+        if self.alerta_agent is None and AlertaAgent:
+            self.alerta_agent = AlertaAgent(db=db)
+
+    def _get_specialized_agent(self, agent_name: str):
+        """
+        Retorna o agente especializado pelo nome.
+
+        Args:
+            agent_name: Nome do agente (escala, substituicao, alerta)
+
+        Returns:
+            Instância do agente ou None
+        """
+        agents = {
+            "escala": self.escala_agent,
+            "substituicao": self.substituicao_agent,
+            "alerta": self.alerta_agent,
+        }
+        return agents.get(agent_name)
+
+    async def _route_to_specialized_agent(
+        self,
+        message: str,
+        intent: str,
+        user_id: int,
+        fallback_result: Optional[FallbackResult] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Roteia para agente especializado se aplicável.
+
+        Detecta pelo intent, palavras-chave ou resultado do LLM fallback
+        se deve delegar para um agente especializado.
+
+        Args:
+            message: Mensagem do usuário
+            intent: Intent detectado
+            user_id: ID do usuário
+            fallback_result: Resultado do LLM fallback classifier (opcional)
+
+        Returns:
+            Resultado do agente ou None se não aplicável
+        """
+        if not AGENTS_AVAILABLE:
+            return None
+
+        message_lower = message.lower()
+        agent_name = None
+
+        # 1. Primeiro tenta usar resultado do LLM fallback (mais preciso)
+        if fallback_result and fallback_result.agent_type:
+            agent_name = fallback_result.agent_type
+            logger.info(f"[AGENT ROUTING] Usando sugestão do LLM fallback: {agent_name}")
+
+        # 2. Se não tem fallback, detecta por keywords
+        if not agent_name:
+            for keyword, name in self.specialized_agents_map.items():
+                if keyword in message_lower or keyword in intent.lower():
+                    agent_name = name
+                    break
+
+        # 3. Roteia para o agente encontrado
+        if agent_name:
+            agent = self._get_specialized_agent(agent_name)
+            if agent:
+                try:
+                    result = await agent.process(message, {"user_id": user_id})
+                    return result
+                except Exception as e:
+                    logger.error(f"Erro no agente {agent_name}: {e}")
+                    # Não retorna erro, deixa o fluxo normal processar
+
+        return None
+
+    def _format_response(
+        self,
+        response: str,
+        intent: str = "unknown",
+        suggestions: list = None,
+        actions: list = None,
+        data_results: dict = None,
+    ) -> dict:
+        """
+        Formata resposta padronizada para retorno.
+
+        Args:
+            response: Texto da resposta
+            intent: Intent detectado
+            suggestions: Sugestões de próximas ações
+            actions: Ações disponíveis
+            data_results: Dados retornados
+
+        Returns:
+            Dicionário formatado
+        """
+        return {
+            "response": response,
+            "intent": intent,
+            "suggestions": suggestions or [],
+            "actions": actions or [],
+            "data": data_results,
+        }
 
     def _generate_suggestions(
         self,
@@ -174,6 +381,7 @@ INSTRUCOES FINAIS:
         message: str,
         module: Optional[str] = None,
         metadata: Optional[dict] = None,
+        db: Optional[AsyncSession] = None,
     ) -> BartoloResponse:
         """
         Processa uma mensagem do usuario.
@@ -184,6 +392,7 @@ INSTRUCOES FINAIS:
             message: Mensagem do usuario
             module: Modulo atual (opcional)
             metadata: Metadados adicionais
+            db: Sessão do banco de dados (opcional, para acesso a dados reais)
 
         Returns:
             BartoloResponse com resposta completa
@@ -192,11 +401,34 @@ INSTRUCOES FINAIS:
         message_id = uuid4()
         metadata = metadata or {}
 
+        # Criar data_connector com db_session se disponível
+        data_connector = DataConnector(db_session=db) if db else self.data_connector
+
         try:
-            # 1. Carrega contexto do usuario
+            # 0. Inicializa agentes especializados (funciona com ou sem db)
+            self._init_specialized_agents(db)
+
+            # 1. Verifica se é comando de skill (antes de qualquer processamento)
+            skill_result = await self._check_skill_command(message, user_id)
+            if skill_result:
+                processing_time = int((time.time() - start_time) * 1000)
+                return BartoloResponse(
+                    message_id=message_id,
+                    session_id=session_id,
+                    response=skill_result.get("response", ""),
+                    intent=skill_result.get("intent", "skill_command"),
+                    suggestions=skill_result.get("suggestions", []),
+                    actions=skill_result.get("actions", []),
+                    data_results=skill_result.get("data"),
+                    processing_time_ms=processing_time,
+                    model_used="skill_executor",
+                    bartolo_mood="professional",
+                )
+
+            # 2. Carrega contexto do usuario
             user_context = await self.profile_service.get_user_context(user_id)
 
-            # 2. Verifica se tem wizard ativo
+            # 3. Verifica se tem wizard ativo
             if self.wizard_manager.has_active_wizard(user_id, session_id):
                 wizard_response = self.wizard_manager.process_input(
                     user_id, session_id, message
@@ -206,10 +438,90 @@ INSTRUCOES FINAIS:
                         message_id, session_id, wizard_response, start_time
                     )
 
-            # 3. Classifica intencao
-            intent_result = self.intent_classifier.classify(message)
+            # 4. Detecta ação executiva
+            logger.info(f"[ACTION DEBUG] db={db is not None}, enable_actions={self.config.enable_actions}")
+            if db and self.config.enable_actions:
+                logger.info("[ACTION DEBUG] Entrando no fluxo de detecção de ações")
+                # Inicializa executor se ainda não foi
+                if not self.action_executor:
+                    self.action_executor = ActionExecutor(db)
+                    logger.info("[ACTION DEBUG] ActionExecutor inicializado")
 
-            # 4. Verifica se deve iniciar wizard
+                action_request = self.action_detector.detect(
+                    message,
+                    str(user_id),
+                    session_id
+                )
+                logger.info(f"[ACTION DEBUG] Resultado da detecção: {action_request is not None}")
+
+                if action_request:
+                    logger.info(f"Ação detectada: {action_request.action_type.value}")
+
+                    # Criar preview da ação
+                    action_preview = await self.action_executor.create_action_preview(action_request)
+
+                    # Formatar resposta para o usuário
+                    response_text = self._format_action_preview_response(action_preview)
+
+                    processing_time = int((time.time() - start_time) * 1000)
+
+                    return BartoloResponse(
+                        message_id=message_id,
+                        session_id=session_id,
+                        response=response_text,
+                        action_preview=action_preview,  # Inclui preview
+                        processing_time_ms=processing_time,
+                        model_used="action_detector",
+                        bartolo_mood="professional",
+                    )
+
+            # 5. Classifica intencao
+            intent_result = self.intent_classifier.classify(message)
+            detected_intent = intent_result.intent.value
+            regex_confidence = intent_result.confidence
+
+            # 5b. LLM Fallback Classifier (se confiança regex baixa)
+            fallback_result: Optional[FallbackResult] = None
+            if self.llm_fallback_classifier.should_use_fallback(regex_confidence):
+                logger.info(f"[FALLBACK] Regex confidence baixa ({regex_confidence:.2f}), usando LLM fallback")
+                try:
+                    fallback_result = await self.llm_fallback_classifier.classify(
+                        message=message,
+                        regex_confidence=regex_confidence,
+                        context={
+                            "role": user_context.role if user_context else None,
+                            "module": module,
+                        }
+                    )
+
+                    # Se fallback tem resultado com agente, pode usar diretamente
+                    if fallback_result and fallback_result.agent_type:
+                        logger.info(f"[FALLBACK] LLM sugeriu agente: {fallback_result.agent_type}/{fallback_result.agent_intent}")
+
+                except Exception as e:
+                    logger.error(f"[FALLBACK] Erro no LLM fallback: {e}")
+                    fallback_result = None
+
+            # 6. Tenta rotear para agente especializado
+            agent_result = await self._route_to_specialized_agent(
+                message, detected_intent, user_id, fallback_result
+            )
+            if agent_result:
+                processing_time = int((time.time() - start_time) * 1000)
+                return BartoloResponse(
+                    message_id=message_id,
+                    session_id=session_id,
+                    response=agent_result.get("response", ""),
+                    intent=agent_result.get("intent", detected_intent),
+                    suggestions=agent_result.get("suggestions", []),
+                    actions=agent_result.get("actions", []),
+                    data_results=agent_result.get("data"),
+                    processing_time_ms=processing_time,
+                    model_used="specialized_agent",
+                    bartolo_mood="professional",
+                )
+
+            # 7. Verifica se deve iniciar wizard
             wizard_type = self._detect_wizard_intent(message)
             if wizard_type:
                 wizard_response = self.wizard_manager.start_wizard(
@@ -220,60 +532,82 @@ INSTRUCOES FINAIS:
                     intro_message=f"Entendi! Vou te ajudar com isso."
                 )
 
-            # 5. Verifica se e consulta de dados
+            # 8. Verifica se e consulta de dados
+            logger.info(f"[DEBUG] Verificando data query para: {message}")
             data_results = None
             if self.config.use_data_connector:
-                data_results = await self._check_data_query(message, module)
+                data_results = await self._check_data_query(message, module, data_connector)
+                logger.info(f"[DEBUG] Data results: {data_results is not None}")
 
-            # 6. Recupera contexto da conversa
+            # 9. Recupera contexto da conversa
+            logger.info(f"[DEBUG] Recuperando contexto...")
             context = await self.context_manager.get_context(user_id, session_id)
+            logger.info(f"[DEBUG] Contexto recuperado")
 
-            # 7. Atualiza contexto
+            # 10. Atualiza contexto
             if module:
                 context.module = module
             if intent_result.entities:
                 context.entities.update(intent_result.entities)
 
-            # 8. Adiciona mensagem ao historico
+            # 11. Adiciona mensagem ao historico
             await self.context_manager.add_message(
                 user_id, session_id, "user", message,
-                metadata={"intent": intent_result.intent.value}
+                metadata={"intent": detected_intent}
             )
 
-            # 9. Prepara mensagens para LLM
+            # 12. Prepara mensagens para LLM
             llm_messages = await self.context_manager.get_messages_for_llm(
                 user_id, session_id
             )
 
-            # 10. Constroi prompt de sistema
+            # 13. Constroi prompt de sistema
             additional_context = None
-            if data_results:
-                additional_context = f"Dados encontrados no sistema:\n{data_results}"
+            if data_results and isinstance(data_results, dict):
+                # Formata dados de forma clara e imperativa
+                data_msg = data_results.get("message", "")
+                total = data_results.get('total_count', 0)
+                entity = data_results.get('entity', '')
+
+                additional_context = f"""
+🔴 DADOS REAIS CONSULTADOS NO BANCO DE DADOS:
+
+{data_msg}
+
+Total: {total}
+Entidade: {entity}
+
+IMPORTANTE: USE ESSES DADOS EXATOS NA SUA RESPOSTA!
+NÃO dê instruções de como buscar - os dados JÁ ESTÃO AQUI!
+"""
 
             system_prompt = self._build_system_prompt(
                 user_context, module, additional_context
             )
 
-            # 11. Gera resposta
+            # 14. Gera resposta com LLM real
+            logger.info(f"[DEBUG] Chamando LLM com {len(llm_messages)} mensagens...")
+            from core.config.settings import settings
             llm_response = await self.llm_provider.generate(
                 messages=llm_messages,
                 system_prompt=system_prompt,
-                max_tokens=self.config.max_response_tokens,
-                temperature=0.7,
+                max_tokens=settings.LLM_MAX_TOKENS,
+                temperature=settings.LLM_TEMPERATURE,
             )
+            logger.info(f"[DEBUG] LLM respondeu: {len(llm_response.content)} chars")
 
-            # 12. Adiciona resposta ao historico
+            # 15. Adiciona resposta ao historico
             await self.context_manager.add_message(
                 user_id, session_id, "assistant", llm_response.content,
                 metadata={"model": llm_response.model}
             )
 
-            # 13. Gera sugestoes
+            # 16. Gera sugestoes
             suggestions = self._generate_suggestions(
-                intent_result.intent.value, module, user_context
+                detected_intent, module, user_context
             )
 
-            # 14. Monta resposta
+            # 17. Monta resposta
             processing_time = int((time.time() - start_time) * 1000)
 
             return BartoloResponse(
@@ -281,7 +615,7 @@ INSTRUCOES FINAIS:
                 session_id=session_id,
                 response=llm_response.content,
                 response_html=self._format_html(llm_response.content),
-                intent=intent_result.intent.value,
+                intent=detected_intent,
                 confidence=intent_result.confidence,
                 suggestions=suggestions,
                 actions=[],
@@ -292,7 +626,7 @@ INSTRUCOES FINAIS:
             )
 
         except Exception as e:
-            logger.error(f"Erro ao processar mensagem: {e}")
+            logger.exception(f"Erro ao processar mensagem: {e}")
             processing_time = int((time.time() - start_time) * 1000)
 
             return BartoloResponse(
@@ -399,11 +733,89 @@ INSTRUCOES FINAIS:
         self,
         message: str,
         module: Optional[str],
+        data_connector: DataConnector,
     ) -> Optional[dict]:
         """Verifica se e consulta de dados e busca resultados."""
-        # Por enquanto retorna None
-        # Sera expandido para integrar com DataConnector
-        return None
+        try:
+            # Detecta se é uma query de dados
+            print(f"[BARTOLO DEBUG] Detectando query para: '{message}'")
+            data_query = data_connector.detect_data_query(message)
+            print(f"[BARTOLO DEBUG] Query detectada: {data_query}")
+
+            if data_query:
+                logger.info(f"Query de dados detectada: {data_query.entity} ({data_query.query_type})")
+                print(f"[BARTOLO DEBUG] Executando query tipo: {data_query.query_type}")
+
+                # Executa a query
+                result = await data_connector.execute_query(data_query)
+                print(f"[BARTOLO DEBUG] Resultado: success={result.success}")
+
+                if result.success:
+                    # Retorna resultado em linguagem natural
+                    response_dict = {
+                        "entity": result.entity,
+                        "query_type": result.query_type.value,
+                        "total_count": result.total_count,
+                        "data": result.data,
+                        "message": result.to_natural_language(),
+                    }
+                    print(f"[BARTOLO DEBUG] Retornando dados: {response_dict.get('entity')}")
+                    return response_dict
+
+            # Verifica se é pedido de dashboard
+            if any(word in message.lower() for word in ["dashboard", "resumo", "visao geral"]):
+                if module:
+                    dashboard_data = await data_connector.get_dashboard_data(module)
+                    if dashboard_data:
+                        return {
+                            "type": "dashboard",
+                            "module": module,
+                            "data": dashboard_data,
+                        }
+
+            print(f"[BARTOLO DEBUG] Nenhuma query detectada, retornando None")
+            return None
+
+        except Exception as e:
+            logger.error(f"Erro ao verificar data query: {e}")
+            print(f"[BARTOLO DEBUG] ERRO: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    def _format_action_preview_response(self, preview: ActionPreview) -> str:
+        """
+        Formata resposta com preview de ação para o usuário.
+
+        Args:
+            preview: Preview da ação
+
+        Returns:
+            Texto formatado em markdown
+        """
+        response = f"Entendi! Você quer **{preview.title}**.\n\n"
+        response += f"{preview.description}\n\n"
+
+        if preview.changes_summary:
+            response += "**O que será feito:**\n"
+            for change in preview.changes_summary:
+                response += f"- {change}\n"
+            response += "\n"
+
+        if preview.warnings:
+            response += "**⚠️ Avisos:**\n"
+            for warning in preview.warnings:
+                response += f"- {warning}\n"
+            response += "\n"
+
+        if not preview.user_has_permission:
+            response += f"**⛔ Permissão Necessária:** {preview.required_permission}\n"
+            response += "Você não tem permissão para executar esta ação.\n"
+        else:
+            response += "**Deseja confirmar esta ação?**\n"
+            response += f"_(Pode {'ser desfeita' if preview.can_be_undone else 'não pode ser desfeita'} posteriormente)_"
+
+        return response
 
     def _format_html(self, text: str) -> str:
         """Formata resposta como HTML."""
