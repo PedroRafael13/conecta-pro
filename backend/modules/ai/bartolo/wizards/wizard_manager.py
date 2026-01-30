@@ -11,6 +11,14 @@ from uuid import UUID
 from modules.ai.bartolo.wizards.base_wizard import BaseWizard, WizardResponse, WizardState
 from modules.ai.bartolo.wizards.proposta_wizard import PropostaComercialWizard
 from modules.ai.bartolo.wizards.admissao_wizard import AdmissaoWizard
+from modules.ai.bartolo.wizards.ocorrencia_wizard import OcorrenciaWizard
+from modules.ai.bartolo.wizards.disciplinar_wizard import DisciplinarWizard
+from modules.ai.bartolo.wizards.ronda_wizard import RondaWizard
+from modules.ai.bartolo.wizards.banco_horas_wizard import BancoHorasWizard
+from modules.ai.bartolo.wizards.escala_wizard import EscalaWizard
+from modules.ai.bartolo.wizards.posto_wizard import PostoWizard
+from modules.ai.bartolo.wizards.diarista_wizard import DiaristaWizard
+from modules.ai.bartolo.wizards.comunicado_wizard import ComunicadoWizard
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +32,30 @@ WIZARD_REGISTRY: dict[str, Type[BaseWizard]] = {
     "admissao_funcionario": AdmissaoWizard,
     "admissao": AdmissaoWizard,
     "contratar": AdmissaoWizard,
+    "ocorrencia": OcorrenciaWizard,
+    "registrar_ocorrencia": OcorrenciaWizard,
+    "disciplinar": DisciplinarWizard,
+    "medida_disciplinar": DisciplinarWizard,
+    "advertencia": DisciplinarWizard,
+    "ronda": RondaWizard,
+    "inspecao": RondaWizard,
+    "ronda_inspecao": RondaWizard,
+    "banco_horas": BancoHorasWizard,
+    "compensacao": BancoHorasWizard,
+    "hora_extra": BancoHorasWizard,
+    "escala": EscalaWizard,
+    "criar_escala": EscalaWizard,
+    "nova_escala": EscalaWizard,
+    "posto": PostoWizard,
+    "criar_posto": PostoWizard,
+    "novo_posto": PostoWizard,
+    "cadastrar_posto": PostoWizard,
+    "diarista": DiaristaWizard,
+    "agendar_diarista": DiaristaWizard,
+    "escalar_diarista": DiaristaWizard,
+    "comunicado": ComunicadoWizard,
+    "criar_comunicado": ComunicadoWizard,
+    "novo_comunicado": ComunicadoWizard,
 }
 
 
@@ -81,6 +113,36 @@ class WizardManager:
             "contratar": "admissao_funcionario",
             "contratacao": "admissao_funcionario",
             "novo funcionario": "admissao_funcionario",
+            "ocorrencia": "ocorrencia",
+            "registrar ocorrencia": "ocorrencia",
+            "abrir ocorrencia": "ocorrencia",
+            "disciplinar": "disciplinar",
+            "advertencia": "disciplinar",
+            "medida disciplinar": "disciplinar",
+            "suspensao": "disciplinar",
+            "ronda": "ronda",
+            "inspecao": "ronda",
+            "ronda inspecao": "ronda",
+            "banco de horas": "banco_horas",
+            "banco horas": "banco_horas",
+            "compensacao": "banco_horas",
+            "hora extra": "banco_horas",
+            "horas extras": "banco_horas",
+            "escala": "escala",
+            "criar escala": "escala",
+            "nova escala": "escala",
+            "montar escala": "escala",
+            "posto": "posto",
+            "criar posto": "posto",
+            "novo posto": "posto",
+            "cadastrar posto": "posto",
+            "diarista": "diarista",
+            "agendar diarista": "diarista",
+            "escalar diarista": "diarista",
+            "comunicado": "comunicado",
+            "criar comunicado": "comunicado",
+            "novo comunicado": "comunicado",
+            "redigir comunicado": "comunicado",
         }
 
         for keyword, wizard in wizard_keywords.items():
@@ -103,6 +165,30 @@ class WizardManager:
 
         if any(k in intent_lower for k in ["admissao", "admitir", "contratar", "contratacao", "novo funcionario"]):
             return "admissao_funcionario"
+
+        if any(k in intent_lower for k in ["ocorrencia", "registrar ocorrencia", "abrir ocorrencia"]):
+            return "ocorrencia"
+
+        if any(k in intent_lower for k in ["disciplinar", "advertencia", "medida disciplinar", "suspensao"]):
+            return "disciplinar"
+
+        if any(k in intent_lower for k in ["ronda", "inspecao", "ronda inspecao"]):
+            return "ronda"
+
+        if any(k in intent_lower for k in ["banco de horas", "banco horas", "compensacao", "hora extra", "horas extras"]):
+            return "banco_horas"
+
+        if any(k in intent_lower for k in ["escala", "criar escala", "nova escala", "montar escala"]):
+            return "escala"
+
+        if any(k in intent_lower for k in ["posto", "criar posto", "novo posto", "cadastrar posto"]):
+            return "posto"
+
+        if any(k in intent_lower for k in ["diarista", "agendar diarista", "escalar diarista"]):
+            return "diarista"
+
+        if any(k in intent_lower for k in ["comunicado", "criar comunicado", "novo comunicado", "redigir comunicado"]):
+            return "comunicado"
 
         return None
 
