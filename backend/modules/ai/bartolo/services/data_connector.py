@@ -737,6 +737,7 @@ class DataConnector:
                 return await self._execute_mock_query(query)
 
             entity_type = entity_info.get("type")
+            logger.info(f"[ROUTE DEBUG] entity={query.entity}, type={entity_type}, filters={query.filters}")
 
             if entity_type == "repository":
                 return await self._execute_repository_query(query, entity_info)
