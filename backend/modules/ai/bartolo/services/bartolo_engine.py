@@ -543,9 +543,14 @@ class BartoloEngine:
             # 3. Detecta tipo de mensagem (consulta/ação vs resposta wizard)
             # CORRECAO: Permite consultas mesmo com wizard ativo
             is_query_or_action = self._is_query_intent(message)
+            logger.info(f"[QUERY DEBUG] Message: '{message[:50]}' | is_query: {is_query_or_action}")
 
             # 3.5. Verifica se tem wizard ativo E mensagem é resposta (não consulta)
-            if self.wizard_manager.has_active_wizard(user_id, session_id) and not is_query_or_action:
+            has_wizard = self.wizard_manager.has_active_wizard(user_id, session_id)
+            if has_wizard:
+                logger.info(f"[WIZARD DEBUG] Wizard ativo | is_query: {is_query_or_action}")
+
+            if has_wizard and not is_query_or_action:
                 wizard_response = self.wizard_manager.process_input(
                     user_id, session_id, message
                 )

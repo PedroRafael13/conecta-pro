@@ -226,7 +226,7 @@ export type { KeyboardShortcut } from './useKeyboardShortcuts';
  * Recruitment - Recrutamento e Seleção
  * Hooks para gerenciamento de vagas, candidatos, candidaturas e entrevistas
  */
-export * from './useRecruitment';
+export * from './recruitment';
 
 // ============================================================================
 // MÓDULO AUDIT - AUDITORIA E COMPLIANCE
@@ -334,6 +334,26 @@ export {
   useShouldShowTour,
   useTourProgress
 } from '@/features/onboarding/hooks/useTour';
+
+// ============================================================================
+// MÓDULO OPERACIONAL - HOOKS ORVAL (NOVOS)
+// ============================================================================
+
+/**
+ * Operacional - Gestão Operacional Completa
+ * Hooks para postos, escalas, funcionários, alocações, ocorrências, etc.
+ */
+export * from './operacional';
+
+// ============================================================================
+// MÓDULO FASE 5 - GRAND FINALE
+// ============================================================================
+
+/**
+ * Fase 5 - Grand Finale
+ * CCT Compliance, Email Intelligence, Quality Framework
+ */
+export * from './fase5';
 
 // ============================================================================
 // TIPOS EXPORTADOS (Re-export de tipos úteis)

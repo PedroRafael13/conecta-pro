@@ -1,70 +1,57 @@
 /**
  * Hooks React Query - Condominium Management
  * Gestão de Condomínios
+ *
+ * MIGRADO PARA ORVAL - 31/01/2026
+ * Agora usa hooks gerados automaticamente pelo Orval
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { condominiumService } from '@/services/clients';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Tipos do Orval
 import type {
   CondominiumCreate,
   CondominiumUpdate,
 } from '@/types/generated/clients/conectaPROMóduloCLIENTS.schemas';
 
+// Hooks e funções Orval
+import {
+  // Query hooks
+  useListCondominiumsApiV1ClientsClientsClientIdCondominiumsGet,
+  useGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGet,
+  useGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGet,
+  // Query keys
+  getListCondominiumsApiV1ClientsClientsClientIdCondominiumsGetQueryKey,
+  getGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGetQueryKey,
+  getGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGetQueryKey,
+  // Mutation functions
+  createCondominiumApiV1ClientsClientsClientIdCondominiumsPost,
+  updateCondominiumApiV1ClientsClientsCondominiumsCondominiumIdPut,
+  deleteCondominiumApiV1ClientsClientsCondominiumsCondominiumIdDelete,
+  activateCondominiumApiV1ClientsClientsCondominiumsCondominiumIdActivatePost,
+  startImplantationApiV1ClientsClientsCondominiumsCondominiumIdStartImplantationPost,
+  finishImplantationApiV1ClientsClientsCondominiumsCondominiumIdFinishImplantationPost,
+} from '@/types/generated/clients/clients-cadastro';
+
 /**
- * Query keys para cache
+ * Re-exports de hooks Orval para queries
  */
-export const condominiumKeys = {
-  all: ['condominiums'] as const,
-  lists: () => [...condominiumKeys.all, 'list'] as const,
-  list: (clientId: string, filters?: any) =>
-    [...condominiumKeys.lists(), clientId, filters] as const,
-  details: () => [...condominiumKeys.all, 'detail'] as const,
-  detail: (id: string) => [...condominiumKeys.details(), id] as const,
-  stats: (clientId?: string) =>
-    [...condominiumKeys.all, 'stats', clientId] as const,
+export {
+  useListCondominiumsApiV1ClientsClientsClientIdCondominiumsGet,
+  useGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGet,
+  useGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGet,
 };
 
 /**
- * Hook para listar condomínios do cliente
+ * Aliases para manter compatibilidade com código existente
  */
-export function useCondominiums(
-  clientId: string,
-  params?: {
-    skip?: number;
-    limit?: number;
-  },
-  enabled = true
-) {
-  return useQuery({
-    queryKey: condominiumKeys.list(clientId, params),
-    queryFn: () => condominiumService.list(clientId, params),
-    enabled: enabled && !!clientId,
-  });
-}
-
-/**
- * Hook para obter condomínio por ID
- */
-export function useCondominium(condominiumId: string, enabled = true) {
-  return useQuery({
-    queryKey: condominiumKeys.detail(condominiumId),
-    queryFn: () => condominiumService.getById(condominiumId),
-    enabled: enabled && !!condominiumId,
-  });
-}
-
-/**
- * Hook para obter estatísticas de condomínios
- */
-export function useCondominiumStats(clientId?: string) {
-  return useQuery({
-    queryKey: condominiumKeys.stats(clientId),
-    queryFn: () => condominiumService.getStats(clientId),
-  });
-}
+export { useListCondominiumsApiV1ClientsClientsClientIdCondominiumsGet as useCondominiums };
+export { useGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGet as useCondominium };
+export { useGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGet as useCondominiumStats };
 
 /**
  * Hook para criar condomínio
+ * Usa Orval mutation function com React Query manual
  */
 export function useCreateCondominium() {
   const queryClient = useQueryClient();
@@ -76,12 +63,16 @@ export function useCreateCondominium() {
     }: {
       clientId: string;
       data: CondominiumCreate;
-    }) => condominiumService.create(clientId, data),
+    }) => createCondominiumApiV1ClientsClientsClientIdCondominiumsPost(clientId, data),
     onSuccess: (_, variables) => {
+      // Invalida lista do cliente
       queryClient.invalidateQueries({
-        queryKey: condominiumKeys.list(variables.clientId),
+        queryKey: getListCondominiumsApiV1ClientsClientsClientIdCondominiumsGetQueryKey(variables.clientId),
       });
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.stats() });
+      // Invalida stats
+      queryClient.invalidateQueries({
+        queryKey: getGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGetQueryKey(),
+      });
     },
   });
 }
@@ -99,12 +90,16 @@ export function useUpdateCondominium() {
     }: {
       condominiumId: string;
       data: CondominiumUpdate;
-    }) => condominiumService.update(condominiumId, data),
+    }) => updateCondominiumApiV1ClientsClientsCondominiumsCondominiumIdPut(condominiumId, data),
     onSuccess: (_, variables) => {
+      // Invalida detalhe do condomínio
       queryClient.invalidateQueries({
-        queryKey: condominiumKeys.detail(variables.condominiumId),
+        queryKey: getGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGetQueryKey(variables.condominiumId),
       });
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.lists() });
+      // Invalida todas as listas (não sabemos o clientId aqui)
+      queryClient.invalidateQueries({
+        queryKey: ['/api/v1/clients/clients'],
+      });
     },
   });
 }
@@ -117,10 +112,15 @@ export function useDeleteCondominium() {
 
   return useMutation({
     mutationFn: (condominiumId: string) =>
-      condominiumService.delete(condominiumId),
+      deleteCondominiumApiV1ClientsClientsCondominiumsCondominiumIdDelete(condominiumId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.stats() });
+      // Invalida todas as listas e stats
+      queryClient.invalidateQueries({
+        queryKey: ['/api/v1/clients/clients'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: getGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGetQueryKey(),
+      });
     },
   });
 }
@@ -133,13 +133,17 @@ export function useActivateCondominium() {
 
   return useMutation({
     mutationFn: (condominiumId: string) =>
-      condominiumService.activate(condominiumId),
+      activateCondominiumApiV1ClientsClientsCondominiumsCondominiumIdActivatePost(condominiumId),
     onSuccess: (_, condominiumId) => {
       queryClient.invalidateQueries({
-        queryKey: condominiumKeys.detail(condominiumId),
+        queryKey: getGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGetQueryKey(condominiumId),
       });
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.stats() });
+      queryClient.invalidateQueries({
+        queryKey: ['/api/v1/clients/clients'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: getGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGetQueryKey(),
+      });
     },
   });
 }
@@ -152,12 +156,14 @@ export function useStartImplantation() {
 
   return useMutation({
     mutationFn: (condominiumId: string) =>
-      condominiumService.startImplantation(condominiumId),
+      startImplantationApiV1ClientsClientsCondominiumsCondominiumIdStartImplantationPost(condominiumId),
     onSuccess: (_, condominiumId) => {
       queryClient.invalidateQueries({
-        queryKey: condominiumKeys.detail(condominiumId),
+        queryKey: getGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGetQueryKey(condominiumId),
       });
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.stats() });
+      queryClient.invalidateQueries({
+        queryKey: getGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGetQueryKey(),
+      });
     },
   });
 }
@@ -170,12 +176,14 @@ export function useFinishImplantation() {
 
   return useMutation({
     mutationFn: (condominiumId: string) =>
-      condominiumService.finishImplantation(condominiumId),
+      finishImplantationApiV1ClientsClientsCondominiumsCondominiumIdFinishImplantationPost(condominiumId),
     onSuccess: (_, condominiumId) => {
       queryClient.invalidateQueries({
-        queryKey: condominiumKeys.detail(condominiumId),
+        queryKey: getGetCondominiumApiV1ClientsClientsCondominiumsCondominiumIdGetQueryKey(condominiumId),
       });
-      queryClient.invalidateQueries({ queryKey: condominiumKeys.stats() });
+      queryClient.invalidateQueries({
+        queryKey: getGetCondominiumStatsApiV1ClientsClientsCondominiumsStatsGetQueryKey(),
+      });
     },
   });
 }

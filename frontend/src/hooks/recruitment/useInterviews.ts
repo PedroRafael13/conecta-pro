@@ -1,0 +1,59 @@
+/**
+ * Interviews Hooks - Gestão de Entrevistas
+ *
+ * Re-exports dos hooks Orval do módulo recruitment
+ */
+
+import {
+  useListInterviewsApiV1RecruitmentInterviewsGet,
+  useCreateInterviewApiV1RecruitmentInterviewsPost,
+  useGetInterviewApiV1RecruitmentInterviewsInterviewIdGet,
+  useUpdateInterviewApiV1RecruitmentInterviewsInterviewIdPatch,
+  useDeleteInterviewApiV1RecruitmentInterviewsInterviewIdDelete,
+  useListByApplicationApiV1RecruitmentInterviewsApplicationApplicationIdGet,
+  useListByDateRangeApiV1RecruitmentInterviewsByDateRangeGet,
+  useGetInterviewStatsApiV1RecruitmentInterviewsStatsGet,
+  useScheduleInterviewApiV1RecruitmentInterviewsSchedulePost,
+  useRescheduleInterviewApiV1RecruitmentInterviewsInterviewIdReschedulePost,
+  useCancelInterviewApiV1RecruitmentInterviewsInterviewIdCancelPost,
+  useCompleteInterviewApiV1RecruitmentInterviewsInterviewIdCompletePost,
+  useEvaluateInterviewApiV1RecruitmentInterviewsInterviewIdEvaluatePost,
+  useGetAvailableSlotsApiV1RecruitmentInterviewsAvailableSlotsGet,
+  useGetCalendarApiV1RecruitmentInterviewsCalendarInterviewerIdGet,
+  useGetSuggestedQuestionsApiV1RecruitmentInterviewsInterviewIdQuestionsGet,
+} from '@/types/generated/recruitment/recruitment-recrutamento-e-selecao/recruitment-recrutamento-e-selecao';
+
+// List & Read
+export const useInterviews = useListInterviewsApiV1RecruitmentInterviewsGet;
+export const useInterview = useGetInterviewApiV1RecruitmentInterviewsInterviewIdGet;
+export const useInterviewsByApplication = useListByApplicationApiV1RecruitmentInterviewsApplicationApplicationIdGet;
+export const useInterviewsByDateRange = useListByDateRangeApiV1RecruitmentInterviewsByDateRangeGet;
+export const useInterviewStats = useGetInterviewStatsApiV1RecruitmentInterviewsStatsGet;
+export const useAvailableSlots = useGetAvailableSlotsApiV1RecruitmentInterviewsAvailableSlotsGet;
+export const useInterviewCalendar = useGetCalendarApiV1RecruitmentInterviewsCalendarInterviewerIdGet;
+export const useSuggestedQuestions = useGetSuggestedQuestionsApiV1RecruitmentInterviewsInterviewIdQuestionsGet;
+
+// Mutations
+export const useCreateInterview = useCreateInterviewApiV1RecruitmentInterviewsPost;
+export const useUpdateInterview = useUpdateInterviewApiV1RecruitmentInterviewsInterviewIdPatch;
+export const useDeleteInterview = useDeleteInterviewApiV1RecruitmentInterviewsInterviewIdDelete;
+export const useScheduleInterview = useScheduleInterviewApiV1RecruitmentInterviewsSchedulePost;
+export const useRescheduleInterview = useRescheduleInterviewApiV1RecruitmentInterviewsInterviewIdReschedulePost;
+export const useCancelInterview = useCancelInterviewApiV1RecruitmentInterviewsInterviewIdCancelPost;
+export const useCompleteInterview = useCompleteInterviewApiV1RecruitmentInterviewsInterviewIdCompletePost;
+export const useEvaluateInterview = useEvaluateInterviewApiV1RecruitmentInterviewsInterviewIdEvaluatePost;
+
+// Re-export types
+export type {
+  InterviewCreate,
+  InterviewUpdate,
+  InterviewResponse,
+  InterviewReschedule,
+  InterviewCancel,
+  InterviewComplete,
+  InterviewEvaluation,
+  InterviewStats,
+  InterviewSlot,
+  InterviewCalendar,
+  InterviewListResponse,
+} from '@/types/generated/recruitment/conectaPROMóduloRECRUITMENT.schemas';
