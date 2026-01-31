@@ -21,10 +21,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
-import { useAllocations } from '@/hooks/useAllocations';
-import { usePosts } from '@/hooks/usePosts';
-import { useEmployees } from '@/hooks/useEmployees';
-import { allocationsService } from '@/lib/services/allocations';
+import { useAllocations } from '@/hooks/operacional/useAllocations';
+import { usePosts } from '@/hooks/operacional/usePosts';
+import { useEmployees } from '@/hooks/operacional/useEmployees';
+import { allocationsService } 
 import { getErrorMessage } from '@/lib/api';
 import { AllocationDetailModal } from '@/components/operacional/allocation-detail-modal';
 import { AllocationFormModal } from '@/components/operacional/allocation-form-modal';
@@ -36,20 +36,18 @@ export default function AlocacoesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const {
-    allocations,
-    total,
-    page,
-    pageSize,
-    totalPages,
+    data: allocations = [],
     isLoading,
     error,
-    filters,
-    setFilters,
-    setPage,
-    refresh,
-  } = useAllocations({ initialPageSize: 10 });
-  const { posts } = usePosts({ initialPageSize: 100 });
-  const { employees } = useEmployees({ initialPageSize: 200 });
+    refetch: refresh,
+  } = useAllocations();
+  const total = allocations.length;
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const totalPages = Math.ceil(total / pageSize);
+  const [filters, setFilters] = useState({});
+  const { data: posts = [] } = usePosts();
+  const { data: employees = [] } = useEmployees();
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedAllocation, setSelectedAllocation] = useState<Allocation | null>(null);

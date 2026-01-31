@@ -29,15 +29,6 @@ import {
   FileSignature,
   Settings,
 } from 'lucide-react';
-import {
-  documentService,
-  type Document,
-  type DocumentType,
-  type DocumentCategory,
-  type DocumentConfidentiality,
-  DOCUMENT_TYPES,
-  DOCUMENT_CATEGORIES,
-} from '@/lib/services/ged';
 import { toast } from 'sonner';
 
 const CONFIDENTIALITY_LEVELS: {

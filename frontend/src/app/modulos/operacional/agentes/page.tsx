@@ -19,7 +19,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
-import { employeesService } from '@/lib/services/employees';
+import { useEmployees } from '@/hooks/operacional/useEmployees';
+import { employeesService } 
 import { getErrorMessage } from '@/lib/api';
 import type { Employee } from '@/types/operacional';
 
@@ -35,11 +36,10 @@ export default function AgentesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const [employees, setEmployees] = useState<SolidesEmployeeExtended[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const { data: employees = [], isLoading, error: queryError, refetch } = useEmployees();
+  const total = employees.length;
   const [error, setError] = useState<string | null>(null);
-  const [dataSource, setDataSource] = useState<string>('');
+  const [dataSource, setDataSource] = useState<string>('local');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -56,46 +56,17 @@ export default function AgentesPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Load employees from Solides
-  const loadEmployees = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await employeesService.listFromSolides(
-        searchTerm || undefined,
-        statusFilter || undefined,
-        true // only_active
-      );
-      setEmployees(response.items);
-      setTotal(response.total);
-      setDataSource(response.source);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setEmployees([]);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
     }
-  };
+  }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadEmployees();
+    if (queryError) {
+      setError(String(queryError));
     }
-  }, [isAuthenticated, statusFilter]);
-
-  // Debounce search
-  const prevSearchRef = useRef<string>('');
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (prevSearchRef.current !== searchTerm) {
-        prevSearchRef.current = searchTerm;
-        loadEmployees();
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm]);
+  }, [queryError]);
 
   // Handlers
   const handleView = (employee: SolidesEmployeeExtended) => {
@@ -104,7 +75,7 @@ export default function AgentesPage() {
   };
 
   const handleRefresh = () => {
-    loadEmployees();
+    refetch();
   };
 
   const clearFilters = () => {

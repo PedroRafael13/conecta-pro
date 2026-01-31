@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RestoreAlert } from '@/components/ui/restore-alert';
 import { SaveIndicator } from '@/components/ui/save-indicator';
-import { allocationsService } from '@/lib/services/allocations';
 import { getErrorMessage } from '@/lib/api';
 import type { AllocationCreate, Employee, Post } from '@/types/operacional';
 import { AlertCircle, Loader2 } from 'lucide-react';

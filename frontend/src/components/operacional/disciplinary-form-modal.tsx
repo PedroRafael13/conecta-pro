@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { disciplinaryService } from '@/lib/services/disciplinary';
 import { getErrorMessage } from '@/lib/api';
 import {
   ACTION_TYPE_LABELS,

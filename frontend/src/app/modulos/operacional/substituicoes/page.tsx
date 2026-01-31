@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubstitutions } from '@/hooks/operacional/useSubstitutions';
 import {
   substitutionsService,
   type Substitution,
@@ -39,20 +40,18 @@ import {
   SUBSTITUTION_REASON_LABELS,
   SUBSTITUTION_STATUS_COLORS,
   SUBSTITUTION_REASON_COLORS,
-} from '@/lib/services/substitutions';
+} 
 
 export default function SubstituicoesPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const [substitutions, setSubstitutions] = useState<Substitution[]>([]);
+  const { data: substitutions = [], isLoading, error, refetch } = useSubstitutions();
   const [pendingSubstitutions, setPendingSubstitutions] = useState<Substitution[]>([]);
-  const [total, setTotal] = useState(0);
+  const total = substitutions.length;
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const totalPages = Math.ceil(total / pageSize);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<SubstitutionStatus | ''>('');
@@ -65,31 +64,14 @@ export default function SubstituicoesPage() {
   const [suggestions, setSuggestions] = useState<SubstituteSuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
-  const loadSubstitutions = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
+  const loadPending = useCallback(async () => {
     try {
-      const [listResponse, pendingResponse] = await Promise.all([
-        substitutionsService.list(page, pageSize, {
-          status: selectedStatus || undefined,
-          reason: selectedReason || undefined,
-          start_date: selectedDate || undefined,
-        }),
-        substitutionsService.getPending(),
-      ]);
-
-      setSubstitutions(listResponse.items);
-      setTotal(listResponse.total);
-      setTotalPages(listResponse.total_pages);
+      const pendingResponse = await substitutionsService.getPending();
       setPendingSubstitutions(pendingResponse);
     } catch (err) {
-      setError('Erro ao carregar substituicoes');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+      console.error('Erro ao carregar substituicoes pendentes:', err);
     }
-  }, [page, pageSize, selectedStatus, selectedReason, selectedDate]);
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -99,9 +81,10 @@ export default function SubstituicoesPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadSubstitutions();
+      refetch();
+      loadPending();
     }
-  }, [isAuthenticated, loadSubstitutions]);
+  }, [isAuthenticated, refetch, loadPending]);
 
   const handleGetSuggestions = async (substitution: Substitution) => {
     setSelectedSubstitution(substitution);

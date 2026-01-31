@@ -32,7 +32,7 @@ import {
   type GEDStats,
   DOCUMENT_TYPES,
   DOCUMENT_CATEGORIES,
-} from '@/lib/services/ged';
+} from '@/types/generated/ged/conectaPROMóduloGED.schemas';
 import {
   DocumentApprovalDialog,
   DocumentSignatureDialog,

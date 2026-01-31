@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   ShieldAlert,
 } from 'lucide-react';
-import { disciplinaryService } from '@/lib/services/disciplinary';
 import { getErrorMessage } from '@/lib/api';
 import {
   ACTION_TYPE_LABELS,

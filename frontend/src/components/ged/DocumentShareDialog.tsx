@@ -32,7 +32,6 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { documentShareService, type ShareType } from '@/lib/services/ged';
 import { toast } from 'sonner';
 
 interface DocumentShareDialogProps {

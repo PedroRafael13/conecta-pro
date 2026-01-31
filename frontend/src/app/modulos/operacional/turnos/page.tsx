@@ -13,11 +13,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
-import { useShifts } from '@/hooks/useShifts';
-import { usePosts } from '@/hooks/usePosts';
-import { useEmployees } from '@/hooks/useEmployees';
-import { useScales } from '@/hooks/useScales';
-import { shiftsService } from '@/lib/services/shifts';
+import { useShifts } from '@/hooks/operacional/useShifts';
+import { usePosts } from '@/hooks/operacional/usePosts';
+import { useEmployees } from '@/hooks/operacional/useEmployees';
+import { useScales } from '@/hooks/operacional/useScales';
+import { useCheckInShift, useCheckOutShift, useMarkShiftMissed } from '@/hooks/operacional/useShifts';
 import { getErrorMessage } from '@/lib/api';
 import { ShiftCalendar } from '@/components/operacional/shift-calendar';
 import { ShiftDayView } from '@/components/operacional/shift-day-view';
@@ -35,9 +35,13 @@ const toLocalDateKey = (date: Date) => {
 export default function TurnosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
-  const { posts } = usePosts({ initialPageSize: 100 });
-  const { employees } = useEmployees({ initialPageSize: 200 });
-  const { scales } = useScales(1, 100);
+  const { data: posts = [] } = usePosts();
+  const { data: employees = [] } = useEmployees();
+  const { data: scales = [] } = useScales();
+
+  const { mutate: checkIn } = useCheckInShift();
+  const { mutate: checkOut } = useCheckOutShift();
+  const { mutate: markMissed } = useMarkShiftMissed();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState<'month' | 'week'>('month');
@@ -66,17 +70,14 @@ export default function TurnosPage() {
   }, [selectedDate, view]);
 
   const {
-    shifts,
+    data: shifts = [],
     isLoading,
     error,
     setFilters: setShiftFilters,
-    refresh,
+    refetch: refresh,
   } = useShifts({
-    initialPageSize: 200,
-    initialFilters: {
-      start_date: dateRange.start,
-      end_date: dateRange.end,
-    },
+    start_date: dateRange.start,
+    end_date: dateRange.end,
   });
 
   useEffect(() => {
@@ -153,26 +154,63 @@ export default function TurnosPage() {
 
     try {
       if (checkMode === 'check-in') {
-        await shiftsService.checkIn(selectedShift.id, {
-          actual_start_time: payload.datetime || new Date().toISOString(),
-          notes: payload.notes,
-        });
+        checkIn(
+          {
+            shiftId: selectedShift.id,
+            data: {
+              actual_start_time: payload.datetime || new Date().toISOString(),
+              notes: payload.notes,
+            },
+          },
+          {
+            onSuccess: () => {
+              setSelectedShift(null);
+              refresh();
+            },
+            onError: (err) => {
+              setCheckError(getErrorMessage(err));
+            },
+          }
+        );
+      } else if (checkMode === 'check-out') {
+        checkOut(
+          {
+            shiftId: selectedShift.id,
+            data: {
+              actual_end_time: payload.datetime || new Date().toISOString(),
+              actual_break_minutes: payload.breakMinutes || 0,
+              notes: payload.notes,
+            },
+          },
+          {
+            onSuccess: () => {
+              setSelectedShift(null);
+              refresh();
+            },
+            onError: (err) => {
+              setCheckError(getErrorMessage(err));
+            },
+          }
+        );
+      } else if (checkMode === 'missed') {
+        markMissed(
+          {
+            shiftId: selectedShift.id,
+            data: {
+              reason: payload.reason,
+            },
+          },
+          {
+            onSuccess: () => {
+              setSelectedShift(null);
+              refresh();
+            },
+            onError: (err) => {
+              setCheckError(getErrorMessage(err));
+            },
+          }
+        );
       }
-      if (checkMode === 'check-out') {
-        await shiftsService.checkOut(selectedShift.id, {
-          actual_end_time: payload.datetime || new Date().toISOString(),
-          actual_break_minutes: payload.breakMinutes || 0,
-          notes: payload.notes,
-        });
-      }
-      if (checkMode === 'missed') {
-        await shiftsService.markMissed(selectedShift.id, payload.reason || undefined);
-      }
-
-      setSelectedShift(null);
-      refresh();
-    } catch (err) {
-      setCheckError(getErrorMessage(err));
     } finally {
       setIsChecking(false);
     }

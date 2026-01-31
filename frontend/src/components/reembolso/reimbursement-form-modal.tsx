@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { reimbursementService } from '@/lib/services/reimbursement';
 import { getErrorMessage } from '@/lib/api';
 import type {
   ReimbursementRequest,

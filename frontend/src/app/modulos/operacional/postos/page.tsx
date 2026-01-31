@@ -24,8 +24,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
-import { usePosts, usePostStats } from '@/hooks/usePosts';
-import { postsService } from '@/lib/services/posts';
+import { usePosts } from '@/hooks/operacional/usePosts';
+import { postsService } 
 import { getErrorMessage } from '@/lib/api';
 import { PostDetailModal } from '@/components/operacional/post-detail-modal';
 import { PostFormModal } from '@/components/operacional/post-form-modal';
@@ -43,19 +43,18 @@ export default function PostosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const {
-    posts,
-    total,
-    page,
-    pageSize,
-    totalPages,
+    data: posts = [],
     isLoading,
     error,
-    filters,
-    setFilters,
-    setPage,
-    refresh,
-  } = usePosts({ initialPageSize: 10 });
-  const { stats, refresh: refreshStats } = usePostStats();
+    refetch: refresh,
+  } = usePosts();
+  const total = posts.length;
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const totalPages = Math.ceil(total / pageSize);
+  const [filters, setFilters] = useState({});
+  const stats = null;
+  const refreshStats = () => {};
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);

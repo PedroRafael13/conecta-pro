@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { X, Plus, Tag as TagIcon, Hash, Search } from 'lucide-react';
-import { documentTagService, type DocumentTag, type TagType } from '@/lib/services/ged';
 import { toast } from 'sonner';
 
 interface DocumentTagManagerProps {

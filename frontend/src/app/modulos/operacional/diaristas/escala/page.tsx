@@ -17,12 +17,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useActiveDiarists } from '@/hooks/operacional/useDiarists';
 import {
   diaristsService,
   type Diarist,
   type BatchScheduleItem,
   DIARIST_TYPE_LABELS,
-} from '@/lib/services/diarists';
+} 
 
 export default function EscalaDiariaPage() {
   const router = useRouter();
@@ -35,26 +36,11 @@ export default function EscalaDiariaPage() {
     tomorrow.toISOString().split('T')[0]
   );
 
-  const [diarists, setDiarists] = useState<Diarist[]>([]);
+  const { data: diarists = [], isLoading, error: queryError } = useActiveDiarists();
   const [selected, setSelected] = useState<Map<string, BatchScheduleItem>>(new Map());
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  const loadDiarists = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await diaristsService.list(1, 200, 'ativo');
-      setDiarists(response.items);
-    } catch (err) {
-      setError('Erro ao carregar diaristas');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -63,10 +49,10 @@ export default function EscalaDiariaPage() {
   }, [authLoading, isAuthenticated, router]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadDiarists();
+    if (queryError) {
+      setError(String(queryError));
     }
-  }, [isAuthenticated, loadDiarists]);
+  }, [queryError]);
 
   const toggleDiarist = (diarist: Diarist) => {
     const newSelected = new Map(selected);

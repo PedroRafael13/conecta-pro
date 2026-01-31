@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, X, Loader2, User, MapPin, Calendar, FileText, Users } from 'lucide-react';
-import { globalSearch, type SearchResult } from '@/lib/services/search';
+import { useGlobalSearch } from '@/hooks/search/useGlobalSearch';
+import type { SearchResult } from '@/types/generated/search/models';
+import { useDebounce } from '@/hooks/useDebounce';
 
 interface GlobalSearchProps {
   isOpen: boolean;
@@ -29,49 +31,19 @@ const typeLabels: Record<string, string> = {
 export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [tookMs, setTookMs] = useState<number>(0);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Buscar na API
-  const performSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      return;
-    }
+  // Debounce do query
+  const debouncedQuery = useDebounce(query, 300);
 
-    setLoading(true);
-    try {
-      const data = await globalSearch(searchQuery);
-      setResults(data.results);
-      setTookMs(data.took_ms);
-      setSelectedIndex(0);
-    } catch (error) {
-      console.error('Erro na busca:', error);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Hook de busca
+  const { data, isLoading } = useGlobalSearch(
+    { q: debouncedQuery },
+    { enabled: debouncedQuery.length >= 1 }
+  );
 
-  // Debounce na busca
-  useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    debounceTimerRef.current = setTimeout(() => {
-      performSearch(query);
-    }, 300);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [query, performSearch]);
+  const results = data?.results || [];
+  const tookMs = data?.took_ms || 0;
 
   // Navegação com teclado
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -104,7 +76,6 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
   useEffect(() => {
     if (isOpen) {
       setQuery('');
-      setResults([]);
       setSelectedIndex(0);
     }
   }, [isOpen]);
@@ -141,7 +112,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-muted-foreground"
             autoFocus
           />
-          {loading && (
+          {isLoading && (
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
           )}
           <button
@@ -161,7 +132,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
             </div>
           )}
 
-          {query.trim() && !loading && results.length === 0 && (
+          {query.trim() && !isLoading && results.length === 0 && (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
               Nenhum resultado encontrado
             </div>

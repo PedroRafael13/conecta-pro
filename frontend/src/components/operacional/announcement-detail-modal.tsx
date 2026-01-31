@@ -16,13 +16,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAnnouncementReadStats } from '@/hooks/useAnnouncements';
-import {
-  type Announcement,
-  ANNOUNCEMENT_STATUS_LABELS,
-  ANNOUNCEMENT_PRIORITY_LABELS,
-  ANNOUNCEMENT_CATEGORY_LABELS,
-  ANNOUNCEMENT_TARGET_TYPE_LABELS,
-} from '@/lib/services/announcements';
 
 interface AnnouncementDetailModalProps {
   isOpen: boolean;

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { reimbursementService } from '@/lib/services/reimbursement';
 import { getErrorMessage } from '@/lib/api';
 import type { ReimbursementRequest } from '@/types/reimbursement';
 import {

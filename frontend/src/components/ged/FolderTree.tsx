@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Folder as FolderIcon, FolderOpen, Lock, Settings } from 'lucide-react';
-import { folderService, type Folder } from '@/lib/services/ged';
 import { cn } from '@/lib/utils';
 
 interface FolderTreeProps {

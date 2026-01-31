@@ -50,8 +50,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { employeesService } from '@/lib/services/employees';
 import { ExportButton } from '@/components/ui/export-button';
+import { useEmployees, useUpdateEmployee } from '@/hooks/operacional/useEmployees';
 
 // Tipo para funcionário
 interface Employee {
@@ -68,13 +68,13 @@ interface Employee {
 }
 
 export default function ColaboradoresPage() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: employees = [], isLoading: loading, error: queryError, refetch } = useEmployees();
+  const { mutateAsync: updateEmployeeMutation } = useUpdateEmployee();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [source, setSource] = useState<string>('');
-  const [total, setTotal] = useState(0);
+  const [source, setSource] = useState<string>('local');
+  const total = employees.length;
 
   // Estados para edição
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -103,9 +103,12 @@ export default function ColaboradoresPage() {
 
     setSaving(true);
     try {
-      await employeesService.update(selectedEmployee.id, editForm);
+      await updateEmployeeMutation({
+        employeeId: selectedEmployee.id,
+        data: editForm,
+      });
       setEditDialogOpen(false);
-      loadEmployees();
+      refetch();
     } catch (err: any) {
       console.error('Erro ao salvar:', err);
       setError(err.response?.data?.detail || 'Erro ao salvar alterações');
@@ -114,45 +117,11 @@ export default function ColaboradoresPage() {
     }
   };
 
-  const loadEmployees = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Tentar carregar do Solides primeiro para dados mais completos
-      try {
-        const response = await employeesService.listFromSolides(
-          search || undefined,
-          statusFilter !== 'all' ? statusFilter : undefined,
-          statusFilter !== 'all' ? statusFilter === 'ativo' : true
-        );
-        setEmployees(response.items);
-        setTotal(response.total);
-        setSource(response.source);
-      } catch {
-        // Fallback para API local
-        const response = await employeesService.list(
-          1,
-          100,
-          search || undefined,
-          statusFilter !== 'all' ? statusFilter : undefined
-        );
-        setEmployees(response.items);
-        setTotal(response.total);
-        setSource('local');
-      }
-    } catch (err: any) {
-      console.error('Erro ao carregar colaboradores:', err);
-      setError(err.response?.data?.detail || 'Erro ao carregar colaboradores. Tente novamente.');
-      setEmployees([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, statusFilter]);
-
   useEffect(() => {
-    loadEmployees();
-  }, [loadEmployees]);
+    if (queryError) {
+      setError(String(queryError));
+    }
+  }, [queryError]);
 
   // Filtrar localmente se houver busca
   const filteredEmployees = employees.filter((emp) => {
@@ -234,7 +203,7 @@ export default function ColaboradoresPage() {
             variant="outline"
             buttonText="Exportar"
           />
-          <Button variant="outline" onClick={loadEmployees} disabled={loading}>
+          <Button variant="outline" onClick={() => refetch()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Atualizar
           </Button>
@@ -277,7 +246,7 @@ export default function ColaboradoresPage() {
           <div className="flex-1">
             <p className="text-sm text-destructive">{error}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={loadEmployees}>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
             Tentar novamente
           </Button>
         </div>

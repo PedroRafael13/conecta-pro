@@ -34,11 +34,6 @@ import {
   AlertCircle,
   Send,
 } from 'lucide-react';
-import {
-  documentSignatureService,
-  type SignatureRole,
-  type SignatureType,
-} from '@/lib/services/ged';
 import { toast } from 'sonner';
 
 interface DocumentSignatureDialogProps {

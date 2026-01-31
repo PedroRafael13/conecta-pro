@@ -21,7 +21,7 @@ import {
   diaristsService,
   type PayrollReport,
   type PayrollDiaristItem,
-} from '@/lib/services/diarists';
+} 
 
 export default function FechamentoFolhaPage() {
   const router = useRouter();

@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Stepper, type Step } from '@/components/ui/stepper';
 import { RestoreAlert } from '@/components/ui/restore-alert';
 import { SaveIndicator } from '@/components/ui/save-indicator';
-import { postsService } from '@/lib/services/posts';
 import { getErrorMessage } from '@/lib/api';
 import type { Post, PostCreate, PostUpdate, PostType, ShiftType } from '@/types/operacional';
 import { POST_TYPE_LABELS, SHIFT_TYPE_LABELS } from '@/types/operacional';

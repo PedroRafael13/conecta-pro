@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { FolderTree } from './FolderTree';
-import { folderService, type Folder } from '@/lib/services/ged';
 import { toast } from 'sonner';
 
 interface MoveFolderDialogProps {

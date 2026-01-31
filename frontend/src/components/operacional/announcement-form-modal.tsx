@@ -14,16 +14,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAnnouncementMutations } from '@/hooks/useAnnouncements';
-import {
-  type Announcement,
-  type AnnouncementCreate,
-  type AnnouncementPriority,
-  type AnnouncementCategory,
-  type AnnouncementTargetType,
-  ANNOUNCEMENT_PRIORITY_LABELS,
-  ANNOUNCEMENT_CATEGORY_LABELS,
-  ANNOUNCEMENT_TARGET_TYPE_LABELS,
-} from '@/lib/services/announcements';
 
 interface AnnouncementFormModalProps {
   isOpen: boolean;

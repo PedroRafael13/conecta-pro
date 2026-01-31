@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,13 +35,18 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import {
-  documentKitsService,
   type DocumentKit,
   type DocumentKitItem,
   KIT_TYPES,
   KIT_TYPE_LABELS,
-} from '@/lib/services/document-kits';
+} from '@/types/generated/ged/conectaPROMóduloGED.schemas';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  useListDocumentKits,
+  useCreateDocumentKit,
+  useUpdateDocumentKit,
+  useDeleteDocumentKit,
+} from '@/types/generated/document-kits/document-kits';
 
 // Categorias baseadas nos tipos válidos do backend
 const KIT_CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => ({
@@ -50,17 +55,11 @@ const KIT_CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => (
 }));
 
 export default function KitsPage() {
-  const [kits, setKits] = useState<DocumentKit[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedKit, setSelectedKit] = useState<DocumentKit | null>(null);
   const [editingKit, setEditingKit] = useState<DocumentKit | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Form state - usando tipo válido do backend
@@ -70,32 +69,29 @@ export default function KitsPage() {
     category: 'ADMISSAO',
   });
 
-  const loadKits = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await documentKitsService.list(1, 100, categoryFilter !== 'all' ? categoryFilter : undefined);
-      setKits(response.items || []);
-    } catch (err: any) {
-      console.error('Erro ao carregar kits:', err);
-      setError(err.response?.data?.detail || 'Erro ao carregar kits. Tente novamente.');
-      setKits([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryFilter]);
+  // Hooks React Query
+  const { data: kitsData, isLoading: loading, error: queryError } = useListDocumentKits(
+    1,
+    100,
+    categoryFilter !== 'all' ? categoryFilter : undefined
+  );
 
-  useEffect(() => {
-    loadKits();
-  }, [loadKits]);
+  const createMutation = useCreateDocumentKit();
+  const updateMutation = useUpdateDocumentKit();
+  const deleteMutation = useDeleteDocumentKit();
+
+  const kits = kitsData?.items || [];
+  const error = queryError ? 'Erro ao carregar kits. Tente novamente.' : null;
 
   // Filtrar kits por busca (categoria já filtrada na API)
-  const filteredKits = kits.filter(kit => {
-    if (!search) return true;
-    const matchesSearch = kit.name.toLowerCase().includes(search.toLowerCase()) ||
-      (kit.description || '').toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
-  });
+  const filteredKits = useMemo(() => {
+    return kits.filter(kit => {
+      if (!search) return true;
+      const matchesSearch = kit.name.toLowerCase().includes(search.toLowerCase()) ||
+        (kit.description || '').toLowerCase().includes(search.toLowerCase());
+      return matchesSearch;
+    });
+  }, [kits, search]);
 
   // Criar novo kit
   const handleCreateKit = async () => {
@@ -108,32 +104,31 @@ export default function KitsPage() {
       return;
     }
 
-    try {
-      setCreating(true);
-      await documentKitsService.create({
+    createMutation.mutate(
+      {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         category: formData.category,
-      });
-
-      toast({
-        title: 'Sucesso',
-        description: 'Kit criado com sucesso!',
-      });
-
-      setDialogOpen(false);
-      setFormData({ name: '', description: '', category: 'ADMISSAO' });
-      loadKits();
-    } catch (err: any) {
-      console.error('Erro ao criar kit:', err);
-      toast({
-        title: 'Erro ao criar kit',
-        description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
-        variant: 'destructive',
-      });
-    } finally {
-      setCreating(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Sucesso',
+            description: 'Kit criado com sucesso!',
+          });
+          setDialogOpen(false);
+          setFormData({ name: '', description: '', category: 'ADMISSAO' });
+        },
+        onError: (err: any) => {
+          console.error('Erro ao criar kit:', err);
+          toast({
+            title: 'Erro ao criar kit',
+            description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
+            variant: 'destructive',
+          });
+        },
+      }
+    );
   };
 
   // Ver detalhes do kit
@@ -163,31 +158,33 @@ export default function KitsPage() {
       return;
     }
 
-    try {
-      setSaving(true);
-      await documentKitsService.update(editingKit.id, {
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-      });
-
-      toast({
-        title: 'Sucesso',
-        description: 'Kit atualizado com sucesso!',
-      });
-
-      setEditingKit(null);
-      setFormData({ name: '', description: '', category: 'ADMISSAO' });
-      loadKits();
-    } catch (err: any) {
-      console.error('Erro ao atualizar kit:', err);
-      toast({
-        title: 'Erro ao atualizar kit',
-        description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate(
+      {
+        id: editingKit.id,
+        data: {
+          name: formData.name.trim(),
+          description: formData.description.trim() || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Sucesso',
+            description: 'Kit atualizado com sucesso!',
+          });
+          setEditingKit(null);
+          setFormData({ name: '', description: '', category: 'ADMISSAO' });
+        },
+        onError: (err: any) => {
+          console.error('Erro ao atualizar kit:', err);
+          toast({
+            title: 'Erro ao atualizar kit',
+            description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
+            variant: 'destructive',
+          });
+        },
+      }
+    );
   };
 
   // Excluir kit
@@ -196,27 +193,23 @@ export default function KitsPage() {
       return;
     }
 
-    try {
-      setDeleting(kit.id);
-      await documentKitsService.delete(kit.id);
-
-      toast({
-        title: 'Sucesso',
-        description: 'Kit excluído com sucesso!',
-      });
-
-      setSelectedKit(null);
-      loadKits();
-    } catch (err: any) {
-      console.error('Erro ao excluir kit:', err);
-      toast({
-        title: 'Erro ao excluir kit',
-        description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
-        variant: 'destructive',
-      });
-    } finally {
-      setDeleting(null);
-    }
+    deleteMutation.mutate(kit.id, {
+      onSuccess: () => {
+        toast({
+          title: 'Sucesso',
+          description: 'Kit excluído com sucesso!',
+        });
+        setSelectedKit(null);
+      },
+      onError: (err: any) => {
+        console.error('Erro ao excluir kit:', err);
+        toast({
+          title: 'Erro ao excluir kit',
+          description: err.response?.data?.detail || 'Erro desconhecido. Tente novamente.',
+          variant: 'destructive',
+        });
+      },
+    });
   };
 
   return (
@@ -279,11 +272,11 @@ export default function KitsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={creating}>
+              <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={createMutation.isPending}>
                 Cancelar
               </Button>
-              <Button onClick={handleCreateKit} disabled={!formData.name || creating}>
-                {creating ? 'Criando...' : 'Criar Kit'}
+              <Button onClick={handleCreateKit} disabled={!formData.name || createMutation.isPending}>
+                {createMutation.isPending ? 'Criando...' : 'Criar Kit'}
               </Button>
             </div>
           </DialogContent>
@@ -323,9 +316,6 @@ export default function KitsPage() {
           <div className="flex-1">
             <p className="text-sm text-destructive">{error}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={loadKits}>
-            Tentar novamente
-          </Button>
         </div>
       )}
 
@@ -471,10 +461,10 @@ export default function KitsPage() {
                   size="sm"
                   className="text-red-600 hover:text-red-700"
                   onClick={() => handleDeleteKit(selectedKit)}
-                  disabled={deleting === selectedKit.id}
+                  disabled={deleteMutation.isPending}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  {deleting === selectedKit.id ? 'Excluindo...' : 'Excluir'}
+                  {deleteMutation.isPending ? 'Excluindo...' : 'Excluir'}
                 </Button>
               </div>
               <Button onClick={() => setSelectedKit(null)}>
@@ -519,11 +509,11 @@ export default function KitsPage() {
               )}
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditingKit(null)} disabled={saving}>
+              <Button variant="outline" onClick={() => setEditingKit(null)} disabled={updateMutation.isPending}>
                 Cancelar
               </Button>
-              <Button onClick={handleSaveKit} disabled={!formData.name || saving}>
-                {saving ? 'Salvando...' : 'Salvar Alterações'}
+              <Button onClick={handleSaveKit} disabled={!formData.name || updateMutation.isPending}>
+                {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
               </Button>
             </div>
           </DialogContent>

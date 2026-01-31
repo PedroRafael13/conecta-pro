@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { SignaturePad } from './signature-pad';
-import { disciplinaryService } from '@/lib/services/disciplinary';
 import { getErrorMessage } from '@/lib/api';
 import {
   ACTION_TYPE_LABELS,

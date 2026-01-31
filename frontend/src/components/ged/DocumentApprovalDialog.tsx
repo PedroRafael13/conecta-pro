@@ -12,9 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { documentService, type Document } from '@/lib/services/ged';
 import { toast } from 'sonner';
-import { formatFileSize } from '@/lib/services/ged';
 
 interface DocumentApprovalDialogProps {
   document: Document | null;

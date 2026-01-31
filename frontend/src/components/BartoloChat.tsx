@@ -14,8 +14,45 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { bartoloService, BartoloMessage, BartoloAction, ActionPreview } from '@/lib/services/bartolo';
+import { useBartoloChat } from '@/hooks/ai/useBartolo';
 import { ActionConfirmationModal } from '@/components/ai/ActionConfirmationModal';
+
+// Types
+interface BartoloMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  contentHtml?: string;
+  timestamp: Date;
+  suggestions?: string[];
+  actions?: BartoloAction[];
+}
+
+interface BartoloAction {
+  type: 'navigate' | 'create' | 'edit' | 'delete' | 'export' | 'help';
+  label: string;
+  target?: string;
+  data?: Record<string, unknown>;
+}
+
+interface ActionPreview {
+  action_id: string;
+  action_type: string;
+  title: string;
+  description: string;
+  affected_entities: Array<{
+    type: string;
+    id: string;
+    name?: string;
+  }>;
+  changes_summary: string[];
+  warnings: string[];
+  required_permission: string;
+  user_has_permission: boolean;
+  parameters: Record<string, unknown>;
+  can_be_undone: boolean;
+  requires_confirmation: boolean;
+}
 
 // Componente SVG do Dachshund (Cachorro Salsicha)
 function DachshundIcon({ className = 'w-6 h-6', animate = false }: { className?: string; animate?: boolean }) {
@@ -116,94 +153,97 @@ function DachshundIcon({ className = 'w-6 h-6', animate = false }: { className?:
   );
 }
 
-interface ChatState {
-  isOpen: boolean;
-  isMinimized: boolean;
-  isLoading: boolean;
-  sessionId: string;
-  messages: BartoloMessage[];
-  suggestions: string[];
-}
-
 export function BartoloChat() {
   const pathname = usePathname();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [state, setState] = useState<ChatState>({
-    isOpen: false,
-    isMinimized: false,
-    isLoading: false,
-    sessionId: '',
-    messages: [],
-    suggestions: [],
-  });
-
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [messages, setMessages] = useState<BartoloMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const [actionPreview, setActionPreview] = useState<ActionPreview | null>(null);
   const [isExecutingAction, setIsExecutingAction] = useState(false);
+  const [sessionId] = useState(() => BartoloService.generateSessionId());
 
-  // Detecta modulo atual e atualiza sugestoes
-  const currentModule = bartoloService.detectModule(pathname);
+  // Detecta modulo atual
+  const currentModule = BartoloService.detectModule(pathname);
 
-  // Inicializa sessao
+  // Hook do Bartolo
+  const {
+    greeting,
+    sendMessage,
+    isSending,
+    lastResponse,
+    submitFeedback,
+    suggestions: moduleSuggestions,
+  } = useBartoloChat(sessionId, currentModule);
+
+  // Adiciona greeting inicial
   useEffect(() => {
-    if (!state.sessionId) {
-      setState((prev) => ({
-        ...prev,
-        sessionId: bartoloService.generateSessionId(),
-        suggestions: bartoloService.getSuggestionsForModule(currentModule),
-      }));
+    if (greeting && messages.length === 0) {
+      const greetingMessage: BartoloMessage = {
+        id: 'greeting',
+        role: 'assistant',
+        content: greeting,
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
     }
-  }, [state.sessionId, currentModule]);
+  }, [greeting]);
 
-  // Atualiza sugestoes quando muda de modulo
+  // Adiciona resposta do Bartolo quando recebe
   useEffect(() => {
-    setState((prev) => ({
-      ...prev,
-      suggestions: bartoloService.getSuggestionsForModule(currentModule),
-    }));
-  }, [currentModule]);
+    if (lastResponse) {
+      const assistantMessage: BartoloMessage = {
+        id: lastResponse.message_id,
+        role: 'assistant',
+        content: lastResponse.response,
+        contentHtml: lastResponse.response_html,
+        timestamp: new Date(),
+        suggestions: (lastResponse.suggestions as string[]) || [],
+        actions: lastResponse.actions as BartoloAction[] | undefined,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+
+      // Verifica se há action_preview
+      // @ts-ignore - action_preview ainda não está no tipo gerado
+      if (lastResponse.action_preview) {
+        // @ts-ignore
+        setActionPreview(lastResponse.action_preview as ActionPreview);
+      }
+    }
+  }, [lastResponse]);
 
   // Scroll para ultima mensagem
   useEffect(() => {
-    if (messagesEndRef.current && state.isOpen && !state.isMinimized) {
+    if (messagesEndRef.current && isOpen && !isMinimized) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [state.messages, state.isOpen, state.isMinimized]);
+  }, [messages, isOpen, isMinimized]);
 
   // Focus no input quando abre
   useEffect(() => {
-    if (state.isOpen && !state.isMinimized && inputRef.current) {
+    if (isOpen && !isMinimized && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [state.isOpen, state.isMinimized]);
+  }, [isOpen, isMinimized]);
 
   const toggleChat = useCallback(() => {
-    setState((prev) => {
-      const newIsOpen = !prev.isOpen;
-      if (newIsOpen) {
-        setHasNewMessage(false);
-      }
-      return {
-        ...prev,
-        isOpen: newIsOpen,
-        isMinimized: false,
-      };
-    });
+    setIsOpen((prev) => !prev);
+    setIsMinimized(false);
+    setHasNewMessage(false);
   }, []);
 
   const toggleMinimize = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      isMinimized: !prev.isMinimized,
-    }));
+    setIsMinimized((prev) => !prev);
   }, []);
 
-  const sendMessage = useCallback(
+  const handleSendMessage = useCallback(
     async (message: string) => {
-      if (!message.trim() || state.isLoading) return;
+      if (!message.trim() || isSending) return;
 
       const userMessage: BartoloMessage = {
         id: `user_${Date.now()}`,
@@ -212,77 +252,26 @@ export function BartoloChat() {
         timestamp: new Date(),
       };
 
-      setState((prev) => ({
-        ...prev,
-        isLoading: true,
-        messages: [...prev.messages, userMessage],
-      }));
+      setMessages((prev) => [...prev, userMessage]);
       setInputValue('');
 
-      try {
-        // TODO: Obter userId do contexto de autenticacao
-        const userId = 1;
-
-        const response = await bartoloService.sendMessage(userId, {
-          message: message.trim(),
-          session_id: state.sessionId,
-          module: currentModule,
-          metadata: { pathname },
-        });
-
-        const assistantMessage: BartoloMessage = {
-          id: response.message_id,
-          role: 'assistant',
-          content: response.response,
-          contentHtml: response.response_html,
-          timestamp: new Date(),
-          suggestions: response.suggestions,
-          actions: response.actions,
-        };
-
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          messages: [...prev.messages, assistantMessage],
-          suggestions:
-            response.suggestions.length > 0
-              ? response.suggestions
-              : bartoloService.getSuggestionsForModule(currentModule),
-        }));
-
-        // Verifica se há action_preview (ação detectada pelo Bartolo)
-        if (response.action_preview) {
-          console.log('[BARTOLO] Ação detectada:', response.action_preview);
-          setActionPreview(response.action_preview);
-        }
-      } catch (error) {
-        console.error('Erro ao enviar mensagem para Bartolo:', error);
-
-        const errorMessage: BartoloMessage = {
-          id: `error_${Date.now()}`,
-          role: 'assistant',
-          content:
-            'Desculpe, tive um problema ao processar sua mensagem. Pode tentar novamente?',
-          timestamp: new Date(),
-        };
-
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          messages: [...prev.messages, errorMessage],
-        }));
-      }
+      sendMessage({
+        message: message.trim(),
+        session_id: sessionId,
+        module: currentModule,
+        metadata: { pathname },
+      });
     },
-    [state.isLoading, state.sessionId, currentModule, pathname]
+    [isSending, sendMessage, sessionId, currentModule, pathname]
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    sendMessage(inputValue);
+    handleSendMessage(inputValue);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    sendMessage(suggestion);
+    handleSendMessage(suggestion);
   };
 
   const handleActionClick = (action: BartoloAction) => {
@@ -293,23 +282,24 @@ export function BartoloChat() {
   };
 
   const resetChat = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      sessionId: bartoloService.generateSessionId(),
-      messages: [],
-      suggestions: bartoloService.getSuggestionsForModule(currentModule),
-    }));
-  }, [currentModule]);
+    setMessages([]);
+    // Session ID não muda, apenas limpa mensagens
+    if (greeting) {
+      const greetingMessage: BartoloMessage = {
+        id: 'greeting',
+        role: 'assistant',
+        content: greeting,
+        timestamp: new Date(),
+      };
+      setMessages([greetingMessage]);
+    }
+  }, [greeting]);
 
   const handleFeedback = async (messageId: string, isPositive: boolean) => {
-    try {
-      await bartoloService.sendFeedback({
-        interaction_id: messageId,
-        feedback_type: isPositive ? 'helpful' : 'not_helpful',
-      });
-    } catch (error) {
-      console.error('Erro ao enviar feedback:', error);
-    }
+    submitFeedback({
+      interaction_id: messageId,
+      feedback_type: isPositive ? 'helpful' : 'not_helpful',
+    });
   };
 
   // Handler para confirmar ação do Bartolo
@@ -318,10 +308,9 @@ export function BartoloChat() {
 
     setIsExecutingAction(true);
     try {
-      // TODO: Obter userId do contexto de autenticacao
-      const userId = 1;
+      const userId = 1; // TODO: Obter userId do contexto de autenticacao
 
-      const result = await bartoloService.confirmAction(
+      const result = await BartoloService.confirmAction(
         userId,
         actionPreview.action_id,
         true
@@ -335,11 +324,7 @@ export function BartoloChat() {
         timestamp: new Date(),
       };
 
-      setState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, resultMessage],
-      }));
-
+      setMessages((prev) => [...prev, resultMessage]);
       setActionPreview(null);
     } catch (error) {
       console.error('Erro ao executar ação:', error);
@@ -351,10 +336,7 @@ export function BartoloChat() {
         timestamp: new Date(),
       };
 
-      setState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, errorMessage],
-      }));
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsExecutingAction(false);
     }
@@ -365,8 +347,8 @@ export function BartoloChat() {
     if (!actionPreview) return;
 
     try {
-      const userId = 1;
-      await bartoloService.confirmAction(
+      const userId = 1; // TODO: Obter do contexto
+      await BartoloService.confirmAction(
         userId,
         actionPreview.action_id,
         false
@@ -397,7 +379,7 @@ export function BartoloChat() {
           'flex items-center justify-center',
           'transition-all duration-300 ease-out',
           'hover:scale-110 active:scale-95',
-          state.isOpen && 'scale-0 opacity-0 pointer-events-none'
+          isOpen && 'scale-0 opacity-0 pointer-events-none'
         )}
         aria-label="Abrir chat com Bartolo"
       >
@@ -412,10 +394,10 @@ export function BartoloChat() {
         className={cn(
           'fixed bottom-6 right-6 z-50',
           'transition-all duration-300 ease-out',
-          state.isOpen
+          isOpen
             ? 'opacity-100 translate-y-0'
             : 'opacity-0 translate-y-4 pointer-events-none',
-          state.isMinimized ? 'w-72' : 'w-96'
+          isMinimized ? 'w-72' : 'w-96'
         )}
       >
         <div
@@ -424,7 +406,7 @@ export function BartoloChat() {
             'border border-slate-700/50',
             'overflow-hidden',
             'flex flex-col',
-            state.isMinimized ? 'h-14' : 'h-[32rem]'
+            isMinimized ? 'h-14' : 'h-[32rem]'
           )}
         >
           {/* Header */}
@@ -435,7 +417,7 @@ export function BartoloChat() {
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-white">Bartolo</h3>
-                {!state.isMinimized && (
+                {!isMinimized && (
                   <p className="text-xs text-amber-100/80">
                     Assistente Conecta PRO
                   </p>
@@ -453,9 +435,9 @@ export function BartoloChat() {
               <button
                 onClick={toggleMinimize}
                 className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                title={state.isMinimized ? 'Expandir' : 'Minimizar'}
+                title={isMinimized ? 'Expandir' : 'Minimizar'}
               >
-                {state.isMinimized ? (
+                {isMinimized ? (
                   <Maximize2 className="w-4 h-4 text-white/80" />
                 ) : (
                   <Minimize2 className="w-4 h-4 text-white/80" />
@@ -472,11 +454,11 @@ export function BartoloChat() {
           </div>
 
           {/* Corpo do Chat (escondido quando minimizado) */}
-          {!state.isMinimized && (
+          {!isMinimized && (
             <>
               {/* Area de Mensagens */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {state.messages.length === 0 ? (
+                {messages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
                     <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
                       <DachshundIcon className="w-12 h-12" />
@@ -489,7 +471,7 @@ export function BartoloChat() {
                     </p>
                   </div>
                 ) : (
-                  state.messages.map((msg) => (
+                  messages.map((msg) => (
                     <div
                       key={msg.id}
                       className={cn(
@@ -564,7 +546,7 @@ export function BartoloChat() {
                 )}
 
                 {/* Indicador de digitando */}
-                {state.isLoading && (
+                {isSending && (
                   <div className="flex gap-2 items-start">
                     <div className="w-7 h-7 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
                       <DachshundIcon className="w-4 h-4" />
@@ -583,11 +565,11 @@ export function BartoloChat() {
               </div>
 
               {/* Sugestoes Rapidas */}
-              {state.messages.length === 0 && state.suggestions.length > 0 && (
+              {messages.length === 0 && moduleSuggestions.length > 0 && (
                 <div className="px-4 pb-2">
                   <p className="text-xs text-slate-500 mb-2">Sugestoes:</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {state.suggestions.slice(0, 4).map((suggestion, idx) => (
+                    {moduleSuggestions.slice(0, 4).map((suggestion, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
@@ -609,7 +591,7 @@ export function BartoloChat() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     placeholder="Digite sua mensagem..."
-                    disabled={state.isLoading}
+                    disabled={isSending}
                     className={cn(
                       'flex-1 bg-slate-800 rounded-xl px-4 py-2.5',
                       'text-sm text-slate-200 placeholder:text-slate-500',
@@ -620,7 +602,7 @@ export function BartoloChat() {
                   />
                   <button
                     type="submit"
-                    disabled={!inputValue.trim() || state.isLoading}
+                    disabled={!inputValue.trim() || isSending}
                     className={cn(
                       'w-10 h-10 rounded-xl',
                       'bg-amber-600 hover:bg-amber-500',
@@ -629,7 +611,7 @@ export function BartoloChat() {
                       'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-600'
                     )}
                   >
-                    {state.isLoading ? (
+                    {isSending ? (
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
                     ) : (
                       <Send className="w-5 h-5 text-white" />

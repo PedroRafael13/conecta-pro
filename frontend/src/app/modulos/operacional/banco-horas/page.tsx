@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
+import { useTimeBankEntries } from '@/hooks/operacional/useTimeBank';
 import {
   timeBankService,
   type TimeBankEntry,
@@ -43,22 +44,20 @@ import {
   TIME_BANK_ENTRY_TYPE_COLORS,
   TIME_BANK_STATUS_COLORS,
   ALERT_SEVERITY_COLORS,
-} from '@/lib/services/time-bank';
+} 
 
 export default function BancoHorasPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const [entries, setEntries] = useState<TimeBankEntry[]>([]);
+  const { data: entries = [], isLoading, error, refetch } = useTimeBankEntries();
   const [pendingEntries, setPendingEntries] = useState<TimeBankEntry[]>([]);
   const [alerts, setAlerts] = useState<TimeBankAlert[]>([]);
   const [stats, setStats] = useState<TimeBankStats | null>(null);
-  const [total, setTotal] = useState(0);
+  const total = entries.length;
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const totalPages = Math.ceil(total / pageSize);
 
   const [selectedStatus, setSelectedStatus] = useState<TimeBankStatus | ''>('');
   const [selectedType, setSelectedType] = useState<TimeBankEntryType | ''>('');

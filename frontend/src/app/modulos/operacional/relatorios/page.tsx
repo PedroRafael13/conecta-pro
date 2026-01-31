@@ -18,9 +18,8 @@ import { Input } from '@/components/ui/input';
 import { PageGuard } from '@/components/ui/permission-guard';
 import { useAuth } from '@/hooks/useAuth';
 import { Permission } from '@/hooks/usePermission';
-import { useEmployees } from '@/hooks/useEmployees';
-import { usePosts } from '@/hooks/usePosts';
-import { reportsService } from '@/lib/services/reports';
+import { useEmployees } from '@/hooks/operacional/useEmployees';
+import { usePosts } from '@/hooks/operacional/usePosts';
 import { getErrorMessage } from '@/lib/api';
 import type {
   CoverageReportResponse,
@@ -44,8 +43,8 @@ const formatPercent = (value: number) => `${value.toFixed(1)}%`;
 export default function RelatoriosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
-  const { posts } = usePosts({ initialPageSize: 100 });
-  const { employees } = useEmployees({ initialPageSize: 200 });
+  const { data: posts = [] } = usePosts();
+  const { data: employees = [] } = useEmployees();
 
   const now = useMemo(() => new Date(), []);
   const [startDate, setStartDate] = useState(

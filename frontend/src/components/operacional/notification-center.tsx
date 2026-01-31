@@ -16,13 +16,6 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNotifications, useUnreadCount, useUserAlerts } from '@/hooks/useNotifications';
-import {
-  type Notification,
-  type NotificationType,
-  type Alert,
-  NOTIFICATION_TYPE_LABELS,
-  ALERT_SEVERITY_LABELS,
-} from '@/lib/services/notifications';
 
 // Cores dos tipos de notificacao
 const NOTIFICATION_TYPE_COLORS: Record<NotificationType, string> = {

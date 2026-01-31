@@ -14,9 +14,28 @@ import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useBartoloChat } from '@/hooks/ai/useBartolo';
-import { BartoloService } from '@/services/ai/bartolo.service';
 import { toast } from 'sonner';
-import { ActionConfirmationModal, type ActionPreview } from './ActionConfirmationModal';
+import { ActionConfirmationModal } from './ActionConfirmationModal';
+
+// Types
+export interface ActionPreview {
+  action_id: string;
+  action_type: string;
+  title: string;
+  description: string;
+  affected_entities: Array<{
+    type: string;
+    id: string;
+    name?: string;
+  }>;
+  changes_summary: string[];
+  warnings: string[];
+  required_permission: string;
+  user_has_permission: boolean;
+  parameters: Record<string, unknown>;
+  can_be_undone: boolean;
+  requires_confirmation: boolean;
+}
 
 interface Message {
   id: string;

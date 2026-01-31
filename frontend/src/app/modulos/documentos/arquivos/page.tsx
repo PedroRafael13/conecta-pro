@@ -68,8 +68,6 @@ import {
   CloudUpload,
 } from 'lucide-react';
 import {
-  documentService,
-  folderService,
   Document,
   Folder,
   formatFileSize,
@@ -77,7 +75,7 @@ import {
   DOCUMENT_CATEGORIES,
   DOCUMENT_STATUS,
   getFileIcon,
-} from '@/lib/services/ged';
+} from '@/types/generated/ged/conectaPROMóduloGED.schemas';
 
 interface UploadFile {
   file: File;

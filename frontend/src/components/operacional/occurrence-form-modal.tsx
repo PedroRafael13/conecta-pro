@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RestoreAlert } from '@/components/ui/restore-alert';
 import { SaveIndicator } from '@/components/ui/save-indicator';
-import { occurrencesService } from '@/lib/services/occurrences';
 import { getErrorMessage } from '@/lib/api';
 import {
   OCCURRENCE_TYPE_LABELS,

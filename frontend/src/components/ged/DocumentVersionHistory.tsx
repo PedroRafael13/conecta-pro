@@ -23,8 +23,6 @@ import {
   ArrowUpDown,
   Eye,
 } from 'lucide-react';
-import { documentVersionService, type DocumentVersion } from '@/lib/services/ged';
-import { formatFileSize } from '@/lib/services/ged';
 import { toast } from 'sonner';
 
 interface DocumentVersionHistoryProps {

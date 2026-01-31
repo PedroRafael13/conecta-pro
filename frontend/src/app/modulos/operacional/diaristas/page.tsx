@@ -28,6 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
+import { useDiarists } from '@/hooks/operacional/useDiarists';
 import { DiaristFormModal } from '@/components/operacional/diarist-form-modal';
 import {
   diaristsService,
@@ -36,7 +37,7 @@ import {
   type DiaristType,
   DIARIST_TYPE_LABELS,
   DIARIST_STATUS_LABELS,
-} from '@/lib/services/diarists';
+} 
 
 const STATUS_COLORS: Record<DiaristStatus, string> = {
   ativo: 'bg-green-500/10 text-green-500',
@@ -57,13 +58,11 @@ export default function DiaristasPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const [diarists, setDiarists] = useState<Diarist[]>([]);
-  const [total, setTotal] = useState(0);
+  const { data: diarists = [], isLoading, error, refetch } = useDiarists();
+  const total = diarists.length;
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const totalPages = Math.ceil(total / pageSize);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<DiaristStatus | ''>('');

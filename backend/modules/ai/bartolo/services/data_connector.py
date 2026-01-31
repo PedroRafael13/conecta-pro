@@ -664,6 +664,22 @@ class DataConnector:
         elif "vencendo" in message:
             filters["expiring_soon"] = True
 
+        # CORRECAO: Filtro de turno
+        if "noite" in message or "noturno" in message:
+            filters["shift"] = "noturno"
+        elif "dia" in message or "diurno" in message:
+            filters["shift"] = "diurno"
+        elif "manha" in message or "manhã" in message or "matutino" in message:
+            filters["shift"] = "matutino"
+        elif "tarde" in message or "vespertino" in message:
+            filters["shift"] = "vespertino"
+        elif "madrugada" in message:
+            filters["shift"] = "madrugada"
+
+        # CORRECAO: Filtro de escalado (deve buscar em allocations/scales)
+        if "escalado" in message or "escalados" in message or "escaladas" in message:
+            filters["escalado"] = True
+
         return filters
 
     async def execute_query(self, query: DataQuery) -> DataResult:
@@ -883,12 +899,42 @@ class DataConnector:
             stmt = (
                 select(model)
                 .where(base_condition)
-                .limit(min(query.limit, 10))
+                .limit(min(query.limit, 100))  # Aumentado de 10 para 100
             )
 
             # Aplicar filtros básicos
             if "status" in query.filters:
                 stmt = stmt.where(model.status == query.filters["status"])
+
+            # CORRECAO CRITICA: Filtro de turno + escalado
+            if query.entity == "funcionarios" and ("shift" in query.filters or "escalado" in query.filters):
+                from modules.operacional.models.shift import Shift
+                from sqlalchemy import and_
+
+                # JOIN com shifts (turnos)
+                stmt = (
+                    select(model)
+                    .join(Shift, Shift.employee_id == model.id)
+                    .where(base_condition)
+                )
+
+                # Filtro de data (hoje)
+                if query.filters.get("today") or query.filters.get("date"):
+                    target_date = query.filters.get("date", date.today())
+                    stmt = stmt.where(Shift.shift_date == target_date)
+
+                # Filtro de turno (usa campo is_night_shift)
+                if "shift" in query.filters:
+                    shift_type = query.filters["shift"]
+                    if shift_type == "noturno":
+                        stmt = stmt.where(Shift.is_night_shift == True)  # noqa: E712
+                    elif shift_type in ["diurno", "matutino", "vespertino"]:
+                        # Turno diurno = NÃO noturno
+                        stmt = stmt.where(Shift.is_night_shift == False)  # noqa: E712
+
+                # Distinct para evitar duplicatas (funcionário pode ter mais de um turno)
+                stmt = stmt.distinct()
+                stmt = stmt.limit(min(query.limit, 100))
 
             result = await self.db.execute(stmt)
             items = list(result.scalars().all())

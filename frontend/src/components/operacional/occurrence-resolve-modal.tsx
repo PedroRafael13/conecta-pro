@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { occurrencesService } from '@/lib/services/occurrences';
 import { getErrorMessage } from '@/lib/api';
 import {
   OCCURRENCE_TYPE_LABELS,

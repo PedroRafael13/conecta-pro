@@ -175,8 +175,21 @@ class BartoloEngine:
         )
 
     def _detect_wizard_intent(self, message: str) -> Optional[str]:
-        """Detecta se mensagem indica necessidade de wizard."""
-        return self.wizard_manager.detect_wizard_type(message)
+        """
+        Detecta se mensagem indica necessidade de wizard.
+
+        CORRECAO CRITICA: Nunca retorna wizard se for pergunta/consulta.
+        """
+        # BLOQUEIO TOTAL: Se é pergunta, NUNCA é wizard
+        if self._is_query_intent(message):
+            logger.info(f"[WIZARD BLOCK] Mensagem é consulta, não inicia wizard: '{message[:50]}'")
+            return None
+
+        # Só tenta detectar wizard se NÃO for consulta
+        wizard_type = self.wizard_manager.detect_wizard_type(message)
+        if wizard_type:
+            logger.info(f"[WIZARD START] Iniciando wizard: {wizard_type}")
+        return wizard_type
 
     async def _check_skill_command(self, message: str, user_id: int, data_connector=None) -> Optional[Dict[str, Any]]:
         """
@@ -706,6 +719,21 @@ class BartoloEngine:
             if self.config.use_data_connector:
                 data_results = await self._check_data_query(message, module, data_connector)
                 logger.info(f"[DEBUG] Data results: {data_results is not None}")
+
+                # CORRECAO CRITICA: Se temos dados, retorna DIRETO sem LLM
+                if data_results and data_results.get("message"):
+                    logger.info("[DATA RESPONSE] Retornando dados diretamente")
+                    processing_time = int((time.time() - start_time) * 1000)
+                    return BartoloResponse(
+                        message_id=message_id,
+                        session_id=session_id,
+                        response=data_results.get("message"),
+                        intent="data_query",
+                        data_results=data_results,
+                        processing_time_ms=processing_time,
+                        model_used="data_connector",
+                        bartolo_mood="professional",
+                    )
 
             # 9. Recupera contexto da conversa
             logger.info(f"[DEBUG] Recuperando contexto...")
