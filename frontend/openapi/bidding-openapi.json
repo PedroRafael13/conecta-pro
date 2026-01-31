@@ -1,0 +1,1114 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Bidding API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for bidding module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "List Certificates",
+        "operationId": "list_certificates",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Certificate",
+        "operationId": "create_certificate",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expiring": {
+      "get": {
+        "summary": "Get Expiring",
+        "operationId": "get_expiring",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "Get Status Geral",
+        "operationId": "get_status_geral",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/habilitacao": {
+      "get": {
+        "summary": "Verificar Habilitacao",
+        "operationId": "verificar_habilitacao",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tipos": {
+      "get": {
+        "summary": "Get Tipos Certidao",
+        "operationId": "get_tipos_certidao",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tipo/{tipo}": {
+      "get": {
+        "summary": "Get By Tipo",
+        "operationId": "get_by_tipo",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{document_id}": {
+      "get": {
+        "summary": "Get Document",
+        "operationId": "get_document",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Document",
+        "operationId": "update_document",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Document",
+        "operationId": "delete_document",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/atualizar-status": {
+      "post": {
+        "summary": "Atualizar Todos Status",
+        "operationId": "atualizar_todos_status",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/estatisticas": {
+      "get": {
+        "summary": "Get Estatisticas",
+        "operationId": "get_estatisticas",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vencedoras": {
+      "get": {
+        "summary": "List Vencedoras",
+        "operationId": "list_vencedoras",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tender/{tender_id}": {
+      "get": {
+        "summary": "List By Tender",
+        "operationId": "list_by_tender",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{proposal_id}": {
+      "get": {
+        "summary": "Get Proposal",
+        "operationId": "get_proposal",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Proposal",
+        "operationId": "update_proposal",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Proposal",
+        "operationId": "delete_proposal",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{proposal_id}/pronta": {
+      "post": {
+        "summary": "Marcar Pronta",
+        "operationId": "marcar_pronta",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{proposal_id}/enviar": {
+      "post": {
+        "summary": "Enviar Proposta",
+        "operationId": "enviar_proposta",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{proposal_id}/resultado": {
+      "post": {
+        "summary": "Registrar Resultado",
+        "operationId": "registrar_resultado",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{proposal_id}/lance": {
+      "post": {
+        "summary": "Registrar Lance",
+        "operationId": "registrar_lance",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calcular-bdi": {
+      "post": {
+        "summary": "Calcular Bdi",
+        "operationId": "calcular_bdi",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Get Dashboard",
+        "operationId": "get_dashboard",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/abertos": {
+      "get": {
+        "summary": "List Abertos",
+        "operationId": "list_abertos",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/participando": {
+      "get": {
+        "summary": "List Participando",
+        "operationId": "list_participando",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/segmento/{segmento}": {
+      "get": {
+        "summary": "List Por Segmento",
+        "operationId": "list_por_segmento",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{tender_id}": {
+      "get": {
+        "summary": "Get Tender",
+        "operationId": "get_tender",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Tender",
+        "operationId": "update_tender",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Tender",
+        "operationId": "delete_tender",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{tender_id}/participar": {
+      "post": {
+        "summary": "Marcar Participacao",
+        "operationId": "marcar_participacao",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{tender_id}/status": {
+      "post": {
+        "summary": "Alterar Status",
+        "operationId": "alterar_status",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{tender_id}/documentos": {
+      "get": {
+        "summary": "Get Documentos",
+        "operationId": "get_documentos",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync-pncp": {
+      "post": {
+        "summary": "Sync Pncp",
+        "operationId": "sync_pncp",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pncp/status": {
+      "get": {
+        "summary": "Pncp Status",
+        "operationId": "pncp_status",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pncp/buscar": {
+      "get": {
+        "summary": "Buscar Pncp",
+        "operationId": "buscar_pncp",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vigentes": {
+      "get": {
+        "summary": "List Vigentes",
+        "operationId": "list_vigentes",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vencendo": {
+      "get": {
+        "summary": "List Vencendo",
+        "operationId": "list_vencendo",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{contract_id}": {
+      "get": {
+        "summary": "Get Contract",
+        "operationId": "get_contract",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Contract",
+        "operationId": "update_contract",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Contract",
+        "operationId": "delete_contract",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{contract_id}/aditivo": {
+      "post": {
+        "summary": "Add Aditivo",
+        "operationId": "add_aditivo",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{contract_id}/reajuste/calcular": {
+      "post": {
+        "summary": "Calcular Reajuste",
+        "operationId": "calcular_reajuste",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{contract_id}/reajuste/aplicar": {
+      "post": {
+        "summary": "Aplicar Reajuste",
+        "operationId": "aplicar_reajuste",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{contract_id}/medicoes": {
+      "get": {
+        "summary": "List Medicoes",
+        "operationId": "list_medicoes",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Add Medicao",
+        "operationId": "add_medicao",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/medicoes/{measurement_id}/aprovar": {
+      "post": {
+        "summary": "Aprovar Medicao",
+        "operationId": "aprovar_medicao",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status/{cnpj}": {
+      "get": {
+        "summary": "Get Status Geral",
+        "operationId": "get_status_geral",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pendentes-renovacao": {
+      "get": {
+        "summary": "Get Pendentes Renovacao",
+        "operationId": "get_pendentes_renovacao",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{certificate_id}": {
+      "get": {
+        "summary": "Get Certificate",
+        "operationId": "get_certificate",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Certificate",
+        "operationId": "update_certificate",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Certificate",
+        "operationId": "delete_certificate",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cnpj/{cnpj}/tipo/{tipo}": {
+      "get": {
+        "summary": "Get By Cnpj Tipo",
+        "operationId": "get_by_cnpj_tipo",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/renovar": {
+      "post": {
+        "summary": "Renovar Certidao",
+        "operationId": "renovar_certidao",
+        "tags": [
+          "Bidding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

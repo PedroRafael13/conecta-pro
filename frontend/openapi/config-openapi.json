@@ -1,0 +1,906 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Config API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for config module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/tenants": {
+      "get": {
+        "summary": "List Tenants",
+        "operationId": "list_tenants",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create Tenant",
+        "operationId": "create_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}": {
+      "get": {
+        "summary": "Get Tenant",
+        "operationId": "get_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Tenant",
+        "operationId": "update_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Tenant",
+        "operationId": "delete_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/plan": {
+      "put": {
+        "summary": "Update Tenant Plan",
+        "operationId": "update_tenant_plan",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/address": {
+      "put": {
+        "summary": "Update Tenant Address",
+        "operationId": "update_tenant_address",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/activate": {
+      "post": {
+        "summary": "Activate Tenant",
+        "operationId": "activate_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/suspend": {
+      "post": {
+        "summary": "Suspend Tenant",
+        "operationId": "suspend_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/cancel": {
+      "post": {
+        "summary": "Cancel Tenant",
+        "operationId": "cancel_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/convert-trial": {
+      "post": {
+        "summary": "Convert Trial",
+        "operationId": "convert_trial",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/features/{feature}/enable": {
+      "post": {
+        "summary": "Enable Tenant Feature",
+        "operationId": "enable_tenant_feature",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/features/{feature}/disable": {
+      "post": {
+        "summary": "Disable Tenant Feature",
+        "operationId": "disable_tenant_feature",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/settings": {
+      "get": {
+        "summary": "List Tenant Settings",
+        "operationId": "list_tenant_settings",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings/{setting_id}": {
+      "get": {
+        "summary": "Get Setting",
+        "operationId": "get_setting",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Setting",
+        "operationId": "update_setting",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Setting",
+        "operationId": "delete_setting",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings/{setting_id}/value": {
+      "put": {
+        "summary": "Update Setting Value",
+        "operationId": "update_setting_value",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings/{setting_id}/reset": {
+      "post": {
+        "summary": "Reset Setting",
+        "operationId": "reset_setting",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system": {
+      "get": {
+        "summary": "List System Configs",
+        "operationId": "list_system_configs",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/{config_id}": {
+      "get": {
+        "summary": "Get System Config",
+        "operationId": "get_system_config",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update System Config",
+        "operationId": "update_system_config",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete System Config",
+        "operationId": "delete_system_config",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags": {
+      "get": {
+        "summary": "List Feature Flags",
+        "operationId": "list_feature_flags",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags/{flag_id}": {
+      "get": {
+        "summary": "Get Feature Flag",
+        "operationId": "get_feature_flag",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Feature Flag",
+        "operationId": "update_feature_flag",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Feature Flag",
+        "operationId": "delete_feature_flag",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags/{flag_id}/enable": {
+      "post": {
+        "summary": "Enable Feature Flag",
+        "operationId": "enable_feature_flag",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags/{flag_id}/disable": {
+      "post": {
+        "summary": "Disable Feature Flag",
+        "operationId": "disable_feature_flag",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags/{flag_id}/percentage": {
+      "post": {
+        "summary": "Set Flag Percentage",
+        "operationId": "set_flag_percentage",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags/{flag_id}/gradual-rollout": {
+      "post": {
+        "summary": "Start Gradual Rollout",
+        "operationId": "start_gradual_rollout",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags/{flag_id}/toggle-tenant": {
+      "post": {
+        "summary": "Toggle Flag For Tenant",
+        "operationId": "toggle_flag_for_tenant",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flags/evaluate": {
+      "post": {
+        "summary": "Evaluate Feature Flag",
+        "operationId": "evaluate_feature_flag",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates": {
+      "get": {
+        "summary": "List Notification Templates",
+        "operationId": "list_notification_templates",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}": {
+      "get": {
+        "summary": "Get Notification Template",
+        "operationId": "get_notification_template",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Notification Template",
+        "operationId": "update_notification_template",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Notification Template",
+        "operationId": "delete_notification_template",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/activate": {
+      "post": {
+        "summary": "Activate Notification Template",
+        "operationId": "activate_notification_template",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/deactivate": {
+      "post": {
+        "summary": "Deactivate Notification Template",
+        "operationId": "deactivate_notification_template",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/render": {
+      "post": {
+        "summary": "Render Notification Template",
+        "operationId": "render_notification_template",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/clone": {
+      "post": {
+        "summary": "Clone Notification Template",
+        "operationId": "clone_notification_template",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Get Config Dashboard",
+        "operationId": "get_config_dashboard",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant_id}/dashboard": {
+      "get": {
+        "summary": "Get Tenant Dashboard",
+        "operationId": "get_tenant_dashboard",
+        "tags": [
+          "Config"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
