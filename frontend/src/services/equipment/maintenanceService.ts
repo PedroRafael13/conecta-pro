@@ -3,7 +3,36 @@
  * Service layer para gestão de manutenções
  */
 
-import { getEquipmentManutencao } from '@/types/generated/equipment/equipment-manutencao/equipment-manutencao';
+import {
+  listMaintenancesApiV1MaintenancesGet,
+  createMaintenanceApiV1MaintenancesPost,
+  getStatsApiV1MaintenancesStatsGet,
+  getOverdueApiV1MaintenancesOverdueGet,
+  getWaitingPartsApiV1MaintenancesWaitingPartsGet,
+  getNeedingFollowupApiV1MaintenancesNeedingFollowupGet,
+  getByClientApiV1MaintenancesByClientClientIdGet,
+  getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet,
+  getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet,
+  getByDateApiV1MaintenancesByDateDateGet,
+  getMaintenanceApiV1MaintenancesMaintenanceIdGet,
+  updateMaintenanceApiV1MaintenancesMaintenanceIdPut,
+  deleteMaintenanceApiV1MaintenancesMaintenanceIdDelete,
+  getByCodeApiV1MaintenancesCodeCodeGet,
+  startMaintenanceApiV1MaintenancesMaintenanceIdStartPost,
+  completeMaintenanceApiV1MaintenancesMaintenanceIdCompletePost,
+  cancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPost,
+  markWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost,
+  addPartReplacedApiV1MaintenancesMaintenanceIdAddPartPost,
+  signMaintenanceApiV1MaintenancesMaintenanceIdSignPost,
+  assignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPost,
+  schedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPost,
+  analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet,
+  predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet,
+  recommendScheduleApiV1MaintenancesAiRecommendScheduleGet,
+  optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet,
+  analyzePatternsApiV1MaintenancesAiPatternsGet,
+  estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet,
+} from '@/types/generated/equipment/equipment-manutencao/equipment-manutencao';
 import type {
   MaintenanceCreate,
   MaintenanceUpdate,
@@ -31,63 +60,61 @@ import type {
   EstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetParams
 } from '@/types/generated/equipment/conectaPROEquipmentManagementAPI.schemas';
 
-const maintenanceApi = getEquipmentManutencao();
-
 export const maintenanceService = {
   /**
    * Lista manutenções com filtros
    */
   list: async (params?: ListMaintenancesApiV1MaintenancesGetParams): Promise<MaintenanceListResponse> => {
-    return await maintenanceApi.listMaintenancesApiV1MaintenancesGet(params);
+    return await listMaintenancesApiV1MaintenancesGet(params);
   },
 
   /**
    * Obtém estatísticas de manutenções
    */
   getStats: async (params?: GetStatsApiV1MaintenancesStatsGetParams): Promise<MaintenanceStats> => {
-    return await maintenanceApi.getStatsApiV1MaintenancesStatsGet(params);
+    return await getStatsApiV1MaintenancesStatsGet(params);
   },
 
   /**
    * Lista manutenções atrasadas
    */
   getOverdue: async (): Promise<MaintenanceResponse[]> => {
-    return await maintenanceApi.getOverdueApiV1MaintenancesOverdueGet();
+    return await getOverdueApiV1MaintenancesOverdueGet();
   },
 
   /**
    * Lista manutenções aguardando peças
    */
   getWaitingParts: async (): Promise<MaintenanceResponse[]> => {
-    return await maintenanceApi.getWaitingPartsApiV1MaintenancesWaitingPartsGet();
+    return await getWaitingPartsApiV1MaintenancesWaitingPartsGet();
   },
 
   /**
    * Lista manutenções que precisam de follow-up
    */
   getNeedingFollowup: async (): Promise<MaintenanceResponse[]> => {
-    return await maintenanceApi.getNeedingFollowupApiV1MaintenancesNeedingFollowupGet();
+    return await getNeedingFollowupApiV1MaintenancesNeedingFollowupGet();
   },
 
   /**
    * Lista manutenções agendadas para uma data
    */
   getByDate: async (date: string): Promise<MaintenanceResponse[]> => {
-    return await maintenanceApi.getByDateApiV1MaintenancesByDateDateGet(date);
+    return await getByDateApiV1MaintenancesByDateDateGet(date);
   },
 
   /**
    * Lista manutenções de um equipamento
    */
   getByEquipment: async (equipmentId: string): Promise<MaintenanceResponse[]> => {
-    return await maintenanceApi.getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet(equipmentId);
+    return await getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet(equipmentId);
   },
 
   /**
    * Lista manutenções de um cliente
    */
   getByClient: async (clientId: string): Promise<MaintenanceResponse[]> => {
-    return await maintenanceApi.getByClientApiV1MaintenancesByClientClientIdGet(clientId);
+    return await getByClientApiV1MaintenancesByClientClientIdGet(clientId);
   },
 
   /**
@@ -97,49 +124,49 @@ export const maintenanceService = {
     technicianId: string,
     params?: GetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetParams
   ): Promise<MaintenanceResponse[]> => {
-    return await maintenanceApi.getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet(technicianId, params);
+    return await getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet(technicianId, params);
   },
 
   /**
    * Busca manutenção por código
    */
   getByCode: async (code: string): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.getByCodeApiV1MaintenancesCodeCodeGet(code);
+    return await getByCodeApiV1MaintenancesCodeCodeGet(code);
   },
 
   /**
    * Busca manutenção por ID
    */
   getById: async (maintenanceId: string): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.getMaintenanceApiV1MaintenancesMaintenanceIdGet(maintenanceId);
+    return await getMaintenanceApiV1MaintenancesMaintenanceIdGet(maintenanceId);
   },
 
   /**
    * Cria nova manutenção
    */
   create: async (data: MaintenanceCreate): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.createMaintenanceApiV1MaintenancesPost(data);
+    return await createMaintenanceApiV1MaintenancesPost(data);
   },
 
   /**
    * Atualiza manutenção
    */
   update: async (maintenanceId: string, data: MaintenanceUpdate): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.updateMaintenanceApiV1MaintenancesMaintenanceIdPut(maintenanceId, data);
+    return await updateMaintenanceApiV1MaintenancesMaintenanceIdPut(maintenanceId, data);
   },
 
   /**
    * Remove manutenção (soft delete)
    */
   delete: async (maintenanceId: string): Promise<void> => {
-    await maintenanceApi.deleteMaintenanceApiV1MaintenancesMaintenanceIdDelete(maintenanceId);
+    await deleteMaintenanceApiV1MaintenancesMaintenanceIdDelete(maintenanceId);
   },
 
   /**
    * Inicia manutenção
    */
   start: async (maintenanceId: string): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.startMaintenanceApiV1MaintenancesMaintenanceIdStartPost(maintenanceId);
+    return await startMaintenanceApiV1MaintenancesMaintenanceIdStartPost(maintenanceId);
   },
 
   /**
@@ -149,14 +176,14 @@ export const maintenanceService = {
     maintenanceId: string,
     params?: CompleteMaintenanceApiV1MaintenancesMaintenanceIdCompletePostParams
   ): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.completeMaintenanceApiV1MaintenancesMaintenanceIdCompletePost(maintenanceId, params);
+    return await completeMaintenanceApiV1MaintenancesMaintenanceIdCompletePost(maintenanceId, params);
   },
 
   /**
    * Cancela manutenção
    */
   cancel: async (maintenanceId: string): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.cancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPost(maintenanceId);
+    return await cancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPost(maintenanceId);
   },
 
   /**
@@ -166,7 +193,7 @@ export const maintenanceService = {
     maintenanceId: string,
     body: BodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost
   ): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.markWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost(maintenanceId, body);
+    return await markWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost(maintenanceId, body);
   },
 
   /**
@@ -176,7 +203,7 @@ export const maintenanceService = {
     maintenanceId: string,
     params: AddPartReplacedApiV1MaintenancesMaintenanceIdAddPartPostParams
   ): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.addPartReplacedApiV1MaintenancesMaintenanceIdAddPartPost(maintenanceId, params);
+    return await addPartReplacedApiV1MaintenancesMaintenanceIdAddPartPost(maintenanceId, params);
   },
 
   /**
@@ -186,7 +213,7 @@ export const maintenanceService = {
     maintenanceId: string,
     params: SignMaintenanceApiV1MaintenancesMaintenanceIdSignPostParams
   ): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.signMaintenanceApiV1MaintenancesMaintenanceIdSignPost(maintenanceId, params);
+    return await signMaintenanceApiV1MaintenancesMaintenanceIdSignPost(maintenanceId, params);
   },
 
   /**
@@ -196,7 +223,7 @@ export const maintenanceService = {
     maintenanceId: string,
     params: AssignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPostParams
   ): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.assignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPost(maintenanceId, params);
+    return await assignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPost(maintenanceId, params);
   },
 
   /**
@@ -206,7 +233,7 @@ export const maintenanceService = {
     equipmentId: string,
     params?: SchedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPostParams
   ): Promise<MaintenanceResponse> => {
-    return await maintenanceApi.schedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPost(equipmentId, params);
+    return await schedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPost(equipmentId, params);
   },
 
   // AI Endpoints
@@ -214,14 +241,14 @@ export const maintenanceService = {
    * Analisa saúde do equipamento usando IA
    */
   analyzeHealth: async (equipmentId: string): Promise<AnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet200> => {
-    return await maintenanceApi.analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet(equipmentId);
+    return await analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet(equipmentId);
   },
 
   /**
    * Prevê probabilidade de falha
    */
   predictFailure: async (equipmentId: string): Promise<PredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet200> => {
-    return await maintenanceApi.predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet(equipmentId);
+    return await predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet(equipmentId);
   },
 
   /**
@@ -230,7 +257,7 @@ export const maintenanceService = {
   recommendSchedule: async (
     params?: RecommendScheduleApiV1MaintenancesAiRecommendScheduleGetParams
   ): Promise<RecommendScheduleApiV1MaintenancesAiRecommendScheduleGet200Item[]> => {
-    return await maintenanceApi.recommendScheduleApiV1MaintenancesAiRecommendScheduleGet(params);
+    return await recommendScheduleApiV1MaintenancesAiRecommendScheduleGet(params);
   },
 
   /**
@@ -240,7 +267,7 @@ export const maintenanceService = {
     technicianId: string,
     params: OptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetParams
   ): Promise<OptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet200Item[]> => {
-    return await maintenanceApi.optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet(technicianId, params);
+    return await optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet(technicianId, params);
   },
 
   /**
@@ -249,7 +276,7 @@ export const maintenanceService = {
   analyzePatterns: async (
     params?: AnalyzePatternsApiV1MaintenancesAiPatternsGetParams
   ): Promise<AnalyzePatternsApiV1MaintenancesAiPatternsGet200> => {
-    return await maintenanceApi.analyzePatternsApiV1MaintenancesAiPatternsGet(params);
+    return await analyzePatternsApiV1MaintenancesAiPatternsGet(params);
   },
 
   /**
@@ -259,6 +286,6 @@ export const maintenanceService = {
     equipmentId: string,
     params?: EstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetParams
   ): Promise<EstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet200> => {
-    return await maintenanceApi.estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet(equipmentId, params);
+    return await estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet(equipmentId, params);
   },
 };

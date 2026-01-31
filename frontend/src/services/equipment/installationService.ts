@@ -3,7 +3,28 @@
  * Service layer para gestão de instalações
  */
 
-import { getEquipmentInstalacoes } from '@/types/generated/equipment/equipment-instalacoes/equipment-instalacoes';
+import {
+  listInstallationsApiV1InstallationsGet,
+  createInstallationApiV1InstallationsPost,
+  getStatsApiV1InstallationsStatsGet,
+  getPendingAcceptanceApiV1InstallationsPendingAcceptanceGet,
+  getOverdueApiV1InstallationsOverdueGet,
+  getByClientApiV1InstallationsByClientClientIdGet,
+  getByTechnicianApiV1InstallationsByTechnicianTechnicianIdGet,
+  getByDateApiV1InstallationsByDateDateGet,
+  getTechnicianScheduleApiV1InstallationsTechnicianScheduleTechnicianIdGet,
+  getInstallationApiV1InstallationsInstallationIdGet,
+  updateInstallationApiV1InstallationsInstallationIdPut,
+  deleteInstallationApiV1InstallationsInstallationIdDelete,
+  getByCodeApiV1InstallationsCodeCodeGet,
+  startInstallationApiV1InstallationsInstallationIdStartPost,
+  completeInstallationApiV1InstallationsInstallationIdCompletePost,
+  cancelInstallationApiV1InstallationsInstallationIdCancelPost,
+  rescheduleInstallationApiV1InstallationsInstallationIdReschedulePost,
+  acceptInstallationApiV1InstallationsInstallationIdAcceptPost,
+  addPhotoApiV1InstallationsInstallationIdPhotoPost,
+  assignTechnicianApiV1InstallationsInstallationIdAssignTechnicianPost,
+} from '@/types/generated/equipment/equipment-instalacoes/equipment-instalacoes';
 import type {
   InstallationCreate,
   InstallationUpdate,
@@ -22,42 +43,40 @@ import type {
   AssignTechnicianApiV1InstallationsInstallationIdAssignTechnicianPostParams
 } from '@/types/generated/equipment/conectaPROEquipmentManagementAPI.schemas';
 
-const installationApi = getEquipmentInstalacoes();
-
 export const installationService = {
   /**
    * Lista instalações com filtros
    */
   list: async (params?: ListInstallationsApiV1InstallationsGetParams): Promise<InstallationListResponse> => {
-    return await installationApi.listInstallationsApiV1InstallationsGet(params);
+    return await listInstallationsApiV1InstallationsGet(params);
   },
 
   /**
    * Lista instalações atrasadas
    */
   getOverdue: async (): Promise<InstallationResponse[]> => {
-    return await installationApi.getOverdueApiV1InstallationsOverdueGet();
+    return await getOverdueApiV1InstallationsOverdueGet();
   },
 
   /**
    * Lista instalações aguardando aceite
    */
   getPendingAcceptance: async (): Promise<InstallationResponse[]> => {
-    return await installationApi.getPendingAcceptanceApiV1InstallationsPendingAcceptanceGet();
+    return await getPendingAcceptanceApiV1InstallationsPendingAcceptanceGet();
   },
 
   /**
    * Lista instalações agendadas para uma data
    */
   getByDate: async (date: string): Promise<InstallationResponse[]> => {
-    return await installationApi.getByDateApiV1InstallationsByDateDateGet(date);
+    return await getByDateApiV1InstallationsByDateDateGet(date);
   },
 
   /**
    * Lista instalações de um cliente
    */
   getByClient: async (clientId: string): Promise<InstallationResponse[]> => {
-    return await installationApi.getByClientApiV1InstallationsByClientClientIdGet(clientId);
+    return await getByClientApiV1InstallationsByClientClientIdGet(clientId);
   },
 
   /**
@@ -67,7 +86,7 @@ export const installationService = {
     technicianId: string,
     params?: GetByTechnicianApiV1InstallationsByTechnicianTechnicianIdGetParams
   ): Promise<InstallationResponse[]> => {
-    return await installationApi.getByTechnicianApiV1InstallationsByTechnicianTechnicianIdGet(technicianId, params);
+    return await getByTechnicianApiV1InstallationsByTechnicianTechnicianIdGet(technicianId, params);
   },
 
   /**
@@ -77,56 +96,56 @@ export const installationService = {
     technicianId: string,
     params: GetTechnicianScheduleApiV1InstallationsTechnicianScheduleTechnicianIdGetParams
   ): Promise<InstallationResponse[]> => {
-    return await installationApi.getTechnicianScheduleApiV1InstallationsTechnicianScheduleTechnicianIdGet(technicianId, params);
+    return await getTechnicianScheduleApiV1InstallationsTechnicianScheduleTechnicianIdGet(technicianId, params);
   },
 
   /**
    * Obtém estatísticas de instalações
    */
   getStats: async (params: GetStatsApiV1InstallationsStatsGetParams): Promise<GetStatsApiV1InstallationsStatsGet200> => {
-    return await installationApi.getStatsApiV1InstallationsStatsGet(params);
+    return await getStatsApiV1InstallationsStatsGet(params);
   },
 
   /**
    * Busca instalação por código
    */
   getByCode: async (code: string): Promise<InstallationResponse> => {
-    return await installationApi.getByCodeApiV1InstallationsCodeCodeGet(code);
+    return await getByCodeApiV1InstallationsCodeCodeGet(code);
   },
 
   /**
    * Busca instalação por ID
    */
   getById: async (installationId: string): Promise<InstallationResponse> => {
-    return await installationApi.getInstallationApiV1InstallationsInstallationIdGet(installationId);
+    return await getInstallationApiV1InstallationsInstallationIdGet(installationId);
   },
 
   /**
    * Cria nova instalação
    */
   create: async (data: InstallationCreate): Promise<InstallationResponse> => {
-    return await installationApi.createInstallationApiV1InstallationsPost(data);
+    return await createInstallationApiV1InstallationsPost(data);
   },
 
   /**
    * Atualiza instalação
    */
   update: async (installationId: string, data: InstallationUpdate): Promise<InstallationResponse> => {
-    return await installationApi.updateInstallationApiV1InstallationsInstallationIdPut(installationId, data);
+    return await updateInstallationApiV1InstallationsInstallationIdPut(installationId, data);
   },
 
   /**
    * Remove instalação (soft delete)
    */
   delete: async (installationId: string): Promise<void> => {
-    await installationApi.deleteInstallationApiV1InstallationsInstallationIdDelete(installationId);
+    await deleteInstallationApiV1InstallationsInstallationIdDelete(installationId);
   },
 
   /**
    * Inicia instalação
    */
   start: async (installationId: string): Promise<InstallationResponse> => {
-    return await installationApi.startInstallationApiV1InstallationsInstallationIdStartPost(installationId);
+    return await startInstallationApiV1InstallationsInstallationIdStartPost(installationId);
   },
 
   /**
@@ -136,7 +155,7 @@ export const installationService = {
     installationId: string,
     params?: CompleteInstallationApiV1InstallationsInstallationIdCompletePostParams
   ): Promise<InstallationResponse> => {
-    return await installationApi.completeInstallationApiV1InstallationsInstallationIdCompletePost(installationId, params);
+    return await completeInstallationApiV1InstallationsInstallationIdCompletePost(installationId, params);
   },
 
   /**
@@ -146,7 +165,7 @@ export const installationService = {
     installationId: string,
     params: CancelInstallationApiV1InstallationsInstallationIdCancelPostParams
   ): Promise<InstallationResponse> => {
-    return await installationApi.cancelInstallationApiV1InstallationsInstallationIdCancelPost(installationId, params);
+    return await cancelInstallationApiV1InstallationsInstallationIdCancelPost(installationId, params);
   },
 
   /**
@@ -156,7 +175,7 @@ export const installationService = {
     installationId: string,
     params: RescheduleInstallationApiV1InstallationsInstallationIdReschedulePostParams
   ): Promise<InstallationResponse> => {
-    return await installationApi.rescheduleInstallationApiV1InstallationsInstallationIdReschedulePost(installationId, params);
+    return await rescheduleInstallationApiV1InstallationsInstallationIdReschedulePost(installationId, params);
   },
 
   /**
@@ -166,7 +185,7 @@ export const installationService = {
     installationId: string,
     params: AcceptInstallationApiV1InstallationsInstallationIdAcceptPostParams
   ): Promise<InstallationResponse> => {
-    return await installationApi.acceptInstallationApiV1InstallationsInstallationIdAcceptPost(installationId, params);
+    return await acceptInstallationApiV1InstallationsInstallationIdAcceptPost(installationId, params);
   },
 
   /**
@@ -176,7 +195,7 @@ export const installationService = {
     installationId: string,
     params: AddPhotoApiV1InstallationsInstallationIdPhotoPostParams
   ): Promise<InstallationResponse> => {
-    return await installationApi.addPhotoApiV1InstallationsInstallationIdPhotoPost(installationId, params);
+    return await addPhotoApiV1InstallationsInstallationIdPhotoPost(installationId, params);
   },
 
   /**
@@ -186,6 +205,6 @@ export const installationService = {
     installationId: string,
     params: AssignTechnicianApiV1InstallationsInstallationIdAssignTechnicianPostParams
   ): Promise<InstallationResponse> => {
-    return await installationApi.assignTechnicianApiV1InstallationsInstallationIdAssignTechnicianPost(installationId, params);
+    return await assignTechnicianApiV1InstallationsInstallationIdAssignTechnicianPost(installationId, params);
   },
 };

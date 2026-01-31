@@ -3,7 +3,34 @@
  * Service layer para gestão de comodatos
  */
 
-import { getEquipmentComodato } from '@/types/generated/equipment/equipment-comodato/equipment-comodato';
+import {
+  listComodatosApiV1ComodatosGet,
+  createComodatoApiV1ComodatosPost,
+  getStatsApiV1ComodatosStatsGet,
+  getActiveApiV1ComodatosActiveGet,
+  getPendingDeliveryApiV1ComodatosPendingDeliveryGet,
+  getPendingSignatureApiV1ComodatosPendingSignatureGet,
+  getPendingReturnApiV1ComodatosPendingReturnGet,
+  getExpiringApiV1ComodatosExpiringGet,
+  getExpiredApiV1ComodatosExpiredGet,
+  getByClientApiV1ComodatosByClientClientIdGet,
+  getComodatoApiV1ComodatosComodatoIdGet,
+  updateComodatoApiV1ComodatosComodatoIdPut,
+  deleteComodatoApiV1ComodatosComodatoIdDelete,
+  getByCodeApiV1ComodatosCodeCodeGet,
+  signComodatoApiV1ComodatosComodatoIdSignPost,
+  deliverComodatoApiV1ComodatosComodatoIdDeliverPost,
+  requestReturnApiV1ComodatosComodatoIdRequestReturnPost,
+  scheduleReturnApiV1ComodatosComodatoIdScheduleReturnPost,
+  registerReturnApiV1ComodatosComodatoIdReturnPost,
+  registerDamageApiV1ComodatosComodatoIdDamagePost,
+  terminateComodatoApiV1ComodatosComodatoIdTerminatePost,
+  transferComodatoApiV1ComodatosComodatoIdTransferPost,
+  markAsLostApiV1ComodatosComodatoIdMarkLostPost,
+  generateContractPdfApiV1ComodatosComodatoIdContractPdfPost,
+  generateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost,
+  generateReturnTermApiV1ComodatosComodatoIdReturnTermPost,
+} from '@/types/generated/equipment/equipment-comodato/equipment-comodato';
 import type {
   ComodatoCreate,
   ComodatoUpdate,
@@ -28,105 +55,103 @@ import type {
   GenerateReturnTermApiV1ComodatosComodatoIdReturnTermPost200
 } from '@/types/generated/equipment/conectaPROEquipmentManagementAPI.schemas';
 
-const comodatoApi = getEquipmentComodato();
-
 export const comodatoService = {
   /**
    * Lista comodatos com filtros
    */
   list: async (params?: ListComodatosApiV1ComodatosGetParams): Promise<ComodatoListResponse> => {
-    return await comodatoApi.listComodatosApiV1ComodatosGet(params);
+    return await listComodatosApiV1ComodatosGet(params);
   },
 
   /**
    * Obtém estatísticas de comodatos
    */
   getStats: async (params?: GetStatsApiV1ComodatosStatsGetParams): Promise<GetStatsApiV1ComodatosStatsGet200> => {
-    return await comodatoApi.getStatsApiV1ComodatosStatsGet(params);
+    return await getStatsApiV1ComodatosStatsGet(params);
   },
 
   /**
    * Lista comodatos ativos
    */
   getActive: async (params?: GetActiveApiV1ComodatosActiveGetParams): Promise<ComodatoResponse[]> => {
-    return await comodatoApi.getActiveApiV1ComodatosActiveGet(params);
+    return await getActiveApiV1ComodatosActiveGet(params);
   },
 
   /**
    * Lista comodatos aguardando assinatura
    */
   getPendingSignature: async (): Promise<ComodatoResponse[]> => {
-    return await comodatoApi.getPendingSignatureApiV1ComodatosPendingSignatureGet();
+    return await getPendingSignatureApiV1ComodatosPendingSignatureGet();
   },
 
   /**
    * Lista comodatos aguardando entrega
    */
   getPendingDelivery: async (): Promise<ComodatoResponse[]> => {
-    return await comodatoApi.getPendingDeliveryApiV1ComodatosPendingDeliveryGet();
+    return await getPendingDeliveryApiV1ComodatosPendingDeliveryGet();
   },
 
   /**
    * Lista comodatos com devolução pendente
    */
   getPendingReturn: async (): Promise<ComodatoResponse[]> => {
-    return await comodatoApi.getPendingReturnApiV1ComodatosPendingReturnGet();
+    return await getPendingReturnApiV1ComodatosPendingReturnGet();
   },
 
   /**
    * Lista comodatos expirando
    */
   getExpiring: async (params?: GetExpiringApiV1ComodatosExpiringGetParams): Promise<ComodatoResponse[]> => {
-    return await comodatoApi.getExpiringApiV1ComodatosExpiringGet(params);
+    return await getExpiringApiV1ComodatosExpiringGet(params);
   },
 
   /**
    * Lista comodatos expirados não devolvidos
    */
   getExpired: async (): Promise<ComodatoResponse[]> => {
-    return await comodatoApi.getExpiredApiV1ComodatosExpiredGet();
+    return await getExpiredApiV1ComodatosExpiredGet();
   },
 
   /**
    * Lista comodatos de um cliente
    */
   getByClient: async (clientId: string): Promise<ComodatoResponse[]> => {
-    return await comodatoApi.getByClientApiV1ComodatosByClientClientIdGet(clientId);
+    return await getByClientApiV1ComodatosByClientClientIdGet(clientId);
   },
 
   /**
    * Busca comodato por código
    */
   getByCode: async (code: string): Promise<ComodatoResponse> => {
-    return await comodatoApi.getByCodeApiV1ComodatosCodeCodeGet(code);
+    return await getByCodeApiV1ComodatosCodeCodeGet(code);
   },
 
   /**
    * Busca comodato por ID
    */
   getById: async (comodatoId: string): Promise<ComodatoResponse> => {
-    return await comodatoApi.getComodatoApiV1ComodatosComodatoIdGet(comodatoId);
+    return await getComodatoApiV1ComodatosComodatoIdGet(comodatoId);
   },
 
   /**
    * Cria novo comodato
    */
   create: async (data: ComodatoCreate): Promise<ComodatoResponse> => {
-    return await comodatoApi.createComodatoApiV1ComodatosPost(data);
+    return await createComodatoApiV1ComodatosPost(data);
   },
 
   /**
    * Atualiza comodato
    */
   update: async (comodatoId: string, data: ComodatoUpdate): Promise<ComodatoResponse> => {
-    return await comodatoApi.updateComodatoApiV1ComodatosComodatoIdPut(comodatoId, data);
+    return await updateComodatoApiV1ComodatosComodatoIdPut(comodatoId, data);
   },
 
   /**
    * Remove comodato (soft delete)
    */
   delete: async (comodatoId: string): Promise<void> => {
-    await comodatoApi.deleteComodatoApiV1ComodatosComodatoIdDelete(comodatoId);
+    await deleteComodatoApiV1ComodatosComodatoIdDelete(comodatoId);
   },
 
   /**
@@ -136,7 +161,7 @@ export const comodatoService = {
     comodatoId: string,
     params: SignComodatoApiV1ComodatosComodatoIdSignPostParams
   ): Promise<ComodatoResponse> => {
-    return await comodatoApi.signComodatoApiV1ComodatosComodatoIdSignPost(comodatoId, params);
+    return await signComodatoApiV1ComodatosComodatoIdSignPost(comodatoId, params);
   },
 
   /**
@@ -147,7 +172,7 @@ export const comodatoService = {
     params: DeliverComodatoApiV1ComodatosComodatoIdDeliverPostParams,
     body?: BodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost
   ): Promise<ComodatoResponse> => {
-    return await comodatoApi.deliverComodatoApiV1ComodatosComodatoIdDeliverPost(
+    return await deliverComodatoApiV1ComodatosComodatoIdDeliverPost(
       comodatoId,
       body ?? { photos: null },
       params
@@ -158,7 +183,7 @@ export const comodatoService = {
    * Solicita devolução
    */
   requestReturn: async (comodatoId: string): Promise<ComodatoResponse> => {
-    return await comodatoApi.requestReturnApiV1ComodatosComodatoIdRequestReturnPost(comodatoId);
+    return await requestReturnApiV1ComodatosComodatoIdRequestReturnPost(comodatoId);
   },
 
   /**
@@ -168,7 +193,7 @@ export const comodatoService = {
     comodatoId: string,
     params: ScheduleReturnApiV1ComodatosComodatoIdScheduleReturnPostParams
   ): Promise<ComodatoResponse> => {
-    return await comodatoApi.scheduleReturnApiV1ComodatosComodatoIdScheduleReturnPost(comodatoId, params);
+    return await scheduleReturnApiV1ComodatosComodatoIdScheduleReturnPost(comodatoId, params);
   },
 
   /**
@@ -179,7 +204,7 @@ export const comodatoService = {
     params: RegisterReturnApiV1ComodatosComodatoIdReturnPostParams,
     body?: BodyRegisterReturnApiV1ComodatosComodatoIdReturnPost
   ): Promise<ComodatoResponse> => {
-    return await comodatoApi.registerReturnApiV1ComodatosComodatoIdReturnPost(
+    return await registerReturnApiV1ComodatosComodatoIdReturnPost(
       comodatoId,
       body ?? { photos: null },
       params
@@ -193,14 +218,14 @@ export const comodatoService = {
     comodatoId: string,
     params: RegisterDamageApiV1ComodatosComodatoIdDamagePostParams
   ): Promise<ComodatoResponse> => {
-    return await comodatoApi.registerDamageApiV1ComodatosComodatoIdDamagePost(comodatoId, params);
+    return await registerDamageApiV1ComodatosComodatoIdDamagePost(comodatoId, params);
   },
 
   /**
    * Marca equipamento como perdido
    */
   markAsLost: async (comodatoId: string): Promise<ComodatoResponse> => {
-    return await comodatoApi.markAsLostApiV1ComodatosComodatoIdMarkLostPost(comodatoId);
+    return await markAsLostApiV1ComodatosComodatoIdMarkLostPost(comodatoId);
   },
 
   /**
@@ -210,7 +235,7 @@ export const comodatoService = {
     comodatoId: string,
     params: TerminateComodatoApiV1ComodatosComodatoIdTerminatePostParams
   ): Promise<ComodatoResponse> => {
-    return await comodatoApi.terminateComodatoApiV1ComodatosComodatoIdTerminatePost(comodatoId, params);
+    return await terminateComodatoApiV1ComodatosComodatoIdTerminatePost(comodatoId, params);
   },
 
   /**
@@ -220,27 +245,27 @@ export const comodatoService = {
     comodatoId: string,
     params: TransferComodatoApiV1ComodatosComodatoIdTransferPostParams
   ): Promise<ComodatoResponse> => {
-    return await comodatoApi.transferComodatoApiV1ComodatosComodatoIdTransferPost(comodatoId, params);
+    return await transferComodatoApiV1ComodatosComodatoIdTransferPost(comodatoId, params);
   },
 
   /**
    * Gera PDF do contrato
    */
   generateContractPdf: async (comodatoId: string): Promise<GenerateContractPdfApiV1ComodatosComodatoIdContractPdfPost200> => {
-    return await comodatoApi.generateContractPdfApiV1ComodatosComodatoIdContractPdfPost(comodatoId);
+    return await generateContractPdfApiV1ComodatosComodatoIdContractPdfPost(comodatoId);
   },
 
   /**
    * Gera termo de entrega
    */
   generateDeliveryTerm: async (comodatoId: string): Promise<GenerateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost200> => {
-    return await comodatoApi.generateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost(comodatoId);
+    return await generateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost(comodatoId);
   },
 
   /**
    * Gera termo de devolução
    */
   generateReturnTerm: async (comodatoId: string): Promise<GenerateReturnTermApiV1ComodatosComodatoIdReturnTermPost200> => {
-    return await comodatoApi.generateReturnTermApiV1ComodatosComodatoIdReturnTermPost(comodatoId);
+    return await generateReturnTermApiV1ComodatosComodatoIdReturnTermPost(comodatoId);
   },
 };
