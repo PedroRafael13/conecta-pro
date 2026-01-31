@@ -5,21 +5,32 @@
  * OpenAPI spec do módulo SEARCH - Busca Global (1 endpoint)
  * OpenAPI spec version: 2.0.0
  */
-import axios from 'axios';
+import {
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   GlobalSearchApiV1SearchGetParams,
+  HTTPValidationError,
   SearchResponse
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getSearchBuscaGlobal = () => {
+
 /**
  * Busca global no sistema.
 
@@ -33,14 +44,92 @@ Busca em:
 Retorna no máximo 20 resultados ordenados por relevância.
  * @summary Global Search
  */
-const globalSearchApiV1SearchGet = <TData = AxiosResponse<SearchResponse>>(
-    params: GlobalSearchApiV1SearchGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/search/`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {globalSearchApiV1SearchGet}};
-export type GlobalSearchApiV1SearchGetResult = AxiosResponse<SearchResponse>
+export const globalSearchApiV1SearchGet = (
+    params: GlobalSearchApiV1SearchGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SearchResponse>(
+      {url: `/api/v1/search/`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGlobalSearchApiV1SearchGetQueryKey = (params?: GlobalSearchApiV1SearchGetParams,) => {
+    return [
+    `/api/v1/search/`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGlobalSearchApiV1SearchGetQueryOptions = <TData = Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError = HTTPValidationError>(params: GlobalSearchApiV1SearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGlobalSearchApiV1SearchGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>> = ({ signal }) => globalSearchApiV1SearchGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GlobalSearchApiV1SearchGetQueryResult = NonNullable<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>>
+export type GlobalSearchApiV1SearchGetQueryError = HTTPValidationError
+
+
+export function useGlobalSearchApiV1SearchGet<TData = Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError = HTTPValidationError>(
+ params: GlobalSearchApiV1SearchGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>,
+          TError,
+          Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGlobalSearchApiV1SearchGet<TData = Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError = HTTPValidationError>(
+ params: GlobalSearchApiV1SearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>,
+          TError,
+          Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGlobalSearchApiV1SearchGet<TData = Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError = HTTPValidationError>(
+ params: GlobalSearchApiV1SearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Global Search
+ */
+
+export function useGlobalSearchApiV1SearchGet<TData = Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError = HTTPValidationError>(
+ params: GlobalSearchApiV1SearchGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalSearchApiV1SearchGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGlobalSearchApiV1SearchGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

@@ -988,29 +988,21 @@ NÃO dê instruções de como buscar - os dados JÁ ESTÃO AQUI!
         """Verifica se e consulta de dados e busca resultados."""
         try:
             # Detecta se é uma query de dados
-            print(f"[BARTOLO DEBUG] Detectando query para: '{message}'")
             data_query = data_connector.detect_data_query(message)
-            print(f"[BARTOLO DEBUG] Query detectada: {data_query}")
 
             if data_query:
                 logger.info(f"Query de dados detectada: {data_query.entity} ({data_query.query_type})")
-                print(f"[BARTOLO DEBUG] Executando query tipo: {data_query.query_type}")
 
-                # Executa a query
                 result = await data_connector.execute_query(data_query)
-                print(f"[BARTOLO DEBUG] Resultado: success={result.success}")
 
                 if result.success:
-                    # Retorna resultado em linguagem natural
-                    response_dict = {
+                    return {
                         "entity": result.entity,
                         "query_type": result.query_type.value,
                         "total_count": result.total_count,
                         "data": result.data,
                         "message": result.to_natural_language(),
                     }
-                    print(f"[BARTOLO DEBUG] Retornando dados: {response_dict.get('entity')}")
-                    return response_dict
 
             # Verifica se é pedido de dashboard
             if any(word in message.lower() for word in ["dashboard", "resumo", "visao geral"]):
@@ -1023,14 +1015,10 @@ NÃO dê instruções de como buscar - os dados JÁ ESTÃO AQUI!
                             "data": dashboard_data,
                         }
 
-            print(f"[BARTOLO DEBUG] Nenhuma query detectada, retornando None")
             return None
 
         except Exception as e:
             logger.error(f"Erro ao verificar data query: {e}")
-            print(f"[BARTOLO DEBUG] ERRO: {e}")
-            import traceback
-            traceback.print_exc()
             return None
 
     def _format_action_preview_response(self, preview: ActionPreview) -> str:

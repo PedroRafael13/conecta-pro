@@ -13,71 +13,376 @@ Módulo completo de proteção de dados conforme LGPD:
 - Controle DPO e Incidentes de Segurança
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AuditLogRequest,
+  ErrorResponse,
   ListAuditLogsParams,
   StandardResponse
 } from '../conectaPROLGPDSecurityAPI.schemas';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getLgpdAuditoria = () => {
+
 /**
  * Registra evento na trilha de auditoria com hash chain.
  * @summary Registra evento de auditoria
  */
-const createAuditLog = <TData = AxiosResponse<StandardResponse>>(
-    auditLogRequest: AuditLogRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/lgpd/audit/log`,
-      auditLogRequest,options
-    );
-  }
-/**
+export const createAuditLog = (
+    auditLogRequest: AuditLogRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/audit/log`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: auditLogRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateAuditLogMutationOptions = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAuditLog>>, TError,{data: AuditLogRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createAuditLog>>, TError,{data: AuditLogRequest}, TContext> => {
+
+const mutationKey = ['createAuditLog'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAuditLog>>, {data: AuditLogRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAuditLog(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAuditLogMutationResult = NonNullable<Awaited<ReturnType<typeof createAuditLog>>>
+    export type CreateAuditLogMutationBody = AuditLogRequest
+    export type CreateAuditLogMutationError = ErrorResponse | ErrorResponse
+
+    /**
+ * @summary Registra evento de auditoria
+ */
+export const useCreateAuditLog = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAuditLog>>, TError,{data: AuditLogRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createAuditLog>>,
+        TError,
+        {data: AuditLogRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateAuditLogMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna eventos de auditoria com filtros.
  * @summary Lista eventos de auditoria
  */
-const listAuditLogs = <TData = AxiosResponse<StandardResponse>>(
-    params?: ListAuditLogsParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/audit/logs`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listAuditLogs = (
+    params?: ListAuditLogsParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/audit/logs`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListAuditLogsQueryKey = (params?: ListAuditLogsParams,) => {
+    return [
+    `/lgpd/audit/logs`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListAuditLogsQueryOptions = <TData = Awaited<ReturnType<typeof listAuditLogs>>, TError = ErrorResponse>(params?: ListAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAuditLogs>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAuditLogsQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAuditLogs>>> = ({ signal }) => listAuditLogs(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAuditLogs>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListAuditLogsQueryResult = NonNullable<Awaited<ReturnType<typeof listAuditLogs>>>
+export type ListAuditLogsQueryError = ErrorResponse
+
+
+export function useListAuditLogs<TData = Awaited<ReturnType<typeof listAuditLogs>>, TError = ErrorResponse>(
+ params: undefined |  ListAuditLogsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAuditLogs>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAuditLogs>>,
+          TError,
+          Awaited<ReturnType<typeof listAuditLogs>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAuditLogs<TData = Awaited<ReturnType<typeof listAuditLogs>>, TError = ErrorResponse>(
+ params?: ListAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAuditLogs>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAuditLogs>>,
+          TError,
+          Awaited<ReturnType<typeof listAuditLogs>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAuditLogs<TData = Awaited<ReturnType<typeof listAuditLogs>>, TError = ErrorResponse>(
+ params?: ListAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAuditLogs>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lista eventos de auditoria
+ */
+
+export function useListAuditLogs<TData = Awaited<ReturnType<typeof listAuditLogs>>, TError = ErrorResponse>(
+ params?: ListAuditLogsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAuditLogs>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListAuditLogsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna ações de auditoria disponíveis.
  * @summary Lista ações de auditoria
  */
-const listActions = <TData = AxiosResponse<StandardResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/audit/actions/list`,options
-    );
-  }
+export const listActions = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/audit/actions/list`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListActionsQueryKey = () => {
+    return [
+    `/lgpd/audit/actions/list`
+    ] as const;
+    }
+
+    
+export const getListActionsQueryOptions = <TData = Awaited<ReturnType<typeof listActions>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActions>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListActionsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listActions>>> = ({ signal }) => listActions(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listActions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListActionsQueryResult = NonNullable<Awaited<ReturnType<typeof listActions>>>
+export type ListActionsQueryError = unknown
+
+
+export function useListActions<TData = Awaited<ReturnType<typeof listActions>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listActions>>,
+          TError,
+          Awaited<ReturnType<typeof listActions>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListActions<TData = Awaited<ReturnType<typeof listActions>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listActions>>,
+          TError,
+          Awaited<ReturnType<typeof listActions>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListActions<TData = Awaited<ReturnType<typeof listActions>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActions>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lista ações de auditoria
+ */
+
+export function useListActions<TData = Awaited<ReturnType<typeof listActions>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActions>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListActionsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna tipos de recurso auditados.
  * @summary Lista tipos de recurso
  */
-const listResourceTypes = <TData = AxiosResponse<StandardResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/audit/resource-types/list`,options
-    );
-  }
-return {createAuditLog,listAuditLogs,listActions,listResourceTypes}};
-export type CreateAuditLogResult = AxiosResponse<StandardResponse>
-export type ListAuditLogsResult = AxiosResponse<StandardResponse>
-export type ListActionsResult = AxiosResponse<StandardResponse>
-export type ListResourceTypesResult = AxiosResponse<StandardResponse>
+export const listResourceTypes = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/audit/resource-types/list`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListResourceTypesQueryKey = () => {
+    return [
+    `/lgpd/audit/resource-types/list`
+    ] as const;
+    }
+
+    
+export const getListResourceTypesQueryOptions = <TData = Awaited<ReturnType<typeof listResourceTypes>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResourceTypes>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListResourceTypesQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listResourceTypes>>> = ({ signal }) => listResourceTypes(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listResourceTypes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListResourceTypesQueryResult = NonNullable<Awaited<ReturnType<typeof listResourceTypes>>>
+export type ListResourceTypesQueryError = unknown
+
+
+export function useListResourceTypes<TData = Awaited<ReturnType<typeof listResourceTypes>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResourceTypes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listResourceTypes>>,
+          TError,
+          Awaited<ReturnType<typeof listResourceTypes>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListResourceTypes<TData = Awaited<ReturnType<typeof listResourceTypes>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResourceTypes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listResourceTypes>>,
+          TError,
+          Awaited<ReturnType<typeof listResourceTypes>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListResourceTypes<TData = Awaited<ReturnType<typeof listResourceTypes>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResourceTypes>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lista tipos de recurso
+ */
+
+export function useListResourceTypes<TData = Awaited<ReturnType<typeof listResourceTypes>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listResourceTypes>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListResourceTypesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

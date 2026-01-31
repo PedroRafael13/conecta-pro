@@ -1340,7 +1340,7 @@ export const deliverComodatoApiV1ComodatosComodatoIdDeliverPost = (
       
       const formData = new FormData();
 if(bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos !== undefined && bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos !== null) {
- bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos.forEach((photo: unknown) => formData.append(`photos`, photo as string | Blob));
+ formData.append(`photos`, bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos)
  }
 
       return customInstance<ComodatoResponse>(
@@ -1540,7 +1540,7 @@ export const registerReturnApiV1ComodatosComodatoIdReturnPost = (
       
       const formData = new FormData();
 if(bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos !== undefined && bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos !== null) {
- bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos.forEach((photo: unknown) => formData.append(`photos`, photo as string | Blob));
+ formData.append(`photos`, bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos)
  }
 
       return customInstance<ComodatoResponse>(

@@ -2043,7 +2043,7 @@ export const markWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost = (
 ) => {
       
       const formData = new FormData();
-bodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost.parts_requested.forEach((value: unknown) => formData.append(`parts_requested`, value as string));
+bodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost.parts_requested.forEach(value => formData.append(`parts_requested`, value));
 
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/waiting-parts`, method: 'POST',

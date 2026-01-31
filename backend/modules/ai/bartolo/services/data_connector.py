@@ -127,8 +127,11 @@ class DataResult:
         if self.query_type == QueryType.LIST:
             if not self.data:
                 return self.message or f"Nao encontrei nenhum {self.entity} com esses criterios."
-            items = "\n".join(f"- {item}" for item in self.data[:5])
-            extra = f"\n(e mais {self.total_count - 5})" if self.total_count > 5 else ""
+            # Mostra todos se lista pequena (<=20), senao primeiros 10
+            show_limit = len(self.data) if len(self.data) <= 20 else 10
+            items = "\n".join(f"- {item}" for item in self.data[:show_limit])
+            remaining = self.total_count - show_limit
+            extra = f"\n(e mais {remaining})" if remaining > 0 else ""
             return f"Encontrei {self.total_count} {self.entity}:\n{items}{extra}"
 
         if self.query_type == QueryType.DETAIL:
@@ -737,7 +740,7 @@ class DataConnector:
                 return await self._execute_mock_query(query)
 
             entity_type = entity_info.get("type")
-            logger.info(f"[ROUTE DEBUG] entity={query.entity}, type={entity_type}, filters={query.filters}")
+            logger.debug(f"Route: entity={query.entity}, type={entity_type}, filters={query.filters}")
 
             if entity_type == "repository":
                 return await self._execute_repository_query(query, entity_info)
@@ -907,14 +910,12 @@ class DataConnector:
             if "status" in query.filters:
                 stmt = stmt.where(model.status == query.filters["status"])
 
-            # CORRECAO CRITICA: Filtro de turno + escalado
-            logger.info(f"[FILTER DEBUG] entity={query.entity}, filters={query.filters}")
-            if query.entity == "funcionarios" and ("shift" in query.filters or "escalado" in query.filters):
-                logger.info("[FILTER DEBUG] Aplicando filtro de turno com JOIN shifts")
+            # Filtro de turno + escalado
+            has_shift_filter = query.entity == "funcionarios" and ("shift" in query.filters or "escalado" in query.filters)
+            if has_shift_filter:
                 from modules.operacional.models.shift import Shift
-                from sqlalchemy import and_
 
-                # JOIN com shifts (turnos)
+                # Rebuild stmt com JOIN shifts
                 stmt = (
                     select(model)
                     .join(Shift, Shift.employee_id == model.id)
@@ -932,12 +933,9 @@ class DataConnector:
                     if shift_type == "noturno":
                         stmt = stmt.where(Shift.is_night_shift == True)  # noqa: E712
                     elif shift_type in ["diurno", "matutino", "vespertino"]:
-                        # Turno diurno = NÃO noturno
                         stmt = stmt.where(Shift.is_night_shift == False)  # noqa: E712
 
-                # Distinct para evitar duplicatas (funcionário pode ter mais de um turno)
-                stmt = stmt.distinct()
-                stmt = stmt.limit(min(query.limit, 100))
+                stmt = stmt.distinct().limit(min(query.limit, 100))
 
             result = await self.db.execute(stmt)
             items = list(result.scalars().all())
@@ -950,7 +948,7 @@ class DataConnector:
                 matricula = getattr(item, "matricula", None)
                 telefone = getattr(item, "telefone", None)
                 tipos_servico = getattr(item, "tipos_servico", None)
-                status = getattr(item, "status", None)
+                item_status = getattr(item, "status", None)
 
                 parts = [name]
                 if matricula:
@@ -961,16 +959,20 @@ class DataConnector:
                     parts.append(", ".join(tipos_servico))
                 if telefone:
                     parts.append(telefone)
-                if status and status not in ("ativo", "active"):
-                    parts.append(f"[{status}]")
+                if item_status and item_status not in ("ativo", "active"):
+                    parts.append(f"[{item_status}]")
 
                 formatted_items.append(" - ".join(parts))
 
-            # Count total com mesmo filtro
-            count_result = await self.db.execute(
-                select(func.count(model.id)).where(base_condition)
-            )
-            total = count_result.scalar() or 0
+            # Count: usar len(items) quando filtros de turno aplicados,
+            # senão consulta geral
+            if has_shift_filter:
+                total = len(formatted_items)
+            else:
+                count_result = await self.db.execute(
+                    select(func.count(model.id)).where(base_condition)
+                )
+                total = count_result.scalar() or 0
 
             return DataResult(
                 success=True,

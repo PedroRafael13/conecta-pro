@@ -13,44 +13,190 @@ Módulo completo de proteção de dados conforme LGPD:
 - Controle DPO e Incidentes de Segurança
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   ErasureRequestSchema,
+  ErrorResponse,
   StandardResponse
 } from '../conectaPROLGPDSecurityAPI.schemas';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getLgpdDireitoAoEsquecimento = () => {
+
 /**
  * Inicia processo de exclusão de dados do titular.
  * @summary Solicita exclusão de dados (Art. 18 LGPD)
  */
-const requestErasure = <TData = AxiosResponse<StandardResponse>>(
-    erasureRequestSchema: ErasureRequestSchema, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/lgpd/erasure/request`,
-      erasureRequestSchema,options
-    );
-  }
-/**
+export const requestErasure = (
+    erasureRequestSchema: ErasureRequestSchema,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/erasure/request`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: erasureRequestSchema, signal
+    },
+      );
+    }
+  
+
+
+export const getRequestErasureMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestErasure>>, TError,{data: ErasureRequestSchema}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof requestErasure>>, TError,{data: ErasureRequestSchema}, TContext> => {
+
+const mutationKey = ['requestErasure'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestErasure>>, {data: ErasureRequestSchema}> = (props) => {
+          const {data} = props ?? {};
+
+          return  requestErasure(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestErasureMutationResult = NonNullable<Awaited<ReturnType<typeof requestErasure>>>
+    export type RequestErasureMutationBody = ErasureRequestSchema
+    export type RequestErasureMutationError = ErrorResponse
+
+    /**
+ * @summary Solicita exclusão de dados (Art. 18 LGPD)
+ */
+export const useRequestErasure = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestErasure>>, TError,{data: ErasureRequestSchema}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestErasure>>,
+        TError,
+        {data: ErasureRequestSchema},
+        TContext
+      > => {
+
+      const mutationOptions = getRequestErasureMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Verifica status de uma solicitação de exclusão.
  * @summary Consulta status de exclusão
  */
-const getErasureStatus = <TData = AxiosResponse<StandardResponse>>(
-    requestId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/erasure/${requestId}/status`,options
-    );
-  }
-return {requestErasure,getErasureStatus}};
-export type RequestErasureResult = AxiosResponse<StandardResponse>
-export type GetErasureStatusResult = AxiosResponse<StandardResponse>
+export const getErasureStatus = (
+    requestId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/erasure/${requestId}/status`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetErasureStatusQueryKey = (requestId?: string,) => {
+    return [
+    `/lgpd/erasure/${requestId}/status`
+    ] as const;
+    }
+
+    
+export const getGetErasureStatusQueryOptions = <TData = Awaited<ReturnType<typeof getErasureStatus>>, TError = ErrorResponse | ErrorResponse>(requestId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getErasureStatus>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetErasureStatusQueryKey(requestId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getErasureStatus>>> = ({ signal }) => getErasureStatus(requestId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(requestId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getErasureStatus>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetErasureStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getErasureStatus>>>
+export type GetErasureStatusQueryError = ErrorResponse | ErrorResponse
+
+
+export function useGetErasureStatus<TData = Awaited<ReturnType<typeof getErasureStatus>>, TError = ErrorResponse | ErrorResponse>(
+ requestId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getErasureStatus>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getErasureStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getErasureStatus>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetErasureStatus<TData = Awaited<ReturnType<typeof getErasureStatus>>, TError = ErrorResponse | ErrorResponse>(
+ requestId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getErasureStatus>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getErasureStatus>>,
+          TError,
+          Awaited<ReturnType<typeof getErasureStatus>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetErasureStatus<TData = Awaited<ReturnType<typeof getErasureStatus>>, TError = ErrorResponse | ErrorResponse>(
+ requestId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getErasureStatus>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Consulta status de exclusão
+ */
+
+export function useGetErasureStatus<TData = Awaited<ReturnType<typeof getErasureStatus>>, TError = ErrorResponse | ErrorResponse>(
+ requestId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getErasureStatus>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetErasureStatusQueryOptions(requestId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

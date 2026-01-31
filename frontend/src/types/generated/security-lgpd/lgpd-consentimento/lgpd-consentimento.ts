@@ -13,84 +13,439 @@ Módulo completo de proteção de dados conforme LGPD:
 - Controle DPO e Incidentes de Segurança
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   ConsentRequest,
+  ErrorResponse,
   RevokeConsentParams,
   StandardResponse
 } from '../conectaPROLGPDSecurityAPI.schemas';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getLgpdConsentimento = () => {
+
 /**
  * Registra consentimento do titular conforme Art. 7 LGPD.
  * @summary Registra consentimento LGPD
  */
-const registerConsent = <TData = AxiosResponse<StandardResponse>>(
-    consentRequest: ConsentRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/lgpd/consent/register`,
-      consentRequest,options
-    );
-  }
-/**
+export const registerConsent = (
+    consentRequest: ConsentRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/consent/register`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: consentRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRegisterConsentMutationOptions = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerConsent>>, TError,{data: ConsentRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof registerConsent>>, TError,{data: ConsentRequest}, TContext> => {
+
+const mutationKey = ['registerConsent'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerConsent>>, {data: ConsentRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerConsent(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterConsentMutationResult = NonNullable<Awaited<ReturnType<typeof registerConsent>>>
+    export type RegisterConsentMutationBody = ConsentRequest
+    export type RegisterConsentMutationError = ErrorResponse | ErrorResponse
+
+    /**
+ * @summary Registra consentimento LGPD
+ */
+export const useRegisterConsent = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerConsent>>, TError,{data: ConsentRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof registerConsent>>,
+        TError,
+        {data: ConsentRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRegisterConsentMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna todos os consentimentos de um titular.
  * @summary Consulta consentimentos de titular
  */
-const getConsents = <TData = AxiosResponse<StandardResponse>>(
-    titularId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/consent/${titularId}`,options
-    );
-  }
+export const getConsents = (
+    titularId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/consent/${titularId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetConsentsQueryKey = (titularId?: string,) => {
+    return [
+    `/lgpd/consent/${titularId}`
+    ] as const;
+    }
+
+    
+export const getGetConsentsQueryOptions = <TData = Awaited<ReturnType<typeof getConsents>>, TError = ErrorResponse>(titularId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConsents>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetConsentsQueryKey(titularId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConsents>>> = ({ signal }) => getConsents(titularId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(titularId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getConsents>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetConsentsQueryResult = NonNullable<Awaited<ReturnType<typeof getConsents>>>
+export type GetConsentsQueryError = ErrorResponse
+
+
+export function useGetConsents<TData = Awaited<ReturnType<typeof getConsents>>, TError = ErrorResponse>(
+ titularId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConsents>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConsents>>,
+          TError,
+          Awaited<ReturnType<typeof getConsents>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConsents<TData = Awaited<ReturnType<typeof getConsents>>, TError = ErrorResponse>(
+ titularId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConsents>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getConsents>>,
+          TError,
+          Awaited<ReturnType<typeof getConsents>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetConsents<TData = Awaited<ReturnType<typeof getConsents>>, TError = ErrorResponse>(
+ titularId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConsents>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Consulta consentimentos de titular
+ */
+
+export function useGetConsents<TData = Awaited<ReturnType<typeof getConsents>>, TError = ErrorResponse>(
+ titularId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getConsents>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetConsentsQueryOptions(titularId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Revoga um consentimento específico.
  * @summary Revoga consentimento
  */
-const revokeConsent = <TData = AxiosResponse<StandardResponse>>(
+export const revokeConsent = (
     consentId: string,
-    params: RevokeConsentParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/lgpd/consent/${consentId}/revoke`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: RevokeConsentParams,
+ ) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/consent/${consentId}/revoke`, method: 'DELETE',
+        params
+    },
+      );
+    }
+  
+
+
+export const getRevokeConsentMutationOptions = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeConsent>>, TError,{consentId: string;params: RevokeConsentParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof revokeConsent>>, TError,{consentId: string;params: RevokeConsentParams}, TContext> => {
+
+const mutationKey = ['revokeConsent'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof revokeConsent>>, {consentId: string;params: RevokeConsentParams}> = (props) => {
+          const {consentId,params} = props ?? {};
+
+          return  revokeConsent(consentId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RevokeConsentMutationResult = NonNullable<Awaited<ReturnType<typeof revokeConsent>>>
+    
+    export type RevokeConsentMutationError = ErrorResponse | ErrorResponse
+
+    /**
+ * @summary Revoga consentimento
+ */
+export const useRevokeConsent = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof revokeConsent>>, TError,{consentId: string;params: RevokeConsentParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof revokeConsent>>,
+        TError,
+        {consentId: string;params: RevokeConsentParams},
+        TContext
+      > => {
+
+      const mutationOptions = getRevokeConsentMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna finalidades de consentimento disponíveis.
  * @summary Lista finalidades de consentimento
  */
-const listPurposes = <TData = AxiosResponse<StandardResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/consent/purposes/list`,options
-    );
-  }
+export const listPurposes = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/consent/purposes/list`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListPurposesQueryKey = () => {
+    return [
+    `/lgpd/consent/purposes/list`
+    ] as const;
+    }
+
+    
+export const getListPurposesQueryOptions = <TData = Awaited<ReturnType<typeof listPurposes>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPurposes>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPurposesQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPurposes>>> = ({ signal }) => listPurposes(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPurposes>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPurposesQueryResult = NonNullable<Awaited<ReturnType<typeof listPurposes>>>
+export type ListPurposesQueryError = unknown
+
+
+export function useListPurposes<TData = Awaited<ReturnType<typeof listPurposes>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPurposes>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPurposes>>,
+          TError,
+          Awaited<ReturnType<typeof listPurposes>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPurposes<TData = Awaited<ReturnType<typeof listPurposes>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPurposes>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPurposes>>,
+          TError,
+          Awaited<ReturnType<typeof listPurposes>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPurposes<TData = Awaited<ReturnType<typeof listPurposes>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPurposes>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lista finalidades de consentimento
+ */
+
+export function useListPurposes<TData = Awaited<ReturnType<typeof listPurposes>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPurposes>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPurposesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna bases legais LGPD disponíveis.
  * @summary Lista bases legais LGPD
  */
-const listLegalBases = <TData = AxiosResponse<StandardResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/consent/legal-bases/list`,options
-    );
-  }
-return {registerConsent,getConsents,revokeConsent,listPurposes,listLegalBases}};
-export type RegisterConsentResult = AxiosResponse<StandardResponse>
-export type GetConsentsResult = AxiosResponse<StandardResponse>
-export type RevokeConsentResult = AxiosResponse<StandardResponse>
-export type ListPurposesResult = AxiosResponse<StandardResponse>
-export type ListLegalBasesResult = AxiosResponse<StandardResponse>
+export const listLegalBases = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/consent/legal-bases/list`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListLegalBasesQueryKey = () => {
+    return [
+    `/lgpd/consent/legal-bases/list`
+    ] as const;
+    }
+
+    
+export const getListLegalBasesQueryOptions = <TData = Awaited<ReturnType<typeof listLegalBases>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLegalBases>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLegalBasesQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLegalBases>>> = ({ signal }) => listLegalBases(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLegalBases>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListLegalBasesQueryResult = NonNullable<Awaited<ReturnType<typeof listLegalBases>>>
+export type ListLegalBasesQueryError = unknown
+
+
+export function useListLegalBases<TData = Awaited<ReturnType<typeof listLegalBases>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLegalBases>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLegalBases>>,
+          TError,
+          Awaited<ReturnType<typeof listLegalBases>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListLegalBases<TData = Awaited<ReturnType<typeof listLegalBases>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLegalBases>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLegalBases>>,
+          TError,
+          Awaited<ReturnType<typeof listLegalBases>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListLegalBases<TData = Awaited<ReturnType<typeof listLegalBases>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLegalBases>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lista bases legais LGPD
+ */
+
+export function useListLegalBases<TData = Awaited<ReturnType<typeof listLegalBases>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLegalBases>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListLegalBasesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

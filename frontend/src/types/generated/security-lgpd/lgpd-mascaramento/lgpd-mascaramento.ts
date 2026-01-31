@@ -13,44 +13,190 @@ Módulo completo de proteção de dados conforme LGPD:
 - Controle DPO e Incidentes de Segurança
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
+  ErrorResponse,
   MaskDataRequest,
   StandardResponse
 } from '../conectaPROLGPDSecurityAPI.schemas';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getLgpdMascaramento = () => {
+
 /**
  * Aplica mascaramento em dados PII (CPF, email, telefone, etc).
  * @summary Mascara dados sensíveis
  */
-const maskData = <TData = AxiosResponse<StandardResponse>>(
-    maskDataRequest: MaskDataRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/lgpd/masking/mask`,
-      maskDataRequest,options
-    );
-  }
-/**
+export const maskData = (
+    maskDataRequest: MaskDataRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/masking/mask`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: maskDataRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getMaskDataMutationOptions = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof maskData>>, TError,{data: MaskDataRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof maskData>>, TError,{data: MaskDataRequest}, TContext> => {
+
+const mutationKey = ['maskData'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof maskData>>, {data: MaskDataRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  maskData(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MaskDataMutationResult = NonNullable<Awaited<ReturnType<typeof maskData>>>
+    export type MaskDataMutationBody = MaskDataRequest
+    export type MaskDataMutationError = ErrorResponse | ErrorResponse
+
+    /**
+ * @summary Mascara dados sensíveis
+ */
+export const useMaskData = <TError = ErrorResponse | ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof maskData>>, TError,{data: MaskDataRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof maskData>>,
+        TError,
+        {data: MaskDataRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getMaskDataMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna categorias e níveis de mascaramento disponíveis.
  * @summary Lista formatos de mascaramento
  */
-const listMaskingFormats = <TData = AxiosResponse<StandardResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/masking/formats`,options
-    );
-  }
-return {maskData,listMaskingFormats}};
-export type MaskDataResult = AxiosResponse<StandardResponse>
-export type ListMaskingFormatsResult = AxiosResponse<StandardResponse>
+export const listMaskingFormats = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/masking/formats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListMaskingFormatsQueryKey = () => {
+    return [
+    `/lgpd/masking/formats`
+    ] as const;
+    }
+
+    
+export const getListMaskingFormatsQueryOptions = <TData = Awaited<ReturnType<typeof listMaskingFormats>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMaskingFormats>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMaskingFormatsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMaskingFormats>>> = ({ signal }) => listMaskingFormats(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMaskingFormats>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListMaskingFormatsQueryResult = NonNullable<Awaited<ReturnType<typeof listMaskingFormats>>>
+export type ListMaskingFormatsQueryError = unknown
+
+
+export function useListMaskingFormats<TData = Awaited<ReturnType<typeof listMaskingFormats>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMaskingFormats>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMaskingFormats>>,
+          TError,
+          Awaited<ReturnType<typeof listMaskingFormats>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListMaskingFormats<TData = Awaited<ReturnType<typeof listMaskingFormats>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMaskingFormats>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMaskingFormats>>,
+          TError,
+          Awaited<ReturnType<typeof listMaskingFormats>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListMaskingFormats<TData = Awaited<ReturnType<typeof listMaskingFormats>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMaskingFormats>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lista formatos de mascaramento
+ */
+
+export function useListMaskingFormats<TData = Awaited<ReturnType<typeof listMaskingFormats>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMaskingFormats>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListMaskingFormatsQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

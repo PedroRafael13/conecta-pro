@@ -5,11 +5,24 @@
  * API de Gestão de Serviços: Catálogo, Ordens, Execuções, Relatórios, SLA e AI
  * OpenAPI spec version: 2.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams,
@@ -29,6 +42,7 @@ import type {
   GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet200,
   GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams,
   GetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet200,
+  HTTPValidationError,
   ListExecutionsApiV1ServicesExecutionsGetParams,
   ListOrdersApiV1ServicesOrdersGetParams,
   ListReportsApiV1ServicesReportsGetParams,
@@ -68,850 +82,4784 @@ import type {
   UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams
 } from '../conectaPROServicesAPI.schemas';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getServicesServicos = () => {
+
 /**
  * Lista serviços do catálogo com filtros.
  * @summary Listar Serviços
  */
-const listServicesApiV1ServicesCatalogGet = <TData = AxiosResponse<ServiceCatalogListResponse[]>>(
-    params?: ListServicesApiV1ServicesCatalogGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/catalog`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listServicesApiV1ServicesCatalogGet = (
+    params?: ListServicesApiV1ServicesCatalogGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceCatalogListResponse[]>(
+      {url: `/api/v1/services/catalog`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListServicesApiV1ServicesCatalogGetQueryKey = (params?: ListServicesApiV1ServicesCatalogGetParams,) => {
+    return [
+    `/api/v1/services/catalog`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListServicesApiV1ServicesCatalogGetQueryOptions = <TData = Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError = HTTPValidationError>(params?: ListServicesApiV1ServicesCatalogGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListServicesApiV1ServicesCatalogGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>> = ({ signal }) => listServicesApiV1ServicesCatalogGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListServicesApiV1ServicesCatalogGetQueryResult = NonNullable<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>>
+export type ListServicesApiV1ServicesCatalogGetQueryError = HTTPValidationError
+
+
+export function useListServicesApiV1ServicesCatalogGet<TData = Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListServicesApiV1ServicesCatalogGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>,
+          TError,
+          Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListServicesApiV1ServicesCatalogGet<TData = Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError = HTTPValidationError>(
+ params?: ListServicesApiV1ServicesCatalogGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>,
+          TError,
+          Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListServicesApiV1ServicesCatalogGet<TData = Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError = HTTPValidationError>(
+ params?: ListServicesApiV1ServicesCatalogGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Serviços
+ */
+
+export function useListServicesApiV1ServicesCatalogGet<TData = Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError = HTTPValidationError>(
+ params?: ListServicesApiV1ServicesCatalogGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listServicesApiV1ServicesCatalogGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListServicesApiV1ServicesCatalogGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo serviço no catálogo.
  * @summary Criar Serviço
  */
-const createServiceApiV1ServicesCatalogPost = <TData = AxiosResponse<ServiceCatalogResponse>>(
-    serviceCatalogCreate: ServiceCatalogCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/catalog`,
-      serviceCatalogCreate,options
-    );
-  }
-/**
+export const createServiceApiV1ServicesCatalogPost = (
+    serviceCatalogCreate: ServiceCatalogCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceCatalogResponse>(
+      {url: `/api/v1/services/catalog`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: serviceCatalogCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateServiceApiV1ServicesCatalogPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createServiceApiV1ServicesCatalogPost>>, TError,{data: ServiceCatalogCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createServiceApiV1ServicesCatalogPost>>, TError,{data: ServiceCatalogCreate}, TContext> => {
+
+const mutationKey = ['createServiceApiV1ServicesCatalogPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createServiceApiV1ServicesCatalogPost>>, {data: ServiceCatalogCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createServiceApiV1ServicesCatalogPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateServiceApiV1ServicesCatalogPostMutationResult = NonNullable<Awaited<ReturnType<typeof createServiceApiV1ServicesCatalogPost>>>
+    export type CreateServiceApiV1ServicesCatalogPostMutationBody = ServiceCatalogCreate
+    export type CreateServiceApiV1ServicesCatalogPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Serviço
+ */
+export const useCreateServiceApiV1ServicesCatalogPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createServiceApiV1ServicesCatalogPost>>, TError,{data: ServiceCatalogCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createServiceApiV1ServicesCatalogPost>>,
+        TError,
+        {data: ServiceCatalogCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateServiceApiV1ServicesCatalogPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatísticas do catálogo de serviços.
  * @summary Estatísticas do Catálogo
  */
-const getCatalogStatsApiV1ServicesCatalogStatsGet = <TData = AxiosResponse<ServiceCatalogStats>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/catalog/stats`,options
-    );
-  }
+export const getCatalogStatsApiV1ServicesCatalogStatsGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceCatalogStats>(
+      {url: `/api/v1/services/catalog/stats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCatalogStatsApiV1ServicesCatalogStatsGetQueryKey = () => {
+    return [
+    `/api/v1/services/catalog/stats`
+    ] as const;
+    }
+
+    
+export const getGetCatalogStatsApiV1ServicesCatalogStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCatalogStatsApiV1ServicesCatalogStatsGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>> = ({ signal }) => getCatalogStatsApiV1ServicesCatalogStatsGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCatalogStatsApiV1ServicesCatalogStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>>
+export type GetCatalogStatsApiV1ServicesCatalogStatsGetQueryError = unknown
+
+
+export function useGetCatalogStatsApiV1ServicesCatalogStatsGet<TData = Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCatalogStatsApiV1ServicesCatalogStatsGet<TData = Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCatalogStatsApiV1ServicesCatalogStatsGet<TData = Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas do Catálogo
+ */
+
+export function useGetCatalogStatsApiV1ServicesCatalogStatsGet<TData = Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCatalogStatsApiV1ServicesCatalogStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCatalogStatsApiV1ServicesCatalogStatsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém detalhes de um serviço.
  * @summary Obter Serviço
  */
-const getServiceApiV1ServicesCatalogServiceIdGet = <TData = AxiosResponse<ServiceCatalogResponse>>(
-    serviceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/catalog/${serviceId}`,options
-    );
-  }
+export const getServiceApiV1ServicesCatalogServiceIdGet = (
+    serviceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceCatalogResponse>(
+      {url: `/api/v1/services/catalog/${serviceId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetServiceApiV1ServicesCatalogServiceIdGetQueryKey = (serviceId?: string,) => {
+    return [
+    `/api/v1/services/catalog/${serviceId}`
+    ] as const;
+    }
+
+    
+export const getGetServiceApiV1ServicesCatalogServiceIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError = HTTPValidationError>(serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetServiceApiV1ServicesCatalogServiceIdGetQueryKey(serviceId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>> = ({ signal }) => getServiceApiV1ServicesCatalogServiceIdGet(serviceId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(serviceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetServiceApiV1ServicesCatalogServiceIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>>
+export type GetServiceApiV1ServicesCatalogServiceIdGetQueryError = HTTPValidationError
+
+
+export function useGetServiceApiV1ServicesCatalogServiceIdGet<TData = Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetServiceApiV1ServicesCatalogServiceIdGet<TData = Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetServiceApiV1ServicesCatalogServiceIdGet<TData = Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Serviço
+ */
+
+export function useGetServiceApiV1ServicesCatalogServiceIdGet<TData = Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getServiceApiV1ServicesCatalogServiceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetServiceApiV1ServicesCatalogServiceIdGetQueryOptions(serviceId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza um serviço existente.
  * @summary Atualizar Serviço
  */
-const updateServiceApiV1ServicesCatalogServiceIdPut = <TData = AxiosResponse<ServiceCatalogResponse>>(
+export const updateServiceApiV1ServicesCatalogServiceIdPut = (
     serviceId: string,
-    serviceCatalogUpdate: ServiceCatalogUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/services/catalog/${serviceId}`,
-      serviceCatalogUpdate,options
-    );
-  }
-/**
+    serviceCatalogUpdate: ServiceCatalogUpdate,
+ ) => {
+      
+      
+      return customInstance<ServiceCatalogResponse>(
+      {url: `/api/v1/services/catalog/${serviceId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: serviceCatalogUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateServiceApiV1ServicesCatalogServiceIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateServiceApiV1ServicesCatalogServiceIdPut>>, TError,{serviceId: string;data: ServiceCatalogUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateServiceApiV1ServicesCatalogServiceIdPut>>, TError,{serviceId: string;data: ServiceCatalogUpdate}, TContext> => {
+
+const mutationKey = ['updateServiceApiV1ServicesCatalogServiceIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateServiceApiV1ServicesCatalogServiceIdPut>>, {serviceId: string;data: ServiceCatalogUpdate}> = (props) => {
+          const {serviceId,data} = props ?? {};
+
+          return  updateServiceApiV1ServicesCatalogServiceIdPut(serviceId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateServiceApiV1ServicesCatalogServiceIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateServiceApiV1ServicesCatalogServiceIdPut>>>
+    export type UpdateServiceApiV1ServicesCatalogServiceIdPutMutationBody = ServiceCatalogUpdate
+    export type UpdateServiceApiV1ServicesCatalogServiceIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Serviço
+ */
+export const useUpdateServiceApiV1ServicesCatalogServiceIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateServiceApiV1ServicesCatalogServiceIdPut>>, TError,{serviceId: string;data: ServiceCatalogUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateServiceApiV1ServicesCatalogServiceIdPut>>,
+        TError,
+        {serviceId: string;data: ServiceCatalogUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateServiceApiV1ServicesCatalogServiceIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Ativa um serviço.
  * @summary Ativar Serviço
  */
-const activateServiceApiV1ServicesCatalogServiceIdActivatePost = <TData = AxiosResponse<ServiceCatalogResponse>>(
-    serviceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/catalog/${serviceId}/activate`,undefined,options
-    );
-  }
-/**
+export const activateServiceApiV1ServicesCatalogServiceIdActivatePost = (
+    serviceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceCatalogResponse>(
+      {url: `/api/v1/services/catalog/${serviceId}/activate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getActivateServiceApiV1ServicesCatalogServiceIdActivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateServiceApiV1ServicesCatalogServiceIdActivatePost>>, TError,{serviceId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof activateServiceApiV1ServicesCatalogServiceIdActivatePost>>, TError,{serviceId: string}, TContext> => {
+
+const mutationKey = ['activateServiceApiV1ServicesCatalogServiceIdActivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateServiceApiV1ServicesCatalogServiceIdActivatePost>>, {serviceId: string}> = (props) => {
+          const {serviceId} = props ?? {};
+
+          return  activateServiceApiV1ServicesCatalogServiceIdActivatePost(serviceId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ActivateServiceApiV1ServicesCatalogServiceIdActivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof activateServiceApiV1ServicesCatalogServiceIdActivatePost>>>
+    
+    export type ActivateServiceApiV1ServicesCatalogServiceIdActivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Ativar Serviço
+ */
+export const useActivateServiceApiV1ServicesCatalogServiceIdActivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateServiceApiV1ServicesCatalogServiceIdActivatePost>>, TError,{serviceId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof activateServiceApiV1ServicesCatalogServiceIdActivatePost>>,
+        TError,
+        {serviceId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getActivateServiceApiV1ServicesCatalogServiceIdActivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Desativa um serviço.
  * @summary Desativar Serviço
  */
-const deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost = <TData = AxiosResponse<ServiceCatalogResponse>>(
-    serviceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/catalog/${serviceId}/deactivate`,undefined,options
-    );
-  }
-/**
+export const deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost = (
+    serviceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceCatalogResponse>(
+      {url: `/api/v1/services/catalog/${serviceId}/deactivate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getDeactivateServiceApiV1ServicesCatalogServiceIdDeactivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost>>, TError,{serviceId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost>>, TError,{serviceId: string}, TContext> => {
+
+const mutationKey = ['deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost>>, {serviceId: string}> = (props) => {
+          const {serviceId} = props ?? {};
+
+          return  deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost(serviceId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateServiceApiV1ServicesCatalogServiceIdDeactivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost>>>
+    
+    export type DeactivateServiceApiV1ServicesCatalogServiceIdDeactivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Desativar Serviço
+ */
+export const useDeactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost>>, TError,{serviceId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost>>,
+        TError,
+        {serviceId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeactivateServiceApiV1ServicesCatalogServiceIdDeactivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Descontinua um serviço.
  * @summary Descontinuar Serviço
  */
-const discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost = <TData = AxiosResponse<ServiceCatalogResponse>>(
-    serviceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/catalog/${serviceId}/discontinue`,undefined,options
-    );
-  }
-/**
+export const discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost = (
+    serviceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceCatalogResponse>(
+      {url: `/api/v1/services/catalog/${serviceId}/discontinue`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getDiscontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost>>, TError,{serviceId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost>>, TError,{serviceId: string}, TContext> => {
+
+const mutationKey = ['discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost>>, {serviceId: string}> = (props) => {
+          const {serviceId} = props ?? {};
+
+          return  discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost(serviceId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DiscontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePostMutationResult = NonNullable<Awaited<ReturnType<typeof discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost>>>
+    
+    export type DiscontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Descontinuar Serviço
+ */
+export const useDiscontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost>>, TError,{serviceId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost>>,
+        TError,
+        {serviceId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDiscontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula preço de um serviço.
  * @summary Calcular Preço
  */
-const calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet = <TData = AxiosResponse<CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGet200>>(
+export const calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet = (
     serviceId: string,
-    params?: CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/catalog/${serviceId}/price`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params?: CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGet200>(
+      {url: `/api/v1/services/catalog/${serviceId}/price`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetQueryKey = (serviceId?: string,
+    params?: CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams,) => {
+    return [
+    `/api/v1/services/catalog/${serviceId}/price`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetQueryOptions = <TData = Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError = HTTPValidationError>(serviceId: string,
+    params?: CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetQueryKey(serviceId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>> = ({ signal }) => calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet(serviceId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(serviceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetQueryResult = NonNullable<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>>
+export type CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetQueryError = HTTPValidationError
+
+
+export function useCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGet<TData = Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params: undefined |  CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>,
+          TError,
+          Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGet<TData = Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params?: CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>,
+          TError,
+          Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGet<TData = Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params?: CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Calcular Preço
+ */
+
+export function useCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGet<TData = Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params?: CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetQueryOptions(serviceId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista ordens de serviço com filtros.
  * @summary Listar Ordens
  */
-const listOrdersApiV1ServicesOrdersGet = <TData = AxiosResponse<ServiceOrderListResponse[]>>(
-    params?: ListOrdersApiV1ServicesOrdersGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/orders`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listOrdersApiV1ServicesOrdersGet = (
+    params?: ListOrdersApiV1ServicesOrdersGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderListResponse[]>(
+      {url: `/api/v1/services/orders`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListOrdersApiV1ServicesOrdersGetQueryKey = (params?: ListOrdersApiV1ServicesOrdersGetParams,) => {
+    return [
+    `/api/v1/services/orders`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListOrdersApiV1ServicesOrdersGetQueryOptions = <TData = Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError = HTTPValidationError>(params?: ListOrdersApiV1ServicesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOrdersApiV1ServicesOrdersGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>> = ({ signal }) => listOrdersApiV1ServicesOrdersGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListOrdersApiV1ServicesOrdersGetQueryResult = NonNullable<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>>
+export type ListOrdersApiV1ServicesOrdersGetQueryError = HTTPValidationError
+
+
+export function useListOrdersApiV1ServicesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListOrdersApiV1ServicesOrdersGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrdersApiV1ServicesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError = HTTPValidationError>(
+ params?: ListOrdersApiV1ServicesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrdersApiV1ServicesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError = HTTPValidationError>(
+ params?: ListOrdersApiV1ServicesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Ordens
+ */
+
+export function useListOrdersApiV1ServicesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError = HTTPValidationError>(
+ params?: ListOrdersApiV1ServicesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1ServicesOrdersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListOrdersApiV1ServicesOrdersGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria uma nova ordem de serviço.
  * @summary Criar Ordem
  */
-const createOrderApiV1ServicesOrdersPost = <TData = AxiosResponse<ServiceOrderResponse>>(
-    serviceOrderCreate: ServiceOrderCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders`,
-      serviceOrderCreate,options
-    );
-  }
-/**
+export const createOrderApiV1ServicesOrdersPost = (
+    serviceOrderCreate: ServiceOrderCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: serviceOrderCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateOrderApiV1ServicesOrdersPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrderApiV1ServicesOrdersPost>>, TError,{data: ServiceOrderCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createOrderApiV1ServicesOrdersPost>>, TError,{data: ServiceOrderCreate}, TContext> => {
+
+const mutationKey = ['createOrderApiV1ServicesOrdersPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOrderApiV1ServicesOrdersPost>>, {data: ServiceOrderCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createOrderApiV1ServicesOrdersPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOrderApiV1ServicesOrdersPostMutationResult = NonNullable<Awaited<ReturnType<typeof createOrderApiV1ServicesOrdersPost>>>
+    export type CreateOrderApiV1ServicesOrdersPostMutationBody = ServiceOrderCreate
+    export type CreateOrderApiV1ServicesOrdersPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Ordem
+ */
+export const useCreateOrderApiV1ServicesOrdersPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrderApiV1ServicesOrdersPost>>, TError,{data: ServiceOrderCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createOrderApiV1ServicesOrdersPost>>,
+        TError,
+        {data: ServiceOrderCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateOrderApiV1ServicesOrdersPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatísticas de ordens.
  * @summary Estatísticas de Ordens
  */
-const getOrderStatsApiV1ServicesOrdersStatsGet = <TData = AxiosResponse<ServiceOrderStats>>(
-    params?: GetOrderStatsApiV1ServicesOrdersStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/orders/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getOrderStatsApiV1ServicesOrdersStatsGet = (
+    params?: GetOrderStatsApiV1ServicesOrdersStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderStats>(
+      {url: `/api/v1/services/orders/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOrderStatsApiV1ServicesOrdersStatsGetQueryKey = (params?: GetOrderStatsApiV1ServicesOrdersStatsGetParams,) => {
+    return [
+    `/api/v1/services/orders/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetOrderStatsApiV1ServicesOrdersStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError = HTTPValidationError>(params?: GetOrderStatsApiV1ServicesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrderStatsApiV1ServicesOrdersStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>> = ({ signal }) => getOrderStatsApiV1ServicesOrdersStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOrderStatsApiV1ServicesOrdersStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>>
+export type GetOrderStatsApiV1ServicesOrdersStatsGetQueryError = HTTPValidationError
+
+
+export function useGetOrderStatsApiV1ServicesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetOrderStatsApiV1ServicesOrdersStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderStatsApiV1ServicesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params?: GetOrderStatsApiV1ServicesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderStatsApiV1ServicesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params?: GetOrderStatsApiV1ServicesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de Ordens
+ */
+
+export function useGetOrderStatsApiV1ServicesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params?: GetOrderStatsApiV1ServicesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1ServicesOrdersStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOrderStatsApiV1ServicesOrdersStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista ordens em atraso.
  * @summary Ordens em Atraso
  */
-const getOverdueOrdersApiV1ServicesOrdersOverdueGet = <TData = AxiosResponse<ServiceOrderListResponse[]>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/orders/overdue`,options
-    );
-  }
+export const getOverdueOrdersApiV1ServicesOrdersOverdueGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderListResponse[]>(
+      {url: `/api/v1/services/orders/overdue`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOverdueOrdersApiV1ServicesOrdersOverdueGetQueryKey = () => {
+    return [
+    `/api/v1/services/orders/overdue`
+    ] as const;
+    }
+
+    
+export const getGetOverdueOrdersApiV1ServicesOrdersOverdueGetQueryOptions = <TData = Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOverdueOrdersApiV1ServicesOrdersOverdueGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>> = ({ signal }) => getOverdueOrdersApiV1ServicesOrdersOverdueGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOverdueOrdersApiV1ServicesOrdersOverdueGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>>
+export type GetOverdueOrdersApiV1ServicesOrdersOverdueGetQueryError = unknown
+
+
+export function useGetOverdueOrdersApiV1ServicesOrdersOverdueGet<TData = Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOverdueOrdersApiV1ServicesOrdersOverdueGet<TData = Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOverdueOrdersApiV1ServicesOrdersOverdueGet<TData = Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Ordens em Atraso
+ */
+
+export function useGetOverdueOrdersApiV1ServicesOrdersOverdueGet<TData = Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueOrdersApiV1ServicesOrdersOverdueGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOverdueOrdersApiV1ServicesOrdersOverdueGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista ordens em risco de atraso.
  * @summary Ordens em Risco
  */
-const getAtRiskOrdersApiV1ServicesOrdersAtRiskGet = <TData = AxiosResponse<unknown[]>>(
-    params?: GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/orders/at-risk`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getAtRiskOrdersApiV1ServicesOrdersAtRiskGet = (
+    params?: GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown[]>(
+      {url: `/api/v1/services/orders/at-risk`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAtRiskOrdersApiV1ServicesOrdersAtRiskGetQueryKey = (params?: GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams,) => {
+    return [
+    `/api/v1/services/orders/at-risk`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetAtRiskOrdersApiV1ServicesOrdersAtRiskGetQueryOptions = <TData = Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError = HTTPValidationError>(params?: GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAtRiskOrdersApiV1ServicesOrdersAtRiskGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>> = ({ signal }) => getAtRiskOrdersApiV1ServicesOrdersAtRiskGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>>
+export type GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetQueryError = HTTPValidationError
+
+
+export function useGetAtRiskOrdersApiV1ServicesOrdersAtRiskGet<TData = Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAtRiskOrdersApiV1ServicesOrdersAtRiskGet<TData = Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError = HTTPValidationError>(
+ params?: GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAtRiskOrdersApiV1ServicesOrdersAtRiskGet<TData = Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError = HTTPValidationError>(
+ params?: GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Ordens em Risco
+ */
+
+export function useGetAtRiskOrdersApiV1ServicesOrdersAtRiskGet<TData = Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError = HTTPValidationError>(
+ params?: GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAtRiskOrdersApiV1ServicesOrdersAtRiskGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAtRiskOrdersApiV1ServicesOrdersAtRiskGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém detalhes de uma ordem.
  * @summary Obter Ordem
  */
-const getOrderApiV1ServicesOrdersOrderIdGet = <TData = AxiosResponse<ServiceOrderResponse>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/orders/${orderId}`,options
-    );
-  }
+export const getOrderApiV1ServicesOrdersOrderIdGet = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOrderApiV1ServicesOrdersOrderIdGetQueryKey = (orderId?: string,) => {
+    return [
+    `/api/v1/services/orders/${orderId}`
+    ] as const;
+    }
+
+    
+export const getGetOrderApiV1ServicesOrdersOrderIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError = HTTPValidationError>(orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrderApiV1ServicesOrdersOrderIdGetQueryKey(orderId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>> = ({ signal }) => getOrderApiV1ServicesOrdersOrderIdGet(orderId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(orderId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOrderApiV1ServicesOrdersOrderIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>>
+export type GetOrderApiV1ServicesOrdersOrderIdGetQueryError = HTTPValidationError
+
+
+export function useGetOrderApiV1ServicesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderApiV1ServicesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderApiV1ServicesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Ordem
+ */
+
+export function useGetOrderApiV1ServicesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1ServicesOrdersOrderIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOrderApiV1ServicesOrdersOrderIdGetQueryOptions(orderId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma ordem de serviço.
  * @summary Atualizar Ordem
  */
-const updateOrderApiV1ServicesOrdersOrderIdPut = <TData = AxiosResponse<ServiceOrderResponse>>(
+export const updateOrderApiV1ServicesOrdersOrderIdPut = (
     orderId: string,
-    serviceOrderUpdate: ServiceOrderUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/services/orders/${orderId}`,
-      serviceOrderUpdate,options
-    );
-  }
-/**
+    serviceOrderUpdate: ServiceOrderUpdate,
+ ) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: serviceOrderUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateOrderApiV1ServicesOrdersOrderIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderApiV1ServicesOrdersOrderIdPut>>, TError,{orderId: string;data: ServiceOrderUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrderApiV1ServicesOrdersOrderIdPut>>, TError,{orderId: string;data: ServiceOrderUpdate}, TContext> => {
+
+const mutationKey = ['updateOrderApiV1ServicesOrdersOrderIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrderApiV1ServicesOrdersOrderIdPut>>, {orderId: string;data: ServiceOrderUpdate}> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  updateOrderApiV1ServicesOrdersOrderIdPut(orderId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOrderApiV1ServicesOrdersOrderIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrderApiV1ServicesOrdersOrderIdPut>>>
+    export type UpdateOrderApiV1ServicesOrdersOrderIdPutMutationBody = ServiceOrderUpdate
+    export type UpdateOrderApiV1ServicesOrdersOrderIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Ordem
+ */
+export const useUpdateOrderApiV1ServicesOrdersOrderIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderApiV1ServicesOrdersOrderIdPut>>, TError,{orderId: string;data: ServiceOrderUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateOrderApiV1ServicesOrdersOrderIdPut>>,
+        TError,
+        {orderId: string;data: ServiceOrderUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateOrderApiV1ServicesOrdersOrderIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Submete ordem para aprovação.
  * @summary Submeter Ordem
  */
-const submitOrderApiV1ServicesOrdersOrderIdSubmitPost = <TData = AxiosResponse<ServiceOrderResponse>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/submit`,undefined,options
-    );
-  }
-/**
+export const submitOrderApiV1ServicesOrdersOrderIdSubmitPost = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/submit`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getSubmitOrderApiV1ServicesOrdersOrderIdSubmitPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitOrderApiV1ServicesOrdersOrderIdSubmitPost>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof submitOrderApiV1ServicesOrdersOrderIdSubmitPost>>, TError,{orderId: string}, TContext> => {
+
+const mutationKey = ['submitOrderApiV1ServicesOrdersOrderIdSubmitPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitOrderApiV1ServicesOrdersOrderIdSubmitPost>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  submitOrderApiV1ServicesOrdersOrderIdSubmitPost(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitOrderApiV1ServicesOrdersOrderIdSubmitPostMutationResult = NonNullable<Awaited<ReturnType<typeof submitOrderApiV1ServicesOrdersOrderIdSubmitPost>>>
+    
+    export type SubmitOrderApiV1ServicesOrdersOrderIdSubmitPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Submeter Ordem
+ */
+export const useSubmitOrderApiV1ServicesOrdersOrderIdSubmitPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitOrderApiV1ServicesOrdersOrderIdSubmitPost>>, TError,{orderId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitOrderApiV1ServicesOrdersOrderIdSubmitPost>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getSubmitOrderApiV1ServicesOrdersOrderIdSubmitPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova uma ordem de serviço.
  * @summary Aprovar Ordem
  */
-const approveOrderApiV1ServicesOrdersOrderIdApprovePost = <TData = AxiosResponse<ServiceOrderResponse>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/approve`,undefined,options
-    );
-  }
-/**
+export const approveOrderApiV1ServicesOrdersOrderIdApprovePost = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/approve`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getApproveOrderApiV1ServicesOrdersOrderIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveOrderApiV1ServicesOrdersOrderIdApprovePost>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveOrderApiV1ServicesOrdersOrderIdApprovePost>>, TError,{orderId: string}, TContext> => {
+
+const mutationKey = ['approveOrderApiV1ServicesOrdersOrderIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveOrderApiV1ServicesOrdersOrderIdApprovePost>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  approveOrderApiV1ServicesOrdersOrderIdApprovePost(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveOrderApiV1ServicesOrdersOrderIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveOrderApiV1ServicesOrdersOrderIdApprovePost>>>
+    
+    export type ApproveOrderApiV1ServicesOrdersOrderIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar Ordem
+ */
+export const useApproveOrderApiV1ServicesOrdersOrderIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveOrderApiV1ServicesOrdersOrderIdApprovePost>>, TError,{orderId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveOrderApiV1ServicesOrdersOrderIdApprovePost>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveOrderApiV1ServicesOrdersOrderIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita uma ordem de serviço.
  * @summary Rejeitar Ordem
  */
-const rejectOrderApiV1ServicesOrdersOrderIdRejectPost = <TData = AxiosResponse<ServiceOrderResponse>>(
+export const rejectOrderApiV1ServicesOrdersOrderIdRejectPost = (
     orderId: string,
-    params: RejectOrderApiV1ServicesOrdersOrderIdRejectPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/reject`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: RejectOrderApiV1ServicesOrdersOrderIdRejectPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/reject`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectOrderApiV1ServicesOrdersOrderIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectOrderApiV1ServicesOrdersOrderIdRejectPost>>, TError,{orderId: string;params: RejectOrderApiV1ServicesOrdersOrderIdRejectPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectOrderApiV1ServicesOrdersOrderIdRejectPost>>, TError,{orderId: string;params: RejectOrderApiV1ServicesOrdersOrderIdRejectPostParams}, TContext> => {
+
+const mutationKey = ['rejectOrderApiV1ServicesOrdersOrderIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectOrderApiV1ServicesOrdersOrderIdRejectPost>>, {orderId: string;params: RejectOrderApiV1ServicesOrdersOrderIdRejectPostParams}> = (props) => {
+          const {orderId,params} = props ?? {};
+
+          return  rejectOrderApiV1ServicesOrdersOrderIdRejectPost(orderId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectOrderApiV1ServicesOrdersOrderIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectOrderApiV1ServicesOrdersOrderIdRejectPost>>>
+    
+    export type RejectOrderApiV1ServicesOrdersOrderIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Rejeitar Ordem
+ */
+export const useRejectOrderApiV1ServicesOrdersOrderIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectOrderApiV1ServicesOrdersOrderIdRejectPost>>, TError,{orderId: string;params: RejectOrderApiV1ServicesOrdersOrderIdRejectPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectOrderApiV1ServicesOrdersOrderIdRejectPost>>,
+        TError,
+        {orderId: string;params: RejectOrderApiV1ServicesOrdersOrderIdRejectPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectOrderApiV1ServicesOrdersOrderIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Agenda uma ordem de serviço.
  * @summary Agendar Ordem
  */
-const scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost = <TData = AxiosResponse<ServiceOrderResponse>>(
+export const scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost = (
     orderId: string,
-    params: ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/schedule`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/schedule`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost>>, TError,{orderId: string;params: ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost>>, TError,{orderId: string;params: ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostParams}, TContext> => {
+
+const mutationKey = ['scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost>>, {orderId: string;params: ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostParams}> = (props) => {
+          const {orderId,params} = props ?? {};
+
+          return  scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost(orderId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostMutationResult = NonNullable<Awaited<ReturnType<typeof scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost>>>
+    
+    export type ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Agendar Ordem
+ */
+export const useScheduleOrderApiV1ServicesOrdersOrderIdSchedulePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost>>, TError,{orderId: string;params: ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost>>,
+        TError,
+        {orderId: string;params: ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Inicia uma ordem de serviço.
  * @summary Iniciar Ordem
  */
-const startOrderApiV1ServicesOrdersOrderIdStartPost = <TData = AxiosResponse<ServiceOrderResponse>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/start`,undefined,options
-    );
-  }
-/**
+export const startOrderApiV1ServicesOrdersOrderIdStartPost = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/start`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getStartOrderApiV1ServicesOrdersOrderIdStartPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startOrderApiV1ServicesOrdersOrderIdStartPost>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof startOrderApiV1ServicesOrdersOrderIdStartPost>>, TError,{orderId: string}, TContext> => {
+
+const mutationKey = ['startOrderApiV1ServicesOrdersOrderIdStartPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startOrderApiV1ServicesOrdersOrderIdStartPost>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  startOrderApiV1ServicesOrdersOrderIdStartPost(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartOrderApiV1ServicesOrdersOrderIdStartPostMutationResult = NonNullable<Awaited<ReturnType<typeof startOrderApiV1ServicesOrdersOrderIdStartPost>>>
+    
+    export type StartOrderApiV1ServicesOrdersOrderIdStartPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Iniciar Ordem
+ */
+export const useStartOrderApiV1ServicesOrdersOrderIdStartPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startOrderApiV1ServicesOrdersOrderIdStartPost>>, TError,{orderId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof startOrderApiV1ServicesOrdersOrderIdStartPost>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getStartOrderApiV1ServicesOrdersOrderIdStartPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Pausa uma ordem de serviço.
  * @summary Pausar Ordem
  */
-const pauseOrderApiV1ServicesOrdersOrderIdPausePost = <TData = AxiosResponse<ServiceOrderResponse>>(
+export const pauseOrderApiV1ServicesOrdersOrderIdPausePost = (
     orderId: string,
-    params: PauseOrderApiV1ServicesOrdersOrderIdPausePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/pause`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: PauseOrderApiV1ServicesOrdersOrderIdPausePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/pause`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getPauseOrderApiV1ServicesOrdersOrderIdPausePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pauseOrderApiV1ServicesOrdersOrderIdPausePost>>, TError,{orderId: string;params: PauseOrderApiV1ServicesOrdersOrderIdPausePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof pauseOrderApiV1ServicesOrdersOrderIdPausePost>>, TError,{orderId: string;params: PauseOrderApiV1ServicesOrdersOrderIdPausePostParams}, TContext> => {
+
+const mutationKey = ['pauseOrderApiV1ServicesOrdersOrderIdPausePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof pauseOrderApiV1ServicesOrdersOrderIdPausePost>>, {orderId: string;params: PauseOrderApiV1ServicesOrdersOrderIdPausePostParams}> = (props) => {
+          const {orderId,params} = props ?? {};
+
+          return  pauseOrderApiV1ServicesOrdersOrderIdPausePost(orderId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PauseOrderApiV1ServicesOrdersOrderIdPausePostMutationResult = NonNullable<Awaited<ReturnType<typeof pauseOrderApiV1ServicesOrdersOrderIdPausePost>>>
+    
+    export type PauseOrderApiV1ServicesOrdersOrderIdPausePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Pausar Ordem
+ */
+export const usePauseOrderApiV1ServicesOrdersOrderIdPausePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pauseOrderApiV1ServicesOrdersOrderIdPausePost>>, TError,{orderId: string;params: PauseOrderApiV1ServicesOrdersOrderIdPausePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof pauseOrderApiV1ServicesOrdersOrderIdPausePost>>,
+        TError,
+        {orderId: string;params: PauseOrderApiV1ServicesOrdersOrderIdPausePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getPauseOrderApiV1ServicesOrdersOrderIdPausePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retoma uma ordem pausada.
  * @summary Retomar Ordem
  */
-const resumeOrderApiV1ServicesOrdersOrderIdResumePost = <TData = AxiosResponse<ServiceOrderResponse>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/resume`,undefined,options
-    );
-  }
-/**
+export const resumeOrderApiV1ServicesOrdersOrderIdResumePost = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/resume`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getResumeOrderApiV1ServicesOrdersOrderIdResumePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resumeOrderApiV1ServicesOrdersOrderIdResumePost>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof resumeOrderApiV1ServicesOrdersOrderIdResumePost>>, TError,{orderId: string}, TContext> => {
+
+const mutationKey = ['resumeOrderApiV1ServicesOrdersOrderIdResumePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resumeOrderApiV1ServicesOrdersOrderIdResumePost>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  resumeOrderApiV1ServicesOrdersOrderIdResumePost(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResumeOrderApiV1ServicesOrdersOrderIdResumePostMutationResult = NonNullable<Awaited<ReturnType<typeof resumeOrderApiV1ServicesOrdersOrderIdResumePost>>>
+    
+    export type ResumeOrderApiV1ServicesOrdersOrderIdResumePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Retomar Ordem
+ */
+export const useResumeOrderApiV1ServicesOrdersOrderIdResumePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resumeOrderApiV1ServicesOrdersOrderIdResumePost>>, TError,{orderId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resumeOrderApiV1ServicesOrdersOrderIdResumePost>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getResumeOrderApiV1ServicesOrdersOrderIdResumePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Conclui uma ordem de serviço.
  * @summary Concluir Ordem
  */
-const completeOrderApiV1ServicesOrdersOrderIdCompletePost = <TData = AxiosResponse<ServiceOrderResponse>>(
+export const completeOrderApiV1ServicesOrdersOrderIdCompletePost = (
     orderId: string,
-    params?: CompleteOrderApiV1ServicesOrdersOrderIdCompletePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/complete`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: CompleteOrderApiV1ServicesOrdersOrderIdCompletePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/complete`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCompleteOrderApiV1ServicesOrdersOrderIdCompletePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeOrderApiV1ServicesOrdersOrderIdCompletePost>>, TError,{orderId: string;params?: CompleteOrderApiV1ServicesOrdersOrderIdCompletePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof completeOrderApiV1ServicesOrdersOrderIdCompletePost>>, TError,{orderId: string;params?: CompleteOrderApiV1ServicesOrdersOrderIdCompletePostParams}, TContext> => {
+
+const mutationKey = ['completeOrderApiV1ServicesOrdersOrderIdCompletePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeOrderApiV1ServicesOrdersOrderIdCompletePost>>, {orderId: string;params?: CompleteOrderApiV1ServicesOrdersOrderIdCompletePostParams}> = (props) => {
+          const {orderId,params} = props ?? {};
+
+          return  completeOrderApiV1ServicesOrdersOrderIdCompletePost(orderId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteOrderApiV1ServicesOrdersOrderIdCompletePostMutationResult = NonNullable<Awaited<ReturnType<typeof completeOrderApiV1ServicesOrdersOrderIdCompletePost>>>
+    
+    export type CompleteOrderApiV1ServicesOrdersOrderIdCompletePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Concluir Ordem
+ */
+export const useCompleteOrderApiV1ServicesOrdersOrderIdCompletePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeOrderApiV1ServicesOrdersOrderIdCompletePost>>, TError,{orderId: string;params?: CompleteOrderApiV1ServicesOrdersOrderIdCompletePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeOrderApiV1ServicesOrdersOrderIdCompletePost>>,
+        TError,
+        {orderId: string;params?: CompleteOrderApiV1ServicesOrdersOrderIdCompletePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCompleteOrderApiV1ServicesOrdersOrderIdCompletePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela uma ordem de serviço.
  * @summary Cancelar Ordem
  */
-const cancelOrderApiV1ServicesOrdersOrderIdCancelPost = <TData = AxiosResponse<ServiceOrderResponse>>(
+export const cancelOrderApiV1ServicesOrdersOrderIdCancelPost = (
     orderId: string,
-    params: CancelOrderApiV1ServicesOrdersOrderIdCancelPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/cancel`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CancelOrderApiV1ServicesOrdersOrderIdCancelPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/cancel`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCancelOrderApiV1ServicesOrdersOrderIdCancelPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOrderApiV1ServicesOrdersOrderIdCancelPost>>, TError,{orderId: string;params: CancelOrderApiV1ServicesOrdersOrderIdCancelPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelOrderApiV1ServicesOrdersOrderIdCancelPost>>, TError,{orderId: string;params: CancelOrderApiV1ServicesOrdersOrderIdCancelPostParams}, TContext> => {
+
+const mutationKey = ['cancelOrderApiV1ServicesOrdersOrderIdCancelPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelOrderApiV1ServicesOrdersOrderIdCancelPost>>, {orderId: string;params: CancelOrderApiV1ServicesOrdersOrderIdCancelPostParams}> = (props) => {
+          const {orderId,params} = props ?? {};
+
+          return  cancelOrderApiV1ServicesOrdersOrderIdCancelPost(orderId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelOrderApiV1ServicesOrdersOrderIdCancelPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelOrderApiV1ServicesOrdersOrderIdCancelPost>>>
+    
+    export type CancelOrderApiV1ServicesOrdersOrderIdCancelPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancelar Ordem
+ */
+export const useCancelOrderApiV1ServicesOrdersOrderIdCancelPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOrderApiV1ServicesOrdersOrderIdCancelPost>>, TError,{orderId: string;params: CancelOrderApiV1ServicesOrdersOrderIdCancelPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelOrderApiV1ServicesOrdersOrderIdCancelPost>>,
+        TError,
+        {orderId: string;params: CancelOrderApiV1ServicesOrdersOrderIdCancelPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelOrderApiV1ServicesOrdersOrderIdCancelPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Avalia uma ordem de serviço.
  * @summary Avaliar Ordem
  */
-const rateOrderApiV1ServicesOrdersOrderIdRatePost = <TData = AxiosResponse<ServiceOrderResponse>>(
+export const rateOrderApiV1ServicesOrdersOrderIdRatePost = (
     orderId: string,
-    params: RateOrderApiV1ServicesOrdersOrderIdRatePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/orders/${orderId}/rate`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: RateOrderApiV1ServicesOrdersOrderIdRatePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceOrderResponse>(
+      {url: `/api/v1/services/orders/${orderId}/rate`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getRateOrderApiV1ServicesOrdersOrderIdRatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rateOrderApiV1ServicesOrdersOrderIdRatePost>>, TError,{orderId: string;params: RateOrderApiV1ServicesOrdersOrderIdRatePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rateOrderApiV1ServicesOrdersOrderIdRatePost>>, TError,{orderId: string;params: RateOrderApiV1ServicesOrdersOrderIdRatePostParams}, TContext> => {
+
+const mutationKey = ['rateOrderApiV1ServicesOrdersOrderIdRatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rateOrderApiV1ServicesOrdersOrderIdRatePost>>, {orderId: string;params: RateOrderApiV1ServicesOrdersOrderIdRatePostParams}> = (props) => {
+          const {orderId,params} = props ?? {};
+
+          return  rateOrderApiV1ServicesOrdersOrderIdRatePost(orderId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RateOrderApiV1ServicesOrdersOrderIdRatePostMutationResult = NonNullable<Awaited<ReturnType<typeof rateOrderApiV1ServicesOrdersOrderIdRatePost>>>
+    
+    export type RateOrderApiV1ServicesOrdersOrderIdRatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Avaliar Ordem
+ */
+export const useRateOrderApiV1ServicesOrdersOrderIdRatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rateOrderApiV1ServicesOrdersOrderIdRatePost>>, TError,{orderId: string;params: RateOrderApiV1ServicesOrdersOrderIdRatePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rateOrderApiV1ServicesOrdersOrderIdRatePost>>,
+        TError,
+        {orderId: string;params: RateOrderApiV1ServicesOrdersOrderIdRatePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getRateOrderApiV1ServicesOrdersOrderIdRatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista execuções de serviço.
  * @summary Listar Execuções
  */
-const listExecutionsApiV1ServicesExecutionsGet = <TData = AxiosResponse<ServiceExecutionResponse[]>>(
-    params?: ListExecutionsApiV1ServicesExecutionsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/executions`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listExecutionsApiV1ServicesExecutionsGet = (
+    params?: ListExecutionsApiV1ServicesExecutionsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse[]>(
+      {url: `/api/v1/services/executions`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListExecutionsApiV1ServicesExecutionsGetQueryKey = (params?: ListExecutionsApiV1ServicesExecutionsGetParams,) => {
+    return [
+    `/api/v1/services/executions`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListExecutionsApiV1ServicesExecutionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError = HTTPValidationError>(params?: ListExecutionsApiV1ServicesExecutionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListExecutionsApiV1ServicesExecutionsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>> = ({ signal }) => listExecutionsApiV1ServicesExecutionsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListExecutionsApiV1ServicesExecutionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>>
+export type ListExecutionsApiV1ServicesExecutionsGetQueryError = HTTPValidationError
+
+
+export function useListExecutionsApiV1ServicesExecutionsGet<TData = Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListExecutionsApiV1ServicesExecutionsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExecutionsApiV1ServicesExecutionsGet<TData = Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError = HTTPValidationError>(
+ params?: ListExecutionsApiV1ServicesExecutionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExecutionsApiV1ServicesExecutionsGet<TData = Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError = HTTPValidationError>(
+ params?: ListExecutionsApiV1ServicesExecutionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Execuções
+ */
+
+export function useListExecutionsApiV1ServicesExecutionsGet<TData = Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError = HTTPValidationError>(
+ params?: ListExecutionsApiV1ServicesExecutionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExecutionsApiV1ServicesExecutionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListExecutionsApiV1ServicesExecutionsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria uma nova execução de serviço.
  * @summary Criar Execução
  */
-const createExecutionApiV1ServicesExecutionsPost = <TData = AxiosResponse<ServiceExecutionResponse>>(
-    serviceExecutionCreate: ServiceExecutionCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions`,
-      serviceExecutionCreate,options
-    );
-  }
-/**
+export const createExecutionApiV1ServicesExecutionsPost = (
+    serviceExecutionCreate: ServiceExecutionCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: serviceExecutionCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateExecutionApiV1ServicesExecutionsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExecutionApiV1ServicesExecutionsPost>>, TError,{data: ServiceExecutionCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createExecutionApiV1ServicesExecutionsPost>>, TError,{data: ServiceExecutionCreate}, TContext> => {
+
+const mutationKey = ['createExecutionApiV1ServicesExecutionsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createExecutionApiV1ServicesExecutionsPost>>, {data: ServiceExecutionCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createExecutionApiV1ServicesExecutionsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateExecutionApiV1ServicesExecutionsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createExecutionApiV1ServicesExecutionsPost>>>
+    export type CreateExecutionApiV1ServicesExecutionsPostMutationBody = ServiceExecutionCreate
+    export type CreateExecutionApiV1ServicesExecutionsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Execução
+ */
+export const useCreateExecutionApiV1ServicesExecutionsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createExecutionApiV1ServicesExecutionsPost>>, TError,{data: ServiceExecutionCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createExecutionApiV1ServicesExecutionsPost>>,
+        TError,
+        {data: ServiceExecutionCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateExecutionApiV1ServicesExecutionsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém detalhes de uma execução.
  * @summary Obter Execução
  */
-const getExecutionApiV1ServicesExecutionsExecutionIdGet = <TData = AxiosResponse<ServiceExecutionResponse>>(
-    executionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/executions/${executionId}`,options
-    );
-  }
+export const getExecutionApiV1ServicesExecutionsExecutionIdGet = (
+    executionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetExecutionApiV1ServicesExecutionsExecutionIdGetQueryKey = (executionId?: string,) => {
+    return [
+    `/api/v1/services/executions/${executionId}`
+    ] as const;
+    }
+
+    
+export const getGetExecutionApiV1ServicesExecutionsExecutionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError = HTTPValidationError>(executionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExecutionApiV1ServicesExecutionsExecutionIdGetQueryKey(executionId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>> = ({ signal }) => getExecutionApiV1ServicesExecutionsExecutionIdGet(executionId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(executionId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetExecutionApiV1ServicesExecutionsExecutionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>>
+export type GetExecutionApiV1ServicesExecutionsExecutionIdGetQueryError = HTTPValidationError
+
+
+export function useGetExecutionApiV1ServicesExecutionsExecutionIdGet<TData = Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError = HTTPValidationError>(
+ executionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExecutionApiV1ServicesExecutionsExecutionIdGet<TData = Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError = HTTPValidationError>(
+ executionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExecutionApiV1ServicesExecutionsExecutionIdGet<TData = Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError = HTTPValidationError>(
+ executionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Execução
+ */
+
+export function useGetExecutionApiV1ServicesExecutionsExecutionIdGet<TData = Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError = HTTPValidationError>(
+ executionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutionApiV1ServicesExecutionsExecutionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetExecutionApiV1ServicesExecutionsExecutionIdGetQueryOptions(executionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Inicia deslocamento para execução.
  * @summary Iniciar Deslocamento
  */
-const startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost = <TData = AxiosResponse<ServiceExecutionResponse>>(
-    executionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/start-travel`,undefined,options
-    );
-  }
-/**
+export const startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost = (
+    executionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/start-travel`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getStartTravelApiV1ServicesExecutionsExecutionIdStartTravelPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost>>, TError,{executionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost>>, TError,{executionId: string}, TContext> => {
+
+const mutationKey = ['startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost>>, {executionId: string}> = (props) => {
+          const {executionId} = props ?? {};
+
+          return  startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost(executionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartTravelApiV1ServicesExecutionsExecutionIdStartTravelPostMutationResult = NonNullable<Awaited<ReturnType<typeof startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost>>>
+    
+    export type StartTravelApiV1ServicesExecutionsExecutionIdStartTravelPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Iniciar Deslocamento
+ */
+export const useStartTravelApiV1ServicesExecutionsExecutionIdStartTravelPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost>>, TError,{executionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost>>,
+        TError,
+        {executionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getStartTravelApiV1ServicesExecutionsExecutionIdStartTravelPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Registra chegada no local.
  * @summary Registrar Chegada
  */
-const arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost = <TData = AxiosResponse<ServiceExecutionResponse>>(
-    executionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/arrive`,undefined,options
-    );
-  }
-/**
+export const arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost = (
+    executionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/arrive`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getArriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost>>, TError,{executionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost>>, TError,{executionId: string}, TContext> => {
+
+const mutationKey = ['arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost>>, {executionId: string}> = (props) => {
+          const {executionId} = props ?? {};
+
+          return  arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost(executionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePostMutationResult = NonNullable<Awaited<ReturnType<typeof arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost>>>
+    
+    export type ArriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Registrar Chegada
+ */
+export const useArriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost>>, TError,{executionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost>>,
+        TError,
+        {executionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getArriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Inicia execução do serviço.
  * @summary Iniciar Execução
  */
-const startExecutionApiV1ServicesExecutionsExecutionIdStartPost = <TData = AxiosResponse<ServiceExecutionResponse>>(
-    executionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/start`,undefined,options
-    );
-  }
-/**
+export const startExecutionApiV1ServicesExecutionsExecutionIdStartPost = (
+    executionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/start`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getStartExecutionApiV1ServicesExecutionsExecutionIdStartPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startExecutionApiV1ServicesExecutionsExecutionIdStartPost>>, TError,{executionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof startExecutionApiV1ServicesExecutionsExecutionIdStartPost>>, TError,{executionId: string}, TContext> => {
+
+const mutationKey = ['startExecutionApiV1ServicesExecutionsExecutionIdStartPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startExecutionApiV1ServicesExecutionsExecutionIdStartPost>>, {executionId: string}> = (props) => {
+          const {executionId} = props ?? {};
+
+          return  startExecutionApiV1ServicesExecutionsExecutionIdStartPost(executionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartExecutionApiV1ServicesExecutionsExecutionIdStartPostMutationResult = NonNullable<Awaited<ReturnType<typeof startExecutionApiV1ServicesExecutionsExecutionIdStartPost>>>
+    
+    export type StartExecutionApiV1ServicesExecutionsExecutionIdStartPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Iniciar Execução
+ */
+export const useStartExecutionApiV1ServicesExecutionsExecutionIdStartPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startExecutionApiV1ServicesExecutionsExecutionIdStartPost>>, TError,{executionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof startExecutionApiV1ServicesExecutionsExecutionIdStartPost>>,
+        TError,
+        {executionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getStartExecutionApiV1ServicesExecutionsExecutionIdStartPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Pausa a execução.
  * @summary Pausar Execução
  */
-const pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost = <TData = AxiosResponse<ServiceExecutionResponse>>(
+export const pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost = (
     executionId: string,
-    params: PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/pause`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/pause`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getPauseExecutionApiV1ServicesExecutionsExecutionIdPausePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost>>, TError,{executionId: string;params: PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost>>, TError,{executionId: string;params: PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostParams}, TContext> => {
+
+const mutationKey = ['pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost>>, {executionId: string;params: PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostParams}> = (props) => {
+          const {executionId,params} = props ?? {};
+
+          return  pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost(executionId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostMutationResult = NonNullable<Awaited<ReturnType<typeof pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost>>>
+    
+    export type PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Pausar Execução
+ */
+export const usePauseExecutionApiV1ServicesExecutionsExecutionIdPausePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost>>, TError,{executionId: string;params: PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost>>,
+        TError,
+        {executionId: string;params: PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getPauseExecutionApiV1ServicesExecutionsExecutionIdPausePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retoma a execução.
  * @summary Retomar Execução
  */
-const resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost = <TData = AxiosResponse<ServiceExecutionResponse>>(
-    executionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/resume`,undefined,options
-    );
-  }
-/**
+export const resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost = (
+    executionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/resume`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getResumeExecutionApiV1ServicesExecutionsExecutionIdResumePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost>>, TError,{executionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost>>, TError,{executionId: string}, TContext> => {
+
+const mutationKey = ['resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost>>, {executionId: string}> = (props) => {
+          const {executionId} = props ?? {};
+
+          return  resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost(executionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResumeExecutionApiV1ServicesExecutionsExecutionIdResumePostMutationResult = NonNullable<Awaited<ReturnType<typeof resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost>>>
+    
+    export type ResumeExecutionApiV1ServicesExecutionsExecutionIdResumePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Retomar Execução
+ */
+export const useResumeExecutionApiV1ServicesExecutionsExecutionIdResumePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost>>, TError,{executionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost>>,
+        TError,
+        {executionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getResumeExecutionApiV1ServicesExecutionsExecutionIdResumePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Finaliza a execução.
  * @summary Finalizar Execução
  */
-const finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost = <TData = AxiosResponse<ServiceExecutionResponse>>(
+export const finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost = (
     executionId: string,
-    params?: FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/finish`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/finish`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getFinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost>>, TError,{executionId: string;params?: FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost>>, TError,{executionId: string;params?: FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostParams}, TContext> => {
+
+const mutationKey = ['finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost>>, {executionId: string;params?: FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostParams}> = (props) => {
+          const {executionId,params} = props ?? {};
+
+          return  finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost(executionId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostMutationResult = NonNullable<Awaited<ReturnType<typeof finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost>>>
+    
+    export type FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Finalizar Execução
+ */
+export const useFinishExecutionApiV1ServicesExecutionsExecutionIdFinishPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost>>, TError,{executionId: string;params?: FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost>>,
+        TError,
+        {executionId: string;params?: FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getFinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Adiciona material à execução.
  * @summary Adicionar Material
  */
-const addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost = <TData = AxiosResponse<ServiceExecutionResponse>>(
+export const addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost = (
     executionId: string,
-    params: AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/materials`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/materials`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getAddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost>>, TError,{executionId: string;params: AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost>>, TError,{executionId: string;params: AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams}, TContext> => {
+
+const mutationKey = ['addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost>>, {executionId: string;params: AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams}> = (props) => {
+          const {executionId,params} = props ?? {};
+
+          return  addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost(executionId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostMutationResult = NonNullable<Awaited<ReturnType<typeof addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost>>>
+    
+    export type AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Adicionar Material
+ */
+export const useAddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost>>, TError,{executionId: string;params: AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost>>,
+        TError,
+        {executionId: string;params: AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getAddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Atualiza item do checklist.
  * @summary Atualizar Checklist
  */
-const updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost = <TData = AxiosResponse<ServiceExecutionResponse>>(
+export const updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost = (
     executionId: string,
     itemIndex: number,
-    params: UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/checklist/${itemIndex}`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/checklist/${itemIndex}`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getUpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost>>, TError,{executionId: string;itemIndex: number;params: UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost>>, TError,{executionId: string;itemIndex: number;params: UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams}, TContext> => {
+
+const mutationKey = ['updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost>>, {executionId: string;itemIndex: number;params: UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams}> = (props) => {
+          const {executionId,itemIndex,params} = props ?? {};
+
+          return  updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost(executionId,itemIndex,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostMutationResult = NonNullable<Awaited<ReturnType<typeof updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost>>>
+    
+    export type UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Checklist
+ */
+export const useUpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost>>, TError,{executionId: string;itemIndex: number;params: UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost>>,
+        TError,
+        {executionId: string;itemIndex: number;params: UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Adiciona assinatura à execução.
  * @summary Adicionar Assinatura
  */
-const addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost = <TData = AxiosResponse<ServiceExecutionResponse>>(
+export const addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost = (
     executionId: string,
-    params: AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/executions/${executionId}/signatures`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceExecutionResponse>(
+      {url: `/api/v1/services/executions/${executionId}/signatures`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getAddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost>>, TError,{executionId: string;params: AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost>>, TError,{executionId: string;params: AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostParams}, TContext> => {
+
+const mutationKey = ['addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost>>, {executionId: string;params: AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostParams}> = (props) => {
+          const {executionId,params} = props ?? {};
+
+          return  addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost(executionId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostMutationResult = NonNullable<Awaited<ReturnType<typeof addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost>>>
+    
+    export type AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Adicionar Assinatura
+ */
+export const useAddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost>>, TError,{executionId: string;params: AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost>>,
+        TError,
+        {executionId: string;params: AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getAddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista relatórios de serviço.
  * @summary Listar Relatórios
  */
-const listReportsApiV1ServicesReportsGet = <TData = AxiosResponse<ServiceReportResponse[]>>(
-    params?: ListReportsApiV1ServicesReportsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/reports`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listReportsApiV1ServicesReportsGet = (
+    params?: ListReportsApiV1ServicesReportsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceReportResponse[]>(
+      {url: `/api/v1/services/reports`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListReportsApiV1ServicesReportsGetQueryKey = (params?: ListReportsApiV1ServicesReportsGetParams,) => {
+    return [
+    `/api/v1/services/reports`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListReportsApiV1ServicesReportsGetQueryOptions = <TData = Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError = HTTPValidationError>(params?: ListReportsApiV1ServicesReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReportsApiV1ServicesReportsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>> = ({ signal }) => listReportsApiV1ServicesReportsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListReportsApiV1ServicesReportsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>>
+export type ListReportsApiV1ServicesReportsGetQueryError = HTTPValidationError
+
+
+export function useListReportsApiV1ServicesReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListReportsApiV1ServicesReportsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReportsApiV1ServicesReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError = HTTPValidationError>(
+ params?: ListReportsApiV1ServicesReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReportsApiV1ServicesReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError = HTTPValidationError>(
+ params?: ListReportsApiV1ServicesReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Relatórios
+ */
+
+export function useListReportsApiV1ServicesReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError = HTTPValidationError>(
+ params?: ListReportsApiV1ServicesReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1ServicesReportsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListReportsApiV1ServicesReportsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo relatório.
  * @summary Criar Relatório
  */
-const createReportApiV1ServicesReportsPost = <TData = AxiosResponse<ServiceReportResponse>>(
-    serviceReportCreate: ServiceReportCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/reports`,
-      serviceReportCreate,options
-    );
-  }
-/**
+export const createReportApiV1ServicesReportsPost = (
+    serviceReportCreate: ServiceReportCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceReportResponse>(
+      {url: `/api/v1/services/reports`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: serviceReportCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateReportApiV1ServicesReportsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReportApiV1ServicesReportsPost>>, TError,{data: ServiceReportCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createReportApiV1ServicesReportsPost>>, TError,{data: ServiceReportCreate}, TContext> => {
+
+const mutationKey = ['createReportApiV1ServicesReportsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReportApiV1ServicesReportsPost>>, {data: ServiceReportCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createReportApiV1ServicesReportsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReportApiV1ServicesReportsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createReportApiV1ServicesReportsPost>>>
+    export type CreateReportApiV1ServicesReportsPostMutationBody = ServiceReportCreate
+    export type CreateReportApiV1ServicesReportsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Relatório
+ */
+export const useCreateReportApiV1ServicesReportsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReportApiV1ServicesReportsPost>>, TError,{data: ServiceReportCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createReportApiV1ServicesReportsPost>>,
+        TError,
+        {data: ServiceReportCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateReportApiV1ServicesReportsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém detalhes de um relatório.
  * @summary Obter Relatório
  */
-const getReportApiV1ServicesReportsReportIdGet = <TData = AxiosResponse<ServiceReportResponse>>(
-    reportId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/reports/${reportId}`,options
-    );
-  }
+export const getReportApiV1ServicesReportsReportIdGet = (
+    reportId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceReportResponse>(
+      {url: `/api/v1/services/reports/${reportId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReportApiV1ServicesReportsReportIdGetQueryKey = (reportId?: string,) => {
+    return [
+    `/api/v1/services/reports/${reportId}`
+    ] as const;
+    }
+
+    
+export const getGetReportApiV1ServicesReportsReportIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError = HTTPValidationError>(reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportApiV1ServicesReportsReportIdGetQueryKey(reportId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>> = ({ signal }) => getReportApiV1ServicesReportsReportIdGet(reportId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(reportId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReportApiV1ServicesReportsReportIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>>
+export type GetReportApiV1ServicesReportsReportIdGetQueryError = HTTPValidationError
+
+
+export function useGetReportApiV1ServicesReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportApiV1ServicesReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportApiV1ServicesReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Relatório
+ */
+
+export function useGetReportApiV1ServicesReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1ServicesReportsReportIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReportApiV1ServicesReportsReportIdGetQueryOptions(reportId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza um relatório.
  * @summary Atualizar Relatório
  */
-const updateReportApiV1ServicesReportsReportIdPut = <TData = AxiosResponse<ServiceReportResponse>>(
+export const updateReportApiV1ServicesReportsReportIdPut = (
     reportId: string,
-    serviceReportUpdate: ServiceReportUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/services/reports/${reportId}`,
-      serviceReportUpdate,options
-    );
-  }
-/**
+    serviceReportUpdate: ServiceReportUpdate,
+ ) => {
+      
+      
+      return customInstance<ServiceReportResponse>(
+      {url: `/api/v1/services/reports/${reportId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: serviceReportUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateReportApiV1ServicesReportsReportIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReportApiV1ServicesReportsReportIdPut>>, TError,{reportId: string;data: ServiceReportUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateReportApiV1ServicesReportsReportIdPut>>, TError,{reportId: string;data: ServiceReportUpdate}, TContext> => {
+
+const mutationKey = ['updateReportApiV1ServicesReportsReportIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReportApiV1ServicesReportsReportIdPut>>, {reportId: string;data: ServiceReportUpdate}> = (props) => {
+          const {reportId,data} = props ?? {};
+
+          return  updateReportApiV1ServicesReportsReportIdPut(reportId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReportApiV1ServicesReportsReportIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateReportApiV1ServicesReportsReportIdPut>>>
+    export type UpdateReportApiV1ServicesReportsReportIdPutMutationBody = ServiceReportUpdate
+    export type UpdateReportApiV1ServicesReportsReportIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Relatório
+ */
+export const useUpdateReportApiV1ServicesReportsReportIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReportApiV1ServicesReportsReportIdPut>>, TError,{reportId: string;data: ServiceReportUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateReportApiV1ServicesReportsReportIdPut>>,
+        TError,
+        {reportId: string;data: ServiceReportUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateReportApiV1ServicesReportsReportIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Finaliza um relatório.
  * @summary Finalizar Relatório
  */
-const finalizeReportApiV1ServicesReportsReportIdFinalizePost = <TData = AxiosResponse<ServiceReportResponse>>(
-    reportId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/reports/${reportId}/finalize`,undefined,options
-    );
-  }
-/**
+export const finalizeReportApiV1ServicesReportsReportIdFinalizePost = (
+    reportId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceReportResponse>(
+      {url: `/api/v1/services/reports/${reportId}/finalize`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getFinalizeReportApiV1ServicesReportsReportIdFinalizePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeReportApiV1ServicesReportsReportIdFinalizePost>>, TError,{reportId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof finalizeReportApiV1ServicesReportsReportIdFinalizePost>>, TError,{reportId: string}, TContext> => {
+
+const mutationKey = ['finalizeReportApiV1ServicesReportsReportIdFinalizePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof finalizeReportApiV1ServicesReportsReportIdFinalizePost>>, {reportId: string}> = (props) => {
+          const {reportId} = props ?? {};
+
+          return  finalizeReportApiV1ServicesReportsReportIdFinalizePost(reportId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FinalizeReportApiV1ServicesReportsReportIdFinalizePostMutationResult = NonNullable<Awaited<ReturnType<typeof finalizeReportApiV1ServicesReportsReportIdFinalizePost>>>
+    
+    export type FinalizeReportApiV1ServicesReportsReportIdFinalizePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Finalizar Relatório
+ */
+export const useFinalizeReportApiV1ServicesReportsReportIdFinalizePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeReportApiV1ServicesReportsReportIdFinalizePost>>, TError,{reportId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof finalizeReportApiV1ServicesReportsReportIdFinalizePost>>,
+        TError,
+        {reportId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getFinalizeReportApiV1ServicesReportsReportIdFinalizePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Revisa um relatório.
  * @summary Revisar Relatório
  */
-const reviewReportApiV1ServicesReportsReportIdReviewPost = <TData = AxiosResponse<ServiceReportResponse>>(
+export const reviewReportApiV1ServicesReportsReportIdReviewPost = (
     reportId: string,
-    params: ReviewReportApiV1ServicesReportsReportIdReviewPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/reports/${reportId}/review`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ReviewReportApiV1ServicesReportsReportIdReviewPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceReportResponse>(
+      {url: `/api/v1/services/reports/${reportId}/review`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getReviewReportApiV1ServicesReportsReportIdReviewPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewReportApiV1ServicesReportsReportIdReviewPost>>, TError,{reportId: string;params: ReviewReportApiV1ServicesReportsReportIdReviewPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reviewReportApiV1ServicesReportsReportIdReviewPost>>, TError,{reportId: string;params: ReviewReportApiV1ServicesReportsReportIdReviewPostParams}, TContext> => {
+
+const mutationKey = ['reviewReportApiV1ServicesReportsReportIdReviewPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewReportApiV1ServicesReportsReportIdReviewPost>>, {reportId: string;params: ReviewReportApiV1ServicesReportsReportIdReviewPostParams}> = (props) => {
+          const {reportId,params} = props ?? {};
+
+          return  reviewReportApiV1ServicesReportsReportIdReviewPost(reportId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewReportApiV1ServicesReportsReportIdReviewPostMutationResult = NonNullable<Awaited<ReturnType<typeof reviewReportApiV1ServicesReportsReportIdReviewPost>>>
+    
+    export type ReviewReportApiV1ServicesReportsReportIdReviewPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Revisar Relatório
+ */
+export const useReviewReportApiV1ServicesReportsReportIdReviewPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewReportApiV1ServicesReportsReportIdReviewPost>>, TError,{reportId: string;params: ReviewReportApiV1ServicesReportsReportIdReviewPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewReportApiV1ServicesReportsReportIdReviewPost>>,
+        TError,
+        {reportId: string;params: ReviewReportApiV1ServicesReportsReportIdReviewPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getReviewReportApiV1ServicesReportsReportIdReviewPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova um relatório.
  * @summary Aprovar Relatório
  */
-const approveReportApiV1ServicesReportsReportIdApprovePost = <TData = AxiosResponse<ServiceReportResponse>>(
+export const approveReportApiV1ServicesReportsReportIdApprovePost = (
     reportId: string,
-    params: ApproveReportApiV1ServicesReportsReportIdApprovePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/reports/${reportId}/approve`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ApproveReportApiV1ServicesReportsReportIdApprovePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceReportResponse>(
+      {url: `/api/v1/services/reports/${reportId}/approve`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveReportApiV1ServicesReportsReportIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveReportApiV1ServicesReportsReportIdApprovePost>>, TError,{reportId: string;params: ApproveReportApiV1ServicesReportsReportIdApprovePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveReportApiV1ServicesReportsReportIdApprovePost>>, TError,{reportId: string;params: ApproveReportApiV1ServicesReportsReportIdApprovePostParams}, TContext> => {
+
+const mutationKey = ['approveReportApiV1ServicesReportsReportIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveReportApiV1ServicesReportsReportIdApprovePost>>, {reportId: string;params: ApproveReportApiV1ServicesReportsReportIdApprovePostParams}> = (props) => {
+          const {reportId,params} = props ?? {};
+
+          return  approveReportApiV1ServicesReportsReportIdApprovePost(reportId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveReportApiV1ServicesReportsReportIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveReportApiV1ServicesReportsReportIdApprovePost>>>
+    
+    export type ApproveReportApiV1ServicesReportsReportIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar Relatório
+ */
+export const useApproveReportApiV1ServicesReportsReportIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveReportApiV1ServicesReportsReportIdApprovePost>>, TError,{reportId: string;params: ApproveReportApiV1ServicesReportsReportIdApprovePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveReportApiV1ServicesReportsReportIdApprovePost>>,
+        TError,
+        {reportId: string;params: ApproveReportApiV1ServicesReportsReportIdApprovePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveReportApiV1ServicesReportsReportIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Marca relatório como enviado.
  * @summary Enviar Relatório
  */
-const sendReportApiV1ServicesReportsReportIdSendPost = <TData = AxiosResponse<ServiceReportResponse>>(
+export const sendReportApiV1ServicesReportsReportIdSendPost = (
     reportId: string,
-    params: SendReportApiV1ServicesReportsReportIdSendPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/reports/${reportId}/send`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: SendReportApiV1ServicesReportsReportIdSendPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceReportResponse>(
+      {url: `/api/v1/services/reports/${reportId}/send`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getSendReportApiV1ServicesReportsReportIdSendPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendReportApiV1ServicesReportsReportIdSendPost>>, TError,{reportId: string;params: SendReportApiV1ServicesReportsReportIdSendPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof sendReportApiV1ServicesReportsReportIdSendPost>>, TError,{reportId: string;params: SendReportApiV1ServicesReportsReportIdSendPostParams}, TContext> => {
+
+const mutationKey = ['sendReportApiV1ServicesReportsReportIdSendPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendReportApiV1ServicesReportsReportIdSendPost>>, {reportId: string;params: SendReportApiV1ServicesReportsReportIdSendPostParams}> = (props) => {
+          const {reportId,params} = props ?? {};
+
+          return  sendReportApiV1ServicesReportsReportIdSendPost(reportId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendReportApiV1ServicesReportsReportIdSendPostMutationResult = NonNullable<Awaited<ReturnType<typeof sendReportApiV1ServicesReportsReportIdSendPost>>>
+    
+    export type SendReportApiV1ServicesReportsReportIdSendPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Enviar Relatório
+ */
+export const useSendReportApiV1ServicesReportsReportIdSendPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendReportApiV1ServicesReportsReportIdSendPost>>, TError,{reportId: string;params: SendReportApiV1ServicesReportsReportIdSendPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sendReportApiV1ServicesReportsReportIdSendPost>>,
+        TError,
+        {reportId: string;params: SendReportApiV1ServicesReportsReportIdSendPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getSendReportApiV1ServicesReportsReportIdSendPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista configurações de SLA.
  * @summary Listar SLAs
  */
-const listSlaConfigsApiV1ServicesSlaConfigsGet = <TData = AxiosResponse<SLAConfigResponse[]>>(
-    params?: ListSlaConfigsApiV1ServicesSlaConfigsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/sla-configs`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listSlaConfigsApiV1ServicesSlaConfigsGet = (
+    params?: ListSlaConfigsApiV1ServicesSlaConfigsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SLAConfigResponse[]>(
+      {url: `/api/v1/services/sla-configs`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListSlaConfigsApiV1ServicesSlaConfigsGetQueryKey = (params?: ListSlaConfigsApiV1ServicesSlaConfigsGetParams,) => {
+    return [
+    `/api/v1/services/sla-configs`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListSlaConfigsApiV1ServicesSlaConfigsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError = HTTPValidationError>(params?: ListSlaConfigsApiV1ServicesSlaConfigsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSlaConfigsApiV1ServicesSlaConfigsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>> = ({ signal }) => listSlaConfigsApiV1ServicesSlaConfigsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListSlaConfigsApiV1ServicesSlaConfigsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>>
+export type ListSlaConfigsApiV1ServicesSlaConfigsGetQueryError = HTTPValidationError
+
+
+export function useListSlaConfigsApiV1ServicesSlaConfigsGet<TData = Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListSlaConfigsApiV1ServicesSlaConfigsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSlaConfigsApiV1ServicesSlaConfigsGet<TData = Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError = HTTPValidationError>(
+ params?: ListSlaConfigsApiV1ServicesSlaConfigsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSlaConfigsApiV1ServicesSlaConfigsGet<TData = Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError = HTTPValidationError>(
+ params?: ListSlaConfigsApiV1ServicesSlaConfigsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar SLAs
+ */
+
+export function useListSlaConfigsApiV1ServicesSlaConfigsGet<TData = Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError = HTTPValidationError>(
+ params?: ListSlaConfigsApiV1ServicesSlaConfigsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSlaConfigsApiV1ServicesSlaConfigsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListSlaConfigsApiV1ServicesSlaConfigsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria uma nova configuração de SLA.
  * @summary Criar SLA
  */
-const createSlaConfigApiV1ServicesSlaConfigsPost = <TData = AxiosResponse<SLAConfigResponse>>(
-    sLAConfigCreate: SLAConfigCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/sla-configs`,
-      sLAConfigCreate,options
-    );
-  }
-/**
+export const createSlaConfigApiV1ServicesSlaConfigsPost = (
+    sLAConfigCreate: SLAConfigCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SLAConfigResponse>(
+      {url: `/api/v1/services/sla-configs`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sLAConfigCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateSlaConfigApiV1ServicesSlaConfigsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSlaConfigApiV1ServicesSlaConfigsPost>>, TError,{data: SLAConfigCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createSlaConfigApiV1ServicesSlaConfigsPost>>, TError,{data: SLAConfigCreate}, TContext> => {
+
+const mutationKey = ['createSlaConfigApiV1ServicesSlaConfigsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSlaConfigApiV1ServicesSlaConfigsPost>>, {data: SLAConfigCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSlaConfigApiV1ServicesSlaConfigsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSlaConfigApiV1ServicesSlaConfigsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createSlaConfigApiV1ServicesSlaConfigsPost>>>
+    export type CreateSlaConfigApiV1ServicesSlaConfigsPostMutationBody = SLAConfigCreate
+    export type CreateSlaConfigApiV1ServicesSlaConfigsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar SLA
+ */
+export const useCreateSlaConfigApiV1ServicesSlaConfigsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSlaConfigApiV1ServicesSlaConfigsPost>>, TError,{data: SLAConfigCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSlaConfigApiV1ServicesSlaConfigsPost>>,
+        TError,
+        {data: SLAConfigCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateSlaConfigApiV1ServicesSlaConfigsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém detalhes de um SLA.
  * @summary Obter SLA
  */
-const getSlaConfigApiV1ServicesSlaConfigsSlaIdGet = <TData = AxiosResponse<SLAConfigResponse>>(
-    slaId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/sla-configs/${slaId}`,options
-    );
-  }
+export const getSlaConfigApiV1ServicesSlaConfigsSlaIdGet = (
+    slaId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SLAConfigResponse>(
+      {url: `/api/v1/services/sla-configs/${slaId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetSlaConfigApiV1ServicesSlaConfigsSlaIdGetQueryKey = (slaId?: string,) => {
+    return [
+    `/api/v1/services/sla-configs/${slaId}`
+    ] as const;
+    }
+
+    
+export const getGetSlaConfigApiV1ServicesSlaConfigsSlaIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError = HTTPValidationError>(slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSlaConfigApiV1ServicesSlaConfigsSlaIdGetQueryKey(slaId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>> = ({ signal }) => getSlaConfigApiV1ServicesSlaConfigsSlaIdGet(slaId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(slaId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSlaConfigApiV1ServicesSlaConfigsSlaIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>>
+export type GetSlaConfigApiV1ServicesSlaConfigsSlaIdGetQueryError = HTTPValidationError
+
+
+export function useGetSlaConfigApiV1ServicesSlaConfigsSlaIdGet<TData = Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSlaConfigApiV1ServicesSlaConfigsSlaIdGet<TData = Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSlaConfigApiV1ServicesSlaConfigsSlaIdGet<TData = Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter SLA
+ */
+
+export function useGetSlaConfigApiV1ServicesSlaConfigsSlaIdGet<TData = Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaConfigApiV1ServicesSlaConfigsSlaIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSlaConfigApiV1ServicesSlaConfigsSlaIdGetQueryOptions(slaId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma configuração de SLA.
  * @summary Atualizar SLA
  */
-const updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut = <TData = AxiosResponse<SLAConfigResponse>>(
+export const updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut = (
     slaId: string,
-    sLAConfigUpdate: SLAConfigUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/services/sla-configs/${slaId}`,
-      sLAConfigUpdate,options
-    );
-  }
-/**
+    sLAConfigUpdate: SLAConfigUpdate,
+ ) => {
+      
+      
+      return customInstance<SLAConfigResponse>(
+      {url: `/api/v1/services/sla-configs/${slaId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: sLAConfigUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateSlaConfigApiV1ServicesSlaConfigsSlaIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut>>, TError,{slaId: string;data: SLAConfigUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut>>, TError,{slaId: string;data: SLAConfigUpdate}, TContext> => {
+
+const mutationKey = ['updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut>>, {slaId: string;data: SLAConfigUpdate}> = (props) => {
+          const {slaId,data} = props ?? {};
+
+          return  updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut(slaId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateSlaConfigApiV1ServicesSlaConfigsSlaIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut>>>
+    export type UpdateSlaConfigApiV1ServicesSlaConfigsSlaIdPutMutationBody = SLAConfigUpdate
+    export type UpdateSlaConfigApiV1ServicesSlaConfigsSlaIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar SLA
+ */
+export const useUpdateSlaConfigApiV1ServicesSlaConfigsSlaIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut>>, TError,{slaId: string;data: SLAConfigUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut>>,
+        TError,
+        {slaId: string;data: SLAConfigUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateSlaConfigApiV1ServicesSlaConfigsSlaIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Ativa um SLA.
  * @summary Ativar SLA
  */
-const activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost = <TData = AxiosResponse<SLAConfigResponse>>(
-    slaId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/sla-configs/${slaId}/activate`,undefined,options
-    );
-  }
-/**
+export const activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost = (
+    slaId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SLAConfigResponse>(
+      {url: `/api/v1/services/sla-configs/${slaId}/activate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getActivateSlaApiV1ServicesSlaConfigsSlaIdActivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost>>, TError,{slaId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost>>, TError,{slaId: string}, TContext> => {
+
+const mutationKey = ['activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost>>, {slaId: string}> = (props) => {
+          const {slaId} = props ?? {};
+
+          return  activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost(slaId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ActivateSlaApiV1ServicesSlaConfigsSlaIdActivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost>>>
+    
+    export type ActivateSlaApiV1ServicesSlaConfigsSlaIdActivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Ativar SLA
+ */
+export const useActivateSlaApiV1ServicesSlaConfigsSlaIdActivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost>>, TError,{slaId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost>>,
+        TError,
+        {slaId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getActivateSlaApiV1ServicesSlaConfigsSlaIdActivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Desativa um SLA.
  * @summary Desativar SLA
  */
-const deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost = <TData = AxiosResponse<SLAConfigResponse>>(
-    slaId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/sla-configs/${slaId}/deactivate`,undefined,options
-    );
-  }
-/**
+export const deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost = (
+    slaId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SLAConfigResponse>(
+      {url: `/api/v1/services/sla-configs/${slaId}/deactivate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getDeactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost>>, TError,{slaId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost>>, TError,{slaId: string}, TContext> => {
+
+const mutationKey = ['deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost>>, {slaId: string}> = (props) => {
+          const {slaId} = props ?? {};
+
+          return  deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost(slaId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost>>>
+    
+    export type DeactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Desativar SLA
+ */
+export const useDeactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost>>, TError,{slaId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost>>,
+        TError,
+        {slaId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Define SLA como padrão.
  * @summary Definir SLA Padrão
  */
-const setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost = <TData = AxiosResponse<SLAConfigResponse>>(
+export const setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost = (
     slaId: string,
-    params?: SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/services/sla-configs/${slaId}/set-default`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SLAConfigResponse>(
+      {url: `/api/v1/services/sla-configs/${slaId}/set-default`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getSetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost>>, TError,{slaId: string;params?: SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost>>, TError,{slaId: string;params?: SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostParams}, TContext> => {
+
+const mutationKey = ['setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost>>, {slaId: string;params?: SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostParams}> = (props) => {
+          const {slaId,params} = props ?? {};
+
+          return  setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost(slaId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostMutationResult = NonNullable<Awaited<ReturnType<typeof setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost>>>
+    
+    export type SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Definir SLA Padrão
+ */
+export const useSetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost>>, TError,{slaId: string;params?: SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost>>,
+        TError,
+        {slaId: string;params?: SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getSetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Gera relatório de compliance do SLA.
  * @summary Relatório de Compliance
  */
-const getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet = <TData = AxiosResponse<GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet200>>(
+export const getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet = (
     slaId: string,
-    params?: GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/sla-configs/${slaId}/compliance-report`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params?: GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet200>(
+      {url: `/api/v1/services/sla-configs/${slaId}/compliance-report`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetQueryKey = (slaId?: string,
+    params?: GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams,) => {
+    return [
+    `/api/v1/services/sla-configs/${slaId}/compliance-report`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetQueryOptions = <TData = Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError = HTTPValidationError>(slaId: string,
+    params?: GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetQueryKey(slaId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>> = ({ signal }) => getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet(slaId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(slaId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>>
+export type GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetQueryError = HTTPValidationError
+
+
+export function useGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet<TData = Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError = HTTPValidationError>(
+ slaId: string,
+    params: undefined |  GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet<TData = Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError = HTTPValidationError>(
+ slaId: string,
+    params?: GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet<TData = Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError = HTTPValidationError>(
+ slaId: string,
+    params?: GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Relatório de Compliance
+ */
+
+export function useGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet<TData = Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError = HTTPValidationError>(
+ slaId: string,
+    params?: GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetQueryOptions(slaId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Analisa performance de um serviço.
  * @summary Análise de Serviço
  */
-const analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet = <TData = AxiosResponse<ServiceAnalysis>>(
-    serviceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/service/${serviceId}`,options
-    );
-  }
+export const analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet = (
+    serviceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceAnalysis>(
+      {url: `/api/v1/services/analytics/service/${serviceId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGetQueryKey = (serviceId?: string,) => {
+    return [
+    `/api/v1/services/analytics/service/${serviceId}`
+    ] as const;
+    }
+
+    
+export const getAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError = HTTPValidationError>(serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGetQueryKey(serviceId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>> = ({ signal }) => analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet(serviceId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(serviceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>>
+export type AnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGetQueryError = HTTPValidationError
+
+
+export function useAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet<TData = Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet<TData = Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet<TData = Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Análise de Serviço
+ */
+
+export function useAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet<TData = Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGetQueryOptions(serviceId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Analisa todos os serviços ativos.
  * @summary Análise de Todos Serviços
  */
-const analyzeAllServicesApiV1ServicesAnalyticsServicesGet = <TData = AxiosResponse<ServiceAnalysis[]>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/services`,options
-    );
-  }
+export const analyzeAllServicesApiV1ServicesAnalyticsServicesGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceAnalysis[]>(
+      {url: `/api/v1/services/analytics/services`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getAnalyzeAllServicesApiV1ServicesAnalyticsServicesGetQueryKey = () => {
+    return [
+    `/api/v1/services/analytics/services`
+    ] as const;
+    }
+
+    
+export const getAnalyzeAllServicesApiV1ServicesAnalyticsServicesGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeAllServicesApiV1ServicesAnalyticsServicesGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>> = ({ signal }) => analyzeAllServicesApiV1ServicesAnalyticsServicesGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeAllServicesApiV1ServicesAnalyticsServicesGetQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>>
+export type AnalyzeAllServicesApiV1ServicesAnalyticsServicesGetQueryError = unknown
+
+
+export function useAnalyzeAllServicesApiV1ServicesAnalyticsServicesGet<TData = Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeAllServicesApiV1ServicesAnalyticsServicesGet<TData = Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeAllServicesApiV1ServicesAnalyticsServicesGet<TData = Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Análise de Todos Serviços
+ */
+
+export function useAnalyzeAllServicesApiV1ServicesAnalyticsServicesGet<TData = Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeAllServicesApiV1ServicesAnalyticsServicesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalyzeAllServicesApiV1ServicesAnalyticsServicesGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna recomendações de serviços.
  * @summary Recomendações de Serviços
  */
-const getRecommendationsApiV1ServicesAnalyticsRecommendationsGet = <TData = AxiosResponse<ServiceRecommendation[]>>(
-    params?: GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/recommendations`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getRecommendationsApiV1ServicesAnalyticsRecommendationsGet = (
+    params?: GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ServiceRecommendation[]>(
+      {url: `/api/v1/services/analytics/recommendations`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetRecommendationsApiV1ServicesAnalyticsRecommendationsGetQueryKey = (params?: GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams,) => {
+    return [
+    `/api/v1/services/analytics/recommendations`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetRecommendationsApiV1ServicesAnalyticsRecommendationsGetQueryOptions = <TData = Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError = HTTPValidationError>(params?: GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRecommendationsApiV1ServicesAnalyticsRecommendationsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>> = ({ signal }) => getRecommendationsApiV1ServicesAnalyticsRecommendationsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>>
+export type GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetQueryError = HTTPValidationError
+
+
+export function useGetRecommendationsApiV1ServicesAnalyticsRecommendationsGet<TData = Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRecommendationsApiV1ServicesAnalyticsRecommendationsGet<TData = Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError = HTTPValidationError>(
+ params?: GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRecommendationsApiV1ServicesAnalyticsRecommendationsGet<TData = Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError = HTTPValidationError>(
+ params?: GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Recomendações de Serviços
+ */
+
+export function useGetRecommendationsApiV1ServicesAnalyticsRecommendationsGet<TData = Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError = HTTPValidationError>(
+ params?: GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRecommendationsApiV1ServicesAnalyticsRecommendationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRecommendationsApiV1ServicesAnalyticsRecommendationsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Prevê demanda para um serviço.
  * @summary Previsão de Demanda
  */
-const predictDemandApiV1ServicesAnalyticsDemandServiceIdGet = <TData = AxiosResponse<PredictDemandApiV1ServicesAnalyticsDemandServiceIdGet200>>(
+export const predictDemandApiV1ServicesAnalyticsDemandServiceIdGet = (
     serviceId: string,
-    params?: PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/demand/${serviceId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params?: PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PredictDemandApiV1ServicesAnalyticsDemandServiceIdGet200>(
+      {url: `/api/v1/services/analytics/demand/${serviceId}`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getPredictDemandApiV1ServicesAnalyticsDemandServiceIdGetQueryKey = (serviceId?: string,
+    params?: PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams,) => {
+    return [
+    `/api/v1/services/analytics/demand/${serviceId}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getPredictDemandApiV1ServicesAnalyticsDemandServiceIdGetQueryOptions = <TData = Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError = HTTPValidationError>(serviceId: string,
+    params?: PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPredictDemandApiV1ServicesAnalyticsDemandServiceIdGetQueryKey(serviceId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>> = ({ signal }) => predictDemandApiV1ServicesAnalyticsDemandServiceIdGet(serviceId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(serviceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>>
+export type PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetQueryError = HTTPValidationError
+
+
+export function usePredictDemandApiV1ServicesAnalyticsDemandServiceIdGet<TData = Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params: undefined |  PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePredictDemandApiV1ServicesAnalyticsDemandServiceIdGet<TData = Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params?: PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePredictDemandApiV1ServicesAnalyticsDemandServiceIdGet<TData = Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params?: PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Previsão de Demanda
+ */
+
+export function usePredictDemandApiV1ServicesAnalyticsDemandServiceIdGet<TData = Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError = HTTPValidationError>(
+ serviceId: string,
+    params?: PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictDemandApiV1ServicesAnalyticsDemandServiceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPredictDemandApiV1ServicesAnalyticsDemandServiceIdGetQueryOptions(serviceId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Analisa compliance de um SLA.
  * @summary Análise de SLA
  */
-const analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet = <TData = AxiosResponse<SLAAnalysis>>(
-    slaId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/sla/${slaId}`,options
-    );
-  }
+export const analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet = (
+    slaId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SLAAnalysis>(
+      {url: `/api/v1/services/analytics/sla/${slaId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGetQueryKey = (slaId?: string,) => {
+    return [
+    `/api/v1/services/analytics/sla/${slaId}`
+    ] as const;
+    }
+
+    
+export const getAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError = HTTPValidationError>(slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGetQueryKey(slaId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>> = ({ signal }) => analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet(slaId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(slaId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>>
+export type AnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGetQueryError = HTTPValidationError
+
+
+export function useAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet<TData = Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet<TData = Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet<TData = Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Análise de SLA
+ */
+
+export function useAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet<TData = Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError = HTTPValidationError>(
+ slaId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGetQueryOptions(slaId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna dashboard de SLAs.
  * @summary Dashboard de SLAs
  */
-const getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet = <TData = AxiosResponse<GetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet200>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/sla-dashboard`,options
-    );
-  }
+export const getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet200>(
+      {url: `/api/v1/services/analytics/sla-dashboard`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGetQueryKey = () => {
+    return [
+    `/api/v1/services/analytics/sla-dashboard`
+    ] as const;
+    }
+
+    
+export const getGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGetQueryOptions = <TData = Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>> = ({ signal }) => getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>>
+export type GetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGetQueryError = unknown
+
+
+export function useGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet<TData = Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet<TData = Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet<TData = Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Dashboard de SLAs
+ */
+
+export function useGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet<TData = Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Analisa padrões de ordens de serviço.
  * @summary Padrões de Ordens
  */
-const analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet = <TData = AxiosResponse<AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet200>>(
-    params?: AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/order-patterns`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet = (
+    params?: AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet200>(
+      {url: `/api/v1/services/analytics/order-patterns`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetQueryKey = (params?: AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams,) => {
+    return [
+    `/api/v1/services/analytics/order-patterns`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError = HTTPValidationError>(params?: AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>> = ({ signal }) => analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>>
+export type AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetQueryError = HTTPValidationError
+
+
+export function useAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet<TData = Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError = HTTPValidationError>(
+ params: undefined |  AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet<TData = Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet<TData = Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Padrões de Ordens
+ */
+
+export function useAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet<TData = Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Identifica gargalos no processo.
  * @summary Gargalos Identificados
  */
-const identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet = <TData = AxiosResponse<unknown[]>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/bottlenecks`,options
-    );
-  }
+export const identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown[]>(
+      {url: `/api/v1/services/analytics/bottlenecks`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGetQueryKey = () => {
+    return [
+    `/api/v1/services/analytics/bottlenecks`
+    ] as const;
+    }
+
+    
+export const getIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGetQueryOptions = <TData = Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>> = ({ signal }) => identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type IdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGetQueryResult = NonNullable<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>>
+export type IdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGetQueryError = unknown
+
+
+export function useIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet<TData = Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>,
+          TError,
+          Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet<TData = Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>,
+          TError,
+          Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet<TData = Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Gargalos Identificados
+ */
+
+export function useIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet<TData = Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getIdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna dashboard executivo.
  * @summary Dashboard Executivo
  */
-const getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet = <TData = AxiosResponse<GetExecutiveDashboardApiV1ServicesAnalyticsDashboardGet200>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/services/analytics/dashboard`,options
-    );
-  }
-return {listServicesApiV1ServicesCatalogGet,createServiceApiV1ServicesCatalogPost,getCatalogStatsApiV1ServicesCatalogStatsGet,getServiceApiV1ServicesCatalogServiceIdGet,updateServiceApiV1ServicesCatalogServiceIdPut,activateServiceApiV1ServicesCatalogServiceIdActivatePost,deactivateServiceApiV1ServicesCatalogServiceIdDeactivatePost,discontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePost,calculateServicePriceApiV1ServicesCatalogServiceIdPriceGet,listOrdersApiV1ServicesOrdersGet,createOrderApiV1ServicesOrdersPost,getOrderStatsApiV1ServicesOrdersStatsGet,getOverdueOrdersApiV1ServicesOrdersOverdueGet,getAtRiskOrdersApiV1ServicesOrdersAtRiskGet,getOrderApiV1ServicesOrdersOrderIdGet,updateOrderApiV1ServicesOrdersOrderIdPut,submitOrderApiV1ServicesOrdersOrderIdSubmitPost,approveOrderApiV1ServicesOrdersOrderIdApprovePost,rejectOrderApiV1ServicesOrdersOrderIdRejectPost,scheduleOrderApiV1ServicesOrdersOrderIdSchedulePost,startOrderApiV1ServicesOrdersOrderIdStartPost,pauseOrderApiV1ServicesOrdersOrderIdPausePost,resumeOrderApiV1ServicesOrdersOrderIdResumePost,completeOrderApiV1ServicesOrdersOrderIdCompletePost,cancelOrderApiV1ServicesOrdersOrderIdCancelPost,rateOrderApiV1ServicesOrdersOrderIdRatePost,listExecutionsApiV1ServicesExecutionsGet,createExecutionApiV1ServicesExecutionsPost,getExecutionApiV1ServicesExecutionsExecutionIdGet,startTravelApiV1ServicesExecutionsExecutionIdStartTravelPost,arriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePost,startExecutionApiV1ServicesExecutionsExecutionIdStartPost,pauseExecutionApiV1ServicesExecutionsExecutionIdPausePost,resumeExecutionApiV1ServicesExecutionsExecutionIdResumePost,finishExecutionApiV1ServicesExecutionsExecutionIdFinishPost,addMaterialApiV1ServicesExecutionsExecutionIdMaterialsPost,updateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPost,addSignatureApiV1ServicesExecutionsExecutionIdSignaturesPost,listReportsApiV1ServicesReportsGet,createReportApiV1ServicesReportsPost,getReportApiV1ServicesReportsReportIdGet,updateReportApiV1ServicesReportsReportIdPut,finalizeReportApiV1ServicesReportsReportIdFinalizePost,reviewReportApiV1ServicesReportsReportIdReviewPost,approveReportApiV1ServicesReportsReportIdApprovePost,sendReportApiV1ServicesReportsReportIdSendPost,listSlaConfigsApiV1ServicesSlaConfigsGet,createSlaConfigApiV1ServicesSlaConfigsPost,getSlaConfigApiV1ServicesSlaConfigsSlaIdGet,updateSlaConfigApiV1ServicesSlaConfigsSlaIdPut,activateSlaApiV1ServicesSlaConfigsSlaIdActivatePost,deactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePost,setDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPost,getSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet,analyzeServiceApiV1ServicesAnalyticsServiceServiceIdGet,analyzeAllServicesApiV1ServicesAnalyticsServicesGet,getRecommendationsApiV1ServicesAnalyticsRecommendationsGet,predictDemandApiV1ServicesAnalyticsDemandServiceIdGet,analyzeSlaApiV1ServicesAnalyticsSlaSlaIdGet,getSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet,analyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet,identifyBottlenecksApiV1ServicesAnalyticsBottlenecksGet,getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet}};
-export type ListServicesApiV1ServicesCatalogGetResult = AxiosResponse<ServiceCatalogListResponse[]>
-export type CreateServiceApiV1ServicesCatalogPostResult = AxiosResponse<ServiceCatalogResponse>
-export type GetCatalogStatsApiV1ServicesCatalogStatsGetResult = AxiosResponse<ServiceCatalogStats>
-export type GetServiceApiV1ServicesCatalogServiceIdGetResult = AxiosResponse<ServiceCatalogResponse>
-export type UpdateServiceApiV1ServicesCatalogServiceIdPutResult = AxiosResponse<ServiceCatalogResponse>
-export type ActivateServiceApiV1ServicesCatalogServiceIdActivatePostResult = AxiosResponse<ServiceCatalogResponse>
-export type DeactivateServiceApiV1ServicesCatalogServiceIdDeactivatePostResult = AxiosResponse<ServiceCatalogResponse>
-export type DiscontinueServiceApiV1ServicesCatalogServiceIdDiscontinuePostResult = AxiosResponse<ServiceCatalogResponse>
-export type CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGetResult = AxiosResponse<CalculateServicePriceApiV1ServicesCatalogServiceIdPriceGet200>
-export type ListOrdersApiV1ServicesOrdersGetResult = AxiosResponse<ServiceOrderListResponse[]>
-export type CreateOrderApiV1ServicesOrdersPostResult = AxiosResponse<ServiceOrderResponse>
-export type GetOrderStatsApiV1ServicesOrdersStatsGetResult = AxiosResponse<ServiceOrderStats>
-export type GetOverdueOrdersApiV1ServicesOrdersOverdueGetResult = AxiosResponse<ServiceOrderListResponse[]>
-export type GetAtRiskOrdersApiV1ServicesOrdersAtRiskGetResult = AxiosResponse<unknown[]>
-export type GetOrderApiV1ServicesOrdersOrderIdGetResult = AxiosResponse<ServiceOrderResponse>
-export type UpdateOrderApiV1ServicesOrdersOrderIdPutResult = AxiosResponse<ServiceOrderResponse>
-export type SubmitOrderApiV1ServicesOrdersOrderIdSubmitPostResult = AxiosResponse<ServiceOrderResponse>
-export type ApproveOrderApiV1ServicesOrdersOrderIdApprovePostResult = AxiosResponse<ServiceOrderResponse>
-export type RejectOrderApiV1ServicesOrdersOrderIdRejectPostResult = AxiosResponse<ServiceOrderResponse>
-export type ScheduleOrderApiV1ServicesOrdersOrderIdSchedulePostResult = AxiosResponse<ServiceOrderResponse>
-export type StartOrderApiV1ServicesOrdersOrderIdStartPostResult = AxiosResponse<ServiceOrderResponse>
-export type PauseOrderApiV1ServicesOrdersOrderIdPausePostResult = AxiosResponse<ServiceOrderResponse>
-export type ResumeOrderApiV1ServicesOrdersOrderIdResumePostResult = AxiosResponse<ServiceOrderResponse>
-export type CompleteOrderApiV1ServicesOrdersOrderIdCompletePostResult = AxiosResponse<ServiceOrderResponse>
-export type CancelOrderApiV1ServicesOrdersOrderIdCancelPostResult = AxiosResponse<ServiceOrderResponse>
-export type RateOrderApiV1ServicesOrdersOrderIdRatePostResult = AxiosResponse<ServiceOrderResponse>
-export type ListExecutionsApiV1ServicesExecutionsGetResult = AxiosResponse<ServiceExecutionResponse[]>
-export type CreateExecutionApiV1ServicesExecutionsPostResult = AxiosResponse<ServiceExecutionResponse>
-export type GetExecutionApiV1ServicesExecutionsExecutionIdGetResult = AxiosResponse<ServiceExecutionResponse>
-export type StartTravelApiV1ServicesExecutionsExecutionIdStartTravelPostResult = AxiosResponse<ServiceExecutionResponse>
-export type ArriveAtLocationApiV1ServicesExecutionsExecutionIdArrivePostResult = AxiosResponse<ServiceExecutionResponse>
-export type StartExecutionApiV1ServicesExecutionsExecutionIdStartPostResult = AxiosResponse<ServiceExecutionResponse>
-export type PauseExecutionApiV1ServicesExecutionsExecutionIdPausePostResult = AxiosResponse<ServiceExecutionResponse>
-export type ResumeExecutionApiV1ServicesExecutionsExecutionIdResumePostResult = AxiosResponse<ServiceExecutionResponse>
-export type FinishExecutionApiV1ServicesExecutionsExecutionIdFinishPostResult = AxiosResponse<ServiceExecutionResponse>
-export type AddMaterialApiV1ServicesExecutionsExecutionIdMaterialsPostResult = AxiosResponse<ServiceExecutionResponse>
-export type UpdateChecklistApiV1ServicesExecutionsExecutionIdChecklistItemIndexPostResult = AxiosResponse<ServiceExecutionResponse>
-export type AddSignatureApiV1ServicesExecutionsExecutionIdSignaturesPostResult = AxiosResponse<ServiceExecutionResponse>
-export type ListReportsApiV1ServicesReportsGetResult = AxiosResponse<ServiceReportResponse[]>
-export type CreateReportApiV1ServicesReportsPostResult = AxiosResponse<ServiceReportResponse>
-export type GetReportApiV1ServicesReportsReportIdGetResult = AxiosResponse<ServiceReportResponse>
-export type UpdateReportApiV1ServicesReportsReportIdPutResult = AxiosResponse<ServiceReportResponse>
-export type FinalizeReportApiV1ServicesReportsReportIdFinalizePostResult = AxiosResponse<ServiceReportResponse>
-export type ReviewReportApiV1ServicesReportsReportIdReviewPostResult = AxiosResponse<ServiceReportResponse>
-export type ApproveReportApiV1ServicesReportsReportIdApprovePostResult = AxiosResponse<ServiceReportResponse>
-export type SendReportApiV1ServicesReportsReportIdSendPostResult = AxiosResponse<ServiceReportResponse>
-export type ListSlaConfigsApiV1ServicesSlaConfigsGetResult = AxiosResponse<SLAConfigResponse[]>
-export type CreateSlaConfigApiV1ServicesSlaConfigsPostResult = AxiosResponse<SLAConfigResponse>
-export type GetSlaConfigApiV1ServicesSlaConfigsSlaIdGetResult = AxiosResponse<SLAConfigResponse>
-export type UpdateSlaConfigApiV1ServicesSlaConfigsSlaIdPutResult = AxiosResponse<SLAConfigResponse>
-export type ActivateSlaApiV1ServicesSlaConfigsSlaIdActivatePostResult = AxiosResponse<SLAConfigResponse>
-export type DeactivateSlaApiV1ServicesSlaConfigsSlaIdDeactivatePostResult = AxiosResponse<SLAConfigResponse>
-export type SetDefaultSlaApiV1ServicesSlaConfigsSlaIdSetDefaultPostResult = AxiosResponse<SLAConfigResponse>
-export type GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGetResult = AxiosResponse<GetSlaComplianceReportApiV1ServicesSlaConfigsSlaIdComplianceReportGet200>
-export type AnalyzeServiceApiV1ServicesAnalyticsServiceServiceIdGetResult = AxiosResponse<ServiceAnalysis>
-export type AnalyzeAllServicesApiV1ServicesAnalyticsServicesGetResult = AxiosResponse<ServiceAnalysis[]>
-export type GetRecommendationsApiV1ServicesAnalyticsRecommendationsGetResult = AxiosResponse<ServiceRecommendation[]>
-export type PredictDemandApiV1ServicesAnalyticsDemandServiceIdGetResult = AxiosResponse<PredictDemandApiV1ServicesAnalyticsDemandServiceIdGet200>
-export type AnalyzeSlaApiV1ServicesAnalyticsSlaSlaIdGetResult = AxiosResponse<SLAAnalysis>
-export type GetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGetResult = AxiosResponse<GetSlaDashboardApiV1ServicesAnalyticsSlaDashboardGet200>
-export type AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGetResult = AxiosResponse<AnalyzeOrderPatternsApiV1ServicesAnalyticsOrderPatternsGet200>
-export type IdentifyBottlenecksApiV1ServicesAnalyticsBottlenecksGetResult = AxiosResponse<unknown[]>
-export type GetExecutiveDashboardApiV1ServicesAnalyticsDashboardGetResult = AxiosResponse<GetExecutiveDashboardApiV1ServicesAnalyticsDashboardGet200>
+export const getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetExecutiveDashboardApiV1ServicesAnalyticsDashboardGet200>(
+      {url: `/api/v1/services/analytics/dashboard`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGetQueryKey = () => {
+    return [
+    `/api/v1/services/analytics/dashboard`
+    ] as const;
+    }
+
+    
+export const getGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGetQueryOptions = <TData = Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>> = ({ signal }) => getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetExecutiveDashboardApiV1ServicesAnalyticsDashboardGetQueryResult = NonNullable<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>>
+export type GetExecutiveDashboardApiV1ServicesAnalyticsDashboardGetQueryError = unknown
+
+
+export function useGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGet<TData = Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGet<TData = Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGet<TData = Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Dashboard Executivo
+ */
+
+export function useGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGet<TData = Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExecutiveDashboardApiV1ServicesAnalyticsDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetExecutiveDashboardApiV1ServicesAnalyticsDashboardGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

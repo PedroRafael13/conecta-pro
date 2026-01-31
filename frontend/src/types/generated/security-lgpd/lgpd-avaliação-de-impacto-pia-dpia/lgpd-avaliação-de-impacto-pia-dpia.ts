@@ -13,56 +13,282 @@ Módulo completo de proteção de dados conforme LGPD:
 - Controle DPO e Incidentes de Segurança
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
+  ErrorResponse,
   PIARequest,
   StandardResponse
 } from '../conectaPROLGPDSecurityAPI.schemas';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getLgpdAvaliaçãoDeImpactoPiaDpia = () => {
+
 /**
  * Inicia avaliação de impacto de privacidade para projeto.
  * @summary Cria avaliação de impacto (PIA/DPIA)
  */
-const createPIA = <TData = AxiosResponse<StandardResponse>>(
-    pIARequest: PIARequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/lgpd/pia/create`,
-      pIARequest,options
-    );
-  }
-/**
+export const createPIA = (
+    pIARequest: PIARequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/pia/create`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: pIARequest, signal
+    },
+      );
+    }
+  
+
+
+export const getCreatePIAMutationOptions = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPIA>>, TError,{data: PIARequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createPIA>>, TError,{data: PIARequest}, TContext> => {
+
+const mutationKey = ['createPIA'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPIA>>, {data: PIARequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPIA(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePIAMutationResult = NonNullable<Awaited<ReturnType<typeof createPIA>>>
+    export type CreatePIAMutationBody = PIARequest
+    export type CreatePIAMutationError = ErrorResponse
+
+    /**
+ * @summary Cria avaliação de impacto (PIA/DPIA)
+ */
+export const useCreatePIA = <TError = ErrorResponse,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPIA>>, TError,{data: PIARequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createPIA>>,
+        TError,
+        {data: PIARequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCreatePIAMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna detalhes de uma avaliação de impacto.
  * @summary Consulta avaliação PIA/DPIA
  */
-const getPIA = <TData = AxiosResponse<StandardResponse>>(
-    assessmentId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/pia/${assessmentId}`,options
-    );
-  }
+export const getPIA = (
+    assessmentId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/pia/${assessmentId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPIAQueryKey = (assessmentId?: string,) => {
+    return [
+    `/lgpd/pia/${assessmentId}`
+    ] as const;
+    }
+
+    
+export const getGetPIAQueryOptions = <TData = Awaited<ReturnType<typeof getPIA>>, TError = ErrorResponse | ErrorResponse>(assessmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPIA>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPIAQueryKey(assessmentId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPIA>>> = ({ signal }) => getPIA(assessmentId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(assessmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPIA>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPIAQueryResult = NonNullable<Awaited<ReturnType<typeof getPIA>>>
+export type GetPIAQueryError = ErrorResponse | ErrorResponse
+
+
+export function useGetPIA<TData = Awaited<ReturnType<typeof getPIA>>, TError = ErrorResponse | ErrorResponse>(
+ assessmentId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPIA>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPIA>>,
+          TError,
+          Awaited<ReturnType<typeof getPIA>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPIA<TData = Awaited<ReturnType<typeof getPIA>>, TError = ErrorResponse | ErrorResponse>(
+ assessmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPIA>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPIA>>,
+          TError,
+          Awaited<ReturnType<typeof getPIA>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPIA<TData = Awaited<ReturnType<typeof getPIA>>, TError = ErrorResponse | ErrorResponse>(
+ assessmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPIA>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Consulta avaliação PIA/DPIA
+ */
+
+export function useGetPIA<TData = Awaited<ReturnType<typeof getPIA>>, TError = ErrorResponse | ErrorResponse>(
+ assessmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPIA>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPIAQueryOptions(assessmentId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna categorias de risco disponíveis.
  * @summary Lista categorias de risco
  */
-const listRiskCategories = <TData = AxiosResponse<StandardResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/lgpd/pia/risk-categories/list`,options
-    );
-  }
-return {createPIA,getPIA,listRiskCategories}};
-export type CreatePIAResult = AxiosResponse<StandardResponse>
-export type GetPIAResult = AxiosResponse<StandardResponse>
-export type ListRiskCategoriesResult = AxiosResponse<StandardResponse>
+export const listRiskCategories = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StandardResponse>(
+      {url: `/lgpd/pia/risk-categories/list`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListRiskCategoriesQueryKey = () => {
+    return [
+    `/lgpd/pia/risk-categories/list`
+    ] as const;
+    }
+
+    
+export const getListRiskCategoriesQueryOptions = <TData = Awaited<ReturnType<typeof listRiskCategories>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRiskCategories>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRiskCategoriesQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRiskCategories>>> = ({ signal }) => listRiskCategories(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRiskCategories>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListRiskCategoriesQueryResult = NonNullable<Awaited<ReturnType<typeof listRiskCategories>>>
+export type ListRiskCategoriesQueryError = unknown
+
+
+export function useListRiskCategories<TData = Awaited<ReturnType<typeof listRiskCategories>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRiskCategories>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRiskCategories>>,
+          TError,
+          Awaited<ReturnType<typeof listRiskCategories>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRiskCategories<TData = Awaited<ReturnType<typeof listRiskCategories>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRiskCategories>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRiskCategories>>,
+          TError,
+          Awaited<ReturnType<typeof listRiskCategories>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRiskCategories<TData = Awaited<ReturnType<typeof listRiskCategories>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRiskCategories>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Lista categorias de risco
+ */
+
+export function useListRiskCategories<TData = Awaited<ReturnType<typeof listRiskCategories>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRiskCategories>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListRiskCategoriesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
