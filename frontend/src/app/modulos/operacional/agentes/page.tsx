@@ -20,7 +20,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useEmployees } from '@/hooks/operacional/useEmployees';
-import { employeesService } 
 import { getErrorMessage } from '@/lib/api';
 import type { Employee } from '@/types/operacional';
 

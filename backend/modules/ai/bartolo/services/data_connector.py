@@ -907,7 +907,9 @@ class DataConnector:
                 stmt = stmt.where(model.status == query.filters["status"])
 
             # CORRECAO CRITICA: Filtro de turno + escalado
+            logger.info(f"[FILTER DEBUG] entity={query.entity}, filters={query.filters}")
             if query.entity == "funcionarios" and ("shift" in query.filters or "escalado" in query.filters):
+                logger.info("[FILTER DEBUG] Aplicando filtro de turno com JOIN shifts")
                 from modules.operacional.models.shift import Shift
                 from sqlalchemy import and_
 

@@ -28,7 +28,6 @@ import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
 import { useDisciplinary, useDisciplinaryStats } from '@/hooks/useDisciplinary';
-import { disciplinaryService } 
 import { getErrorMessage } from '@/lib/api';
 import { DisciplinaryFormModal } from '@/components/operacional/disciplinary-form-modal';
 import { DisciplinaryDetailModal } from '@/components/operacional/disciplinary-detail-modal';

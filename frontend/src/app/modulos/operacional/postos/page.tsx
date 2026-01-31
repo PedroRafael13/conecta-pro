@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
 import { usePosts } from '@/hooks/operacional/usePosts';
-import { postsService } 
 import { getErrorMessage } from '@/lib/api';
 import { PostDetailModal } from '@/components/operacional/post-detail-modal';
 import { PostFormModal } from '@/components/operacional/post-form-modal';

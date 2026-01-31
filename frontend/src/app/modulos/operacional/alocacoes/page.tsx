@@ -24,7 +24,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAllocations } from '@/hooks/operacional/useAllocations';
 import { usePosts } from '@/hooks/operacional/usePosts';
 import { useEmployees } from '@/hooks/operacional/useEmployees';
-import { allocationsService } 
 import { getErrorMessage } from '@/lib/api';
 import { AllocationDetailModal } from '@/components/operacional/allocation-detail-modal';
 import { AllocationFormModal } from '@/components/operacional/allocation-form-modal';

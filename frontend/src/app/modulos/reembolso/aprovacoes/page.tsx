@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { usePendingApprovals, useReimbursementStats } from '@/hooks/useReimbursement';
-import { reimbursementService } 
 import { getErrorMessage } from '@/lib/api';
 import { ReimbursementApprovalModal } from '@/components/reembolso/reimbursement-approval-modal';
 import { ReimbursementDetailModal } from '@/components/reembolso/reimbursement-detail-modal';
