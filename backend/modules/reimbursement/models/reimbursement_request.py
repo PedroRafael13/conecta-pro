@@ -66,7 +66,6 @@ class ReimbursementRequest(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     condominio_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
         nullable=False,
         index=True,
     )
@@ -79,7 +78,7 @@ class ReimbursementRequest(Base):
     # Solicitante
     requester_id = Column(
         UUID(as_uuid=True),
-        ForeignKey("usuarios.id"),
+        ForeignKey("users.id"),
         nullable=False,
         index=True,
     )
@@ -101,14 +100,14 @@ class ReimbursementRequest(Base):
     submitted_at = Column(DateTime(timezone=True), nullable=True)
 
     # Aprovação/Rejeição
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     approved_at = Column(DateTime(timezone=True), nullable=True)
     rejection_reason = Column(Text, nullable=True)
 
     # Processamento (integração financeiro)
     payable_account_id = Column(UUID(as_uuid=True), nullable=True)  # FK para conta a pagar
     processed_at = Column(DateTime(timezone=True), nullable=True)
-    processed_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    processed_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     # Dados bancários do funcionário (para pagamento)
     bank_code = Column(String(10), nullable=True)
@@ -281,11 +280,11 @@ class ReimbursementRequest(Base):
     @property
     def can_submit(self) -> bool:
         """Verifica se pode ser submetida."""
-        return (
-            self.status == ReimbursementStatus.RASCUNHO.value
-            and self.items
-            and len([i for i in self.items if i.is_active]) > 0
-        )
+        if self.status != ReimbursementStatus.RASCUNHO.value:
+            return False
+        if not self.items:
+            return False
+        return len([i for i in self.items if i.is_active]) > 0
 
     @property
     def can_approve(self) -> bool:

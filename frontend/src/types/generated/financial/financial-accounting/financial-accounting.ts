@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AccountStats,
@@ -46,6 +59,7 @@ import type {
   GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams,
   GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams,
   GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams,
+  HTTPValidationError,
   JournalEntryApprovalRequest,
   JournalEntryCreate,
   JournalEntryLineResponse,
@@ -74,614 +88,3722 @@ import type {
   TrialBalanceResponse
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialAccounting = () => {
+
 /**
  * Lista planos de contas.
  * @summary List Charts
  */
-const listChartsApiV1FinancialAccountingAccountingChartsGet = <TData = AxiosResponse<ChartOfAccountsListResponse[]>>(
-    params?: ListChartsApiV1FinancialAccountingAccountingChartsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/charts`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listChartsApiV1FinancialAccountingAccountingChartsGet = (
+    params?: ListChartsApiV1FinancialAccountingAccountingChartsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ChartOfAccountsListResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/charts`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListChartsApiV1FinancialAccountingAccountingChartsGetQueryKey = (params?: ListChartsApiV1FinancialAccountingAccountingChartsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/charts`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListChartsApiV1FinancialAccountingAccountingChartsGetQueryOptions = <TData = Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError = HTTPValidationError>(params?: ListChartsApiV1FinancialAccountingAccountingChartsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListChartsApiV1FinancialAccountingAccountingChartsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>> = ({ signal }) => listChartsApiV1FinancialAccountingAccountingChartsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListChartsApiV1FinancialAccountingAccountingChartsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>>
+export type ListChartsApiV1FinancialAccountingAccountingChartsGetQueryError = HTTPValidationError
+
+
+export function useListChartsApiV1FinancialAccountingAccountingChartsGet<TData = Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListChartsApiV1FinancialAccountingAccountingChartsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListChartsApiV1FinancialAccountingAccountingChartsGet<TData = Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError = HTTPValidationError>(
+ params?: ListChartsApiV1FinancialAccountingAccountingChartsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListChartsApiV1FinancialAccountingAccountingChartsGet<TData = Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError = HTTPValidationError>(
+ params?: ListChartsApiV1FinancialAccountingAccountingChartsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Charts
+ */
+
+export function useListChartsApiV1FinancialAccountingAccountingChartsGet<TData = Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError = HTTPValidationError>(
+ params?: ListChartsApiV1FinancialAccountingAccountingChartsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listChartsApiV1FinancialAccountingAccountingChartsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListChartsApiV1FinancialAccountingAccountingChartsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo plano de contas.
  * @summary Create Chart
  */
-const createChartApiV1FinancialAccountingAccountingChartsPost = <TData = AxiosResponse<ChartOfAccountsResponse>>(
-    chartOfAccountsCreate: ChartOfAccountsCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/charts`,
-      chartOfAccountsCreate,options
-    );
-  }
-/**
+export const createChartApiV1FinancialAccountingAccountingChartsPost = (
+    chartOfAccountsCreate: ChartOfAccountsCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ChartOfAccountsResponse>(
+      {url: `/api/v1/financial/accounting/accounting/charts`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: chartOfAccountsCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateChartApiV1FinancialAccountingAccountingChartsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChartApiV1FinancialAccountingAccountingChartsPost>>, TError,{data: ChartOfAccountsCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createChartApiV1FinancialAccountingAccountingChartsPost>>, TError,{data: ChartOfAccountsCreate}, TContext> => {
+
+const mutationKey = ['createChartApiV1FinancialAccountingAccountingChartsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createChartApiV1FinancialAccountingAccountingChartsPost>>, {data: ChartOfAccountsCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createChartApiV1FinancialAccountingAccountingChartsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateChartApiV1FinancialAccountingAccountingChartsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createChartApiV1FinancialAccountingAccountingChartsPost>>>
+    export type CreateChartApiV1FinancialAccountingAccountingChartsPostMutationBody = ChartOfAccountsCreate
+    export type CreateChartApiV1FinancialAccountingAccountingChartsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Chart
+ */
+export const useCreateChartApiV1FinancialAccountingAccountingChartsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createChartApiV1FinancialAccountingAccountingChartsPost>>, TError,{data: ChartOfAccountsCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createChartApiV1FinancialAccountingAccountingChartsPost>>,
+        TError,
+        {data: ChartOfAccountsCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateChartApiV1FinancialAccountingAccountingChartsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna plano de contas ativo.
  * @summary Get Active Chart
  */
-const getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet = <TData = AxiosResponse<ChartOfAccountsResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/charts/active`,options
-    );
-  }
+export const getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ChartOfAccountsResponse>(
+      {url: `/api/v1/financial/accounting/accounting/charts/active`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGetQueryKey = () => {
+    return [
+    `/api/v1/financial/accounting/accounting/charts/active`
+    ] as const;
+    }
+
+    
+export const getGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGetQueryOptions = <TData = Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>> = ({ signal }) => getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetActiveChartApiV1FinancialAccountingAccountingChartsActiveGetQueryResult = NonNullable<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>>
+export type GetActiveChartApiV1FinancialAccountingAccountingChartsActiveGetQueryError = unknown
+
+
+export function useGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGet<TData = Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>,
+          TError,
+          Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGet<TData = Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>,
+          TError,
+          Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGet<TData = Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Active Chart
+ */
+
+export function useGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGet<TData = Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetActiveChartApiV1FinancialAccountingAccountingChartsActiveGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas dos planos de contas.
  * @summary Get Chart Stats
  */
-const getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet = <TData = AxiosResponse<ChartStats>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/charts/stats`,options
-    );
-  }
+export const getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ChartStats>(
+      {url: `/api/v1/financial/accounting/accounting/charts/stats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGetQueryKey = () => {
+    return [
+    `/api/v1/financial/accounting/accounting/charts/stats`
+    ] as const;
+    }
+
+    
+export const getGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>> = ({ signal }) => getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetChartStatsApiV1FinancialAccountingAccountingChartsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>>
+export type GetChartStatsApiV1FinancialAccountingAccountingChartsStatsGetQueryError = unknown
+
+
+export function useGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGet<TData = Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGet<TData = Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGet<TData = Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Chart Stats
+ */
+
+export function useGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGet<TData = Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetChartStatsApiV1FinancialAccountingAccountingChartsStatsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca plano de contas por ID.
  * @summary Get Chart
  */
-const getChartApiV1FinancialAccountingAccountingChartsChartIdGet = <TData = AxiosResponse<ChartOfAccountsResponse>>(
-    chartId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/charts/${chartId}`,options
-    );
-  }
+export const getChartApiV1FinancialAccountingAccountingChartsChartIdGet = (
+    chartId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ChartOfAccountsResponse>(
+      {url: `/api/v1/financial/accounting/accounting/charts/${chartId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetChartApiV1FinancialAccountingAccountingChartsChartIdGetQueryKey = (chartId?: string,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/charts/${chartId}`
+    ] as const;
+    }
+
+    
+export const getGetChartApiV1FinancialAccountingAccountingChartsChartIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError = HTTPValidationError>(chartId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChartApiV1FinancialAccountingAccountingChartsChartIdGetQueryKey(chartId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>> = ({ signal }) => getChartApiV1FinancialAccountingAccountingChartsChartIdGet(chartId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(chartId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetChartApiV1FinancialAccountingAccountingChartsChartIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>>
+export type GetChartApiV1FinancialAccountingAccountingChartsChartIdGetQueryError = HTTPValidationError
+
+
+export function useGetChartApiV1FinancialAccountingAccountingChartsChartIdGet<TData = Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError = HTTPValidationError>(
+ chartId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChartApiV1FinancialAccountingAccountingChartsChartIdGet<TData = Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError = HTTPValidationError>(
+ chartId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChartApiV1FinancialAccountingAccountingChartsChartIdGet<TData = Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError = HTTPValidationError>(
+ chartId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Chart
+ */
+
+export function useGetChartApiV1FinancialAccountingAccountingChartsChartIdGet<TData = Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError = HTTPValidationError>(
+ chartId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChartApiV1FinancialAccountingAccountingChartsChartIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetChartApiV1FinancialAccountingAccountingChartsChartIdGetQueryOptions(chartId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza plano de contas.
  * @summary Update Chart
  */
-const updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch = <TData = AxiosResponse<ChartOfAccountsResponse>>(
+export const updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch = (
     chartId: string,
-    chartOfAccountsUpdate: ChartOfAccountsUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/accounting/accounting/charts/${chartId}`,
-      chartOfAccountsUpdate,options
-    );
-  }
-/**
+    chartOfAccountsUpdate: ChartOfAccountsUpdate,
+ ) => {
+      
+      
+      return customInstance<ChartOfAccountsResponse>(
+      {url: `/api/v1/financial/accounting/accounting/charts/${chartId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: chartOfAccountsUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateChartApiV1FinancialAccountingAccountingChartsChartIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch>>, TError,{chartId: string;data: ChartOfAccountsUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch>>, TError,{chartId: string;data: ChartOfAccountsUpdate}, TContext> => {
+
+const mutationKey = ['updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch>>, {chartId: string;data: ChartOfAccountsUpdate}> = (props) => {
+          const {chartId,data} = props ?? {};
+
+          return  updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch(chartId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateChartApiV1FinancialAccountingAccountingChartsChartIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch>>>
+    export type UpdateChartApiV1FinancialAccountingAccountingChartsChartIdPatchMutationBody = ChartOfAccountsUpdate
+    export type UpdateChartApiV1FinancialAccountingAccountingChartsChartIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Chart
+ */
+export const useUpdateChartApiV1FinancialAccountingAccountingChartsChartIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch>>, TError,{chartId: string;data: ChartOfAccountsUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch>>,
+        TError,
+        {chartId: string;data: ChartOfAccountsUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateChartApiV1FinancialAccountingAccountingChartsChartIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Ativa plano de contas.
  * @summary Activate Chart
  */
-const activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost = <TData = AxiosResponse<ActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost200>>(
-    chartId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/charts/${chartId}/activate`,undefined,options
-    );
-  }
-/**
+export const activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost = (
+    chartId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost200>(
+      {url: `/api/v1/financial/accounting/accounting/charts/${chartId}/activate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost>>, TError,{chartId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost>>, TError,{chartId: string}, TContext> => {
+
+const mutationKey = ['activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost>>, {chartId: string}> = (props) => {
+          const {chartId} = props ?? {};
+
+          return  activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost(chartId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost>>>
+    
+    export type ActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Activate Chart
+ */
+export const useActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost>>, TError,{chartId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost>>,
+        TError,
+        {chartId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista contas contabeis.
  * @summary List Accounts
  */
-const listAccountsApiV1FinancialAccountingAccountingAccountsGet = <TData = AxiosResponse<AccountingAccountListResponse[]>>(
-    params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/accounts`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listAccountsApiV1FinancialAccountingAccountingAccountsGet = (
+    params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountingAccountListResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/accounts`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListAccountsApiV1FinancialAccountingAccountingAccountsGetQueryKey = (params?: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/accounts`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListAccountsApiV1FinancialAccountingAccountingAccountsGetQueryOptions = <TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError = HTTPValidationError>(params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAccountsApiV1FinancialAccountingAccountingAccountsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>> = ({ signal }) => listAccountsApiV1FinancialAccountingAccountingAccountsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListAccountsApiV1FinancialAccountingAccountingAccountsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>>
+export type ListAccountsApiV1FinancialAccountingAccountingAccountsGetQueryError = HTTPValidationError
+
+
+export function useListAccountsApiV1FinancialAccountingAccountingAccountsGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAccountsApiV1FinancialAccountingAccountingAccountsGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAccountsApiV1FinancialAccountingAccountingAccountsGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Accounts
+ */
+
+export function useListAccountsApiV1FinancialAccountingAccountingAccountsGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialAccountingAccountingAccountsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListAccountsApiV1FinancialAccountingAccountingAccountsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria uma nova conta contabil.
  * @summary Create Account
  */
-const createAccountApiV1FinancialAccountingAccountingAccountsPost = <TData = AxiosResponse<AccountingAccountResponse>>(
-    accountingAccountCreate: AccountingAccountCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/accounts`,
-      accountingAccountCreate,options
-    );
-  }
-/**
+export const createAccountApiV1FinancialAccountingAccountingAccountsPost = (
+    accountingAccountCreate: AccountingAccountCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountingAccountResponse>(
+      {url: `/api/v1/financial/accounting/accounting/accounts`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: accountingAccountCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateAccountApiV1FinancialAccountingAccountingAccountsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAccountApiV1FinancialAccountingAccountingAccountsPost>>, TError,{data: AccountingAccountCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createAccountApiV1FinancialAccountingAccountingAccountsPost>>, TError,{data: AccountingAccountCreate}, TContext> => {
+
+const mutationKey = ['createAccountApiV1FinancialAccountingAccountingAccountsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAccountApiV1FinancialAccountingAccountingAccountsPost>>, {data: AccountingAccountCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAccountApiV1FinancialAccountingAccountingAccountsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAccountApiV1FinancialAccountingAccountingAccountsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createAccountApiV1FinancialAccountingAccountingAccountsPost>>>
+    export type CreateAccountApiV1FinancialAccountingAccountingAccountsPostMutationBody = AccountingAccountCreate
+    export type CreateAccountApiV1FinancialAccountingAccountingAccountsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Account
+ */
+export const useCreateAccountApiV1FinancialAccountingAccountingAccountsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAccountApiV1FinancialAccountingAccountingAccountsPost>>, TError,{data: AccountingAccountCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createAccountApiV1FinancialAccountingAccountingAccountsPost>>,
+        TError,
+        {data: AccountingAccountCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateAccountApiV1FinancialAccountingAccountingAccountsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna arvore hierarquica de contas.
  * @summary Get Account Tree
  */
-const getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet = <TData = AxiosResponse<AccountTreeResponse[]>>(
-    params: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/accounts/tree`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet = (
+    params: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountTreeResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/accounts/tree`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetQueryKey = (params?: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/accounts/tree`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetQueryOptions = <TData = Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError = HTTPValidationError>(params: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>> = ({ signal }) => getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>>
+export type GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetQueryError = HTTPValidationError
+
+
+export function useGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet<TData = Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError = HTTPValidationError>(
+ params: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet<TData = Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError = HTTPValidationError>(
+ params: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet<TData = Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError = HTTPValidationError>(
+ params: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Account Tree
+ */
+
+export function useGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet<TData = Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError = HTTPValidationError>(
+ params: GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas das contas.
  * @summary Get Account Stats
  */
-const getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet = <TData = AxiosResponse<AccountStats>>(
-    params: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/accounts/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet = (
+    params: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountStats>(
+      {url: `/api/v1/financial/accounting/accounting/accounts/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetQueryKey = (params?: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/accounts/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError = HTTPValidationError>(params: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>> = ({ signal }) => getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>>
+export type GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet<TData = Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet<TData = Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet<TData = Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Account Stats
+ */
+
+export function useGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet<TData = Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca conta contabil por ID.
  * @summary Get Account
  */
-const getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet = <TData = AxiosResponse<AccountingAccountResponse>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/accounts/${accountId}`,options
-    );
-  }
+export const getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet = (
+    accountId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountingAccountResponse>(
+      {url: `/api/v1/financial/accounting/accounting/accounts/${accountId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGetQueryKey = (accountId?: string,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/accounts/${accountId}`
+    ] as const;
+    }
+
+    
+export const getGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError = HTTPValidationError>(accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGetQueryKey(accountId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>> = ({ signal }) => getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet(accountId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(accountId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>>
+export type GetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGetQueryError = HTTPValidationError
+
+
+export function useGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Account
+ */
+
+export function useGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGetQueryOptions(accountId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza conta contabil.
  * @summary Update Account
  */
-const updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch = <TData = AxiosResponse<AccountingAccountResponse>>(
+export const updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch = (
     accountId: string,
-    accountingAccountUpdate: AccountingAccountUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/accounting/accounting/accounts/${accountId}`,
-      accountingAccountUpdate,options
-    );
-  }
-/**
+    accountingAccountUpdate: AccountingAccountUpdate,
+ ) => {
+      
+      
+      return customInstance<AccountingAccountResponse>(
+      {url: `/api/v1/financial/accounting/accounting/accounts/${accountId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: accountingAccountUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch>>, TError,{accountId: string;data: AccountingAccountUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch>>, TError,{accountId: string;data: AccountingAccountUpdate}, TContext> => {
+
+const mutationKey = ['updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch>>, {accountId: string;data: AccountingAccountUpdate}> = (props) => {
+          const {accountId,data} = props ?? {};
+
+          return  updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch(accountId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch>>>
+    export type UpdateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatchMutationBody = AccountingAccountUpdate
+    export type UpdateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Account
+ */
+export const useUpdateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch>>, TError,{accountId: string;data: AccountingAccountUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch>>,
+        TError,
+        {accountId: string;data: AccountingAccountUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna saldo de uma conta.
  * @summary Get Account Balance
  */
-const getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet = <TData = AxiosResponse<GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet200>>(
+export const getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet = (
     accountId: string,
-    params?: GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/accounts/${accountId}/balance`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params?: GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet200>(
+      {url: `/api/v1/financial/accounting/accounting/accounts/${accountId}/balance`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetQueryKey = (accountId?: string,
+    params?: GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/accounts/${accountId}/balance`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetQueryOptions = <TData = Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError = HTTPValidationError>(accountId: string,
+    params?: GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetQueryKey(accountId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>> = ({ signal }) => getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet(accountId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(accountId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>>
+export type GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetQueryError = HTTPValidationError
+
+
+export function useGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet<TData = Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError = HTTPValidationError>(
+ accountId: string,
+    params: undefined |  GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet<TData = Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError = HTTPValidationError>(
+ accountId: string,
+    params?: GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet<TData = Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError = HTTPValidationError>(
+ accountId: string,
+    params?: GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Account Balance
+ */
+
+export function useGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet<TData = Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError = HTTPValidationError>(
+ accountId: string,
+    params?: GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetQueryOptions(accountId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista centros de custo.
  * @summary List Cost Centers
  */
-const listCostCentersApiV1FinancialAccountingAccountingCostCentersGet = <TData = AxiosResponse<CostCenterListResponse[]>>(
-    params?: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/cost-centers`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listCostCentersApiV1FinancialAccountingAccountingCostCentersGet = (
+    params?: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostCenterListResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/cost-centers`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListCostCentersApiV1FinancialAccountingAccountingCostCentersGetQueryKey = (params?: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/cost-centers`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListCostCentersApiV1FinancialAccountingAccountingCostCentersGetQueryOptions = <TData = Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError = HTTPValidationError>(params?: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCostCentersApiV1FinancialAccountingAccountingCostCentersGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>> = ({ signal }) => listCostCentersApiV1FinancialAccountingAccountingCostCentersGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetQueryResult = NonNullable<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>>
+export type ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetQueryError = HTTPValidationError
+
+
+export function useListCostCentersApiV1FinancialAccountingAccountingCostCentersGet<TData = Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCostCentersApiV1FinancialAccountingAccountingCostCentersGet<TData = Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError = HTTPValidationError>(
+ params?: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCostCentersApiV1FinancialAccountingAccountingCostCentersGet<TData = Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError = HTTPValidationError>(
+ params?: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Cost Centers
+ */
+
+export function useListCostCentersApiV1FinancialAccountingAccountingCostCentersGet<TData = Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError = HTTPValidationError>(
+ params?: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCostCentersApiV1FinancialAccountingAccountingCostCentersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListCostCentersApiV1FinancialAccountingAccountingCostCentersGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo centro de custo.
  * @summary Create Cost Center
  */
-const createCostCenterApiV1FinancialAccountingAccountingCostCentersPost = <TData = AxiosResponse<CostCenterResponse>>(
-    costCenterCreate: CostCenterCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/cost-centers`,
-      costCenterCreate,options
-    );
-  }
-/**
+export const createCostCenterApiV1FinancialAccountingAccountingCostCentersPost = (
+    costCenterCreate: CostCenterCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostCenterResponse>(
+      {url: `/api/v1/financial/accounting/accounting/cost-centers`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costCenterCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateCostCenterApiV1FinancialAccountingAccountingCostCentersPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCostCenterApiV1FinancialAccountingAccountingCostCentersPost>>, TError,{data: CostCenterCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createCostCenterApiV1FinancialAccountingAccountingCostCentersPost>>, TError,{data: CostCenterCreate}, TContext> => {
+
+const mutationKey = ['createCostCenterApiV1FinancialAccountingAccountingCostCentersPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCostCenterApiV1FinancialAccountingAccountingCostCentersPost>>, {data: CostCenterCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCostCenterApiV1FinancialAccountingAccountingCostCentersPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCostCenterApiV1FinancialAccountingAccountingCostCentersPostMutationResult = NonNullable<Awaited<ReturnType<typeof createCostCenterApiV1FinancialAccountingAccountingCostCentersPost>>>
+    export type CreateCostCenterApiV1FinancialAccountingAccountingCostCentersPostMutationBody = CostCenterCreate
+    export type CreateCostCenterApiV1FinancialAccountingAccountingCostCentersPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Cost Center
+ */
+export const useCreateCostCenterApiV1FinancialAccountingAccountingCostCentersPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCostCenterApiV1FinancialAccountingAccountingCostCentersPost>>, TError,{data: CostCenterCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createCostCenterApiV1FinancialAccountingAccountingCostCentersPost>>,
+        TError,
+        {data: CostCenterCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateCostCenterApiV1FinancialAccountingAccountingCostCentersPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatisticas dos centros de custo.
  * @summary Get Cost Center Stats
  */
-const getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet = <TData = AxiosResponse<CostCenterStats>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/cost-centers/stats`,options
-    );
-  }
+export const getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostCenterStats>(
+      {url: `/api/v1/financial/accounting/accounting/cost-centers/stats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGetQueryKey = () => {
+    return [
+    `/api/v1/financial/accounting/accounting/cost-centers/stats`
+    ] as const;
+    }
+
+    
+export const getGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>> = ({ signal }) => getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>>
+export type GetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGetQueryError = unknown
+
+
+export function useGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet<TData = Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet<TData = Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet<TData = Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Cost Center Stats
+ */
+
+export function useGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet<TData = Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca centro de custo por ID.
  * @summary Get Cost Center
  */
-const getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet = <TData = AxiosResponse<CostCenterResponse>>(
-    centerId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/cost-centers/${centerId}`,options
-    );
-  }
+export const getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet = (
+    centerId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostCenterResponse>(
+      {url: `/api/v1/financial/accounting/accounting/cost-centers/${centerId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGetQueryKey = (centerId?: string,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/cost-centers/${centerId}`
+    ] as const;
+    }
+
+    
+export const getGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError = HTTPValidationError>(centerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGetQueryKey(centerId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>> = ({ signal }) => getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet(centerId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(centerId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>>
+export type GetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGetQueryError = HTTPValidationError
+
+
+export function useGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet<TData = Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError = HTTPValidationError>(
+ centerId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet<TData = Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError = HTTPValidationError>(
+ centerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet<TData = Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError = HTTPValidationError>(
+ centerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Cost Center
+ */
+
+export function useGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet<TData = Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError = HTTPValidationError>(
+ centerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGetQueryOptions(centerId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza centro de custo.
  * @summary Update Cost Center
  */
-const updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch = <TData = AxiosResponse<CostCenterResponse>>(
+export const updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch = (
     centerId: string,
-    costCenterUpdate: CostCenterUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/accounting/accounting/cost-centers/${centerId}`,
-      costCenterUpdate,options
-    );
-  }
-/**
+    costCenterUpdate: CostCenterUpdate,
+ ) => {
+      
+      
+      return customInstance<CostCenterResponse>(
+      {url: `/api/v1/financial/accounting/accounting/cost-centers/${centerId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: costCenterUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch>>, TError,{centerId: string;data: CostCenterUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch>>, TError,{centerId: string;data: CostCenterUpdate}, TContext> => {
+
+const mutationKey = ['updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch>>, {centerId: string;data: CostCenterUpdate}> = (props) => {
+          const {centerId,data} = props ?? {};
+
+          return  updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch(centerId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch>>>
+    export type UpdateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatchMutationBody = CostCenterUpdate
+    export type UpdateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Cost Center
+ */
+export const useUpdateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch>>, TError,{centerId: string;data: CostCenterUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch>>,
+        TError,
+        {centerId: string;data: CostCenterUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista periodos contabeis.
  * @summary List Periods
  */
-const listPeriodsApiV1FinancialAccountingAccountingPeriodsGet = <TData = AxiosResponse<AccountingPeriodListResponse[]>>(
-    params?: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/periods`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listPeriodsApiV1FinancialAccountingAccountingPeriodsGet = (
+    params?: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountingPeriodListResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/periods`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListPeriodsApiV1FinancialAccountingAccountingPeriodsGetQueryKey = (params?: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/periods`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListPeriodsApiV1FinancialAccountingAccountingPeriodsGetQueryOptions = <TData = Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError = HTTPValidationError>(params?: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPeriodsApiV1FinancialAccountingAccountingPeriodsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>> = ({ signal }) => listPeriodsApiV1FinancialAccountingAccountingPeriodsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>>
+export type ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetQueryError = HTTPValidationError
+
+
+export function useListPeriodsApiV1FinancialAccountingAccountingPeriodsGet<TData = Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPeriodsApiV1FinancialAccountingAccountingPeriodsGet<TData = Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError = HTTPValidationError>(
+ params?: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPeriodsApiV1FinancialAccountingAccountingPeriodsGet<TData = Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError = HTTPValidationError>(
+ params?: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Periods
+ */
+
+export function useListPeriodsApiV1FinancialAccountingAccountingPeriodsGet<TData = Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError = HTTPValidationError>(
+ params?: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPeriodsApiV1FinancialAccountingAccountingPeriodsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPeriodsApiV1FinancialAccountingAccountingPeriodsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo periodo contabil.
  * @summary Create Period
  */
-const createPeriodApiV1FinancialAccountingAccountingPeriodsPost = <TData = AxiosResponse<AccountingPeriodResponse>>(
-    accountingPeriodCreate: AccountingPeriodCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/periods`,
-      accountingPeriodCreate,options
-    );
-  }
-/**
+export const createPeriodApiV1FinancialAccountingAccountingPeriodsPost = (
+    accountingPeriodCreate: AccountingPeriodCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountingPeriodResponse>(
+      {url: `/api/v1/financial/accounting/accounting/periods`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: accountingPeriodCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreatePeriodApiV1FinancialAccountingAccountingPeriodsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPeriodApiV1FinancialAccountingAccountingPeriodsPost>>, TError,{data: AccountingPeriodCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createPeriodApiV1FinancialAccountingAccountingPeriodsPost>>, TError,{data: AccountingPeriodCreate}, TContext> => {
+
+const mutationKey = ['createPeriodApiV1FinancialAccountingAccountingPeriodsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPeriodApiV1FinancialAccountingAccountingPeriodsPost>>, {data: AccountingPeriodCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPeriodApiV1FinancialAccountingAccountingPeriodsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePeriodApiV1FinancialAccountingAccountingPeriodsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createPeriodApiV1FinancialAccountingAccountingPeriodsPost>>>
+    export type CreatePeriodApiV1FinancialAccountingAccountingPeriodsPostMutationBody = AccountingPeriodCreate
+    export type CreatePeriodApiV1FinancialAccountingAccountingPeriodsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Period
+ */
+export const useCreatePeriodApiV1FinancialAccountingAccountingPeriodsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPeriodApiV1FinancialAccountingAccountingPeriodsPost>>, TError,{data: AccountingPeriodCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createPeriodApiV1FinancialAccountingAccountingPeriodsPost>>,
+        TError,
+        {data: AccountingPeriodCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreatePeriodApiV1FinancialAccountingAccountingPeriodsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna periodo contabil atual.
  * @summary Get Current Period
  */
-const getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet = <TData = AxiosResponse<AccountingPeriodResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/periods/current`,options
-    );
-  }
+export const getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountingPeriodResponse>(
+      {url: `/api/v1/financial/accounting/accounting/periods/current`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGetQueryKey = () => {
+    return [
+    `/api/v1/financial/accounting/accounting/periods/current`
+    ] as const;
+    }
+
+    
+export const getGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGetQueryOptions = <TData = Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>> = ({ signal }) => getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>>
+export type GetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGetQueryError = unknown
+
+
+export function useGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet<TData = Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet<TData = Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet<TData = Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Current Period
+ */
+
+export function useGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet<TData = Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas dos periodos.
  * @summary Get Period Stats
  */
-const getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet = <TData = AxiosResponse<PeriodStats>>(
-    params?: GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/periods/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet = (
+    params?: GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PeriodStats>(
+      {url: `/api/v1/financial/accounting/accounting/periods/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetQueryKey = (params?: GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/periods/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError = HTTPValidationError>(params?: GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>> = ({ signal }) => getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>>
+export type GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet<TData = Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet<TData = Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError = HTTPValidationError>(
+ params?: GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet<TData = Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError = HTTPValidationError>(
+ params?: GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Period Stats
+ */
+
+export function useGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet<TData = Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError = HTTPValidationError>(
+ params?: GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca periodo por ID.
  * @summary Get Period
  */
-const getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet = <TData = AxiosResponse<AccountingPeriodResponse>>(
-    periodId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/periods/${periodId}`,options
-    );
-  }
+export const getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet = (
+    periodId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AccountingPeriodResponse>(
+      {url: `/api/v1/financial/accounting/accounting/periods/${periodId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGetQueryKey = (periodId?: string,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/periods/${periodId}`
+    ] as const;
+    }
+
+    
+export const getGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError = HTTPValidationError>(periodId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGetQueryKey(periodId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>> = ({ signal }) => getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet(periodId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(periodId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>>
+export type GetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGetQueryError = HTTPValidationError
+
+
+export function useGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet<TData = Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError = HTTPValidationError>(
+ periodId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet<TData = Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError = HTTPValidationError>(
+ periodId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet<TData = Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError = HTTPValidationError>(
+ periodId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Period
+ */
+
+export function useGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet<TData = Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError = HTTPValidationError>(
+ periodId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGetQueryOptions(periodId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Abre periodo contabil.
  * @summary Open Period
  */
-const openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost = <TData = AxiosResponse<OpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost200>>(
-    periodId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/periods/${periodId}/open`,undefined,options
-    );
-  }
-/**
+export const openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost = (
+    periodId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<OpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost200>(
+      {url: `/api/v1/financial/accounting/accounting/periods/${periodId}/open`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getOpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost>>, TError,{periodId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost>>, TError,{periodId: string}, TContext> => {
+
+const mutationKey = ['openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost>>, {periodId: string}> = (props) => {
+          const {periodId} = props ?? {};
+
+          return  openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost(periodId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type OpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPostMutationResult = NonNullable<Awaited<ReturnType<typeof openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost>>>
+    
+    export type OpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Open Period
+ */
+export const useOpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost>>, TError,{periodId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost>>,
+        TError,
+        {periodId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getOpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Fecha periodo contabil.
  * @summary Close Period
  */
-const closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost = <TData = AxiosResponse<ClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost200>>(
+export const closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost = (
     periodId: string,
-    periodCloseRequest: PeriodCloseRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/periods/${periodId}/close`,
-      periodCloseRequest,options
-    );
-  }
-/**
+    periodCloseRequest: PeriodCloseRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost200>(
+      {url: `/api/v1/financial/accounting/accounting/periods/${periodId}/close`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: periodCloseRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost>>, TError,{periodId: string;data: PeriodCloseRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost>>, TError,{periodId: string;data: PeriodCloseRequest}, TContext> => {
+
+const mutationKey = ['closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost>>, {periodId: string;data: PeriodCloseRequest}> = (props) => {
+          const {periodId,data} = props ?? {};
+
+          return  closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost(periodId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePostMutationResult = NonNullable<Awaited<ReturnType<typeof closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost>>>
+    export type ClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePostMutationBody = PeriodCloseRequest
+    export type ClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Close Period
+ */
+export const useClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost>>, TError,{periodId: string;data: PeriodCloseRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost>>,
+        TError,
+        {periodId: string;data: PeriodCloseRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Reabre periodo contabil.
  * @summary Reopen Period
  */
-const reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost = <TData = AxiosResponse<ReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost200>>(
+export const reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost = (
     periodId: string,
-    periodReopenRequest: PeriodReopenRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/periods/${periodId}/reopen`,
-      periodReopenRequest,options
-    );
-  }
-/**
+    periodReopenRequest: PeriodReopenRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost200>(
+      {url: `/api/v1/financial/accounting/accounting/periods/${periodId}/reopen`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: periodReopenRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost>>, TError,{periodId: string;data: PeriodReopenRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost>>, TError,{periodId: string;data: PeriodReopenRequest}, TContext> => {
+
+const mutationKey = ['reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost>>, {periodId: string;data: PeriodReopenRequest}> = (props) => {
+          const {periodId,data} = props ?? {};
+
+          return  reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost(periodId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPostMutationResult = NonNullable<Awaited<ReturnType<typeof reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost>>>
+    export type ReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPostMutationBody = PeriodReopenRequest
+    export type ReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Reopen Period
+ */
+export const useReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost>>, TError,{periodId: string;data: PeriodReopenRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost>>,
+        TError,
+        {periodId: string;data: PeriodReopenRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista lancamentos contabeis.
  * @summary List Journal Entries
  */
-const listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet = <TData = AxiosResponse<JournalEntryListResponse[]>>(
-    params?: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/journal-entries`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet = (
+    params?: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<JournalEntryListResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetQueryKey = (params?: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/journal-entries`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetQueryOptions = <TData = Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError = HTTPValidationError>(params?: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>> = ({ signal }) => listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>>
+export type ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetQueryError = HTTPValidationError
+
+
+export function useListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet<TData = Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet<TData = Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError = HTTPValidationError>(
+ params?: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet<TData = Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError = HTTPValidationError>(
+ params?: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Journal Entries
+ */
+
+export function useListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet<TData = Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError = HTTPValidationError>(
+ params?: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo lancamento contabil.
  * @summary Create Journal Entry
  */
-const createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost = <TData = AxiosResponse<JournalEntryResponse>>(
-    journalEntryCreate: JournalEntryCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/journal-entries`,
-      journalEntryCreate,options
-    );
-  }
-/**
+export const createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost = (
+    journalEntryCreate: JournalEntryCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<JournalEntryResponse>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: journalEntryCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost>>, TError,{data: JournalEntryCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost>>, TError,{data: JournalEntryCreate}, TContext> => {
+
+const mutationKey = ['createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost>>, {data: JournalEntryCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost>>>
+    export type CreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPostMutationBody = JournalEntryCreate
+    export type CreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Journal Entry
+ */
+export const useCreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost>>, TError,{data: JournalEntryCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost>>,
+        TError,
+        {data: JournalEntryCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista lancamentos pendentes de aprovacao.
  * @summary List Pending Approval
  */
-const listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet = <TData = AxiosResponse<JournalEntryListResponse[]>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/journal-entries/pending-approval`,options
-    );
-  }
+export const listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<JournalEntryListResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/pending-approval`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGetQueryKey = () => {
+    return [
+    `/api/v1/financial/accounting/accounting/journal-entries/pending-approval`
+    ] as const;
+    }
+
+    
+export const getListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGetQueryOptions = <TData = Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>> = ({ signal }) => listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGetQueryResult = NonNullable<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>>
+export type ListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGetQueryError = unknown
+
+
+export function useListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet<TData = Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet<TData = Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet<TData = Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Pending Approval
+ */
+
+export function useListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet<TData = Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas dos lancamentos.
  * @summary Get Journal Stats
  */
-const getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet = <TData = AxiosResponse<JournalStats>>(
-    params?: GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/journal-entries/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet = (
+    params?: GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<JournalStats>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetQueryKey = (params?: GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/journal-entries/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError = HTTPValidationError>(params?: GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>> = ({ signal }) => getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>>
+export type GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetQueryError = HTTPValidationError
+
+
+export function useGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet<TData = Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet<TData = Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet<TData = Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Journal Stats
+ */
+
+export function useGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet<TData = Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca lancamento por ID.
  * @summary Get Journal Entry
  */
-const getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet = <TData = AxiosResponse<JournalEntryResponse>>(
-    entryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/journal-entries/${entryId}`,options
-    );
-  }
+export const getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet = (
+    entryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<JournalEntryResponse>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/${entryId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGetQueryKey = (entryId?: string,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/journal-entries/${entryId}`
+    ] as const;
+    }
+
+    
+export const getGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError = HTTPValidationError>(entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGetQueryKey(entryId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>> = ({ signal }) => getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet(entryId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(entryId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>>
+export type GetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGetQueryError = HTTPValidationError
+
+
+export function useGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Journal Entry
+ */
+
+export function useGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGetQueryOptions(entryId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista partidas do lancamento.
  * @summary Get Entry Lines
  */
-const getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet = <TData = AxiosResponse<JournalEntryLineResponse[]>>(
-    entryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/lines`,options
-    );
-  }
+export const getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet = (
+    entryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<JournalEntryLineResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/lines`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGetQueryKey = (entryId?: string,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/lines`
+    ] as const;
+    }
+
+    
+export const getGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGetQueryOptions = <TData = Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError = HTTPValidationError>(entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGetQueryKey(entryId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>> = ({ signal }) => getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet(entryId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(entryId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGetQueryResult = NonNullable<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>>
+export type GetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGetQueryError = HTTPValidationError
+
+
+export function useGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet<TData = Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError = HTTPValidationError>(
+ entryId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet<TData = Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet<TData = Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Entry Lines
+ */
+
+export function useGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet<TData = Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGetQueryOptions(entryId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Contabiliza lancamento.
  * @summary Post Journal Entry
  */
-const postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost = <TData = AxiosResponse<PostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost200>>(
-    entryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/post`,undefined,options
-    );
-  }
-/**
+export const postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost = (
+    entryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost200>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/post`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getPostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost>>, TError,{entryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost>>, TError,{entryId: string}, TContext> => {
+
+const mutationKey = ['postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost>>, {entryId: string}> = (props) => {
+          const {entryId} = props ?? {};
+
+          return  postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost(entryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPostMutationResult = NonNullable<Awaited<ReturnType<typeof postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost>>>
+    
+    export type PostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Post Journal Entry
+ */
+export const usePostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost>>, TError,{entryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost>>,
+        TError,
+        {entryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getPostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova lancamento.
  * @summary Approve Journal Entry
  */
-const approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost = <TData = AxiosResponse<ApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost200>>(
+export const approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost = (
     entryId: string,
-    journalEntryApprovalRequest: JournalEntryApprovalRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/approve`,
-      journalEntryApprovalRequest,options
-    );
-  }
-/**
+    journalEntryApprovalRequest: JournalEntryApprovalRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost200>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: journalEntryApprovalRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost>>, TError,{entryId: string;data: JournalEntryApprovalRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost>>, TError,{entryId: string;data: JournalEntryApprovalRequest}, TContext> => {
+
+const mutationKey = ['approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost>>, {entryId: string;data: JournalEntryApprovalRequest}> = (props) => {
+          const {entryId,data} = props ?? {};
+
+          return  approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost(entryId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost>>>
+    export type ApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePostMutationBody = JournalEntryApprovalRequest
+    export type ApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Approve Journal Entry
+ */
+export const useApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost>>, TError,{entryId: string;data: JournalEntryApprovalRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost>>,
+        TError,
+        {entryId: string;data: JournalEntryApprovalRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita lancamento.
  * @summary Reject Journal Entry
  */
-const rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost = <TData = AxiosResponse<RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost200>>(
+export const rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost = (
     entryId: string,
-    params: RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/reject`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost200>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/reject`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost>>, TError,{entryId: string;params: RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost>>, TError,{entryId: string;params: RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostParams}, TContext> => {
+
+const mutationKey = ['rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost>>, {entryId: string;params: RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostParams}> = (props) => {
+          const {entryId,params} = props ?? {};
+
+          return  rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost(entryId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost>>>
+    
+    export type RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Reject Journal Entry
+ */
+export const useRejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost>>, TError,{entryId: string;params: RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost>>,
+        TError,
+        {entryId: string;params: RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Estorna lancamento.
  * @summary Reverse Journal Entry
  */
-const reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost = <TData = AxiosResponse<JournalEntryResponse>>(
+export const reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost = (
     entryId: string,
-    journalEntryReversalRequest: JournalEntryReversalRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/reverse`,
-      journalEntryReversalRequest,options
-    );
-  }
-/**
+    journalEntryReversalRequest: JournalEntryReversalRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<JournalEntryResponse>(
+      {url: `/api/v1/financial/accounting/accounting/journal-entries/${entryId}/reverse`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: journalEntryReversalRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getReverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost>>, TError,{entryId: string;data: JournalEntryReversalRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost>>, TError,{entryId: string;data: JournalEntryReversalRequest}, TContext> => {
+
+const mutationKey = ['reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost>>, {entryId: string;data: JournalEntryReversalRequest}> = (props) => {
+          const {entryId,data} = props ?? {};
+
+          return  reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost(entryId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePostMutationResult = NonNullable<Awaited<ReturnType<typeof reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost>>>
+    export type ReverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePostMutationBody = JournalEntryReversalRequest
+    export type ReverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Reverse Journal Entry
+ */
+export const useReverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost>>, TError,{entryId: string;data: JournalEntryReversalRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost>>,
+        TError,
+        {entryId: string;data: JournalEntryReversalRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getReverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista balancetes.
  * @summary List Trial Balances
  */
-const listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet = <TData = AxiosResponse<TrialBalanceListResponse[]>>(
-    params?: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/trial-balances`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet = (
+    params?: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TrialBalanceListResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetQueryKey = (params?: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/trial-balances`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetQueryOptions = <TData = Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError = HTTPValidationError>(params?: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>> = ({ signal }) => listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>>
+export type ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetQueryError = HTTPValidationError
+
+
+export function useListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet<TData = Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet<TData = Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError = HTTPValidationError>(
+ params?: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet<TData = Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError = HTTPValidationError>(
+ params?: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Trial Balances
+ */
+
+export function useListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet<TData = Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError = HTTPValidationError>(
+ params?: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo balancete.
  * @summary Create Trial Balance
  */
-const createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost = <TData = AxiosResponse<TrialBalanceResponse>>(
-    trialBalanceCreate: TrialBalanceCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/trial-balances`,
-      trialBalanceCreate,options
-    );
-  }
-/**
+export const createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost = (
+    trialBalanceCreate: TrialBalanceCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TrialBalanceResponse>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: trialBalanceCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost>>, TError,{data: TrialBalanceCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost>>, TError,{data: TrialBalanceCreate}, TContext> => {
+
+const mutationKey = ['createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost>>, {data: TrialBalanceCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost>>>
+    export type CreateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPostMutationBody = TrialBalanceCreate
+    export type CreateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Trial Balance
+ */
+export const useCreateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost>>, TError,{data: TrialBalanceCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost>>,
+        TError,
+        {data: TrialBalanceCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna ultimo balancete.
  * @summary Get Latest Balance
  */
-const getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet = <TData = AxiosResponse<TrialBalanceResponse>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/trial-balances/latest`,options
-    );
-  }
+export const getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TrialBalanceResponse>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances/latest`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGetQueryKey = () => {
+    return [
+    `/api/v1/financial/accounting/accounting/trial-balances/latest`
+    ] as const;
+    }
+
+    
+export const getGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGetQueryOptions = <TData = Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>> = ({ signal }) => getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGetQueryResult = NonNullable<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>>
+export type GetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGetQueryError = unknown
+
+
+export function useGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet<TData = Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>,
+          TError,
+          Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet<TData = Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>,
+          TError,
+          Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet<TData = Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Latest Balance
+ */
+
+export function useGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet<TData = Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas dos balancetes.
  * @summary Get Balance Stats
  */
-const getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet = <TData = AxiosResponse<BalanceStats>>(
-    params?: GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/trial-balances/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet = (
+    params?: GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BalanceStats>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetQueryKey = (params?: GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/trial-balances/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError = HTTPValidationError>(params?: GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>> = ({ signal }) => getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>>
+export type GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetQueryError = HTTPValidationError
+
+
+export function useGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet<TData = Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet<TData = Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet<TData = Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Balance Stats
+ */
+
+export function useGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet<TData = Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca balancete por ID.
  * @summary Get Trial Balance
  */
-const getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet = <TData = AxiosResponse<TrialBalanceResponse>>(
-    balanceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}`,options
-    );
-  }
+export const getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet = (
+    balanceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TrialBalanceResponse>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGetQueryKey = (balanceId?: string,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}`
+    ] as const;
+    }
+
+    
+export const getGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError = HTTPValidationError>(balanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGetQueryKey(balanceId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>> = ({ signal }) => getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet(balanceId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(balanceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>>
+export type GetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGetQueryError = HTTPValidationError
+
+
+export function useGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet<TData = Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError = HTTPValidationError>(
+ balanceId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet<TData = Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError = HTTPValidationError>(
+ balanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet<TData = Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError = HTTPValidationError>(
+ balanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Trial Balance
+ */
+
+export function useGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet<TData = Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError = HTTPValidationError>(
+ balanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGetQueryOptions(balanceId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista itens do balancete.
  * @summary Get Balance Items
  */
-const getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet = <TData = AxiosResponse<TrialBalanceItemResponse[]>>(
+export const getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet = (
     balanceId: string,
-    params?: GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/items`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params?: GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TrialBalanceItemResponse[]>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/items`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetQueryKey = (balanceId?: string,
+    params?: GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams,) => {
+    return [
+    `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/items`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetQueryOptions = <TData = Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError = HTTPValidationError>(balanceId: string,
+    params?: GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetQueryKey(balanceId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>> = ({ signal }) => getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet(balanceId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(balanceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>>
+export type GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetQueryError = HTTPValidationError
+
+
+export function useGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet<TData = Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError = HTTPValidationError>(
+ balanceId: string,
+    params: undefined |  GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet<TData = Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError = HTTPValidationError>(
+ balanceId: string,
+    params?: GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet<TData = Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError = HTTPValidationError>(
+ balanceId: string,
+    params?: GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Balance Items
+ */
+
+export function useGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet<TData = Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError = HTTPValidationError>(
+ balanceId: string,
+    params?: GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetQueryOptions(balanceId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Gera balancete a partir dos lancamentos.
  * @summary Generate Trial Balance
  */
-const generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost = <TData = AxiosResponse<GenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost200>>(
-    balanceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/generate`,undefined,options
-    );
-  }
-/**
+export const generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost = (
+    balanceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost200>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/generate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getGenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost>>, TError,{balanceId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost>>, TError,{balanceId: string}, TContext> => {
+
+const mutationKey = ['generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost>>, {balanceId: string}> = (props) => {
+          const {balanceId} = props ?? {};
+
+          return  generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost(balanceId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePostMutationResult = NonNullable<Awaited<ReturnType<typeof generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost>>>
+    
+    export type GenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Generate Trial Balance
+ */
+export const useGenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost>>, TError,{balanceId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost>>,
+        TError,
+        {balanceId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getGenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova balancete.
  * @summary Approve Trial Balance
  */
-const approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost = <TData = AxiosResponse<ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost200>>(
+export const approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost = (
     balanceId: string,
-    params?: ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/approve`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost200>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/approve`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost>>, TError,{balanceId: string;params?: ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost>>, TError,{balanceId: string;params?: ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostParams}, TContext> => {
+
+const mutationKey = ['approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost>>, {balanceId: string;params?: ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostParams}> = (props) => {
+          const {balanceId,params} = props ?? {};
+
+          return  approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost(balanceId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost>>>
+    
+    export type ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Approve Trial Balance
+ */
+export const useApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost>>, TError,{balanceId: string;params?: ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost>>,
+        TError,
+        {balanceId: string;params?: ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Publica balancete.
  * @summary Publish Trial Balance
  */
-const publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost = <TData = AxiosResponse<PublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost200>>(
-    balanceId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/publish`,undefined,options
-    );
-  }
-return {listChartsApiV1FinancialAccountingAccountingChartsGet,createChartApiV1FinancialAccountingAccountingChartsPost,getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet,getChartStatsApiV1FinancialAccountingAccountingChartsStatsGet,getChartApiV1FinancialAccountingAccountingChartsChartIdGet,updateChartApiV1FinancialAccountingAccountingChartsChartIdPatch,activateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost,listAccountsApiV1FinancialAccountingAccountingAccountsGet,createAccountApiV1FinancialAccountingAccountingAccountsPost,getAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGet,getAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGet,getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet,updateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatch,getAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet,listCostCentersApiV1FinancialAccountingAccountingCostCentersGet,createCostCenterApiV1FinancialAccountingAccountingCostCentersPost,getCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGet,getCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGet,updateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatch,listPeriodsApiV1FinancialAccountingAccountingPeriodsGet,createPeriodApiV1FinancialAccountingAccountingPeriodsPost,getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet,getPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGet,getPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGet,openPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost,closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost,reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost,listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet,createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost,listPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGet,getJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGet,getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet,getEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGet,postJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost,approveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost,rejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost,reverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePost,listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet,createTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPost,getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet,getBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGet,getTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet,getBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGet,generateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost,approveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost,publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost}};
-export type ListChartsApiV1FinancialAccountingAccountingChartsGetResult = AxiosResponse<ChartOfAccountsListResponse[]>
-export type CreateChartApiV1FinancialAccountingAccountingChartsPostResult = AxiosResponse<ChartOfAccountsResponse>
-export type GetActiveChartApiV1FinancialAccountingAccountingChartsActiveGetResult = AxiosResponse<ChartOfAccountsResponse>
-export type GetChartStatsApiV1FinancialAccountingAccountingChartsStatsGetResult = AxiosResponse<ChartStats>
-export type GetChartApiV1FinancialAccountingAccountingChartsChartIdGetResult = AxiosResponse<ChartOfAccountsResponse>
-export type UpdateChartApiV1FinancialAccountingAccountingChartsChartIdPatchResult = AxiosResponse<ChartOfAccountsResponse>
-export type ActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePostResult = AxiosResponse<ActivateChartApiV1FinancialAccountingAccountingChartsChartIdActivatePost200>
-export type ListAccountsApiV1FinancialAccountingAccountingAccountsGetResult = AxiosResponse<AccountingAccountListResponse[]>
-export type CreateAccountApiV1FinancialAccountingAccountingAccountsPostResult = AxiosResponse<AccountingAccountResponse>
-export type GetAccountTreeApiV1FinancialAccountingAccountingAccountsTreeGetResult = AxiosResponse<AccountTreeResponse[]>
-export type GetAccountStatsApiV1FinancialAccountingAccountingAccountsStatsGetResult = AxiosResponse<AccountStats>
-export type GetAccountApiV1FinancialAccountingAccountingAccountsAccountIdGetResult = AxiosResponse<AccountingAccountResponse>
-export type UpdateAccountApiV1FinancialAccountingAccountingAccountsAccountIdPatchResult = AxiosResponse<AccountingAccountResponse>
-export type GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGetResult = AxiosResponse<GetAccountBalanceApiV1FinancialAccountingAccountingAccountsAccountIdBalanceGet200>
-export type ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetResult = AxiosResponse<CostCenterListResponse[]>
-export type CreateCostCenterApiV1FinancialAccountingAccountingCostCentersPostResult = AxiosResponse<CostCenterResponse>
-export type GetCostCenterStatsApiV1FinancialAccountingAccountingCostCentersStatsGetResult = AxiosResponse<CostCenterStats>
-export type GetCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdGetResult = AxiosResponse<CostCenterResponse>
-export type UpdateCostCenterApiV1FinancialAccountingAccountingCostCentersCenterIdPatchResult = AxiosResponse<CostCenterResponse>
-export type ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetResult = AxiosResponse<AccountingPeriodListResponse[]>
-export type CreatePeriodApiV1FinancialAccountingAccountingPeriodsPostResult = AxiosResponse<AccountingPeriodResponse>
-export type GetCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGetResult = AxiosResponse<AccountingPeriodResponse>
-export type GetPeriodStatsApiV1FinancialAccountingAccountingPeriodsStatsGetResult = AxiosResponse<PeriodStats>
-export type GetPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdGetResult = AxiosResponse<AccountingPeriodResponse>
-export type OpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPostResult = AxiosResponse<OpenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdOpenPost200>
-export type ClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePostResult = AxiosResponse<ClosePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost200>
-export type ReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPostResult = AxiosResponse<ReopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost200>
-export type ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetResult = AxiosResponse<JournalEntryListResponse[]>
-export type CreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPostResult = AxiosResponse<JournalEntryResponse>
-export type ListPendingApprovalApiV1FinancialAccountingAccountingJournalEntriesPendingApprovalGetResult = AxiosResponse<JournalEntryListResponse[]>
-export type GetJournalStatsApiV1FinancialAccountingAccountingJournalEntriesStatsGetResult = AxiosResponse<JournalStats>
-export type GetJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGetResult = AxiosResponse<JournalEntryResponse>
-export type GetEntryLinesApiV1FinancialAccountingAccountingJournalEntriesEntryIdLinesGetResult = AxiosResponse<JournalEntryLineResponse[]>
-export type PostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPostResult = AxiosResponse<PostJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdPostPost200>
-export type ApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePostResult = AxiosResponse<ApproveJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdApprovePost200>
-export type RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPostResult = AxiosResponse<RejectJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdRejectPost200>
-export type ReverseJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdReversePostResult = AxiosResponse<JournalEntryResponse>
-export type ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetResult = AxiosResponse<TrialBalanceListResponse[]>
-export type CreateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesPostResult = AxiosResponse<TrialBalanceResponse>
-export type GetLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGetResult = AxiosResponse<TrialBalanceResponse>
-export type GetBalanceStatsApiV1FinancialAccountingAccountingTrialBalancesStatsGetResult = AxiosResponse<BalanceStats>
-export type GetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGetResult = AxiosResponse<TrialBalanceResponse>
-export type GetBalanceItemsApiV1FinancialAccountingAccountingTrialBalancesBalanceIdItemsGetResult = AxiosResponse<TrialBalanceItemResponse[]>
-export type GenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePostResult = AxiosResponse<GenerateTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGeneratePost200>
-export type ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePostResult = AxiosResponse<ApproveTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdApprovePost200>
-export type PublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPostResult = AxiosResponse<PublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost200>
+export const publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost = (
+    balanceId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost200>(
+      {url: `/api/v1/financial/accounting/accounting/trial-balances/${balanceId}/publish`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getPublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost>>, TError,{balanceId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost>>, TError,{balanceId: string}, TContext> => {
+
+const mutationKey = ['publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost>>, {balanceId: string}> = (props) => {
+          const {balanceId} = props ?? {};
+
+          return  publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost(balanceId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPostMutationResult = NonNullable<Awaited<ReturnType<typeof publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost>>>
+    
+    export type PublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Publish Trial Balance
+ */
+export const usePublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost>>, TError,{balanceId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof publishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPost>>,
+        TError,
+        {balanceId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getPublishTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdPublishPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   BankReconciliationCreate,
@@ -21,6 +34,7 @@ import type {
   GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet200,
   GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams,
   GetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet200,
+  HTTPValidationError,
   ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost200,
   ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams,
   MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost200,
@@ -30,183 +44,996 @@ import type {
   StatementImport
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialBankReconciliation = () => {
+
 /**
  * Cria nova conciliação bancária.
  * @summary Criar conciliação
  */
-const createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost = <TData = AxiosResponse<BankReconciliationResponse>>(
-    bankReconciliationCreate: BankReconciliationCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/`,
-      bankReconciliationCreate,options
-    );
-  }
-/**
+export const createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost = (
+    bankReconciliationCreate: BankReconciliationCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankReconciliationResponse>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: bankReconciliationCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateReconciliationApiV1FinancialBankReconciliationBankReconciliationsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost>>, TError,{data: BankReconciliationCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost>>, TError,{data: BankReconciliationCreate}, TContext> => {
+
+const mutationKey = ['createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost>>, {data: BankReconciliationCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReconciliationApiV1FinancialBankReconciliationBankReconciliationsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost>>>
+    export type CreateReconciliationApiV1FinancialBankReconciliationBankReconciliationsPostMutationBody = BankReconciliationCreate
+    export type CreateReconciliationApiV1FinancialBankReconciliationBankReconciliationsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar conciliação
+ */
+export const useCreateReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost>>, TError,{data: BankReconciliationCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost>>,
+        TError,
+        {data: BankReconciliationCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateReconciliationApiV1FinancialBankReconciliationBankReconciliationsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista conciliações com filtros.
  * @summary Listar conciliações
  */
-const listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet = <TData = AxiosResponse<BankReconciliationResponse[]>>(
-    params: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet = (
+    params: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankReconciliationResponse[]>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetQueryKey = (params?: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams,) => {
+    return [
+    `/api/v1/financial/bank-reconciliation/bank-reconciliations/`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetQueryOptions = <TData = Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError = HTTPValidationError>(params: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>> = ({ signal }) => listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>>
+export type ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetQueryError = HTTPValidationError
+
+
+export function useListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet<TData = Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError = HTTPValidationError>(
+ params: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet<TData = Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError = HTTPValidationError>(
+ params: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet<TData = Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError = HTTPValidationError>(
+ params: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar conciliações
+ */
+
+export function useListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet<TData = Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError = HTTPValidationError>(
+ params: ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna conciliação em andamento para a conta.
  * @summary Conciliação em andamento
  */
-const getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet = <TData = AxiosResponse<GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet200>>(
-    params: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/in-progress`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet = (
+    params: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet200>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/in-progress`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetQueryKey = (params?: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams,) => {
+    return [
+    `/api/v1/financial/bank-reconciliation/bank-reconciliations/in-progress`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetQueryOptions = <TData = Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError = HTTPValidationError>(params: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>> = ({ signal }) => getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetQueryResult = NonNullable<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>>
+export type GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetQueryError = HTTPValidationError
+
+
+export function useGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet<TData = Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError = HTTPValidationError>(
+ params: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet<TData = Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError = HTTPValidationError>(
+ params: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet<TData = Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError = HTTPValidationError>(
+ params: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Conciliação em andamento
+ */
+
+export function useGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet<TData = Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError = HTTPValidationError>(
+ params: GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna conciliação pelo ID.
  * @summary Obter conciliação
  */
-const getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet = <TData = AxiosResponse<BankReconciliationResponse>>(
-    reconciliationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}`,options
-    );
-  }
+export const getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet = (
+    reconciliationId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankReconciliationResponse>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGetQueryKey = (reconciliationId?: string,) => {
+    return [
+    `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}`
+    ] as const;
+    }
+
+    
+export const getGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError = HTTPValidationError>(reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGetQueryKey(reconciliationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>> = ({ signal }) => getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet(reconciliationId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(reconciliationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>>
+export type GetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGetQueryError = HTTPValidationError
+
+
+export function useGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet<TData = Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet<TData = Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet<TData = Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter conciliação
+ */
+
+export function useGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet<TData = Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGetQueryOptions(reconciliationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza conciliação bancária.
  * @summary Atualizar conciliação
  */
-const updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut = <TData = AxiosResponse<BankReconciliationResponse>>(
+export const updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut = (
     reconciliationId: string,
-    bankReconciliationUpdate: BankReconciliationUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}`,
-      bankReconciliationUpdate,options
-    );
-  }
-/**
+    bankReconciliationUpdate: BankReconciliationUpdate,
+ ) => {
+      
+      
+      return customInstance<BankReconciliationResponse>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: bankReconciliationUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut>>, TError,{reconciliationId: string;data: BankReconciliationUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut>>, TError,{reconciliationId: string;data: BankReconciliationUpdate}, TContext> => {
+
+const mutationKey = ['updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut>>, {reconciliationId: string;data: BankReconciliationUpdate}> = (props) => {
+          const {reconciliationId,data} = props ?? {};
+
+          return  updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut(reconciliationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut>>>
+    export type UpdateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPutMutationBody = BankReconciliationUpdate
+    export type UpdateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar conciliação
+ */
+export const useUpdateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut>>, TError,{reconciliationId: string;data: BankReconciliationUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut>>,
+        TError,
+        {reconciliationId: string;data: BankReconciliationUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui conciliação bancária.
  * @summary Excluir conciliação
  */
-const deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete = <TData = AxiosResponse<void>>(
-    reconciliationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}`,options
-    );
-  }
-/**
+export const deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete = (
+    reconciliationId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete>>, TError,{reconciliationId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete>>, TError,{reconciliationId: string}, TContext> => {
+
+const mutationKey = ['deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete>>, {reconciliationId: string}> = (props) => {
+          const {reconciliationId} = props ?? {};
+
+          return  deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete(reconciliationId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete>>>
+    
+    export type DeleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir conciliação
+ */
+export const useDeleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete>>, TError,{reconciliationId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete>>,
+        TError,
+        {reconciliationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Importa extrato bancário para conciliação.
  * @summary Importar extrato
  */
-const importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost = <TData = AxiosResponse<ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost200>>(
+export const importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost = (
     reconciliationId: string,
-    statementImport: StatementImport, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/import-statement`,
-      statementImport,options
-    );
-  }
-/**
+    statementImport: StatementImport,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost200>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/import-statement`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: statementImport, signal
+    },
+      );
+    }
+  
+
+
+export const getImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost>>, TError,{reconciliationId: string;data: StatementImport}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost>>, TError,{reconciliationId: string;data: StatementImport}, TContext> => {
+
+const mutationKey = ['importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost>>, {reconciliationId: string;data: StatementImport}> = (props) => {
+          const {reconciliationId,data} = props ?? {};
+
+          return  importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost(reconciliationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPostMutationResult = NonNullable<Awaited<ReturnType<typeof importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost>>>
+    export type ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPostMutationBody = StatementImport
+    export type ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Importar extrato
+ */
+export const useImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost>>, TError,{reconciliationId: string;data: StatementImport}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost>>,
+        TError,
+        {reconciliationId: string;data: StatementImport},
+        TContext
+      > => {
+
+      const mutationOptions = getImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Vincula item do extrato com transação do sistema.
  * @summary Conciliar item
  */
-const matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost = <TData = AxiosResponse<MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost200>>(
+export const matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost = (
     reconciliationId: string,
-    reconciliationItemMatch: ReconciliationItemMatch, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/match`,
-      reconciliationItemMatch,options
-    );
-  }
-/**
+    reconciliationItemMatch: ReconciliationItemMatch,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost200>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/match`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: reconciliationItemMatch, signal
+    },
+      );
+    }
+  
+
+
+export const getMatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost>>, TError,{reconciliationId: string;data: ReconciliationItemMatch}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost>>, TError,{reconciliationId: string;data: ReconciliationItemMatch}, TContext> => {
+
+const mutationKey = ['matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost>>, {reconciliationId: string;data: ReconciliationItemMatch}> = (props) => {
+          const {reconciliationId,data} = props ?? {};
+
+          return  matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost(reconciliationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPostMutationResult = NonNullable<Awaited<ReturnType<typeof matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost>>>
+    export type MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPostMutationBody = ReconciliationItemMatch
+    export type MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Conciliar item
+ */
+export const useMatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost>>, TError,{reconciliationId: string;data: ReconciliationItemMatch}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost>>,
+        TError,
+        {reconciliationId: string;data: ReconciliationItemMatch},
+        TContext
+      > => {
+
+      const mutationOptions = getMatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria lançamento de ajuste para diferença de conciliação.
  * @summary Criar ajuste
  */
-const createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost = <TData = AxiosResponse<CreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost200>>(
+export const createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost = (
     reconciliationId: string,
-    reconciliationAdjustment: ReconciliationAdjustment, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/adjustment`,
-      reconciliationAdjustment,options
-    );
-  }
-/**
+    reconciliationAdjustment: ReconciliationAdjustment,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost200>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/adjustment`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: reconciliationAdjustment, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost>>, TError,{reconciliationId: string;data: ReconciliationAdjustment}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost>>, TError,{reconciliationId: string;data: ReconciliationAdjustment}, TContext> => {
+
+const mutationKey = ['createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost>>, {reconciliationId: string;data: ReconciliationAdjustment}> = (props) => {
+          const {reconciliationId,data} = props ?? {};
+
+          return  createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost(reconciliationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPostMutationResult = NonNullable<Awaited<ReturnType<typeof createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost>>>
+    export type CreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPostMutationBody = ReconciliationAdjustment
+    export type CreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar ajuste
+ */
+export const useCreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost>>, TError,{reconciliationId: string;data: ReconciliationAdjustment}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost>>,
+        TError,
+        {reconciliationId: string;data: ReconciliationAdjustment},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Finaliza conciliação bancária.
  * @summary Finalizar conciliação
  */
-const completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost = <TData = AxiosResponse<BankReconciliationResponse>>(
-    reconciliationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/complete`,undefined,options
-    );
-  }
-/**
+export const completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost = (
+    reconciliationId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankReconciliationResponse>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/complete`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getCompleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost>>, TError,{reconciliationId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost>>, TError,{reconciliationId: string}, TContext> => {
+
+const mutationKey = ['completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost>>, {reconciliationId: string}> = (props) => {
+          const {reconciliationId} = props ?? {};
+
+          return  completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost(reconciliationId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CompleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePostMutationResult = NonNullable<Awaited<ReturnType<typeof completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost>>>
+    
+    export type CompleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Finalizar conciliação
+ */
+export const useCompleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost>>, TError,{reconciliationId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost>>,
+        TError,
+        {reconciliationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getCompleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Reabre conciliação concluída.
  * @summary Reabrir conciliação
  */
-const reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost = <TData = AxiosResponse<BankReconciliationResponse>>(
+export const reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost = (
     reconciliationId: string,
-    params: ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/reopen`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankReconciliationResponse>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/reopen`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost>>, TError,{reconciliationId: string;params: ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost>>, TError,{reconciliationId: string;params: ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostParams}, TContext> => {
+
+const mutationKey = ['reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost>>, {reconciliationId: string;params: ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostParams}> = (props) => {
+          const {reconciliationId,params} = props ?? {};
+
+          return  reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost(reconciliationId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostMutationResult = NonNullable<Awaited<ReturnType<typeof reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost>>>
+    
+    export type ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Reabrir conciliação
+ */
+export const useReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost>>, TError,{reconciliationId: string;params: ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost>>,
+        TError,
+        {reconciliationId: string;params: ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna detalhes completos da conciliação.
  * @summary Detalhes da conciliação
  */
-const getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet = <TData = AxiosResponse<GetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet200>>(
-    reconciliationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/details`,options
-    );
-  }
+export const getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet = (
+    reconciliationId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet200>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/details`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGetQueryKey = (reconciliationId?: string,) => {
+    return [
+    `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/details`
+    ] as const;
+    }
+
+    
+export const getGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGetQueryOptions = <TData = Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError = HTTPValidationError>(reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGetQueryKey(reconciliationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>> = ({ signal }) => getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet(reconciliationId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(reconciliationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>>
+export type GetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGetQueryError = HTTPValidationError
+
+
+export function useGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet<TData = Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet<TData = Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet<TData = Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Detalhes da conciliação
+ */
+
+export function useGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet<TData = Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError = HTTPValidationError>(
+ reconciliationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGetQueryOptions(reconciliationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Exporta dados da conciliação.
  * @summary Exportar conciliação
  */
-const exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet = <TData = AxiosResponse<ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet200>>(
+export const exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet = (
     reconciliationId: string,
-    params?: ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/export`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {createReconciliationApiV1FinancialBankReconciliationBankReconciliationsPost,listReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGet,getInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet,getReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGet,updateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPut,deleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDelete,importStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost,matchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost,createAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost,completeReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePost,reopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPost,getReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet,exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet}};
-export type CreateReconciliationApiV1FinancialBankReconciliationBankReconciliationsPostResult = AxiosResponse<BankReconciliationResponse>
-export type ListReconciliationsApiV1FinancialBankReconciliationBankReconciliationsGetResult = AxiosResponse<BankReconciliationResponse[]>
-export type GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGetResult = AxiosResponse<GetInProgressApiV1FinancialBankReconciliationBankReconciliationsInProgressGet200>
-export type GetReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdGetResult = AxiosResponse<BankReconciliationResponse>
-export type UpdateReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdPutResult = AxiosResponse<BankReconciliationResponse>
-export type DeleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDeleteResult = AxiosResponse<void>
-export type ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPostResult = AxiosResponse<ImportStatementApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdImportStatementPost200>
-export type MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPostResult = AxiosResponse<MatchItemApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdMatchPost200>
-export type CreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPostResult = AxiosResponse<CreateAdjustmentApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdAdjustmentPost200>
-export type CompleteReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdCompletePostResult = AxiosResponse<BankReconciliationResponse>
-export type ReopenReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdReopenPostResult = AxiosResponse<BankReconciliationResponse>
-export type GetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGetResult = AxiosResponse<GetReconciliationDetailsApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdDetailsGet200>
-export type ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetResult = AxiosResponse<ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet200>
+    params?: ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet200>(
+      {url: `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/export`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetQueryKey = (reconciliationId?: string,
+    params?: ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams,) => {
+    return [
+    `/api/v1/financial/bank-reconciliation/bank-reconciliations/${reconciliationId}/export`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetQueryOptions = <TData = Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError = HTTPValidationError>(reconciliationId: string,
+    params?: ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetQueryKey(reconciliationId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>> = ({ signal }) => exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet(reconciliationId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(reconciliationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetQueryResult = NonNullable<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>>
+export type ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetQueryError = HTTPValidationError
+
+
+export function useExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet<TData = Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError = HTTPValidationError>(
+ reconciliationId: string,
+    params: undefined |  ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet<TData = Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError = HTTPValidationError>(
+ reconciliationId: string,
+    params?: ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>,
+          TError,
+          Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet<TData = Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError = HTTPValidationError>(
+ reconciliationId: string,
+    params?: ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Exportar conciliação
+ */
+
+export function useExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet<TData = Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError = HTTPValidationError>(
+ reconciliationId: string,
+    params?: ExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof exportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getExportReconciliationApiV1FinancialBankReconciliationBankReconciliationsReconciliationIdExportGetQueryOptions(reconciliationId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

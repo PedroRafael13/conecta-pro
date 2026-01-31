@@ -52,6 +52,10 @@ export const modules: Module[] = [
       { id: 'turnos', title: 'Turnos', href: '/modulos/operacional/turnos', icon: 'Clock', permissions: ['operacional:turnos'] },
       { id: 'ocorrencias', title: 'Ocorrências', href: '/modulos/operacional/ocorrencias', icon: 'AlertTriangle', permissions: ['operacional:ocorrencias'] },
       { id: 'rondas', title: 'Rondas', href: '/modulos/operacional/rondas', icon: 'Route', permissions: ['operacional:rondas'] },
+      { id: 'comunicados', title: 'Comunicados', href: '/modulos/operacional/comunicados', icon: 'Bell', permissions: ['operacional:comunicados'] },
+      { id: 'notificacoes', title: 'Notificações', href: '/modulos/operacional/notificacoes', icon: 'Bell', permissions: ['operacional:notificacoes'] },
+      { id: 'reembolsos', title: 'Reembolsos', href: '/modulos/operacional/reembolsos', icon: 'Receipt', permissions: ['operacional:reembolsos'] },
+      { id: 'disciplinar', title: 'Processos Disciplinares', href: '/modulos/operacional/disciplinar', icon: 'FileText', permissions: ['operacional:disciplinar'] },
     ],
   },
   {

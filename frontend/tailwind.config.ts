@@ -65,6 +65,7 @@ const config: Config = {
         'slide-up': 'slideUp 0.4s ease-out',
         'pulse-slow': 'pulse-slow 2s ease-in-out infinite',
         'shimmer': 'shimmer 1.5s infinite',
+        'wag': 'wag 0.5s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -82,6 +83,10 @@ const config: Config = {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        wag: {
+          '0%, 100%': { transform: 'rotate(-15deg)' },
+          '50%': { transform: 'rotate(15deg)' },
         },
       },
     },

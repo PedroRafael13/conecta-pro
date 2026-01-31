@@ -10,9 +10,20 @@ import type {
   PayableAccountCreate,
   PayableAccountUpdate,
   PayableAccountResponse,
-  PayableInstallmentCreate,
-  PayablePaymentRequest,
-  ListPayablesApiV1FinancialPayablesPayablesGetParams,
+  PayableInstallmentUpdate,
+  PayableBulkPaymentRequest,
+  PayableBulkApproveRequest,
+  PayablePaymentCreate,
+  PayablePaymentReconcileRequest,
+  PayableInstallmentResponse,
+  PayablePaymentResponse,
+  ListAccountsApiV1FinancialPayablesPayablesGetParams,
+  GetStatsApiV1FinancialPayablesPayablesStatsGetParams,
+  GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams,
+  GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams,
+  GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams,
+  ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams,
+  RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams,
 } from '@/types/generated/financial/models';
 
 const payables = getFinancialPayables();
@@ -20,23 +31,17 @@ const payables = getFinancialPayables();
 export const payableService = {
   // Payable Accounts
   async create(data: PayableAccountCreate): Promise<PayableAccountResponse> {
-    const response = await payables.createPayableApiV1FinancialPayablesPayablesPost(
-      data
-    );
+    const response = await payables.createAccountApiV1FinancialPayablesPayablesPost(data);
     return response.data;
   },
 
-  async list(params: ListPayablesApiV1FinancialPayablesPayablesGetParams = {}) {
-    const response = await payables.listPayablesApiV1FinancialPayablesPayablesGet(
-      params
-    );
+  async list(params: ListAccountsApiV1FinancialPayablesPayablesGetParams) {
+    const response = await payables.listAccountsApiV1FinancialPayablesPayablesGet(params);
     return response.data;
   },
 
   async getById(payableId: string): Promise<PayableAccountResponse> {
-    const response = await payables.getPayableApiV1FinancialPayablesPayablesPayableIdGet(
-      payableId
-    );
+    const response = await payables.getAccountApiV1FinancialPayablesPayablesAccountIdGet(payableId);
     return response.data;
   },
 
@@ -44,7 +49,7 @@ export const payableService = {
     payableId: string,
     data: PayableAccountUpdate
   ): Promise<PayableAccountResponse> {
-    const response = await payables.updatePayableApiV1FinancialPayablesPayablesPayableIdPut(
+    const response = await payables.updateAccountApiV1FinancialPayablesPayablesAccountIdPut(
       payableId,
       data
     );
@@ -52,75 +57,99 @@ export const payableService = {
   },
 
   async delete(payableId: string): Promise<void> {
-    await payables.deletePayableApiV1FinancialPayablesPayablesPayableIdDelete(
-      payableId
-    );
+    await payables.deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete(payableId);
   },
 
-  async getDashboard(condominioId: string) {
-    const response = await payables.getPayablesDashboardApiV1FinancialPayablesPayablesDashboardGet(
-      { condominio_id: condominioId }
-    );
+  async getStats(params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams) {
+    const response = await payables.getStatsApiV1FinancialPayablesPayablesStatsGet(params);
+    return response.data;
+  },
+
+  async getOverdue(params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams) {
+    const response = await payables.getOverdueApiV1FinancialPayablesPayablesOverdueGet(params);
+    return response.data;
+  },
+
+  async getDueSoon(params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams) {
+    const response = await payables.getDueSoonApiV1FinancialPayablesPayablesDueSoonGet(params);
     return response.data;
   },
 
   // Installments
-  async createInstallment(data: PayableInstallmentCreate) {
-    const response = await payables.createInstallmentApiV1FinancialPayablesInstallmentsPost(
+  async listInstallments(accountId: string): Promise<PayableInstallmentResponse[]> {
+    const response = await payables.listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet(accountId);
+    return response.data;
+  },
+
+  async updateInstallment(
+    installmentId: string,
+    data: PayableInstallmentUpdate
+  ): Promise<PayableInstallmentResponse> {
+    const response = await payables.updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut(
+      installmentId,
       data
     );
     return response.data;
   },
 
-  async getInstallment(installmentId: string) {
-    const response = await payables.getInstallmentApiV1FinancialPayablesInstallmentsInstallmentIdGet(
-      installmentId
-    );
+  async getPendingInstallments(
+    params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams
+  ): Promise<PayableInstallmentResponse[]> {
+    const response = await payables.getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet(params);
     return response.data;
   },
 
   // Payments
-  async processPayment(data: PayablePaymentRequest) {
-    const response = await payables.processPaymentApiV1FinancialPayablesPaymentsPost(
+  async registerPayment(
+    installmentId: string,
+    data: PayablePaymentCreate
+  ): Promise<PayablePaymentResponse> {
+    const response = await payables.registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost(
+      installmentId,
       data
     );
     return response.data;
   },
 
-  async cancelPayment(paymentId: string) {
-    const response = await payables.cancelPaymentApiV1FinancialPayablesPaymentsPaymentIdCancelPost(
-      paymentId
+  async bulkPayment(data: PayableBulkPaymentRequest) {
+    const response = await payables.bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost(data);
+    return response.data;
+  },
+
+  async reconcilePayment(
+    paymentId: string,
+    data: PayablePaymentReconcileRequest
+  ): Promise<PayablePaymentResponse> {
+    const response = await payables.reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost(
+      paymentId,
+      data
     );
     return response.data;
   },
 
   // Approvals
-  async approve(payableId: string, observations?: string) {
-    const response = await payables.approvePayableApiV1FinancialPayablesPayablesPayableIdApprovePost(
-      payableId,
-      { observations }
+  async approve(
+    accountId: string,
+    params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams
+  ): Promise<PayableAccountResponse> {
+    const response = await payables.approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost(
+      accountId,
+      params
     );
     return response.data;
   },
 
-  async reject(payableId: string, reason: string) {
-    const response = await payables.rejectPayableApiV1FinancialPayablesPayablesPayableIdRejectPost(
-      payableId,
-      { reason }
-    );
+  async bulkApprove(data: PayableBulkApproveRequest) {
+    const response = await payables.bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost(data);
     return response.data;
   },
 
-  // Reports
-  async getAgingReport(condominioId: string) {
-    const response = await payables.getAgingReportApiV1FinancialPayablesReportsAgingGet(
-      { condominio_id: condominioId }
-    );
-    return response.data;
-  },
-
-  async exportToExcel(params: any) {
-    const response = await payables.exportPayablesToExcelApiV1FinancialPayablesExportExcelGet(
+  async reject(
+    accountId: string,
+    params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams
+  ): Promise<PayableAccountResponse> {
+    const response = await payables.rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost(
+      accountId,
       params
     );
     return response.data;

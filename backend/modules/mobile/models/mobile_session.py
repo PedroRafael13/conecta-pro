@@ -8,7 +8,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, T
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from core.database.base import Base
+from core.models.base import Base
 
 
 class MobileSession(Base):

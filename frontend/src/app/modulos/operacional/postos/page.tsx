@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -30,6 +30,8 @@ import { getErrorMessage } from '@/lib/api';
 import { PostDetailModal } from '@/components/operacional/post-detail-modal';
 import { PostFormModal } from '@/components/operacional/post-form-modal';
 import { ResponsiveTable, Column } from '@/components/ResponsiveTable';
+import { ExportButton } from '@/components/ui/export-button';
+import { formatDataForExport } from '@/utils/export';
 import type { Post, PostType, PostStatus, ShiftType } from '@/types/operacional';
 import {
   POST_TYPE_LABELS,
@@ -73,13 +75,30 @@ export default function PostosPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Debounce search
+  // Debounce search - com proteção contra loops
+  const lastSearchRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
+    const newSearch = searchTerm || undefined;
+
+    // Só atualiza se o valor realmente mudou
+    if (lastSearchRef.current === newSearch) {
+      return;
+    }
+
     const timer = setTimeout(() => {
-      setFilters({ ...filters, search: searchTerm || undefined });
+      lastSearchRef.current = newSearch;
+      setFilters((prev) => {
+        // Evita criar novo objeto se o valor é o mesmo
+        if (prev.search === newSearch) {
+          return prev;
+        }
+        return { ...prev, search: newSearch };
+      });
     }, 300);
+
     return () => clearTimeout(timer);
-  }, [searchTerm, filters, setFilters]);
+  }, [searchTerm, setFilters]);
 
   // Handlers
   const handleView = (post: Post) => {
@@ -276,6 +295,23 @@ export default function PostosPage() {
           <Button variant="outline" onClick={refresh} disabled={isLoading}>
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
+          <ExportButton
+            data={formatDataForExport(posts, {
+              code: 'Código',
+              name: 'Nome',
+              post_type: 'Tipo',
+              status: 'Status',
+              shift_type: 'Turno',
+              headcount: 'Vagas',
+              filled_count: 'Preenchidas',
+              address: 'Endereço',
+              city: 'Cidade',
+              state: 'Estado',
+            })}
+            filename="postos"
+            pdfTitle="Relatório de Postos de Trabalho"
+            formats={['excel', 'pdf', 'csv']}
+          />
         </div>
 
         {/* Filters Panel */}

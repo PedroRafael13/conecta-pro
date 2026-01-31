@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   CFOPCreate,
@@ -28,6 +41,7 @@ import type {
   FiscalStats,
   GerarSpedApiV1FinancialFiscalFiscalSpedGerarPost200,
   GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams,
+  HTTPValidationError,
   InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost200,
   InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams,
   ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams,
@@ -99,191 +113,1233 @@ import type {
   ValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost200
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialFiscal = () => {
+
 /**
  * Cria um novo CFOP.
  * @summary Criar Cfop
  */
-const criarCfopApiV1FinancialFiscalFiscalCfopPost = <TData = AxiosResponse<CFOPResponse>>(
-    cFOPCreate: CFOPCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/cfop`,
-      cFOPCreate,options
-    );
-  }
-/**
+export const criarCfopApiV1FinancialFiscalFiscalCfopPost = (
+    cFOPCreate: CFOPCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CFOPResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/cfop`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cFOPCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarCfopApiV1FinancialFiscalFiscalCfopPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarCfopApiV1FinancialFiscalFiscalCfopPost>>, TError,{data: CFOPCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarCfopApiV1FinancialFiscalFiscalCfopPost>>, TError,{data: CFOPCreate}, TContext> => {
+
+const mutationKey = ['criarCfopApiV1FinancialFiscalFiscalCfopPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarCfopApiV1FinancialFiscalFiscalCfopPost>>, {data: CFOPCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarCfopApiV1FinancialFiscalFiscalCfopPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarCfopApiV1FinancialFiscalFiscalCfopPostMutationResult = NonNullable<Awaited<ReturnType<typeof criarCfopApiV1FinancialFiscalFiscalCfopPost>>>
+    export type CriarCfopApiV1FinancialFiscalFiscalCfopPostMutationBody = CFOPCreate
+    export type CriarCfopApiV1FinancialFiscalFiscalCfopPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Cfop
+ */
+export const useCriarCfopApiV1FinancialFiscalFiscalCfopPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarCfopApiV1FinancialFiscalFiscalCfopPost>>, TError,{data: CFOPCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarCfopApiV1FinancialFiscalFiscalCfopPost>>,
+        TError,
+        {data: CFOPCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarCfopApiV1FinancialFiscalFiscalCfopPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista CFOPs com filtros.
  * @summary Listar Cfops
  */
-const listarCfopsApiV1FinancialFiscalFiscalCfopGet = <TData = AxiosResponse<CFOPListResponse>>(
-    params?: ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/cfop`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarCfopsApiV1FinancialFiscalFiscalCfopGet = (
+    params?: ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CFOPListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/cfop`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarCfopsApiV1FinancialFiscalFiscalCfopGetQueryKey = (params?: ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/cfop`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarCfopsApiV1FinancialFiscalFiscalCfopGetQueryOptions = <TData = Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError = HTTPValidationError>(params?: ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarCfopsApiV1FinancialFiscalFiscalCfopGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>> = ({ signal }) => listarCfopsApiV1FinancialFiscalFiscalCfopGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarCfopsApiV1FinancialFiscalFiscalCfopGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>>
+export type ListarCfopsApiV1FinancialFiscalFiscalCfopGetQueryError = HTTPValidationError
+
+
+export function useListarCfopsApiV1FinancialFiscalFiscalCfopGet<TData = Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarCfopsApiV1FinancialFiscalFiscalCfopGet<TData = Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError = HTTPValidationError>(
+ params?: ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarCfopsApiV1FinancialFiscalFiscalCfopGet<TData = Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError = HTTPValidationError>(
+ params?: ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Cfops
+ */
+
+export function useListarCfopsApiV1FinancialFiscalFiscalCfopGet<TData = Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError = HTTPValidationError>(
+ params?: ListarCfopsApiV1FinancialFiscalFiscalCfopGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsApiV1FinancialFiscalFiscalCfopGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarCfopsApiV1FinancialFiscalFiscalCfopGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista CFOPs comuns para servicos de vigilancia em ZFM.
  * @summary Listar Cfops Vigilancia Zfm
  */
-const listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet = <TData = AxiosResponse<ListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet200>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/cfop/vigilancia-zfm`,options
-    );
-  }
+export const listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet200>(
+      {url: `/api/v1/financial/fiscal/fiscal/cfop/vigilancia-zfm`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGetQueryKey = () => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/cfop/vigilancia-zfm`
+    ] as const;
+    }
+
+    
+export const getListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGetQueryOptions = <TData = Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>> = ({ signal }) => listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>>
+export type ListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGetQueryError = unknown
+
+
+export function useListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet<TData = Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet<TData = Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet<TData = Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Cfops Vigilancia Zfm
+ */
+
+export function useListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet<TData = Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca CFOP por ID.
  * @summary Obter Cfop
  */
-const obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet = <TData = AxiosResponse<CFOPResponse>>(
-    cfopId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/cfop/${cfopId}`,options
-    );
-  }
+export const obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet = (
+    cfopId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CFOPResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/cfop/${cfopId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGetQueryKey = (cfopId?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/cfop/${cfopId}`
+    ] as const;
+    }
+
+    
+export const getObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGetQueryOptions = <TData = Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError = HTTPValidationError>(cfopId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGetQueryKey(cfopId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>> = ({ signal }) => obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet(cfopId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(cfopId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>>
+export type ObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGetQueryError = HTTPValidationError
+
+
+export function useObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet<TData = Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError = HTTPValidationError>(
+ cfopId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet<TData = Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError = HTTPValidationError>(
+ cfopId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet<TData = Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError = HTTPValidationError>(
+ cfopId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Cfop
+ */
+
+export function useObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet<TData = Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError = HTTPValidationError>(
+ cfopId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGetQueryOptions(cfopId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza CFOP.
  * @summary Atualizar Cfop
  */
-const atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch = <TData = AxiosResponse<CFOPResponse>>(
+export const atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch = (
     cfopId: string,
-    cFOPUpdate: CFOPUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/fiscal/fiscal/cfop/${cfopId}`,
-      cFOPUpdate,options
-    );
-  }
-/**
+    cFOPUpdate: CFOPUpdate,
+ ) => {
+      
+      
+      return customInstance<CFOPResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/cfop/${cfopId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: cFOPUpdate
+    },
+      );
+    }
+  
+
+
+export const getAtualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch>>, TError,{cfopId: string;data: CFOPUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch>>, TError,{cfopId: string;data: CFOPUpdate}, TContext> => {
+
+const mutationKey = ['atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch>>, {cfopId: string;data: CFOPUpdate}> = (props) => {
+          const {cfopId,data} = props ?? {};
+
+          return  atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch(cfopId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AtualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch>>>
+    export type AtualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatchMutationBody = CFOPUpdate
+    export type AtualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Cfop
+ */
+export const useAtualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch>>, TError,{cfopId: string;data: CFOPUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch>>,
+        TError,
+        {cfopId: string;data: CFOPUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getAtualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca CFOP por codigo.
  * @summary Obter Cfop Por Codigo
  */
-const obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet = <TData = AxiosResponse<CFOPResponse>>(
-    codigo: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/cfop/codigo/${codigo}`,options
-    );
-  }
+export const obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet = (
+    codigo: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CFOPResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/cfop/codigo/${codigo}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGetQueryKey = (codigo?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/cfop/codigo/${codigo}`
+    ] as const;
+    }
+
+    
+export const getObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGetQueryOptions = <TData = Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError = HTTPValidationError>(codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGetQueryKey(codigo);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>> = ({ signal }) => obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet(codigo, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(codigo), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>>
+export type ObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGetQueryError = HTTPValidationError
+
+
+export function useObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Cfop Por Codigo
+ */
+
+export function useObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGetQueryOptions(codigo,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo NCM.
  * @summary Criar Ncm
  */
-const criarNcmApiV1FinancialFiscalFiscalNcmPost = <TData = AxiosResponse<NCMResponse>>(
-    nCMCreate: NCMCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/ncm`,
-      nCMCreate,options
-    );
-  }
-/**
+export const criarNcmApiV1FinancialFiscalFiscalNcmPost = (
+    nCMCreate: NCMCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NCMResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/ncm`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nCMCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarNcmApiV1FinancialFiscalFiscalNcmPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarNcmApiV1FinancialFiscalFiscalNcmPost>>, TError,{data: NCMCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarNcmApiV1FinancialFiscalFiscalNcmPost>>, TError,{data: NCMCreate}, TContext> => {
+
+const mutationKey = ['criarNcmApiV1FinancialFiscalFiscalNcmPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarNcmApiV1FinancialFiscalFiscalNcmPost>>, {data: NCMCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarNcmApiV1FinancialFiscalFiscalNcmPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarNcmApiV1FinancialFiscalFiscalNcmPostMutationResult = NonNullable<Awaited<ReturnType<typeof criarNcmApiV1FinancialFiscalFiscalNcmPost>>>
+    export type CriarNcmApiV1FinancialFiscalFiscalNcmPostMutationBody = NCMCreate
+    export type CriarNcmApiV1FinancialFiscalFiscalNcmPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Ncm
+ */
+export const useCriarNcmApiV1FinancialFiscalFiscalNcmPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarNcmApiV1FinancialFiscalFiscalNcmPost>>, TError,{data: NCMCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarNcmApiV1FinancialFiscalFiscalNcmPost>>,
+        TError,
+        {data: NCMCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarNcmApiV1FinancialFiscalFiscalNcmPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista NCMs com filtros.
  * @summary Listar Ncms
  */
-const listarNcmsApiV1FinancialFiscalFiscalNcmGet = <TData = AxiosResponse<NCMListResponse>>(
-    params?: ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/ncm`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarNcmsApiV1FinancialFiscalFiscalNcmGet = (
+    params?: ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NCMListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/ncm`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarNcmsApiV1FinancialFiscalFiscalNcmGetQueryKey = (params?: ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/ncm`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarNcmsApiV1FinancialFiscalFiscalNcmGetQueryOptions = <TData = Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError = HTTPValidationError>(params?: ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarNcmsApiV1FinancialFiscalFiscalNcmGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>> = ({ signal }) => listarNcmsApiV1FinancialFiscalFiscalNcmGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarNcmsApiV1FinancialFiscalFiscalNcmGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>>
+export type ListarNcmsApiV1FinancialFiscalFiscalNcmGetQueryError = HTTPValidationError
+
+
+export function useListarNcmsApiV1FinancialFiscalFiscalNcmGet<TData = Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarNcmsApiV1FinancialFiscalFiscalNcmGet<TData = Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError = HTTPValidationError>(
+ params?: ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarNcmsApiV1FinancialFiscalFiscalNcmGet<TData = Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError = HTTPValidationError>(
+ params?: ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Ncms
+ */
+
+export function useListarNcmsApiV1FinancialFiscalFiscalNcmGet<TData = Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError = HTTPValidationError>(
+ params?: ListarNcmsApiV1FinancialFiscalFiscalNcmGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNcmsApiV1FinancialFiscalFiscalNcmGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarNcmsApiV1FinancialFiscalFiscalNcmGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca NCM por ID.
  * @summary Obter Ncm
  */
-const obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet = <TData = AxiosResponse<NCMResponse>>(
-    ncmId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/ncm/${ncmId}`,options
-    );
-  }
+export const obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet = (
+    ncmId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NCMResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/ncm/${ncmId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGetQueryKey = (ncmId?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/ncm/${ncmId}`
+    ] as const;
+    }
+
+    
+export const getObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGetQueryOptions = <TData = Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError = HTTPValidationError>(ncmId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGetQueryKey(ncmId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>> = ({ signal }) => obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet(ncmId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(ncmId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>>
+export type ObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGetQueryError = HTTPValidationError
+
+
+export function useObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet<TData = Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError = HTTPValidationError>(
+ ncmId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet<TData = Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError = HTTPValidationError>(
+ ncmId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet<TData = Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError = HTTPValidationError>(
+ ncmId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Ncm
+ */
+
+export function useObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet<TData = Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError = HTTPValidationError>(
+ ncmId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGetQueryOptions(ncmId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza NCM.
  * @summary Atualizar Ncm
  */
-const atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch = <TData = AxiosResponse<NCMResponse>>(
+export const atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch = (
     ncmId: string,
-    nCMUpdate: NCMUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/fiscal/fiscal/ncm/${ncmId}`,
-      nCMUpdate,options
-    );
-  }
-/**
+    nCMUpdate: NCMUpdate,
+ ) => {
+      
+      
+      return customInstance<NCMResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/ncm/${ncmId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: nCMUpdate
+    },
+      );
+    }
+  
+
+
+export const getAtualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch>>, TError,{ncmId: string;data: NCMUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch>>, TError,{ncmId: string;data: NCMUpdate}, TContext> => {
+
+const mutationKey = ['atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch>>, {ncmId: string;data: NCMUpdate}> = (props) => {
+          const {ncmId,data} = props ?? {};
+
+          return  atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch(ncmId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AtualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch>>>
+    export type AtualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatchMutationBody = NCMUpdate
+    export type AtualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Ncm
+ */
+export const useAtualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch>>, TError,{ncmId: string;data: NCMUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch>>,
+        TError,
+        {ncmId: string;data: NCMUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getAtualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca NCM por codigo.
  * @summary Obter Ncm Por Codigo
  */
-const obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet = <TData = AxiosResponse<NCMResponse>>(
-    codigo: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/ncm/codigo/${codigo}`,options
-    );
-  }
+export const obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet = (
+    codigo: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NCMResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/ncm/codigo/${codigo}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGetQueryKey = (codigo?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/ncm/codigo/${codigo}`
+    ] as const;
+    }
+
+    
+export const getObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGetQueryOptions = <TData = Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError = HTTPValidationError>(codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGetQueryKey(codigo);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>> = ({ signal }) => obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet(codigo, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(codigo), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>>
+export type ObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGetQueryError = HTTPValidationError
+
+
+export function useObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Ncm Por Codigo
+ */
+
+export function useObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet<TData = Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError = HTTPValidationError>(
+ codigo: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGetQueryOptions(codigo,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria configuracao de retencao federal.
  * @summary Criar Retencao
  */
-const criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost = <TData = AxiosResponse<RetencaoFederalResponse>>(
-    retencaoFederalCreate: RetencaoFederalCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/retencao`,
-      retencaoFederalCreate,options
-    );
-  }
-/**
+export const criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost = (
+    retencaoFederalCreate: RetencaoFederalCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<RetencaoFederalResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/retencao`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: retencaoFederalCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarRetencaoApiV1FinancialFiscalFiscalRetencaoPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost>>, TError,{data: RetencaoFederalCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost>>, TError,{data: RetencaoFederalCreate}, TContext> => {
+
+const mutationKey = ['criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost>>, {data: RetencaoFederalCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarRetencaoApiV1FinancialFiscalFiscalRetencaoPostMutationResult = NonNullable<Awaited<ReturnType<typeof criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost>>>
+    export type CriarRetencaoApiV1FinancialFiscalFiscalRetencaoPostMutationBody = RetencaoFederalCreate
+    export type CriarRetencaoApiV1FinancialFiscalFiscalRetencaoPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Retencao
+ */
+export const useCriarRetencaoApiV1FinancialFiscalFiscalRetencaoPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost>>, TError,{data: RetencaoFederalCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost>>,
+        TError,
+        {data: RetencaoFederalCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarRetencaoApiV1FinancialFiscalFiscalRetencaoPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista configuracoes de retencao.
  * @summary Listar Retencoes
  */
-const listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet = <TData = AxiosResponse<RetencaoFederalListResponse>>(
-    params: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/retencao`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet = (
+    params: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<RetencaoFederalListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/retencao`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetQueryKey = (params?: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/retencao`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetQueryOptions = <TData = Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError = HTTPValidationError>(params: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>> = ({ signal }) => listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>>
+export type ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetQueryError = HTTPValidationError
+
+
+export function useListarRetencoesApiV1FinancialFiscalFiscalRetencaoGet<TData = Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError = HTTPValidationError>(
+ params: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarRetencoesApiV1FinancialFiscalFiscalRetencaoGet<TData = Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError = HTTPValidationError>(
+ params: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarRetencoesApiV1FinancialFiscalFiscalRetencaoGet<TData = Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError = HTTPValidationError>(
+ params: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Retencoes
+ */
+
+export function useListarRetencoesApiV1FinancialFiscalFiscalRetencaoGet<TData = Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError = HTTPValidationError>(
+ params: ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca configuracao de retencao por ID.
  * @summary Obter Retencao
  */
-const obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet = <TData = AxiosResponse<RetencaoFederalResponse>>(
-    retencaoId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/retencao/${retencaoId}`,options
-    );
-  }
+export const obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet = (
+    retencaoId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<RetencaoFederalResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/retencao/${retencaoId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGetQueryKey = (retencaoId?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/retencao/${retencaoId}`
+    ] as const;
+    }
+
+    
+export const getObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGetQueryOptions = <TData = Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError = HTTPValidationError>(retencaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGetQueryKey(retencaoId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>> = ({ signal }) => obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet(retencaoId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(retencaoId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>>
+export type ObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGetQueryError = HTTPValidationError
+
+
+export function useObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet<TData = Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError = HTTPValidationError>(
+ retencaoId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet<TData = Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError = HTTPValidationError>(
+ retencaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet<TData = Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError = HTTPValidationError>(
+ retencaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Retencao
+ */
+
+export function useObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet<TData = Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError = HTTPValidationError>(
+ retencaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGetQueryOptions(retencaoId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza configuracao de retencao.
  * @summary Atualizar Retencao
  */
-const atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch = <TData = AxiosResponse<RetencaoFederalResponse>>(
+export const atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch = (
     retencaoId: string,
-    retencaoFederalUpdate: RetencaoFederalUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/fiscal/fiscal/retencao/${retencaoId}`,
-      retencaoFederalUpdate,options
-    );
-  }
-/**
+    retencaoFederalUpdate: RetencaoFederalUpdate,
+ ) => {
+      
+      
+      return customInstance<RetencaoFederalResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/retencao/${retencaoId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: retencaoFederalUpdate
+    },
+      );
+    }
+  
+
+
+export const getAtualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch>>, TError,{retencaoId: string;data: RetencaoFederalUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch>>, TError,{retencaoId: string;data: RetencaoFederalUpdate}, TContext> => {
+
+const mutationKey = ['atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch>>, {retencaoId: string;data: RetencaoFederalUpdate}> = (props) => {
+          const {retencaoId,data} = props ?? {};
+
+          return  atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch(retencaoId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AtualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch>>>
+    export type AtualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatchMutationBody = RetencaoFederalUpdate
+    export type AtualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Retencao
+ */
+export const useAtualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch>>, TError,{retencaoId: string;data: RetencaoFederalUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch>>,
+        TError,
+        {retencaoId: string;data: RetencaoFederalUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getAtualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula retencoes federais para um valor de servico.
 
 Considera:
@@ -296,399 +1352,2418 @@ Para servicos de vigilancia do Simples Nacional Anexo III,
 se houver liminar ativa e o cliente aceitar, INSS = 0.
  * @summary Calcular Retencoes
  */
-const calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost = <TData = AxiosResponse<CalculoRetencaoResponse>>(
+export const calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost = (
     calculoRetencaoRequest: CalculoRetencaoRequest,
-    params: CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/retencao/calcular`,
-      calculoRetencaoRequest,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CalculoRetencaoResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/retencao/calcular`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: calculoRetencaoRequest,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost>>, TError,{data: CalculoRetencaoRequest;params: CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost>>, TError,{data: CalculoRetencaoRequest;params: CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostParams}, TContext> => {
+
+const mutationKey = ['calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost>>, {data: CalculoRetencaoRequest;params: CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostMutationResult = NonNullable<Awaited<ReturnType<typeof calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost>>>
+    export type CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostMutationBody = CalculoRetencaoRequest
+    export type CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calcular Retencoes
+ */
+export const useCalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost>>, TError,{data: CalculoRetencaoRequest;params: CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost>>,
+        TError,
+        {data: CalculoRetencaoRequest;params: CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria uma nova NF-e.
  * @summary Criar Nfe
  */
-const criarNfeApiV1FinancialFiscalFiscalNfePost = <TData = AxiosResponse<NFeResponse>>(
-    nFeCreate: NFeCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/nfe`,
-      nFeCreate,options
-    );
-  }
-/**
+export const criarNfeApiV1FinancialFiscalFiscalNfePost = (
+    nFeCreate: NFeCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFeResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nFeCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarNfeApiV1FinancialFiscalFiscalNfePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarNfeApiV1FinancialFiscalFiscalNfePost>>, TError,{data: NFeCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarNfeApiV1FinancialFiscalFiscalNfePost>>, TError,{data: NFeCreate}, TContext> => {
+
+const mutationKey = ['criarNfeApiV1FinancialFiscalFiscalNfePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarNfeApiV1FinancialFiscalFiscalNfePost>>, {data: NFeCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarNfeApiV1FinancialFiscalFiscalNfePost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarNfeApiV1FinancialFiscalFiscalNfePostMutationResult = NonNullable<Awaited<ReturnType<typeof criarNfeApiV1FinancialFiscalFiscalNfePost>>>
+    export type CriarNfeApiV1FinancialFiscalFiscalNfePostMutationBody = NFeCreate
+    export type CriarNfeApiV1FinancialFiscalFiscalNfePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Nfe
+ */
+export const useCriarNfeApiV1FinancialFiscalFiscalNfePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarNfeApiV1FinancialFiscalFiscalNfePost>>, TError,{data: NFeCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarNfeApiV1FinancialFiscalFiscalNfePost>>,
+        TError,
+        {data: NFeCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarNfeApiV1FinancialFiscalFiscalNfePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista NF-es com filtros.
  * @summary Listar Nfes
  */
-const listarNfesApiV1FinancialFiscalFiscalNfeGet = <TData = AxiosResponse<NFeListResponse>>(
-    params: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/nfe`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarNfesApiV1FinancialFiscalFiscalNfeGet = (
+    params: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFeListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarNfesApiV1FinancialFiscalFiscalNfeGetQueryKey = (params?: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/nfe`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarNfesApiV1FinancialFiscalFiscalNfeGetQueryOptions = <TData = Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError = HTTPValidationError>(params: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarNfesApiV1FinancialFiscalFiscalNfeGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>> = ({ signal }) => listarNfesApiV1FinancialFiscalFiscalNfeGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarNfesApiV1FinancialFiscalFiscalNfeGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>>
+export type ListarNfesApiV1FinancialFiscalFiscalNfeGetQueryError = HTTPValidationError
+
+
+export function useListarNfesApiV1FinancialFiscalFiscalNfeGet<TData = Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError = HTTPValidationError>(
+ params: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarNfesApiV1FinancialFiscalFiscalNfeGet<TData = Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError = HTTPValidationError>(
+ params: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarNfesApiV1FinancialFiscalFiscalNfeGet<TData = Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError = HTTPValidationError>(
+ params: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Nfes
+ */
+
+export function useListarNfesApiV1FinancialFiscalFiscalNfeGet<TData = Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError = HTTPValidationError>(
+ params: ListarNfesApiV1FinancialFiscalFiscalNfeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfesApiV1FinancialFiscalFiscalNfeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarNfesApiV1FinancialFiscalFiscalNfeGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca NF-e por ID.
  * @summary Obter Nfe
  */
-const obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet = <TData = AxiosResponse<NFeResponse>>(
-    nfeId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/nfe/${nfeId}`,options
-    );
-  }
+export const obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet = (
+    nfeId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFeResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe/${nfeId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGetQueryKey = (nfeId?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/nfe/${nfeId}`
+    ] as const;
+    }
+
+    
+export const getObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGetQueryOptions = <TData = Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError = HTTPValidationError>(nfeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGetQueryKey(nfeId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>> = ({ signal }) => obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet(nfeId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(nfeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>>
+export type ObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGetQueryError = HTTPValidationError
+
+
+export function useObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet<TData = Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError = HTTPValidationError>(
+ nfeId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet<TData = Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError = HTTPValidationError>(
+ nfeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet<TData = Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError = HTTPValidationError>(
+ nfeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Nfe
+ */
+
+export function useObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet<TData = Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError = HTTPValidationError>(
+ nfeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGetQueryOptions(nfeId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza NF-e (apenas rascunho).
  * @summary Atualizar Nfe
  */
-const atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch = <TData = AxiosResponse<NFeResponse>>(
+export const atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch = (
     nfeId: string,
-    nFeUpdate: NFeUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/fiscal/fiscal/nfe/${nfeId}`,
-      nFeUpdate,options
-    );
-  }
-/**
+    nFeUpdate: NFeUpdate,
+ ) => {
+      
+      
+      return customInstance<NFeResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe/${nfeId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: nFeUpdate
+    },
+      );
+    }
+  
+
+
+export const getAtualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch>>, TError,{nfeId: string;data: NFeUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch>>, TError,{nfeId: string;data: NFeUpdate}, TContext> => {
+
+const mutationKey = ['atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch>>, {nfeId: string;data: NFeUpdate}> = (props) => {
+          const {nfeId,data} = props ?? {};
+
+          return  atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch(nfeId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AtualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch>>>
+    export type AtualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatchMutationBody = NFeUpdate
+    export type AtualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Nfe
+ */
+export const useAtualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch>>, TError,{nfeId: string;data: NFeUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch>>,
+        TError,
+        {nfeId: string;data: NFeUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getAtualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca NF-e por chave de acesso.
  * @summary Obter Nfe Por Chave
  */
-const obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet = <TData = AxiosResponse<NFeResponse>>(
-    chaveAcesso: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/nfe/chave/${chaveAcesso}`,options
-    );
-  }
+export const obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet = (
+    chaveAcesso: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFeResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe/chave/${chaveAcesso}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGetQueryKey = (chaveAcesso?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/nfe/chave/${chaveAcesso}`
+    ] as const;
+    }
+
+    
+export const getObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGetQueryOptions = <TData = Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError = HTTPValidationError>(chaveAcesso: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGetQueryKey(chaveAcesso);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>> = ({ signal }) => obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet(chaveAcesso, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(chaveAcesso), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>>
+export type ObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGetQueryError = HTTPValidationError
+
+
+export function useObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet<TData = Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError = HTTPValidationError>(
+ chaveAcesso: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet<TData = Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError = HTTPValidationError>(
+ chaveAcesso: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet<TData = Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError = HTTPValidationError>(
+ chaveAcesso: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Nfe Por Chave
+ */
+
+export function useObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet<TData = Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError = HTTPValidationError>(
+ chaveAcesso: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGetQueryOptions(chaveAcesso,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Emite NF-e para a SEFAZ.
 
 TODO: Integrar com biblioteca de NF-e (pynfe, brazilfiscal, etc)
  * @summary Emitir Nfe
  */
-const emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost = <TData = AxiosResponse<NFeEmitirResponse>>(
-    nFeEmitirRequest: NFeEmitirRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/nfe/emitir`,
-      nFeEmitirRequest,options
-    );
-  }
-/**
+export const emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost = (
+    nFeEmitirRequest: NFeEmitirRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFeEmitirResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe/emitir`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nFeEmitirRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getEmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost>>, TError,{data: NFeEmitirRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost>>, TError,{data: NFeEmitirRequest}, TContext> => {
+
+const mutationKey = ['emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost>>, {data: NFeEmitirRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPostMutationResult = NonNullable<Awaited<ReturnType<typeof emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost>>>
+    export type EmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPostMutationBody = NFeEmitirRequest
+    export type EmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Emitir Nfe
+ */
+export const useEmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost>>, TError,{data: NFeEmitirRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost>>,
+        TError,
+        {data: NFeEmitirRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getEmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela NF-e autorizada.
  * @summary Cancelar Nfe
  */
-const cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost = <TData = AxiosResponse<CancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost200>>(
-    nFeCancelarRequest: NFeCancelarRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/nfe/cancelar`,
-      nFeCancelarRequest,options
-    );
-  }
-/**
+export const cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost = (
+    nFeCancelarRequest: NFeCancelarRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost200>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe/cancelar`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nFeCancelarRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getCancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost>>, TError,{data: NFeCancelarRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost>>, TError,{data: NFeCancelarRequest}, TContext> => {
+
+const mutationKey = ['cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost>>, {data: NFeCancelarRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost>>>
+    export type CancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPostMutationBody = NFeCancelarRequest
+    export type CancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancelar Nfe
+ */
+export const useCancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost>>, TError,{data: NFeCancelarRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost>>,
+        TError,
+        {data: NFeCancelarRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Inutiliza faixa de numeracao de NF-e.
  * @summary Inutilizar Numeracao
  */
-const inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost = <TData = AxiosResponse<InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost200>>(
+export const inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost = (
     nFeInutilizarRequest: NFeInutilizarRequest,
-    params: InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/nfe/inutilizar`,
-      nFeInutilizarRequest,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost200>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfe/inutilizar`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nFeInutilizarRequest,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getInutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost>>, TError,{data: NFeInutilizarRequest;params: InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost>>, TError,{data: NFeInutilizarRequest;params: InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams}, TContext> => {
+
+const mutationKey = ['inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost>>, {data: NFeInutilizarRequest;params: InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostMutationResult = NonNullable<Awaited<ReturnType<typeof inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost>>>
+    export type InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostMutationBody = NFeInutilizarRequest
+    export type InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Inutilizar Numeracao
+ */
+export const useInutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost>>, TError,{data: NFeInutilizarRequest;params: InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost>>,
+        TError,
+        {data: NFeInutilizarRequest;params: InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getInutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria uma nova NFS-e.
  * @summary Criar Nfse
  */
-const criarNfseApiV1FinancialFiscalFiscalNfsePost = <TData = AxiosResponse<NFSeResponse>>(
-    nFSeCreate: NFSeCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/nfse`,
-      nFSeCreate,options
-    );
-  }
-/**
+export const criarNfseApiV1FinancialFiscalFiscalNfsePost = (
+    nFSeCreate: NFSeCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFSeResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfse`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nFSeCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarNfseApiV1FinancialFiscalFiscalNfsePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarNfseApiV1FinancialFiscalFiscalNfsePost>>, TError,{data: NFSeCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarNfseApiV1FinancialFiscalFiscalNfsePost>>, TError,{data: NFSeCreate}, TContext> => {
+
+const mutationKey = ['criarNfseApiV1FinancialFiscalFiscalNfsePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarNfseApiV1FinancialFiscalFiscalNfsePost>>, {data: NFSeCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarNfseApiV1FinancialFiscalFiscalNfsePost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarNfseApiV1FinancialFiscalFiscalNfsePostMutationResult = NonNullable<Awaited<ReturnType<typeof criarNfseApiV1FinancialFiscalFiscalNfsePost>>>
+    export type CriarNfseApiV1FinancialFiscalFiscalNfsePostMutationBody = NFSeCreate
+    export type CriarNfseApiV1FinancialFiscalFiscalNfsePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Nfse
+ */
+export const useCriarNfseApiV1FinancialFiscalFiscalNfsePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarNfseApiV1FinancialFiscalFiscalNfsePost>>, TError,{data: NFSeCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarNfseApiV1FinancialFiscalFiscalNfsePost>>,
+        TError,
+        {data: NFSeCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarNfseApiV1FinancialFiscalFiscalNfsePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista NFS-es com filtros.
  * @summary Listar Nfses
  */
-const listarNfsesApiV1FinancialFiscalFiscalNfseGet = <TData = AxiosResponse<NFSeListResponse>>(
-    params: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/nfse`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarNfsesApiV1FinancialFiscalFiscalNfseGet = (
+    params: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFSeListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfse`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarNfsesApiV1FinancialFiscalFiscalNfseGetQueryKey = (params?: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/nfse`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarNfsesApiV1FinancialFiscalFiscalNfseGetQueryOptions = <TData = Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError = HTTPValidationError>(params: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarNfsesApiV1FinancialFiscalFiscalNfseGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>> = ({ signal }) => listarNfsesApiV1FinancialFiscalFiscalNfseGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarNfsesApiV1FinancialFiscalFiscalNfseGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>>
+export type ListarNfsesApiV1FinancialFiscalFiscalNfseGetQueryError = HTTPValidationError
+
+
+export function useListarNfsesApiV1FinancialFiscalFiscalNfseGet<TData = Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError = HTTPValidationError>(
+ params: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarNfsesApiV1FinancialFiscalFiscalNfseGet<TData = Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError = HTTPValidationError>(
+ params: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarNfsesApiV1FinancialFiscalFiscalNfseGet<TData = Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError = HTTPValidationError>(
+ params: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Nfses
+ */
+
+export function useListarNfsesApiV1FinancialFiscalFiscalNfseGet<TData = Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError = HTTPValidationError>(
+ params: ListarNfsesApiV1FinancialFiscalFiscalNfseGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarNfsesApiV1FinancialFiscalFiscalNfseGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarNfsesApiV1FinancialFiscalFiscalNfseGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca NFS-e por ID.
  * @summary Obter Nfse
  */
-const obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet = <TData = AxiosResponse<NFSeResponse>>(
-    nfseId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/nfse/${nfseId}`,options
-    );
-  }
+export const obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet = (
+    nfseId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFSeResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfse/${nfseId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGetQueryKey = (nfseId?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/nfse/${nfseId}`
+    ] as const;
+    }
+
+    
+export const getObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGetQueryOptions = <TData = Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError = HTTPValidationError>(nfseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGetQueryKey(nfseId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>> = ({ signal }) => obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet(nfseId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(nfseId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>>
+export type ObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGetQueryError = HTTPValidationError
+
+
+export function useObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet<TData = Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError = HTTPValidationError>(
+ nfseId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet<TData = Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError = HTTPValidationError>(
+ nfseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet<TData = Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError = HTTPValidationError>(
+ nfseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Nfse
+ */
+
+export function useObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet<TData = Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError = HTTPValidationError>(
+ nfseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGetQueryOptions(nfseId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza NFS-e (apenas rascunho).
  * @summary Atualizar Nfse
  */
-const atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch = <TData = AxiosResponse<NFSeResponse>>(
+export const atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch = (
     nfseId: string,
-    nFSeUpdate: NFSeUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/fiscal/fiscal/nfse/${nfseId}`,
-      nFSeUpdate,options
-    );
-  }
-/**
+    nFSeUpdate: NFSeUpdate,
+ ) => {
+      
+      
+      return customInstance<NFSeResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfse/${nfseId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: nFSeUpdate
+    },
+      );
+    }
+  
+
+
+export const getAtualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch>>, TError,{nfseId: string;data: NFSeUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch>>, TError,{nfseId: string;data: NFSeUpdate}, TContext> => {
+
+const mutationKey = ['atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch>>, {nfseId: string;data: NFSeUpdate}> = (props) => {
+          const {nfseId,data} = props ?? {};
+
+          return  atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch(nfseId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AtualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch>>>
+    export type AtualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatchMutationBody = NFSeUpdate
+    export type AtualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Nfse
+ */
+export const useAtualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch>>, TError,{nfseId: string;data: NFSeUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch>>,
+        TError,
+        {nfseId: string;data: NFSeUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getAtualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Emite NFS-e para a prefeitura.
 
 TODO: Integrar com webservice da prefeitura de Manaus (ABRASF 2.0)
  * @summary Emitir Nfse
  */
-const emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost = <TData = AxiosResponse<NFSeEmitirResponse>>(
-    nFSeEmitirRequest: NFSeEmitirRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/nfse/emitir`,
-      nFSeEmitirRequest,options
-    );
-  }
-/**
+export const emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost = (
+    nFSeEmitirRequest: NFSeEmitirRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<NFSeEmitirResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfse/emitir`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nFSeEmitirRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getEmitirNfseApiV1FinancialFiscalFiscalNfseEmitirPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost>>, TError,{data: NFSeEmitirRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost>>, TError,{data: NFSeEmitirRequest}, TContext> => {
+
+const mutationKey = ['emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost>>, {data: NFSeEmitirRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type EmitirNfseApiV1FinancialFiscalFiscalNfseEmitirPostMutationResult = NonNullable<Awaited<ReturnType<typeof emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost>>>
+    export type EmitirNfseApiV1FinancialFiscalFiscalNfseEmitirPostMutationBody = NFSeEmitirRequest
+    export type EmitirNfseApiV1FinancialFiscalFiscalNfseEmitirPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Emitir Nfse
+ */
+export const useEmitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost>>, TError,{data: NFSeEmitirRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost>>,
+        TError,
+        {data: NFSeEmitirRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getEmitirNfseApiV1FinancialFiscalFiscalNfseEmitirPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela NFS-e autorizada.
  * @summary Cancelar Nfse
  */
-const cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost = <TData = AxiosResponse<CancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost200>>(
-    nFSeCancelarRequest: NFSeCancelarRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/nfse/cancelar`,
-      nFSeCancelarRequest,options
-    );
-  }
-/**
+export const cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost = (
+    nFSeCancelarRequest: NFSeCancelarRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost200>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfse/cancelar`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: nFSeCancelarRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getCancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost>>, TError,{data: NFSeCancelarRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost>>, TError,{data: NFSeCancelarRequest}, TContext> => {
+
+const mutationKey = ['cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost>>, {data: NFSeCancelarRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost>>>
+    export type CancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPostMutationBody = NFSeCancelarRequest
+    export type CancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancelar Nfse
+ */
+export const useCancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost>>, TError,{data: NFSeCancelarRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost>>,
+        TError,
+        {data: NFSeCancelarRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna total de retencoes de uma competencia.
 
 Util para conferencia de DAS e relatorios fiscais.
 Inclui economia com liminar de INSS.
  * @summary Obter Retencoes Competencia
  */
-const obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet = <TData = AxiosResponse<ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet200>>(
-    params: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/nfse/retencoes/competencia`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet = (
+    params: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet200>(
+      {url: `/api/v1/financial/fiscal/fiscal/nfse/retencoes/competencia`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetQueryKey = (params?: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/nfse/retencoes/competencia`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetQueryOptions = <TData = Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError = HTTPValidationError>(params: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>> = ({ signal }) => obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>>
+export type ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetQueryError = HTTPValidationError
+
+
+export function useObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet<TData = Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet<TData = Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet<TData = Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Retencoes Competencia
+ */
+
+export function useObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet<TData = Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria arquivo SPED.
  * @summary Criar Sped
  */
-const criarSpedApiV1FinancialFiscalFiscalSpedPost = <TData = AxiosResponse<SPEDFileResponse>>(
-    sPEDFileCreate: SPEDFileCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/sped`,
-      sPEDFileCreate,options
-    );
-  }
-/**
+export const criarSpedApiV1FinancialFiscalFiscalSpedPost = (
+    sPEDFileCreate: SPEDFileCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SPEDFileResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/sped`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sPEDFileCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarSpedApiV1FinancialFiscalFiscalSpedPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarSpedApiV1FinancialFiscalFiscalSpedPost>>, TError,{data: SPEDFileCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarSpedApiV1FinancialFiscalFiscalSpedPost>>, TError,{data: SPEDFileCreate}, TContext> => {
+
+const mutationKey = ['criarSpedApiV1FinancialFiscalFiscalSpedPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarSpedApiV1FinancialFiscalFiscalSpedPost>>, {data: SPEDFileCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarSpedApiV1FinancialFiscalFiscalSpedPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarSpedApiV1FinancialFiscalFiscalSpedPostMutationResult = NonNullable<Awaited<ReturnType<typeof criarSpedApiV1FinancialFiscalFiscalSpedPost>>>
+    export type CriarSpedApiV1FinancialFiscalFiscalSpedPostMutationBody = SPEDFileCreate
+    export type CriarSpedApiV1FinancialFiscalFiscalSpedPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Sped
+ */
+export const useCriarSpedApiV1FinancialFiscalFiscalSpedPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarSpedApiV1FinancialFiscalFiscalSpedPost>>, TError,{data: SPEDFileCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarSpedApiV1FinancialFiscalFiscalSpedPost>>,
+        TError,
+        {data: SPEDFileCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarSpedApiV1FinancialFiscalFiscalSpedPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista arquivos SPED.
  * @summary Listar Speds
  */
-const listarSpedsApiV1FinancialFiscalFiscalSpedGet = <TData = AxiosResponse<SPEDFileListResponse>>(
-    params: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/sped`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarSpedsApiV1FinancialFiscalFiscalSpedGet = (
+    params: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SPEDFileListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/sped`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarSpedsApiV1FinancialFiscalFiscalSpedGetQueryKey = (params?: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/sped`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarSpedsApiV1FinancialFiscalFiscalSpedGetQueryOptions = <TData = Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError = HTTPValidationError>(params: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarSpedsApiV1FinancialFiscalFiscalSpedGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>> = ({ signal }) => listarSpedsApiV1FinancialFiscalFiscalSpedGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarSpedsApiV1FinancialFiscalFiscalSpedGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>>
+export type ListarSpedsApiV1FinancialFiscalFiscalSpedGetQueryError = HTTPValidationError
+
+
+export function useListarSpedsApiV1FinancialFiscalFiscalSpedGet<TData = Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError = HTTPValidationError>(
+ params: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarSpedsApiV1FinancialFiscalFiscalSpedGet<TData = Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError = HTTPValidationError>(
+ params: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarSpedsApiV1FinancialFiscalFiscalSpedGet<TData = Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError = HTTPValidationError>(
+ params: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Speds
+ */
+
+export function useListarSpedsApiV1FinancialFiscalFiscalSpedGet<TData = Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError = HTTPValidationError>(
+ params: ListarSpedsApiV1FinancialFiscalFiscalSpedGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarSpedsApiV1FinancialFiscalFiscalSpedGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarSpedsApiV1FinancialFiscalFiscalSpedGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca arquivo SPED por ID.
  * @summary Obter Sped
  */
-const obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet = <TData = AxiosResponse<SPEDFileResponse>>(
-    spedId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/sped/${spedId}`,options
-    );
-  }
+export const obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet = (
+    spedId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SPEDFileResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/sped/${spedId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGetQueryKey = (spedId?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/sped/${spedId}`
+    ] as const;
+    }
+
+    
+export const getObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGetQueryOptions = <TData = Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError = HTTPValidationError>(spedId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGetQueryKey(spedId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>> = ({ signal }) => obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet(spedId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(spedId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>>
+export type ObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGetQueryError = HTTPValidationError
+
+
+export function useObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet<TData = Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError = HTTPValidationError>(
+ spedId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet<TData = Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError = HTTPValidationError>(
+ spedId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet<TData = Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError = HTTPValidationError>(
+ spedId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Sped
+ */
+
+export function useObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet<TData = Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError = HTTPValidationError>(
+ spedId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGetQueryOptions(spedId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Gera arquivo SPED.
 
 TODO: Implementar geracao de arquivos SPED
  * @summary Gerar Sped
  */
-const gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost = <TData = AxiosResponse<GerarSpedApiV1FinancialFiscalFiscalSpedGerarPost200>>(
+export const gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost = (
     sPEDGerarRequest: SPEDGerarRequest,
-    params: GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/sped/gerar`,
-      sPEDGerarRequest,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GerarSpedApiV1FinancialFiscalFiscalSpedGerarPost200>(
+      {url: `/api/v1/financial/fiscal/fiscal/sped/gerar`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sPEDGerarRequest,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getGerarSpedApiV1FinancialFiscalFiscalSpedGerarPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost>>, TError,{data: SPEDGerarRequest;params: GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost>>, TError,{data: SPEDGerarRequest;params: GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams}, TContext> => {
+
+const mutationKey = ['gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost>>, {data: SPEDGerarRequest;params: GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostMutationResult = NonNullable<Awaited<ReturnType<typeof gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost>>>
+    export type GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostMutationBody = SPEDGerarRequest
+    export type GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Gerar Sped
+ */
+export const useGerarSpedApiV1FinancialFiscalFiscalSpedGerarPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost>>, TError,{data: SPEDGerarRequest;params: GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost>>,
+        TError,
+        {data: SPEDGerarRequest;params: GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getGerarSpedApiV1FinancialFiscalFiscalSpedGerarPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Valida arquivo SPED.
  * @summary Validar Sped
  */
-const validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost = <TData = AxiosResponse<ValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost200>>(
-    spedId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/sped/${spedId}/validar`,undefined,options
-    );
-  }
-/**
+export const validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost = (
+    spedId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost200>(
+      {url: `/api/v1/financial/fiscal/fiscal/sped/${spedId}/validar`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost>>, TError,{spedId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost>>, TError,{spedId: string}, TContext> => {
+
+const mutationKey = ['validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost>>, {spedId: string}> = (props) => {
+          const {spedId} = props ?? {};
+
+          return  validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost(spedId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPostMutationResult = NonNullable<Awaited<ReturnType<typeof validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost>>>
+    
+    export type ValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Validar Sped
+ */
+export const useValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost>>, TError,{spedId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost>>,
+        TError,
+        {spedId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Transmite arquivo SPED.
  * @summary Transmitir Sped
  */
-const transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost = <TData = AxiosResponse<TransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost200>>(
+export const transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost = (
     spedId: string,
-    sPEDTransmitirRequest: SPEDTransmitirRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/sped/${spedId}/transmitir`,
-      sPEDTransmitirRequest,options
-    );
-  }
-/**
+    sPEDTransmitirRequest: SPEDTransmitirRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost200>(
+      {url: `/api/v1/financial/fiscal/fiscal/sped/${spedId}/transmitir`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sPEDTransmitirRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getTransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost>>, TError,{spedId: string;data: SPEDTransmitirRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost>>, TError,{spedId: string;data: SPEDTransmitirRequest}, TContext> => {
+
+const mutationKey = ['transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost>>, {spedId: string;data: SPEDTransmitirRequest}> = (props) => {
+          const {spedId,data} = props ?? {};
+
+          return  transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost(spedId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPostMutationResult = NonNullable<Awaited<ReturnType<typeof transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost>>>
+    export type TransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPostMutationBody = SPEDTransmitirRequest
+    export type TransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Transmitir Sped
+ */
+export const useTransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost>>, TError,{spedId: string;data: SPEDTransmitirRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost>>,
+        TError,
+        {spedId: string;data: SPEDTransmitirRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getTransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria obrigacao fiscal.
  * @summary Criar Obrigacao
  */
-const criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost = <TData = AxiosResponse<ObrigacaoFiscalResponse>>(
-    obrigacaoFiscalCreate: ObrigacaoFiscalCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/obrigacao`,
-      obrigacaoFiscalCreate,options
-    );
-  }
-/**
+export const criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost = (
+    obrigacaoFiscalCreate: ObrigacaoFiscalCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObrigacaoFiscalResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/obrigacao`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: obrigacaoFiscalCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost>>, TError,{data: ObrigacaoFiscalCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost>>, TError,{data: ObrigacaoFiscalCreate}, TContext> => {
+
+const mutationKey = ['criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost>>, {data: ObrigacaoFiscalCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPostMutationResult = NonNullable<Awaited<ReturnType<typeof criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost>>>
+    export type CriarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPostMutationBody = ObrigacaoFiscalCreate
+    export type CriarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Obrigacao
+ */
+export const useCriarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost>>, TError,{data: ObrigacaoFiscalCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost>>,
+        TError,
+        {data: ObrigacaoFiscalCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista obrigacoes fiscais.
  * @summary Listar Obrigacoes
  */
-const listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet = <TData = AxiosResponse<ObrigacaoFiscalListResponse>>(
-    params: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/obrigacao`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet = (
+    params: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObrigacaoFiscalListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/obrigacao`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetQueryKey = (params?: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/obrigacao`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetQueryOptions = <TData = Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError = HTTPValidationError>(params: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>> = ({ signal }) => listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>>
+export type ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetQueryError = HTTPValidationError
+
+
+export function useListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet<TData = Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet<TData = Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet<TData = Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Obrigacoes
+ */
+
+export function useListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet<TData = Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista obrigacoes pendentes ordenadas por vencimento.
  * @summary Listar Obrigacoes Pendentes
  */
-const listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet = <TData = AxiosResponse<ObrigacaoFiscalResponse[]>>(
-    params: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/obrigacao/pendentes`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet = (
+    params: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObrigacaoFiscalResponse[]>(
+      {url: `/api/v1/financial/fiscal/fiscal/obrigacao/pendentes`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetQueryKey = (params?: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/obrigacao/pendentes`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetQueryOptions = <TData = Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError = HTTPValidationError>(params: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>> = ({ signal }) => listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>>
+export type ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetQueryError = HTTPValidationError
+
+
+export function useListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet<TData = Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet<TData = Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet<TData = Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Obrigacoes Pendentes
+ */
+
+export function useListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet<TData = Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista obrigacoes atrasadas.
  * @summary Listar Obrigacoes Atrasadas
  */
-const listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet = <TData = AxiosResponse<ObrigacaoFiscalResponse[]>>(
-    params: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/obrigacao/atrasadas`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet = (
+    params: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObrigacaoFiscalResponse[]>(
+      {url: `/api/v1/financial/fiscal/fiscal/obrigacao/atrasadas`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetQueryKey = (params?: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/obrigacao/atrasadas`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetQueryOptions = <TData = Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError = HTTPValidationError>(params: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>> = ({ signal }) => listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>>
+export type ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetQueryError = HTTPValidationError
+
+
+export function useListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet<TData = Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet<TData = Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet<TData = Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Obrigacoes Atrasadas
+ */
+
+export function useListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet<TData = Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError = HTTPValidationError>(
+ params: ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca obrigacao por ID.
  * @summary Obter Obrigacao
  */
-const obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet = <TData = AxiosResponse<ObrigacaoFiscalResponse>>(
-    obrigacaoId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/obrigacao/${obrigacaoId}`,options
-    );
-  }
+export const obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet = (
+    obrigacaoId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObrigacaoFiscalResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/obrigacao/${obrigacaoId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGetQueryKey = (obrigacaoId?: string,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/obrigacao/${obrigacaoId}`
+    ] as const;
+    }
+
+    
+export const getObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGetQueryOptions = <TData = Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError = HTTPValidationError>(obrigacaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGetQueryKey(obrigacaoId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>> = ({ signal }) => obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet(obrigacaoId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(obrigacaoId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>>
+export type ObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGetQueryError = HTTPValidationError
+
+
+export function useObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet<TData = Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError = HTTPValidationError>(
+ obrigacaoId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet<TData = Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError = HTTPValidationError>(
+ obrigacaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet<TData = Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError = HTTPValidationError>(
+ obrigacaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Obrigacao
+ */
+
+export function useObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet<TData = Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError = HTTPValidationError>(
+ obrigacaoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGetQueryOptions(obrigacaoId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza obrigacao fiscal.
  * @summary Atualizar Obrigacao
  */
-const atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch = <TData = AxiosResponse<ObrigacaoFiscalResponse>>(
+export const atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch = (
     obrigacaoId: string,
-    obrigacaoFiscalUpdate: ObrigacaoFiscalUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/fiscal/fiscal/obrigacao/${obrigacaoId}`,
-      obrigacaoFiscalUpdate,options
-    );
-  }
-/**
+    obrigacaoFiscalUpdate: ObrigacaoFiscalUpdate,
+ ) => {
+      
+      
+      return customInstance<ObrigacaoFiscalResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/obrigacao/${obrigacaoId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: obrigacaoFiscalUpdate
+    },
+      );
+    }
+  
+
+
+export const getAtualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch>>, TError,{obrigacaoId: string;data: ObrigacaoFiscalUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch>>, TError,{obrigacaoId: string;data: ObrigacaoFiscalUpdate}, TContext> => {
+
+const mutationKey = ['atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch>>, {obrigacaoId: string;data: ObrigacaoFiscalUpdate}> = (props) => {
+          const {obrigacaoId,data} = props ?? {};
+
+          return  atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch(obrigacaoId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AtualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch>>>
+    export type AtualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatchMutationBody = ObrigacaoFiscalUpdate
+    export type AtualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar Obrigacao
+ */
+export const useAtualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch>>, TError,{obrigacaoId: string;data: ObrigacaoFiscalUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch>>,
+        TError,
+        {obrigacaoId: string;data: ObrigacaoFiscalUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getAtualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria DAS do Simples Nacional.
  * @summary Criar Das
  */
-const criarDasApiV1FinancialFiscalFiscalDasPost = <TData = AxiosResponse<SimplesNacionalDASResponse>>(
-    simplesNacionalDASCreate: SimplesNacionalDASCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/das`,
-      simplesNacionalDASCreate,options
-    );
-  }
-/**
+export const criarDasApiV1FinancialFiscalFiscalDasPost = (
+    simplesNacionalDASCreate: SimplesNacionalDASCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SimplesNacionalDASResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/das`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: simplesNacionalDASCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarDasApiV1FinancialFiscalFiscalDasPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarDasApiV1FinancialFiscalFiscalDasPost>>, TError,{data: SimplesNacionalDASCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarDasApiV1FinancialFiscalFiscalDasPost>>, TError,{data: SimplesNacionalDASCreate}, TContext> => {
+
+const mutationKey = ['criarDasApiV1FinancialFiscalFiscalDasPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarDasApiV1FinancialFiscalFiscalDasPost>>, {data: SimplesNacionalDASCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarDasApiV1FinancialFiscalFiscalDasPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarDasApiV1FinancialFiscalFiscalDasPostMutationResult = NonNullable<Awaited<ReturnType<typeof criarDasApiV1FinancialFiscalFiscalDasPost>>>
+    export type CriarDasApiV1FinancialFiscalFiscalDasPostMutationBody = SimplesNacionalDASCreate
+    export type CriarDasApiV1FinancialFiscalFiscalDasPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Das
+ */
+export const useCriarDasApiV1FinancialFiscalFiscalDasPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarDasApiV1FinancialFiscalFiscalDasPost>>, TError,{data: SimplesNacionalDASCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarDasApiV1FinancialFiscalFiscalDasPost>>,
+        TError,
+        {data: SimplesNacionalDASCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarDasApiV1FinancialFiscalFiscalDasPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista DAS do Simples Nacional.
  * @summary Listar Das
  */
-const listarDasApiV1FinancialFiscalFiscalDasGet = <TData = AxiosResponse<SimplesNacionalDASResponse[]>>(
-    params: ListarDasApiV1FinancialFiscalFiscalDasGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/das`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarDasApiV1FinancialFiscalFiscalDasGet = (
+    params: ListarDasApiV1FinancialFiscalFiscalDasGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SimplesNacionalDASResponse[]>(
+      {url: `/api/v1/financial/fiscal/fiscal/das`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarDasApiV1FinancialFiscalFiscalDasGetQueryKey = (params?: ListarDasApiV1FinancialFiscalFiscalDasGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/das`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarDasApiV1FinancialFiscalFiscalDasGetQueryOptions = <TData = Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError = HTTPValidationError>(params: ListarDasApiV1FinancialFiscalFiscalDasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarDasApiV1FinancialFiscalFiscalDasGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>> = ({ signal }) => listarDasApiV1FinancialFiscalFiscalDasGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarDasApiV1FinancialFiscalFiscalDasGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>>
+export type ListarDasApiV1FinancialFiscalFiscalDasGetQueryError = HTTPValidationError
+
+
+export function useListarDasApiV1FinancialFiscalFiscalDasGet<TData = Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError = HTTPValidationError>(
+ params: ListarDasApiV1FinancialFiscalFiscalDasGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarDasApiV1FinancialFiscalFiscalDasGet<TData = Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError = HTTPValidationError>(
+ params: ListarDasApiV1FinancialFiscalFiscalDasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarDasApiV1FinancialFiscalFiscalDasGet<TData = Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError = HTTPValidationError>(
+ params: ListarDasApiV1FinancialFiscalFiscalDasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Das
+ */
+
+export function useListarDasApiV1FinancialFiscalFiscalDasGet<TData = Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError = HTTPValidationError>(
+ params: ListarDasApiV1FinancialFiscalFiscalDasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarDasApiV1FinancialFiscalFiscalDasGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarDasApiV1FinancialFiscalFiscalDasGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca DAS de uma competencia.
  * @summary Obter Das Competencia
  */
-const obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet = <TData = AxiosResponse<ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet200>>(
-    params: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/das/competencia`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet = (
+    params: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet200>(
+      {url: `/api/v1/financial/fiscal/fiscal/das/competencia`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetQueryKey = (params?: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/das/competencia`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetQueryOptions = <TData = Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError = HTTPValidationError>(params: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>> = ({ signal }) => obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>>
+export type ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetQueryError = HTTPValidationError
+
+
+export function useObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet<TData = Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet<TData = Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet<TData = Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Das Competencia
+ */
+
+export function useObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet<TData = Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError = HTTPValidationError>(
+ params: ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Calcula DAS do Simples Nacional.
 
@@ -698,18 +3773,70 @@ Para servicos de vigilancia (Anexo III):
 - Nao deve haver retencao adicional de INSS (bitributacao)
  * @summary Calcular Das
  */
-const calcularDasApiV1FinancialFiscalFiscalDasCalcularPost = <TData = AxiosResponse<DASCalcularResponse>>(
+export const calcularDasApiV1FinancialFiscalFiscalDasCalcularPost = (
     dASCalcularRequest: DASCalcularRequest,
-    params: CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/das/calcular`,
-      dASCalcularRequest,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DASCalcularResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/das/calcular`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: dASCalcularRequest,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalcularDasApiV1FinancialFiscalFiscalDasCalcularPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calcularDasApiV1FinancialFiscalFiscalDasCalcularPost>>, TError,{data: DASCalcularRequest;params: CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calcularDasApiV1FinancialFiscalFiscalDasCalcularPost>>, TError,{data: DASCalcularRequest;params: CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostParams}, TContext> => {
+
+const mutationKey = ['calcularDasApiV1FinancialFiscalFiscalDasCalcularPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calcularDasApiV1FinancialFiscalFiscalDasCalcularPost>>, {data: DASCalcularRequest;params: CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  calcularDasApiV1FinancialFiscalFiscalDasCalcularPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostMutationResult = NonNullable<Awaited<ReturnType<typeof calcularDasApiV1FinancialFiscalFiscalDasCalcularPost>>>
+    export type CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostMutationBody = DASCalcularRequest
+    export type CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calcular Das
+ */
+export const useCalcularDasApiV1FinancialFiscalFiscalDasCalcularPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calcularDasApiV1FinancialFiscalFiscalDasCalcularPost>>, TError,{data: DASCalcularRequest;params: CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calcularDasApiV1FinancialFiscalFiscalDasCalcularPost>>,
+        TError,
+        {data: DASCalcularRequest;params: CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalcularDasApiV1FinancialFiscalFiscalDasCalcularPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna tabela de faixas do Simples Nacional.
 
 Anexo III - Servicos de vigilancia, limpeza, conservacao:
@@ -717,171 +3844,780 @@ Anexo III - Servicos de vigilancia, limpeza, conservacao:
 - CPP INCLUSO no DAS (nao reter INSS adicional)
  * @summary Obter Faixas Simples
  */
-const obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet = <TData = AxiosResponse<ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet200Item[]>>(
-    params?: ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/das/faixas`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet = (
+    params?: ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet200Item[]>(
+      {url: `/api/v1/financial/fiscal/fiscal/das/faixas`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetQueryKey = (params?: ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/das/faixas`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetQueryOptions = <TData = Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError = HTTPValidationError>(params?: ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>> = ({ signal }) => obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>>
+export type ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetQueryError = HTTPValidationError
+
+
+export function useObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet<TData = Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError = HTTPValidationError>(
+ params: undefined |  ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet<TData = Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError = HTTPValidationError>(
+ params?: ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet<TData = Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError = HTTPValidationError>(
+ params?: ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Faixas Simples
+ */
+
+export function useObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet<TData = Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError = HTTPValidationError>(
+ params?: ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Calcula receita bruta dos ultimos 12 meses para DAS.
  * @summary Obter Receita 12 Meses
  */
-const obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet = <TData = AxiosResponse<ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet200>>(
-    params: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/das/receita-12-meses`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet = (
+    params: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet200>(
+      {url: `/api/v1/financial/fiscal/fiscal/das/receita-12-meses`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetQueryKey = (params?: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/das/receita-12-meses`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetQueryOptions = <TData = Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError = HTTPValidationError>(params: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>> = ({ signal }) => obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>>
+export type ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetQueryError = HTTPValidationError
+
+
+export function useObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet<TData = Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError = HTTPValidationError>(
+ params: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet<TData = Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError = HTTPValidationError>(
+ params: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet<TData = Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError = HTTPValidationError>(
+ params: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Receita 12 Meses
+ */
+
+export function useObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet<TData = Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError = HTTPValidationError>(
+ params: ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria configuracao SUFRAMA.
  * @summary Criar Suframa Config
  */
-const criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost = <TData = AxiosResponse<SUFRAMAConfigResponse>>(
-    sUFRAMAConfigCreate: SUFRAMAConfigCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/suframa/config`,
-      sUFRAMAConfigCreate,options
-    );
-  }
-/**
+export const criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost = (
+    sUFRAMAConfigCreate: SUFRAMAConfigCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SUFRAMAConfigResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/suframa/config`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sUFRAMAConfigCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCriarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost>>, TError,{data: SUFRAMAConfigCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost>>, TError,{data: SUFRAMAConfigCreate}, TContext> => {
+
+const mutationKey = ['criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost>>, {data: SUFRAMAConfigCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CriarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPostMutationResult = NonNullable<Awaited<ReturnType<typeof criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost>>>
+    export type CriarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPostMutationBody = SUFRAMAConfigCreate
+    export type CriarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar Suframa Config
+ */
+export const useCriarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost>>, TError,{data: SUFRAMAConfigCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost>>,
+        TError,
+        {data: SUFRAMAConfigCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCriarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca configuracao SUFRAMA ativa.
  * @summary Obter Suframa Config
  */
-const obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet = <TData = AxiosResponse<ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet200>>(
-    params: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/suframa/config`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet = (
+    params: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet200>(
+      {url: `/api/v1/financial/fiscal/fiscal/suframa/config`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetQueryKey = (params?: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/suframa/config`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetQueryOptions = <TData = Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError = HTTPValidationError>(params: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>> = ({ signal }) => obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>>
+export type ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetQueryError = HTTPValidationError
+
+
+export function useObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet<TData = Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError = HTTPValidationError>(
+ params: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet<TData = Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError = HTTPValidationError>(
+ params: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet<TData = Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError = HTTPValidationError>(
+ params: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Suframa Config
+ */
+
+export function useObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet<TData = Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError = HTTPValidationError>(
+ params: ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Registra operacao com beneficio SUFRAMA.
  * @summary Registrar Operacao Suframa
  */
-const registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost = <TData = AxiosResponse<SUFRAMAOperacaoResponse>>(
-    sUFRAMAOperacaoCreate: SUFRAMAOperacaoCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/fiscal/fiscal/suframa/operacao`,
-      sUFRAMAOperacaoCreate,options
-    );
-  }
-/**
+export const registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost = (
+    sUFRAMAOperacaoCreate: SUFRAMAOperacaoCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SUFRAMAOperacaoResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/suframa/operacao`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: sUFRAMAOperacaoCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getRegistrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost>>, TError,{data: SUFRAMAOperacaoCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost>>, TError,{data: SUFRAMAOperacaoCreate}, TContext> => {
+
+const mutationKey = ['registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost>>, {data: SUFRAMAOperacaoCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegistrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPostMutationResult = NonNullable<Awaited<ReturnType<typeof registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost>>>
+    export type RegistrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPostMutationBody = SUFRAMAOperacaoCreate
+    export type RegistrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Registrar Operacao Suframa
+ */
+export const useRegistrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost>>, TError,{data: SUFRAMAOperacaoCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost>>,
+        TError,
+        {data: SUFRAMAOperacaoCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getRegistrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista operacoes com beneficio SUFRAMA.
  * @summary Listar Operacoes Suframa
  */
-const listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet = <TData = AxiosResponse<SUFRAMAOperacaoListResponse>>(
-    params: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/suframa/operacoes`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet = (
+    params: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<SUFRAMAOperacaoListResponse>(
+      {url: `/api/v1/financial/fiscal/fiscal/suframa/operacoes`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetQueryKey = (params?: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/suframa/operacoes`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetQueryOptions = <TData = Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError = HTTPValidationError>(params: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>> = ({ signal }) => listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>>
+export type ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetQueryError = HTTPValidationError
+
+
+export function useListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet<TData = Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError = HTTPValidationError>(
+ params: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet<TData = Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError = HTTPValidationError>(
+ params: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet<TData = Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError = HTTPValidationError>(
+ params: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar Operacoes Suframa
+ */
+
+export function useListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet<TData = Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError = HTTPValidationError>(
+ params: ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Calcula economia SUFRAMA de um periodo.
  * @summary Obter Economia Suframa
  */
-const obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet = <TData = AxiosResponse<ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet200>>(
-    params: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/suframa/economia`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet = (
+    params: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet200>(
+      {url: `/api/v1/financial/fiscal/fiscal/suframa/economia`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetQueryKey = (params?: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/suframa/economia`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetQueryOptions = <TData = Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError = HTTPValidationError>(params: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>> = ({ signal }) => obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>>
+export type ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetQueryError = HTTPValidationError
+
+
+export function useObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet<TData = Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError = HTTPValidationError>(
+ params: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet<TData = Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError = HTTPValidationError>(
+ params: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet<TData = Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError = HTTPValidationError>(
+ params: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Economia Suframa
+ */
+
+export function useObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet<TData = Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError = HTTPValidationError>(
+ params: ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas fiscais do mes.
  * @summary Obter Stats Fiscal
  */
-const obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet = <TData = AxiosResponse<FiscalStats>>(
-    params: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet = (
+    params: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<FiscalStats>(
+      {url: `/api/v1/financial/fiscal/fiscal/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetQueryKey = (params?: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError = HTTPValidationError>(params: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>> = ({ signal }) => obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>>
+export type ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetQueryError = HTTPValidationError
+
+
+export function useObterStatsFiscalApiV1FinancialFiscalFiscalStatsGet<TData = Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError = HTTPValidationError>(
+ params: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterStatsFiscalApiV1FinancialFiscalFiscalStatsGet<TData = Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError = HTTPValidationError>(
+ params: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterStatsFiscalApiV1FinancialFiscalFiscalStatsGet<TData = Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError = HTTPValidationError>(
+ params: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Stats Fiscal
+ */
+
+export function useObterStatsFiscalApiV1FinancialFiscalFiscalStatsGet<TData = Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError = HTTPValidationError>(
+ params: ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna dashboard fiscal completo.
  * @summary Obter Dashboard Fiscal
  */
-const obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet = <TData = AxiosResponse<FiscalDashboard>>(
-    params: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/fiscal/fiscal/dashboard`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {criarCfopApiV1FinancialFiscalFiscalCfopPost,listarCfopsApiV1FinancialFiscalFiscalCfopGet,listarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet,obterCfopApiV1FinancialFiscalFiscalCfopCfopIdGet,atualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatch,obterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGet,criarNcmApiV1FinancialFiscalFiscalNcmPost,listarNcmsApiV1FinancialFiscalFiscalNcmGet,obterNcmApiV1FinancialFiscalFiscalNcmNcmIdGet,atualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatch,obterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGet,criarRetencaoApiV1FinancialFiscalFiscalRetencaoPost,listarRetencoesApiV1FinancialFiscalFiscalRetencaoGet,obterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGet,atualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatch,calcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPost,criarNfeApiV1FinancialFiscalFiscalNfePost,listarNfesApiV1FinancialFiscalFiscalNfeGet,obterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet,atualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatch,obterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGet,emitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost,cancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost,inutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost,criarNfseApiV1FinancialFiscalFiscalNfsePost,listarNfsesApiV1FinancialFiscalFiscalNfseGet,obterNfseApiV1FinancialFiscalFiscalNfseNfseIdGet,atualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatch,emitirNfseApiV1FinancialFiscalFiscalNfseEmitirPost,cancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost,obterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet,criarSpedApiV1FinancialFiscalFiscalSpedPost,listarSpedsApiV1FinancialFiscalFiscalSpedGet,obterSpedApiV1FinancialFiscalFiscalSpedSpedIdGet,gerarSpedApiV1FinancialFiscalFiscalSpedGerarPost,validarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost,transmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost,criarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPost,listarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGet,listarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGet,listarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGet,obterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGet,atualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatch,criarDasApiV1FinancialFiscalFiscalDasPost,listarDasApiV1FinancialFiscalFiscalDasGet,obterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet,calcularDasApiV1FinancialFiscalFiscalDasCalcularPost,obterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet,obterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet,criarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPost,obterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet,registrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPost,listarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGet,obterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet,obterStatsFiscalApiV1FinancialFiscalFiscalStatsGet,obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet}};
-export type CriarCfopApiV1FinancialFiscalFiscalCfopPostResult = AxiosResponse<CFOPResponse>
-export type ListarCfopsApiV1FinancialFiscalFiscalCfopGetResult = AxiosResponse<CFOPListResponse>
-export type ListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGetResult = AxiosResponse<ListarCfopsVigilanciaZfmApiV1FinancialFiscalFiscalCfopVigilanciaZfmGet200>
-export type ObterCfopApiV1FinancialFiscalFiscalCfopCfopIdGetResult = AxiosResponse<CFOPResponse>
-export type AtualizarCfopApiV1FinancialFiscalFiscalCfopCfopIdPatchResult = AxiosResponse<CFOPResponse>
-export type ObterCfopPorCodigoApiV1FinancialFiscalFiscalCfopCodigoCodigoGetResult = AxiosResponse<CFOPResponse>
-export type CriarNcmApiV1FinancialFiscalFiscalNcmPostResult = AxiosResponse<NCMResponse>
-export type ListarNcmsApiV1FinancialFiscalFiscalNcmGetResult = AxiosResponse<NCMListResponse>
-export type ObterNcmApiV1FinancialFiscalFiscalNcmNcmIdGetResult = AxiosResponse<NCMResponse>
-export type AtualizarNcmApiV1FinancialFiscalFiscalNcmNcmIdPatchResult = AxiosResponse<NCMResponse>
-export type ObterNcmPorCodigoApiV1FinancialFiscalFiscalNcmCodigoCodigoGetResult = AxiosResponse<NCMResponse>
-export type CriarRetencaoApiV1FinancialFiscalFiscalRetencaoPostResult = AxiosResponse<RetencaoFederalResponse>
-export type ListarRetencoesApiV1FinancialFiscalFiscalRetencaoGetResult = AxiosResponse<RetencaoFederalListResponse>
-export type ObterRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdGetResult = AxiosResponse<RetencaoFederalResponse>
-export type AtualizarRetencaoApiV1FinancialFiscalFiscalRetencaoRetencaoIdPatchResult = AxiosResponse<RetencaoFederalResponse>
-export type CalcularRetencoesApiV1FinancialFiscalFiscalRetencaoCalcularPostResult = AxiosResponse<CalculoRetencaoResponse>
-export type CriarNfeApiV1FinancialFiscalFiscalNfePostResult = AxiosResponse<NFeResponse>
-export type ListarNfesApiV1FinancialFiscalFiscalNfeGetResult = AxiosResponse<NFeListResponse>
-export type ObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGetResult = AxiosResponse<NFeResponse>
-export type AtualizarNfeApiV1FinancialFiscalFiscalNfeNfeIdPatchResult = AxiosResponse<NFeResponse>
-export type ObterNfePorChaveApiV1FinancialFiscalFiscalNfeChaveChaveAcessoGetResult = AxiosResponse<NFeResponse>
-export type EmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPostResult = AxiosResponse<NFeEmitirResponse>
-export type CancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPostResult = AxiosResponse<CancelarNfeApiV1FinancialFiscalFiscalNfeCancelarPost200>
-export type InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPostResult = AxiosResponse<InutilizarNumeracaoApiV1FinancialFiscalFiscalNfeInutilizarPost200>
-export type CriarNfseApiV1FinancialFiscalFiscalNfsePostResult = AxiosResponse<NFSeResponse>
-export type ListarNfsesApiV1FinancialFiscalFiscalNfseGetResult = AxiosResponse<NFSeListResponse>
-export type ObterNfseApiV1FinancialFiscalFiscalNfseNfseIdGetResult = AxiosResponse<NFSeResponse>
-export type AtualizarNfseApiV1FinancialFiscalFiscalNfseNfseIdPatchResult = AxiosResponse<NFSeResponse>
-export type EmitirNfseApiV1FinancialFiscalFiscalNfseEmitirPostResult = AxiosResponse<NFSeEmitirResponse>
-export type CancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPostResult = AxiosResponse<CancelarNfseApiV1FinancialFiscalFiscalNfseCancelarPost200>
-export type ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGetResult = AxiosResponse<ObterRetencoesCompetenciaApiV1FinancialFiscalFiscalNfseRetencoesCompetenciaGet200>
-export type CriarSpedApiV1FinancialFiscalFiscalSpedPostResult = AxiosResponse<SPEDFileResponse>
-export type ListarSpedsApiV1FinancialFiscalFiscalSpedGetResult = AxiosResponse<SPEDFileListResponse>
-export type ObterSpedApiV1FinancialFiscalFiscalSpedSpedIdGetResult = AxiosResponse<SPEDFileResponse>
-export type GerarSpedApiV1FinancialFiscalFiscalSpedGerarPostResult = AxiosResponse<GerarSpedApiV1FinancialFiscalFiscalSpedGerarPost200>
-export type ValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPostResult = AxiosResponse<ValidarSpedApiV1FinancialFiscalFiscalSpedSpedIdValidarPost200>
-export type TransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPostResult = AxiosResponse<TransmitirSpedApiV1FinancialFiscalFiscalSpedSpedIdTransmitirPost200>
-export type CriarObrigacaoApiV1FinancialFiscalFiscalObrigacaoPostResult = AxiosResponse<ObrigacaoFiscalResponse>
-export type ListarObrigacoesApiV1FinancialFiscalFiscalObrigacaoGetResult = AxiosResponse<ObrigacaoFiscalListResponse>
-export type ListarObrigacoesPendentesApiV1FinancialFiscalFiscalObrigacaoPendentesGetResult = AxiosResponse<ObrigacaoFiscalResponse[]>
-export type ListarObrigacoesAtrasadasApiV1FinancialFiscalFiscalObrigacaoAtrasadasGetResult = AxiosResponse<ObrigacaoFiscalResponse[]>
-export type ObterObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdGetResult = AxiosResponse<ObrigacaoFiscalResponse>
-export type AtualizarObrigacaoApiV1FinancialFiscalFiscalObrigacaoObrigacaoIdPatchResult = AxiosResponse<ObrigacaoFiscalResponse>
-export type CriarDasApiV1FinancialFiscalFiscalDasPostResult = AxiosResponse<SimplesNacionalDASResponse>
-export type ListarDasApiV1FinancialFiscalFiscalDasGetResult = AxiosResponse<SimplesNacionalDASResponse[]>
-export type ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGetResult = AxiosResponse<ObterDasCompetenciaApiV1FinancialFiscalFiscalDasCompetenciaGet200>
-export type CalcularDasApiV1FinancialFiscalFiscalDasCalcularPostResult = AxiosResponse<DASCalcularResponse>
-export type ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGetResult = AxiosResponse<ObterFaixasSimplesApiV1FinancialFiscalFiscalDasFaixasGet200Item[]>
-export type ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGetResult = AxiosResponse<ObterReceita12MesesApiV1FinancialFiscalFiscalDasReceita12MesesGet200>
-export type CriarSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigPostResult = AxiosResponse<SUFRAMAConfigResponse>
-export type ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGetResult = AxiosResponse<ObterSuframaConfigApiV1FinancialFiscalFiscalSuframaConfigGet200>
-export type RegistrarOperacaoSuframaApiV1FinancialFiscalFiscalSuframaOperacaoPostResult = AxiosResponse<SUFRAMAOperacaoResponse>
-export type ListarOperacoesSuframaApiV1FinancialFiscalFiscalSuframaOperacoesGetResult = AxiosResponse<SUFRAMAOperacaoListResponse>
-export type ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGetResult = AxiosResponse<ObterEconomiaSuframaApiV1FinancialFiscalFiscalSuframaEconomiaGet200>
-export type ObterStatsFiscalApiV1FinancialFiscalFiscalStatsGetResult = AxiosResponse<FiscalStats>
-export type ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetResult = AxiosResponse<FiscalDashboard>
+export const obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet = (
+    params: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<FiscalDashboard>(
+      {url: `/api/v1/financial/fiscal/fiscal/dashboard`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetQueryKey = (params?: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams,) => {
+    return [
+    `/api/v1/financial/fiscal/fiscal/dashboard`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetQueryOptions = <TData = Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError = HTTPValidationError>(params: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>> = ({ signal }) => obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetQueryResult = NonNullable<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>>
+export type ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetQueryError = HTTPValidationError
+
+
+export function useObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet<TData = Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError = HTTPValidationError>(
+ params: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet<TData = Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError = HTTPValidationError>(
+ params: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet<TData = Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError = HTTPValidationError>(
+ params: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter Dashboard Fiscal
+ */
+
+export function useObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet<TData = Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError = HTTPValidationError>(
+ params: ObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof obterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

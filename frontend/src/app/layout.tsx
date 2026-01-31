@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/contexts/providers';
 import { Toaster } from '@/components/ui/toaster';
+import { BartoloChat } from '@/components/BartoloChat';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -31,10 +32,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" className="dark">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Conecta PRO" />
+      </head>
       <body className="min-h-screen bg-[hsl(var(--background))] antialiased">
         <Providers>
           {children}
           <Toaster />
+          <BartoloChat />
         </Providers>
       </body>
     </html>

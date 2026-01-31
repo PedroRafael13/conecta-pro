@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     # JWT
     jwt_secret_key: str = Field(default="CHANGE_ME_IN_PRODUCTION_32_CHARS_MIN")
     jwt_algorithm: str = Field(default="HS256")
-    jwt_access_token_expire_minutes: int = Field(default=30)
+    jwt_access_token_expire_minutes: int = Field(default=240)  # 4 horas para operação 24/7
     jwt_refresh_token_expire_days: int = Field(default=7)
 
     # CORS - usa string para evitar problemas de parsing
@@ -55,11 +55,25 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
     log_format: str = Field(default="json")
 
+    # Sentry Monitoring
+    sentry_dsn: str = Field(default="")
+    sentry_traces_sample_rate: float = Field(default=0.1)
+    sentry_profiles_sample_rate: float = Field(default=0.1)
+
     # Google OAuth
     GOOGLE_CLIENT_ID: str = Field(default="")
     GOOGLE_CLIENT_SECRET: str = Field(default="")
     GOOGLE_REDIRECT_URI: str = Field(default="https://erp.conectamais.pro/api/v1/auth/google/callback")
     FRONTEND_URL: str = Field(default="https://erp.conectamais.pro")
+
+    # AI/LLM Configuration
+    OPENAI_API_KEY: str = Field(default="")
+    ANTHROPIC_API_KEY: str = Field(default="")
+    LLM_PROVIDER: str = Field(default="anthropic")  # openai, anthropic ou local
+    LLM_MODEL: str = Field(default="claude-3-5-sonnet-20241022")
+    LLM_MAX_TOKENS: int = Field(default=2000)
+    LLM_TEMPERATURE: float = Field(default=0.7)
+    LLM_FALLBACK_ENABLED: bool = Field(default=True)
 
     @property
     def cors_origins(self) -> List[str]:

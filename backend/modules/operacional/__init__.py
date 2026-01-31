@@ -53,6 +53,7 @@ from .controllers import (
     substitution_router,
     time_bank_router,
     dashboard_router,
+    employee_router,
 )
 
 # Router de diaristas
@@ -106,6 +107,11 @@ operacional_router.include_router(
 # Diaristas
 operacional_router.include_router(
     diarist_router, prefix="/diaristas", tags=["Operacional - Diaristas"]
+)
+
+# Employees
+operacional_router.include_router(
+    employee_router, tags=["Operacional - Employees"]
 )
 
 # Dashboard unificado
@@ -398,6 +404,7 @@ __all__ = [
     "substitution_router",
     "time_bank_router",
     "dashboard_router",
+    "employee_router",
     "diarist_router",
     "diarists_router",
     # New routers

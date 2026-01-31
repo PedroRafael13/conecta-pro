@@ -1,0 +1,5054 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO",
+    "description": "Sistema ERP completo para gestao empresarial",
+    "version": "2.0.0"
+  },
+  "servers": [],
+  "paths": {
+    "/api/v1/document-kits/": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Create Kit",
+        "description": "Cria um novo kit documental.",
+        "operationId": "create_kit_api_v1_document_kits__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentKitCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "List Kits",
+        "description": "Lista kits documentais.",
+        "operationId": "list_kits_api_v1_document_kits__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/KitType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/KitStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "is_template",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Template"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/stats": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Stats",
+        "description": "Retorna estatisticas de kits.",
+        "operationId": "get_stats_api_v1_document_kits_stats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitStatsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/templates": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "List Templates",
+        "description": "Lista templates de kits.",
+        "operationId": "list_templates_api_v1_document_kits_templates_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/KitType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentKitResponse"
+                  },
+                  "title": "Response List Templates Api V1 Document Kits Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/{kit_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Kit",
+        "description": "Busca kit por ID.",
+        "operationId": "get_kit_api_v1_document_kits__kit_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Update Kit",
+        "description": "Atualiza kit.",
+        "operationId": "update_kit_api_v1_document_kits__kit_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentKitUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Delete Kit",
+        "description": "Remove kit.",
+        "operationId": "delete_kit_api_v1_document_kits__kit_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/{kit_id}/activate": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Activate Kit",
+        "description": "Ativa kit.",
+        "operationId": "activate_kit_api_v1_document_kits__kit_id__activate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/{kit_id}/deactivate": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Deactivate Kit",
+        "description": "Desativa kit.",
+        "operationId": "deactivate_kit_api_v1_document_kits__kit_id__deactivate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/{kit_id}/archive": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Archive Kit",
+        "description": "Arquiva kit.",
+        "operationId": "archive_kit_api_v1_document_kits__kit_id__archive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/{kit_id}/duplicate": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Duplicate Kit",
+        "description": "Duplica kit.",
+        "operationId": "duplicate_kit_api_v1_document_kits__kit_id__duplicate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "new_codigo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "New Codigo"
+            }
+          },
+          {
+            "name": "new_nome",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "New Nome"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/{kit_id}/items": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Add Item",
+        "description": "Adiciona item ao kit.",
+        "operationId": "add_item_api_v1_document_kits__kit_id__items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentKitItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "List Items",
+        "description": "Lista itens de um kit.",
+        "operationId": "list_items_api_v1_document_kits__kit_id__items_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "only_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Only Active"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentKitItemResponse"
+                  },
+                  "title": "Response List Items Api V1 Document Kits  Kit Id  Items Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/items/{item_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Item",
+        "description": "Busca item por ID.",
+        "operationId": "get_item_api_v1_document_kits_items__item_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Update Item",
+        "description": "Atualiza item.",
+        "operationId": "update_item_api_v1_document_kits_items__item_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentKitItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Delete Item",
+        "description": "Remove item.",
+        "operationId": "delete_item_api_v1_document_kits_items__item_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/{kit_id}/items/reorder": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Reorder Items",
+        "description": "Reordena itens do kit.",
+        "operationId": "reorder_items_api_v1_document_kits__kit_id__items_reorder_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                },
+                "title": "Item Orders"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Assign Kit",
+        "description": "Atribui kit a uma entidade.",
+        "operationId": "assign_kit_api_v1_document_kits_assignments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentKitAssignmentCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "List Assignments",
+        "description": "Lista atribuicoes.",
+        "operationId": "list_assignments_api_v1_document_kits_assignments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "kit_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kit Id"
+            }
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EntityType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/modules__document_kits__models__document_kit__AssignmentStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "vencidos",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Vencidos"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                  },
+                  "title": "Response List Assignments Api V1 Document Kits Assignments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/pending": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "List Pending Assignments",
+        "description": "Lista atribuicoes pendentes.",
+        "operationId": "list_pending_assignments_api_v1_document_kits_assignments_pending_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                  },
+                  "title": "Response List Pending Assignments Api V1 Document Kits Assignments Pending Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/overdue": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "List Overdue Assignments",
+        "description": "Lista atribuicoes vencidas.",
+        "operationId": "list_overdue_assignments_api_v1_document_kits_assignments_overdue_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                  },
+                  "title": "Response List Overdue Assignments Api V1 Document Kits Assignments Overdue Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Assignment",
+        "description": "Busca atribuicao por ID.",
+        "operationId": "get_assignment_api_v1_document_kits_assignments__assignment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Update Assignment",
+        "description": "Atualiza atribuicao.",
+        "operationId": "update_assignment_api_v1_document_kits_assignments__assignment_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentKitAssignmentUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}/start": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Start Assignment",
+        "description": "Inicia atribuicao.",
+        "operationId": "start_assignment_api_v1_document_kits_assignments__assignment_id__start_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}/approve": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Approve Assignment",
+        "description": "Aprova atribuicao.",
+        "operationId": "approve_assignment_api_v1_document_kits_assignments__assignment_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}/reject": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Reject Assignment",
+        "description": "Reprova atribuicao.",
+        "operationId": "reject_assignment_api_v1_document_kits_assignments__assignment_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "motivo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Motivo"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}/complete": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Complete Assignment",
+        "description": "Completa atribuicao.",
+        "operationId": "complete_assignment_api_v1_document_kits_assignments__assignment_id__complete_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}/cancel": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Cancel Assignment",
+        "description": "Cancela atribuicao.",
+        "operationId": "cancel_assignment_api_v1_document_kits_assignments__assignment_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}/notify": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Notify Assignment",
+        "description": "Envia notificacao.",
+        "operationId": "notify_assignment_api_v1_document_kits_assignments__assignment_id__notify_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitAssignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/assignments/{assignment_id}/statuses": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "List Item Statuses",
+        "description": "Lista status de itens de uma atribuicao.",
+        "operationId": "list_item_statuses_api_v1_document_kits_assignments__assignment_id__statuses_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ItemStatusEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentKitItemStatusResponse"
+                  },
+                  "title": "Response List Item Statuses Api V1 Document Kits Assignments  Assignment Id  Statuses Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/item-statuses/{status_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Item Status",
+        "description": "Busca status de item.",
+        "operationId": "get_item_status_api_v1_document_kits_item_statuses__status_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/item-statuses/{status_id}/submit": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Submit Document",
+        "description": "Submete documento.",
+        "operationId": "submit_document_api_v1_document_kits_item_statuses__status_id__submit_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "arquivo_url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Arquivo Url"
+            }
+          },
+          {
+            "name": "arquivo_nome",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Arquivo Nome"
+            }
+          },
+          {
+            "name": "arquivo_tamanho",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Arquivo Tamanho"
+            }
+          },
+          {
+            "name": "arquivo_tipo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Arquivo Tipo"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/item-statuses/{status_id}/approve": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Approve Document",
+        "description": "Aprova documento.",
+        "operationId": "approve_document_api_v1_document_kits_item_statuses__status_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "observacoes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Observacoes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/item-statuses/{status_id}/reject": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Reject Document",
+        "description": "Reprova documento.",
+        "operationId": "reject_document_api_v1_document_kits_item_statuses__status_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "motivo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Motivo"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/item-statuses/{status_id}/not-applicable": {
+      "post": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Mark Not Applicable",
+        "description": "Marca item como nao aplicavel.",
+        "operationId": "mark_not_applicable_api_v1_document_kits_item_statuses__status_id__not_applicable_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "motivo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Motivo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentKitItemStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/suggest": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Suggest Kits",
+        "description": "Sugere kits para uma entidade.",
+        "operationId": "suggest_kits_api_v1_document_kits_ai_suggest_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityType"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "cargo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cargo"
+            }
+          },
+          {
+            "name": "departamento",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Departamento"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KitSuggestionResponse"
+                  },
+                  "title": "Response Suggest Kits Api V1 Document Kits Ai Suggest Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/compliance/{entity_type}/{entity_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Analyze Compliance",
+        "description": "Analisa conformidade de uma entidade.",
+        "operationId": "analyze_compliance_api_v1_document_kits_ai_compliance__entity_type___entity_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityType"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Analyze Compliance Api V1 Document Kits Ai Compliance  Entity Type   Entity Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/predict/{assignment_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Predict Completion",
+        "description": "Preve data de conclusao.",
+        "operationId": "predict_completion_api_v1_document_kits_ai_predict__assignment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Predict Completion Api V1 Document Kits Ai Predict  Assignment Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/priorities": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Priorities",
+        "description": "Retorna atribuicoes prioritarias.",
+        "operationId": "get_priorities_api_v1_document_kits_ai_priorities_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Priorities Api V1 Document Kits Ai Priorities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/usage": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Analyze Usage",
+        "description": "Analisa uso dos kits.",
+        "operationId": "analyze_usage_api_v1_document_kits_ai_usage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Analyze Usage Api V1 Document Kits Ai Usage Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/expiring": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Expiring Documents",
+        "description": "Lista documentos proximos do vencimento.",
+        "operationId": "get_expiring_documents_api_v1_document_kits_ai_expiring_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "days_ahead",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days Ahead"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Expiring Documents Api V1 Document Kits Ai Expiring Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/operational/employees": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Employees By Condominium",
+        "description": "Busca todos os colaboradores alocados em um condominio no periodo.",
+        "operationId": "get_employees_by_condominium_api_v1_document_kits_operational_employees_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominium_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Condominium Id"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Data inicial (YYYY-MM-DD)",
+              "title": "Start Date"
+            },
+            "description": "Data inicial (YYYY-MM-DD)"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Data final (YYYY-MM-DD)",
+              "title": "End Date"
+            },
+            "description": "Data final (YYYY-MM-DD)"
+          },
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Incluir funcionarios inativos",
+              "default": false,
+              "title": "Include Inactive"
+            },
+            "description": "Incluir funcionarios inativos"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Employees By Condominium Api V1 Document Kits Operational Employees Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/operational/employees/month": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Employees By Month",
+        "description": "Busca colaboradores de um condominio em um mes especifico.",
+        "operationId": "get_employees_by_month_api_v1_document_kits_operational_employees_month_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominium_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Condominium Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "description": "Mes (1-12)",
+              "title": "Month"
+            },
+            "description": "Mes (1-12)"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2020,
+              "description": "Ano (ex: 2026)",
+              "title": "Year"
+            },
+            "description": "Ano (ex: 2026)"
+          },
+          {
+            "name": "include_inactive",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Incluir funcionarios inativos",
+              "default": false,
+              "title": "Include Inactive"
+            },
+            "description": "Incluir funcionarios inativos"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Employees By Month Api V1 Document Kits Operational Employees Month Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/operational/condominiums": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Condominiums With Employees",
+        "description": "Busca TODOS os condominios que possuem funcionarios alocados atualmente.",
+        "operationId": "get_condominiums_with_employees_api_v1_document_kits_operational_condominiums_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Get Condominiums With Employees Api V1 Document Kits Operational Condominiums Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/document-kits/operational/validate": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Validate Condominium Has Employees",
+        "description": "Valida se um condominio possui funcionarios no periodo.",
+        "operationId": "validate_condominium_has_employees_api_v1_document_kits_operational_validate_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominium_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Condominium Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 12,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Mes (1-12)",
+              "title": "Month"
+            },
+            "description": "Mes (1-12)"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 2100,
+                  "minimum": 2020
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Ano",
+              "title": "Year"
+            },
+            "description": "Ano"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Validate Condominium Has Employees Api V1 Document Kits Operational Validate Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DocumentKitAssignmentResponse": {
+        "properties": {
+          "entity_type": {
+            "$ref": "#/components/schemas/EntityType"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Nome"
+          },
+          "data_limite": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Limite"
+          },
+          "responsavel_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsavel Id"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kit_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kit Id"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus-Output"
+          },
+          "data_inicio": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data Inicio"
+          },
+          "data_conclusao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Conclusao"
+          },
+          "total_itens": {
+            "type": "integer",
+            "title": "Total Itens"
+          },
+          "itens_pendentes": {
+            "type": "integer",
+            "title": "Itens Pendentes"
+          },
+          "itens_aprovados": {
+            "type": "integer",
+            "title": "Itens Aprovados"
+          },
+          "itens_reprovados": {
+            "type": "integer",
+            "title": "Itens Reprovados"
+          },
+          "percentual_completo": {
+            "type": "integer",
+            "title": "Percentual Completo"
+          },
+          "aprovador_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aprovador Id"
+          },
+          "motivo_reprovacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Reprovacao"
+          },
+          "notificacoes_count": {
+            "type": "integer",
+            "title": "Notificacoes Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_type",
+          "entity_id",
+          "id",
+          "kit_id",
+          "condominio_id",
+          "status",
+          "data_inicio",
+          "total_itens",
+          "itens_pendentes",
+          "itens_aprovados",
+          "itens_reprovados",
+          "percentual_completo",
+          "notificacoes_count",
+          "created_at"
+        ],
+        "title": "DocumentKitAssignmentResponse",
+        "description": "Schema de resposta para DocumentKitAssignment."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "DocumentKitItemUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "instrucoes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes"
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prioridade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemPriority"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ordem": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordem"
+          },
+          "is_ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Ativo"
+          },
+          "formatos_aceitos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formatos Aceitos"
+          },
+          "tamanho_max_mb": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tamanho Max Mb"
+          },
+          "requer_validade": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requer Validade"
+          },
+          "validade_minima_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validade Minima Dias"
+          },
+          "requer_autenticacao": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requer Autenticacao"
+          },
+          "template_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Url"
+          },
+          "exemplo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exemplo Url"
+          },
+          "depende_de": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depende De"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "title": "DocumentKitItemUpdate",
+        "description": "Schema para atualizacao de DocumentKitItem."
+      },
+      "ItemStatusEnum": {
+        "type": "string",
+        "enum": [
+          "PENDENTE",
+          "ENVIADO",
+          "EM_ANALISE",
+          "APROVADO",
+          "REPROVADO",
+          "VENCIDO",
+          "NAO_APLICAVEL"
+        ],
+        "title": "ItemStatusEnum",
+        "description": "Status do item na atribuicao."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ItemPriority": {
+        "type": "string",
+        "enum": [
+          "OBRIGATORIO",
+          "IMPORTANTE",
+          "DESEJAVEL",
+          "OPCIONAL"
+        ],
+        "title": "ItemPriority",
+        "description": "Prioridade do item."
+      },
+      "DocumentKitResponse": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Codigo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "tipo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KitType"
+              }
+            ],
+            "default": "OUTRO"
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "default": false
+          },
+          "is_obrigatorio": {
+            "type": "boolean",
+            "title": "Is Obrigatorio",
+            "default": true
+          },
+          "prazo_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prazo Dias",
+            "default": 30
+          },
+          "permite_parcial": {
+            "type": "boolean",
+            "title": "Permite Parcial",
+            "default": false
+          },
+          "requer_aprovacao": {
+            "type": "boolean",
+            "title": "Requer Aprovacao",
+            "default": true
+          },
+          "entity_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Entity Types"
+          },
+          "departamentos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Departamentos"
+          },
+          "cargos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cargos"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/KitStatus"
+          },
+          "total_itens": {
+            "type": "integer",
+            "title": "Total Itens"
+          },
+          "itens_obrigatorios": {
+            "type": "integer",
+            "title": "Itens Obrigatorios"
+          },
+          "uso_count": {
+            "type": "integer",
+            "title": "Uso Count"
+          },
+          "versao": {
+            "type": "integer",
+            "title": "Versao"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "nome",
+          "id",
+          "condominio_id",
+          "status",
+          "total_itens",
+          "itens_obrigatorios",
+          "uso_count",
+          "versao",
+          "created_at"
+        ],
+        "title": "DocumentKitResponse",
+        "description": "Schema de resposta para DocumentKit."
+      },
+      "KitSuggestionResponse": {
+        "properties": {
+          "kit_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kit Id"
+          },
+          "kit_nome": {
+            "type": "string",
+            "title": "Kit Nome"
+          },
+          "kit_tipo": {
+            "$ref": "#/components/schemas/KitType"
+          },
+          "relevancia_score": {
+            "type": "number",
+            "title": "Relevancia Score"
+          },
+          "motivo": {
+            "type": "string",
+            "title": "Motivo"
+          },
+          "itens_count": {
+            "type": "integer",
+            "title": "Itens Count"
+          },
+          "prazo_sugerido_dias": {
+            "type": "integer",
+            "title": "Prazo Sugerido Dias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kit_id",
+          "kit_nome",
+          "kit_tipo",
+          "relevancia_score",
+          "motivo",
+          "itens_count",
+          "prazo_sugerido_dias"
+        ],
+        "title": "KitSuggestionResponse",
+        "description": "Sugestao de kit para entidade."
+      },
+      "EntityType": {
+        "type": "string",
+        "enum": [
+          "FUNCIONARIO",
+          "CANDIDATO",
+          "CONTRATO",
+          "CLIENTE",
+          "FORNECEDOR",
+          "EQUIPAMENTO",
+          "POSTO",
+          "TREINAMENTO",
+          "OUTRO"
+        ],
+        "title": "EntityType",
+        "description": "Tipo de entidade para atribuicao."
+      },
+      "DocumentKitItemStatusResponse": {
+        "properties": {
+          "arquivo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arquivo Url"
+          },
+          "arquivo_nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arquivo Nome"
+          },
+          "data_validade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Validade"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "assignment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Assignment Id"
+          },
+          "item_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Item Id"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ItemStatusEnum"
+          },
+          "arquivo_tamanho": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arquivo Tamanho"
+          },
+          "arquivo_tipo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arquivo Tipo"
+          },
+          "is_vencido": {
+            "type": "boolean",
+            "title": "Is Vencido"
+          },
+          "analisado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analisado Por"
+          },
+          "analisado_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analisado At"
+          },
+          "observacoes_analise": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes Analise"
+          },
+          "motivo_reprovacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Reprovacao"
+          },
+          "tentativas": {
+            "type": "integer",
+            "title": "Tentativas"
+          },
+          "enviado_por": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enviado Por"
+          },
+          "enviado_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enviado At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "assignment_id",
+          "item_id",
+          "condominio_id",
+          "status",
+          "is_vencido",
+          "tentativas",
+          "created_at"
+        ],
+        "title": "DocumentKitItemStatusResponse",
+        "description": "Schema de resposta para DocumentKitItemStatus."
+      },
+      "KitType": {
+        "type": "string",
+        "enum": [
+          "ADMISSAO",
+          "DEMISSAO",
+          "FERIAS",
+          "AFASTAMENTO",
+          "PROMOCAO",
+          "TRANSFERENCIA",
+          "CONTRATO_CLIENTE",
+          "ENCERRAMENTO_CONTRATO",
+          "MENSAL",
+          "TREINAMENTO",
+          "CERTIFICACAO",
+          "VIGILANTE",
+          "EQUIPAMENTO",
+          "AUDITORIA",
+          "LICITACAO",
+          "RENOVACAO",
+          "OUTRO"
+        ],
+        "title": "KitType",
+        "description": "Tipo de kit documental."
+      },
+      "DocumentKitUpdate": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KitType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KitStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_obrigatorio": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Obrigatorio"
+          },
+          "prazo_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prazo Dias"
+          },
+          "permite_parcial": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permite Parcial"
+          },
+          "requer_aprovacao": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requer Aprovacao"
+          },
+          "entity_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Types"
+          },
+          "departamentos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departamentos"
+          },
+          "cargos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargos"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "title": "DocumentKitUpdate",
+        "description": "Schema para atualizacao de DocumentKit."
+      },
+      "DocumentKitItemCreate": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Codigo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "instrucoes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes"
+          },
+          "tipo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemType"
+              }
+            ],
+            "default": "DOCUMENTO_PESSOAL"
+          },
+          "prioridade": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemPriority"
+              }
+            ],
+            "default": "OBRIGATORIO"
+          },
+          "ordem": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ordem",
+            "default": 0
+          },
+          "formatos_aceitos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Formatos Aceitos"
+          },
+          "tamanho_max_mb": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Tamanho Max Mb",
+            "default": 10
+          },
+          "requer_validade": {
+            "type": "boolean",
+            "title": "Requer Validade",
+            "default": false
+          },
+          "validade_minima_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validade Minima Dias"
+          },
+          "requer_autenticacao": {
+            "type": "boolean",
+            "title": "Requer Autenticacao",
+            "default": false
+          },
+          "template_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Url"
+          },
+          "exemplo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exemplo Url"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "kit_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kit Id"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "depende_de": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depende De"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "nome",
+          "kit_id",
+          "condominio_id"
+        ],
+        "title": "DocumentKitItemCreate",
+        "description": "Schema para criacao de DocumentKitItem."
+      },
+      "DocumentKitAssignmentCreate": {
+        "properties": {
+          "entity_type": {
+            "$ref": "#/components/schemas/EntityType"
+          },
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Nome"
+          },
+          "data_limite": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Limite"
+          },
+          "responsavel_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsavel Id"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "kit_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kit Id"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_type",
+          "entity_id",
+          "kit_id",
+          "condominio_id"
+        ],
+        "title": "DocumentKitAssignmentCreate",
+        "description": "Schema para criacao de DocumentKitAssignment."
+      },
+      "DocumentKitCreate": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Codigo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "tipo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/KitType"
+              }
+            ],
+            "default": "OUTRO"
+          },
+          "is_template": {
+            "type": "boolean",
+            "title": "Is Template",
+            "default": false
+          },
+          "is_obrigatorio": {
+            "type": "boolean",
+            "title": "Is Obrigatorio",
+            "default": true
+          },
+          "prazo_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 365.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prazo Dias",
+            "default": 30
+          },
+          "permite_parcial": {
+            "type": "boolean",
+            "title": "Permite Parcial",
+            "default": false
+          },
+          "requer_aprovacao": {
+            "type": "boolean",
+            "title": "Requer Aprovacao",
+            "default": true
+          },
+          "entity_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Entity Types"
+          },
+          "departamentos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Departamentos"
+          },
+          "cargos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cargos"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "nome",
+          "condominio_id"
+        ],
+        "title": "DocumentKitCreate",
+        "description": "Schema para criacao de DocumentKit."
+      },
+      "modules__document_kits__models__document_kit__AssignmentStatus": {
+        "type": "string",
+        "enum": [
+          "PENDENTE",
+          "EM_ANDAMENTO",
+          "AGUARDANDO_DOCUMENTOS",
+          "EM_ANALISE",
+          "APROVADO",
+          "REPROVADO",
+          "COMPLETO",
+          "INCOMPLETO",
+          "CANCELADO",
+          "EXPIRADO"
+        ],
+        "title": "AssignmentStatus",
+        "description": "Status da atribuicao do kit."
+      },
+      "KitStatus": {
+        "type": "string",
+        "enum": [
+          "RASCUNHO",
+          "ATIVO",
+          "INATIVO",
+          "ARQUIVADO",
+          "OBSOLETO"
+        ],
+        "title": "KitStatus",
+        "description": "Status do kit."
+      },
+      "KitStatsResponse": {
+        "properties": {
+          "total_kits": {
+            "type": "integer",
+            "title": "Total Kits"
+          },
+          "kits_ativos": {
+            "type": "integer",
+            "title": "Kits Ativos"
+          },
+          "kits_inativos": {
+            "type": "integer",
+            "title": "Kits Inativos"
+          },
+          "total_assignments": {
+            "type": "integer",
+            "title": "Total Assignments"
+          },
+          "assignments_pendentes": {
+            "type": "integer",
+            "title": "Assignments Pendentes"
+          },
+          "assignments_completos": {
+            "type": "integer",
+            "title": "Assignments Completos"
+          },
+          "assignments_vencidos": {
+            "type": "integer",
+            "title": "Assignments Vencidos"
+          },
+          "taxa_conclusao": {
+            "type": "number",
+            "title": "Taxa Conclusao"
+          },
+          "tempo_medio_conclusao_dias": {
+            "type": "number",
+            "title": "Tempo Medio Conclusao Dias"
+          },
+          "por_tipo": {
+            "type": "object",
+            "title": "Por Tipo"
+          },
+          "por_status": {
+            "type": "object",
+            "title": "Por Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_kits",
+          "kits_ativos",
+          "kits_inativos",
+          "total_assignments",
+          "assignments_pendentes",
+          "assignments_completos",
+          "assignments_vencidos",
+          "taxa_conclusao",
+          "tempo_medio_conclusao_dias",
+          "por_tipo",
+          "por_status"
+        ],
+        "title": "KitStatsResponse",
+        "description": "Estatisticas de kits."
+      },
+      "DocumentKitListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentKitResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "pages"
+        ],
+        "title": "DocumentKitListResponse",
+        "description": "Schema de lista de DocumentKits."
+      },
+      "AssignmentStatus-Output": {
+        "type": "string",
+        "enum": [
+          "PENDENTE",
+          "EM_ANDAMENTO",
+          "AGUARDANDO_DOCUMENTOS",
+          "EM_ANALISE",
+          "APROVADO",
+          "REPROVADO",
+          "COMPLETO",
+          "INCOMPLETO",
+          "CANCELADO",
+          "EXPIRADO"
+        ],
+        "title": "AssignmentStatus",
+        "description": "Status da atribuicao do kit."
+      },
+      "ItemType": {
+        "type": "string",
+        "enum": [
+          "DOCUMENTO_PESSOAL",
+          "CERTIFICADO",
+          "COMPROVANTE",
+          "DECLARACAO",
+          "CONTRATO",
+          "TERMO",
+          "FORMULARIO",
+          "FOTO",
+          "LAUDO",
+          "ATESTADO",
+          "REGISTRO",
+          "AUTORIZACAO",
+          "PROCURACAO",
+          "OUTRO"
+        ],
+        "title": "ItemType",
+        "description": "Tipo de item do kit."
+      },
+      "DocumentKitItemResponse": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Codigo"
+          },
+          "nome": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Nome"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "instrucoes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes"
+          },
+          "tipo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemType"
+              }
+            ],
+            "default": "DOCUMENTO_PESSOAL"
+          },
+          "prioridade": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ItemPriority"
+              }
+            ],
+            "default": "OBRIGATORIO"
+          },
+          "ordem": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Ordem",
+            "default": 0
+          },
+          "formatos_aceitos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Formatos Aceitos"
+          },
+          "tamanho_max_mb": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Tamanho Max Mb",
+            "default": 10
+          },
+          "requer_validade": {
+            "type": "boolean",
+            "title": "Requer Validade",
+            "default": false
+          },
+          "validade_minima_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 3650.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validade Minima Dias"
+          },
+          "requer_autenticacao": {
+            "type": "boolean",
+            "title": "Requer Autenticacao",
+            "default": false
+          },
+          "template_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Url"
+          },
+          "exemplo_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exemplo Url"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "kit_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kit Id"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "is_ativo": {
+            "type": "boolean",
+            "title": "Is Ativo"
+          },
+          "depende_de": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depende De"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "nome",
+          "id",
+          "kit_id",
+          "condominio_id",
+          "is_ativo",
+          "created_at"
+        ],
+        "title": "DocumentKitItemResponse",
+        "description": "Schema de resposta para DocumentKitItem."
+      },
+      "DocumentKitAssignmentUpdate": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/modules__document_kits__models__document_kit__AssignmentStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_limite": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Limite"
+          },
+          "responsavel_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsavel Id"
+          },
+          "aprovador_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aprovador Id"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "motivo_reprovacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo Reprovacao"
+          }
+        },
+        "type": "object",
+        "title": "DocumentKitAssignmentUpdate",
+        "description": "Schema para atualizacao de DocumentKitAssignment."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Document Kits",
+      "description": "Gerenciamento de kits documentais, templates e automa\u00e7\u00e3o"
+    },
+    {
+      "name": "Document Kits - Operational",
+      "description": "Integra\u00e7\u00e3o operacional e gera\u00e7\u00e3o autom\u00e1tica mensal de kits"
+    }
+  ]
+}

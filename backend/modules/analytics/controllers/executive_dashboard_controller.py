@@ -93,7 +93,7 @@ async def get_executive_dashboard(
             summary="KPIs por Categoria",
             description="Retorna KPIs filtrados por categoria específica")
 async def get_kpis_by_category(
-    category: str = Query(..., description="Categoria: financial, operational, hr, safety, client")
+    category: str
 ) -> Dict[str, Any]:
     """
     Retorna KPIs filtrados por categoria específica.

@@ -30,59 +30,52 @@ export const executiveDashboardService = {
    * Obter dashboard executivo completo
    */
   async getDashboard(refresh?: boolean): Promise<GetExecutiveDashboardApiV1AnalyticsExecutiveDashboardGet200> {
-    const response = await getExecutiveDashboardApiV1AnalyticsExecutiveDashboardGet({
+    return getExecutiveDashboardApiV1AnalyticsExecutiveDashboardGet({
       refresh: refresh || false,
-    });
-    return response.data;
+    }) as Promise<GetExecutiveDashboardApiV1AnalyticsExecutiveDashboardGet200>;
   },
 
   /**
    * Obter KPIs por categoria
    */
   async getKpisByCategory(category: string): Promise<GetKpisByCategoryApiV1AnalyticsExecutiveKpisCategoryGet200> {
-    const response = await getKpisByCategoryApiV1AnalyticsExecutiveKpisCategoryGet(category);
-    return response.data;
+    return getKpisByCategoryApiV1AnalyticsExecutiveKpisCategoryGet(category) as Promise<GetKpisByCategoryApiV1AnalyticsExecutiveKpisCategoryGet200>;
   },
 
   /**
    * Obter alertas ativos
    */
   async getActiveAlerts(): Promise<GetActiveAlertsApiV1AnalyticsExecutiveAlertsActiveGet200> {
-    const response = await getActiveAlertsApiV1AnalyticsExecutiveAlertsActiveGet();
-    return response.data;
+    return getActiveAlertsApiV1AnalyticsExecutiveAlertsActiveGet() as Promise<GetActiveAlertsApiV1AnalyticsExecutiveAlertsActiveGet200>;
   },
 
   /**
    * Obter insights preditivos
    */
   async getPredictiveInsights(): Promise<GetPredictiveInsightsApiV1AnalyticsExecutiveInsightsPredictiveGet200> {
-    const response = await getPredictiveInsightsApiV1AnalyticsExecutiveInsightsPredictiveGet();
-    return response.data;
+    return getPredictiveInsightsApiV1AnalyticsExecutiveInsightsPredictiveGet() as Promise<GetPredictiveInsightsApiV1AnalyticsExecutiveInsightsPredictiveGet200>;
   },
 
   /**
    * Obter resumo executivo
    */
   async getSummary(): Promise<GetExecutiveSummaryApiV1AnalyticsExecutiveSummaryGet200> {
-    const response = await getExecutiveSummaryApiV1AnalyticsExecutiveSummaryGet();
-    return response.data;
+    return getExecutiveSummaryApiV1AnalyticsExecutiveSummaryGet() as Promise<GetExecutiveSummaryApiV1AnalyticsExecutiveSummaryGet200>;
   },
 
   /**
    * Exportar dashboard
    */
   async exportDashboard(formatType: 'json' | 'csv' = 'json'): Promise<ExportDashboardApiV1AnalyticsExecutiveExportGet200> {
-    const response = await exportDashboardApiV1AnalyticsExecutiveExportGet({
+    return exportDashboardApiV1AnalyticsExecutiveExportGet({
       format_type: formatType,
-    });
-    return response.data;
+    }) as Promise<ExportDashboardApiV1AnalyticsExecutiveExportGet200>;
   },
 
   /**
    * Health check do dashboard
    */
   async healthCheck(): Promise<DashboardHealthCheckApiV1AnalyticsExecutiveHealthGet200> {
-    const response = await dashboardHealthCheckApiV1AnalyticsExecutiveHealthGet();
-    return response.data;
+    return dashboardHealthCheckApiV1AnalyticsExecutiveHealthGet() as Promise<DashboardHealthCheckApiV1AnalyticsExecutiveHealthGet200>;
   },
 };

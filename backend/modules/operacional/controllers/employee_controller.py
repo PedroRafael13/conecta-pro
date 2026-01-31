@@ -46,6 +46,15 @@ class EmployeeListResponse(BaseModel):
     total_pages: int
 
 
+class EmployeeUpdateRequest(BaseModel):
+    """Schema para atualização de funcionário."""
+
+    cargo: Optional[str] = None
+    departamento: Optional[str] = None
+    telefone: Optional[str] = None
+    status: Optional[str] = None
+
+
 @router.get(
     "/",
     response_model=EmployeeListResponse,
@@ -111,6 +120,55 @@ async def list_employees(
         page=page,
         page_size=page_size,
         total_pages=total_pages,
+    )
+
+
+@router.patch(
+    "/{employee_id}",
+    response_model=EmployeeResponse,
+    dependencies=[require_operacional_permission(Permission.EMPLOYEES_EDIT)],
+)
+async def update_employee(
+    employee_id: str,
+    data: EmployeeUpdateRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> EmployeeResponse:
+    """
+    Atualiza dados de um funcionário.
+    """
+    # Busca funcionário
+    result = await db.execute(
+        select(Employee).where(Employee.id == employee_id)
+    )
+    employee = result.scalar_one_or_none()
+
+    if not employee:
+        raise HTTPException(status_code=404, detail="Funcionário não encontrado")
+
+    # Atualiza campos
+    if data.cargo is not None:
+        employee.cargo = data.cargo
+    if data.departamento is not None:
+        employee.departamento = data.departamento
+    if data.telefone is not None:
+        employee.telefone = data.telefone
+    if data.status is not None:
+        employee.status = data.status
+
+    await db.commit()
+    await db.refresh(employee)
+
+    logger.info(f"Funcionário {employee_id} atualizado por {current_user.email}")
+
+    return EmployeeResponse(
+        id=str(employee.id),
+        nome=employee.nome,
+        email=employee.email,
+        matricula=employee.matricula,
+        cargo=employee.cargo,
+        departamento=employee.departamento,
+        status=employee.status,
     )
 
 

@@ -55,6 +55,7 @@ class ShiftType(str, Enum):
     NOITE = "noite"  # 22h-06h
     ADMINISTRATIVO = "administrativo"  # 08h-18h
     INTEGRAL = "integral"  # 24h (revezamento)
+    ESCALA_12X36 = "12x36"  # 12h trabalho / 36h descanso
 
 
 class Post(Base):

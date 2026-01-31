@@ -5,177 +5,1003 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams,
   CustomerCreate,
   CustomerResponse,
   CustomerUpdate,
+  HTTPValidationError,
   ListCustomersApiV1FinancialCustomersCustomersGetParams,
   ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialCustomers = () => {
+
 /**
  * Cria um novo cliente/devedor.
  * @summary Criar cliente
  */
-const createCustomerApiV1FinancialCustomersCustomersPost = <TData = AxiosResponse<CustomerResponse>>(
-    customerCreate: CustomerCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/customers/customers/`,
-      customerCreate,options
-    );
-  }
-/**
+export const createCustomerApiV1FinancialCustomersCustomersPost = (
+    customerCreate: CustomerCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse>(
+      {url: `/api/v1/financial/customers/customers/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: customerCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateCustomerApiV1FinancialCustomersCustomersPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiV1FinancialCustomersCustomersPost>>, TError,{data: CustomerCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiV1FinancialCustomersCustomersPost>>, TError,{data: CustomerCreate}, TContext> => {
+
+const mutationKey = ['createCustomerApiV1FinancialCustomersCustomersPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCustomerApiV1FinancialCustomersCustomersPost>>, {data: CustomerCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCustomerApiV1FinancialCustomersCustomersPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCustomerApiV1FinancialCustomersCustomersPostMutationResult = NonNullable<Awaited<ReturnType<typeof createCustomerApiV1FinancialCustomersCustomersPost>>>
+    export type CreateCustomerApiV1FinancialCustomersCustomersPostMutationBody = CustomerCreate
+    export type CreateCustomerApiV1FinancialCustomersCustomersPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar cliente
+ */
+export const useCreateCustomerApiV1FinancialCustomersCustomersPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCustomerApiV1FinancialCustomersCustomersPost>>, TError,{data: CustomerCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createCustomerApiV1FinancialCustomersCustomersPost>>,
+        TError,
+        {data: CustomerCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateCustomerApiV1FinancialCustomersCustomersPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista clientes com filtros.
  * @summary Listar clientes
  */
-const listCustomersApiV1FinancialCustomersCustomersGet = <TData = AxiosResponse<CustomerResponse[]>>(
-    params: ListCustomersApiV1FinancialCustomersCustomersGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/customers/customers/`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listCustomersApiV1FinancialCustomersCustomersGet = (
+    params: ListCustomersApiV1FinancialCustomersCustomersGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse[]>(
+      {url: `/api/v1/financial/customers/customers/`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListCustomersApiV1FinancialCustomersCustomersGetQueryKey = (params?: ListCustomersApiV1FinancialCustomersCustomersGetParams,) => {
+    return [
+    `/api/v1/financial/customers/customers/`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListCustomersApiV1FinancialCustomersCustomersGetQueryOptions = <TData = Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError = HTTPValidationError>(params: ListCustomersApiV1FinancialCustomersCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCustomersApiV1FinancialCustomersCustomersGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>> = ({ signal }) => listCustomersApiV1FinancialCustomersCustomersGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListCustomersApiV1FinancialCustomersCustomersGetQueryResult = NonNullable<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>>
+export type ListCustomersApiV1FinancialCustomersCustomersGetQueryError = HTTPValidationError
+
+
+export function useListCustomersApiV1FinancialCustomersCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError = HTTPValidationError>(
+ params: ListCustomersApiV1FinancialCustomersCustomersGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCustomersApiV1FinancialCustomersCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError = HTTPValidationError>(
+ params: ListCustomersApiV1FinancialCustomersCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCustomersApiV1FinancialCustomersCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError = HTTPValidationError>(
+ params: ListCustomersApiV1FinancialCustomersCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar clientes
+ */
+
+export function useListCustomersApiV1FinancialCustomersCustomersGet<TData = Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError = HTTPValidationError>(
+ params: ListCustomersApiV1FinancialCustomersCustomersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCustomersApiV1FinancialCustomersCustomersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListCustomersApiV1FinancialCustomersCustomersGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista clientes com divida ativa.
  * @summary Listar devedores
  */
-const listDebtorsApiV1FinancialCustomersCustomersDebtorsGet = <TData = AxiosResponse<CustomerResponse[]>>(
-    params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/customers/customers/debtors`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listDebtorsApiV1FinancialCustomersCustomersDebtorsGet = (
+    params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse[]>(
+      {url: `/api/v1/financial/customers/customers/debtors`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListDebtorsApiV1FinancialCustomersCustomersDebtorsGetQueryKey = (params?: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams,) => {
+    return [
+    `/api/v1/financial/customers/customers/debtors`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListDebtorsApiV1FinancialCustomersCustomersDebtorsGetQueryOptions = <TData = Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError = HTTPValidationError>(params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDebtorsApiV1FinancialCustomersCustomersDebtorsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>> = ({ signal }) => listDebtorsApiV1FinancialCustomersCustomersDebtorsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>>
+export type ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetQueryError = HTTPValidationError
+
+
+export function useListDebtorsApiV1FinancialCustomersCustomersDebtorsGet<TData = Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError = HTTPValidationError>(
+ params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDebtorsApiV1FinancialCustomersCustomersDebtorsGet<TData = Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError = HTTPValidationError>(
+ params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDebtorsApiV1FinancialCustomersCustomersDebtorsGet<TData = Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError = HTTPValidationError>(
+ params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar devedores
+ */
+
+export function useListDebtorsApiV1FinancialCustomersCustomersDebtorsGet<TData = Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError = HTTPValidationError>(
+ params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDebtorsApiV1FinancialCustomersCustomersDebtorsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListDebtorsApiV1FinancialCustomersCustomersDebtorsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca cliente por ID.
  * @summary Buscar cliente
  */
-const getCustomerApiV1FinancialCustomersCustomersCustomerIdGet = <TData = AxiosResponse<CustomerResponse>>(
-    customerId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/customers/customers/${customerId}`,options
-    );
-  }
+export const getCustomerApiV1FinancialCustomersCustomersCustomerIdGet = (
+    customerId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse>(
+      {url: `/api/v1/financial/customers/customers/${customerId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCustomerApiV1FinancialCustomersCustomersCustomerIdGetQueryKey = (customerId?: string,) => {
+    return [
+    `/api/v1/financial/customers/customers/${customerId}`
+    ] as const;
+    }
+
+    
+export const getGetCustomerApiV1FinancialCustomersCustomersCustomerIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError = HTTPValidationError>(customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomerApiV1FinancialCustomersCustomersCustomerIdGetQueryKey(customerId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>> = ({ signal }) => getCustomerApiV1FinancialCustomersCustomersCustomerIdGet(customerId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(customerId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomerApiV1FinancialCustomersCustomersCustomerIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>>
+export type GetCustomerApiV1FinancialCustomersCustomersCustomerIdGetQueryError = HTTPValidationError
+
+
+export function useGetCustomerApiV1FinancialCustomersCustomersCustomerIdGet<TData = Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError = HTTPValidationError>(
+ customerId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerApiV1FinancialCustomersCustomersCustomerIdGet<TData = Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError = HTTPValidationError>(
+ customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerApiV1FinancialCustomersCustomersCustomerIdGet<TData = Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError = HTTPValidationError>(
+ customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar cliente
+ */
+
+export function useGetCustomerApiV1FinancialCustomersCustomersCustomerIdGet<TData = Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError = HTTPValidationError>(
+ customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerApiV1FinancialCustomersCustomersCustomerIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomerApiV1FinancialCustomersCustomersCustomerIdGetQueryOptions(customerId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza um cliente.
  * @summary Atualizar cliente
  */
-const updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut = <TData = AxiosResponse<CustomerResponse>>(
+export const updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut = (
     customerId: string,
-    customerUpdate: CustomerUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/customers/customers/${customerId}`,
-      customerUpdate,options
-    );
-  }
-/**
+    customerUpdate: CustomerUpdate,
+ ) => {
+      
+      
+      return customInstance<CustomerResponse>(
+      {url: `/api/v1/financial/customers/customers/${customerId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: customerUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateCustomerApiV1FinancialCustomersCustomersCustomerIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut>>, TError,{customerId: string;data: CustomerUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut>>, TError,{customerId: string;data: CustomerUpdate}, TContext> => {
+
+const mutationKey = ['updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut>>, {customerId: string;data: CustomerUpdate}> = (props) => {
+          const {customerId,data} = props ?? {};
+
+          return  updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut(customerId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCustomerApiV1FinancialCustomersCustomersCustomerIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut>>>
+    export type UpdateCustomerApiV1FinancialCustomersCustomersCustomerIdPutMutationBody = CustomerUpdate
+    export type UpdateCustomerApiV1FinancialCustomersCustomersCustomerIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar cliente
+ */
+export const useUpdateCustomerApiV1FinancialCustomersCustomersCustomerIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut>>, TError,{customerId: string;data: CustomerUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut>>,
+        TError,
+        {customerId: string;data: CustomerUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateCustomerApiV1FinancialCustomersCustomersCustomerIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui um cliente (soft delete).
  * @summary Excluir cliente
  */
-const deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete = <TData = AxiosResponse<void>>(
-    customerId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/customers/customers/${customerId}`,options
-    );
-  }
-/**
+export const deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete = (
+    customerId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/customers/customers/${customerId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteCustomerApiV1FinancialCustomersCustomersCustomerIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext> => {
+
+const mutationKey = ['deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete>>, {customerId: string}> = (props) => {
+          const {customerId} = props ?? {};
+
+          return  deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete(customerId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCustomerApiV1FinancialCustomersCustomersCustomerIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete>>>
+    
+    export type DeleteCustomerApiV1FinancialCustomersCustomersCustomerIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir cliente
+ */
+export const useDeleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete>>, TError,{customerId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete>>,
+        TError,
+        {customerId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteCustomerApiV1FinancialCustomersCustomersCustomerIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca cliente por CPF/CNPJ.
  * @summary Buscar cliente por documento
  */
-const getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet = <TData = AxiosResponse<CustomerResponse>>(
-    document: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/customers/customers/document/${document}`,options
-    );
-  }
+export const getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet = (
+    document: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse>(
+      {url: `/api/v1/financial/customers/customers/document/${document}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGetQueryKey = (document?: string,) => {
+    return [
+    `/api/v1/financial/customers/customers/document/${document}`
+    ] as const;
+    }
+
+    
+export const getGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGetQueryOptions = <TData = Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError = HTTPValidationError>(document: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGetQueryKey(document);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>> = ({ signal }) => getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet(document, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(document), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>>
+export type GetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGetQueryError = HTTPValidationError
+
+
+export function useGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet<TData = Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError = HTTPValidationError>(
+ document: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet<TData = Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError = HTTPValidationError>(
+ document: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet<TData = Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError = HTTPValidationError>(
+ document: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar cliente por documento
+ */
+
+export function useGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet<TData = Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError = HTTPValidationError>(
+ document: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGetQueryOptions(document,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca cliente pelo ID do morador.
  * @summary Buscar cliente por morador
  */
-const getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet = <TData = AxiosResponse<CustomerResponse>>(
-    moradorId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/customers/customers/morador/${moradorId}`,options
-    );
-  }
+export const getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet = (
+    moradorId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse>(
+      {url: `/api/v1/financial/customers/customers/morador/${moradorId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGetQueryKey = (moradorId?: string,) => {
+    return [
+    `/api/v1/financial/customers/customers/morador/${moradorId}`
+    ] as const;
+    }
+
+    
+export const getGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError = HTTPValidationError>(moradorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGetQueryKey(moradorId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>> = ({ signal }) => getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet(moradorId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(moradorId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>>
+export type GetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGetQueryError = HTTPValidationError
+
+
+export function useGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet<TData = Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError = HTTPValidationError>(
+ moradorId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet<TData = Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError = HTTPValidationError>(
+ moradorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet<TData = Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError = HTTPValidationError>(
+ moradorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar cliente por morador
+ */
+
+export function useGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet<TData = Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError = HTTPValidationError>(
+ moradorId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGetQueryOptions(moradorId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca clientes de uma unidade.
  * @summary Buscar clientes por unidade
  */
-const getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet = <TData = AxiosResponse<CustomerResponse[]>>(
-    unidadeId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/customers/customers/unidade/${unidadeId}`,options
-    );
-  }
+export const getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet = (
+    unidadeId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse[]>(
+      {url: `/api/v1/financial/customers/customers/unidade/${unidadeId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGetQueryKey = (unidadeId?: string,) => {
+    return [
+    `/api/v1/financial/customers/customers/unidade/${unidadeId}`
+    ] as const;
+    }
+
+    
+export const getGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError = HTTPValidationError>(unidadeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGetQueryKey(unidadeId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>> = ({ signal }) => getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet(unidadeId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(unidadeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>>
+export type GetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGetQueryError = HTTPValidationError
+
+
+export function useGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet<TData = Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError = HTTPValidationError>(
+ unidadeId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet<TData = Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError = HTTPValidationError>(
+ unidadeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet<TData = Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError = HTTPValidationError>(
+ unidadeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar clientes por unidade
+ */
+
+export function useGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet<TData = Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError = HTTPValidationError>(
+ unidadeId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGetQueryOptions(unidadeId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Bloqueia um cliente.
  * @summary Bloquear cliente
  */
-const blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost = <TData = AxiosResponse<CustomerResponse>>(
+export const blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost = (
     customerId: string,
-    params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/customers/customers/${customerId}/block`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse>(
+      {url: `/api/v1/financial/customers/customers/${customerId}/block`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getBlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost>>, TError,{customerId: string;params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost>>, TError,{customerId: string;params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams}, TContext> => {
+
+const mutationKey = ['blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost>>, {customerId: string;params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams}> = (props) => {
+          const {customerId,params} = props ?? {};
+
+          return  blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost(customerId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostMutationResult = NonNullable<Awaited<ReturnType<typeof blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost>>>
+    
+    export type BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Bloquear cliente
+ */
+export const useBlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost>>, TError,{customerId: string;params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost>>,
+        TError,
+        {customerId: string;params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getBlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Desbloqueia um cliente.
  * @summary Desbloquear cliente
  */
-const unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost = <TData = AxiosResponse<CustomerResponse>>(
-    customerId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/customers/customers/${customerId}/unblock`,undefined,options
-    );
-  }
-/**
+export const unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost = (
+    customerId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CustomerResponse>(
+      {url: `/api/v1/financial/customers/customers/${customerId}/unblock`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getUnblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost>>, TError,{customerId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost>>, TError,{customerId: string}, TContext> => {
+
+const mutationKey = ['unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost>>, {customerId: string}> = (props) => {
+          const {customerId} = props ?? {};
+
+          return  unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost(customerId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPostMutationResult = NonNullable<Awaited<ReturnType<typeof unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost>>>
+    
+    export type UnblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Desbloquear cliente
+ */
+export const useUnblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost>>, TError,{customerId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost>>,
+        TError,
+        {customerId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getUnblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna resumo completo de divida do cliente.
  * @summary Resumo de divida do cliente
  */
-const getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet = <TData = AxiosResponse<unknown>>(
-    customerId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/customers/customers/${customerId}/debt-summary`,options
-    );
-  }
-return {createCustomerApiV1FinancialCustomersCustomersPost,listCustomersApiV1FinancialCustomersCustomersGet,listDebtorsApiV1FinancialCustomersCustomersDebtorsGet,getCustomerApiV1FinancialCustomersCustomersCustomerIdGet,updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut,deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete,getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet,getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet,getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet,blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost,unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost,getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet}};
-export type CreateCustomerApiV1FinancialCustomersCustomersPostResult = AxiosResponse<CustomerResponse>
-export type ListCustomersApiV1FinancialCustomersCustomersGetResult = AxiosResponse<CustomerResponse[]>
-export type ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetResult = AxiosResponse<CustomerResponse[]>
-export type GetCustomerApiV1FinancialCustomersCustomersCustomerIdGetResult = AxiosResponse<CustomerResponse>
-export type UpdateCustomerApiV1FinancialCustomersCustomersCustomerIdPutResult = AxiosResponse<CustomerResponse>
-export type DeleteCustomerApiV1FinancialCustomersCustomersCustomerIdDeleteResult = AxiosResponse<void>
-export type GetCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGetResult = AxiosResponse<CustomerResponse>
-export type GetCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGetResult = AxiosResponse<CustomerResponse>
-export type GetCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGetResult = AxiosResponse<CustomerResponse[]>
-export type BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostResult = AxiosResponse<CustomerResponse>
-export type UnblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPostResult = AxiosResponse<CustomerResponse>
-export type GetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGetResult = AxiosResponse<unknown>
+export const getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet = (
+    customerId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/customers/customers/${customerId}/debt-summary`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGetQueryKey = (customerId?: string,) => {
+    return [
+    `/api/v1/financial/customers/customers/${customerId}/debt-summary`
+    ] as const;
+    }
+
+    
+export const getGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGetQueryOptions = <TData = Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError = HTTPValidationError>(customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGetQueryKey(customerId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>> = ({ signal }) => getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet(customerId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(customerId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>>
+export type GetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGetQueryError = HTTPValidationError
+
+
+export function useGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet<TData = Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError = HTTPValidationError>(
+ customerId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet<TData = Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError = HTTPValidationError>(
+ customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet<TData = Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError = HTTPValidationError>(
+ customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Resumo de divida do cliente
+ */
+
+export function useGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet<TData = Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError = HTTPValidationError>(
+ customerId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGetQueryOptions(customerId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

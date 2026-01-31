@@ -78,6 +78,8 @@ class Permission(str, Enum):
 
     # Funcionarios
     EMPLOYEES_VIEW = "employees:view"
+    EMPLOYEES_EDIT = "employees:edit"
+    EMPLOYEES_CREATE = "employees:create"
 
 
 # Mapeamento Role -> Permissoes
@@ -109,6 +111,8 @@ ROLE_PERMISSIONS: dict[OperacionalRole, list[Permission]] = {
         Permission.TIMEBANK_VIEW_OWN,
         Permission.REPORTS_VIEW,
         Permission.EMPLOYEES_VIEW,
+        Permission.EMPLOYEES_EDIT,
+        Permission.EMPLOYEES_CREATE,
     ],
     OperacionalRole.SUPERVISOR: [
         Permission.POSTS_VIEW,
@@ -133,6 +137,7 @@ ROLE_PERMISSIONS: dict[OperacionalRole, list[Permission]] = {
         Permission.TIMEBANK_VIEW_OWN,
         Permission.REPORTS_VIEW,
         Permission.EMPLOYEES_VIEW,
+        Permission.EMPLOYEES_EDIT,
     ],
     OperacionalRole.INSPETOR: [
         Permission.POSTS_VIEW,

@@ -95,7 +95,7 @@ class ReimbursementAttachment(Base):
     description = Column(Text, nullable=True)
 
     # Upload
-    uploaded_by = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    uploaded_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Controle

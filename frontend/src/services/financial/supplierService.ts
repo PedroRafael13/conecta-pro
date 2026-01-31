@@ -48,10 +48,9 @@ export const supplierService = {
    * Criar novo fornecedor
    */
   async create(data: SupplierCreate): Promise<SupplierResponse> {
-    const response = await suppliers.createSupplierApiV1FinancialSuppliersSuppliersPost(
+    return await suppliers.createSupplierApiV1FinancialSuppliersSuppliersPost(
       data
     );
-    return response.data;
   },
 
   /**
@@ -60,20 +59,18 @@ export const supplierService = {
   async list(
     params: ListSuppliersParams = {}
   ): Promise<SupplierListResponse[]> {
-    const response = await suppliers.listSuppliersApiV1FinancialSuppliersSuppliersGet(
+    return await suppliers.listSuppliersApiV1FinancialSuppliersSuppliersGet(
       params as ListSuppliersApiV1FinancialSuppliersSuppliersGetParams
     );
-    return response.data;
   },
 
   /**
    * Buscar fornecedor por ID
    */
   async getById(supplierId: string): Promise<SupplierResponse> {
-    const response = await suppliers.getSupplierApiV1FinancialSuppliersSuppliersSupplierIdGet(
+    return await suppliers.getSupplierApiV1FinancialSuppliersSuppliersSupplierIdGet(
       supplierId
     );
-    return response.data;
   },
 
   /**
@@ -83,11 +80,10 @@ export const supplierService = {
     supplierId: string,
     data: SupplierUpdate
   ): Promise<SupplierResponse> {
-    const response = await suppliers.updateSupplierApiV1FinancialSuppliersSuppliersSupplierIdPut(
+    return await suppliers.updateSupplierApiV1FinancialSuppliersSuppliersSupplierIdPut(
       supplierId,
       data
     );
-    return response.data;
   },
 
   /**
@@ -106,10 +102,9 @@ export const supplierService = {
     q: string;
     limit?: number;
   }): Promise<SupplierListResponse[]> {
-    const response = await suppliers.searchSuppliersApiV1FinancialSuppliersSuppliersSearchGet(
+    return await suppliers.searchSuppliersApiV1FinancialSuppliersSuppliersSearchGet(
       params as SearchSuppliersApiV1FinancialSuppliersSuppliersSearchGetParams
     );
-    return response.data;
   },
 
   /**
@@ -118,10 +113,9 @@ export const supplierService = {
   async getStats(params: {
     condominio_id: string;
   }): Promise<SupplierStats> {
-    const response = await suppliers.getStatsApiV1FinancialSuppliersSuppliersStatsGet(
+    return await suppliers.getStatsApiV1FinancialSuppliersSuppliersStatsGet(
       params as GetStatsApiV1FinancialSuppliersSuppliersStatsGetParams
     );
-    return response.data;
   },
 
   /**
@@ -131,11 +125,10 @@ export const supplierService = {
     supplierId: string,
     data: QualifySupplierApiV1FinancialSuppliersSuppliersSupplierIdQualifyPostBody
   ): Promise<SupplierResponse> {
-    const response = await suppliers.qualifySupplierApiV1FinancialSuppliersSuppliersSupplierIdQualifyPost(
+    return await suppliers.qualifySupplierApiV1FinancialSuppliersSuppliersSupplierIdQualifyPost(
       supplierId,
       data
     );
-    return response.data;
   },
 
   /**
@@ -145,31 +138,28 @@ export const supplierService = {
     supplierId: string,
     data: SupplierBlockRequest
   ): Promise<SupplierResponse> {
-    const response = await suppliers.blockSupplierApiV1FinancialSuppliersSuppliersSupplierIdBlockPost(
+    return await suppliers.blockSupplierApiV1FinancialSuppliersSuppliersSupplierIdBlockPost(
       supplierId,
       data
     );
-    return response.data;
   },
 
   /**
    * Desbloquear fornecedor
    */
   async unblock(supplierId: string): Promise<SupplierResponse> {
-    const response = await suppliers.unblockSupplierApiV1FinancialSuppliersSuppliersSupplierIdUnblockPost(
+    return await suppliers.unblockSupplierApiV1FinancialSuppliersSuppliersSupplierIdUnblockPost(
       supplierId
     );
-    return response.data;
   },
 
   /**
    * Obter histórico do fornecedor
    */
   async getHistory(supplierId: string): Promise<any> {
-    const response = await suppliers.getSupplierHistoryApiV1FinancialSuppliersSuppliersSupplierIdHistoryGet(
+    return await suppliers.getSupplierApiV1FinancialSuppliersSuppliersSupplierIdGet(
       supplierId
     );
-    return response.data;
   },
 };
 

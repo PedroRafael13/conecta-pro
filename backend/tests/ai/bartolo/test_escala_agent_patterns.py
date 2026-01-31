@@ -327,3 +327,98 @@ class TestEscalaAgentProcess:
         """Testa que mensagens genéricas retornam None."""
         result = await agent.process("bom dia")
         assert result is None, "Deveria retornar None para mensagem genérica"
+
+
+class TestEscalaAgentFollowup:
+    """Testes para o método process_followup do EscalaAgent."""
+
+    @pytest.fixture
+    def agent(self):
+        return EscalaAgent()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("message,expected_type", [
+        ("12x36", "12x36"),
+        ("5x2", "5x2"),
+        ("6x1", "6x1"),
+        ("5x1", "5x1"),
+        ("4x2", "4x2"),
+        ("12x36 diurno", "12x36"),
+        ("12x36 noturno", "12x36"),
+    ])
+    async def test_followup_scale_type(self, agent, message, expected_type):
+        """Testa follow-up com tipo de escala após GERAR_ESCALA."""
+        result = await agent.process_followup(
+            message=message,
+            context={"user_id": 1},
+            previous_intent=EscalaIntent.GERAR_ESCALA.value,
+            previous_data={"cliente": "Teste"},
+        )
+        assert result is not None, f"Deveria reconhecer follow-up para: '{message}'"
+        assert result["data"]["scale_type"] == expected_type
+        assert result["data"]["cliente"] == "Teste"
+
+    @pytest.mark.asyncio
+    async def test_followup_confirmation(self, agent):
+        """Testa follow-up de confirmação."""
+        for msg in ["sim", "s", "confirmar", "ok", "pode"]:
+            result = await agent.process_followup(
+                message=msg,
+                context={"user_id": 1},
+                previous_intent=EscalaIntent.GERAR_ESCALA.value,
+                previous_data={"scale_type": "12x36"},
+            )
+            assert result is not None, f"Deveria reconhecer confirmação: '{msg}'"
+            assert result["data"].get("confirmed") is True
+
+    @pytest.mark.asyncio
+    async def test_followup_negation(self, agent):
+        """Testa follow-up de negação/cancelamento."""
+        for msg in ["nao", "n", "cancelar", "sair"]:
+            result = await agent.process_followup(
+                message=msg,
+                context={"user_id": 1},
+                previous_intent=EscalaIntent.GERAR_ESCALA.value,
+                previous_data={"scale_type": "12x36"},
+            )
+            assert result is not None, f"Deveria reconhecer negação: '{msg}'"
+            assert result["data"].get("cancelled") is True
+
+    @pytest.mark.asyncio
+    async def test_followup_unrelated_returns_none(self, agent):
+        """Testa que mensagem não relacionada retorna None."""
+        result = await agent.process_followup(
+            message="como está o tempo hoje",
+            context={"user_id": 1},
+            previous_intent=EscalaIntent.GERAR_ESCALA.value,
+        )
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_followup_wrong_intent_returns_none(self, agent):
+        """Testa que follow-up com intent errado retorna None."""
+        result = await agent.process_followup(
+            message="12x36",
+            context={"user_id": 1},
+            previous_intent=EscalaIntent.CALCULAR_CUSTO.value,
+        )
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_followup_diurno_noturno(self, agent):
+        """Testa extração de turno no follow-up."""
+        result = await agent.process_followup(
+            message="12x36 diurno",
+            context={"user_id": 1},
+            previous_intent=EscalaIntent.GERAR_ESCALA.value,
+        )
+        assert result is not None
+        assert "Diurno" in result["data"].get("turno", "")
+
+        result2 = await agent.process_followup(
+            message="12x36 noturno",
+            context={"user_id": 1},
+            previous_intent=EscalaIntent.GERAR_ESCALA.value,
+        )
+        assert result2 is not None
+        assert "Noturno" in result2["data"].get("turno", "")

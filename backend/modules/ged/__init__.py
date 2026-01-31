@@ -51,6 +51,7 @@ from modules.ged.controllers import (
     share_router,
     tag_router,
     signature_router,
+    stats_router,
 )
 
 
@@ -95,4 +96,5 @@ __all__ = [
     "share_router",
     "tag_router",
     "signature_router",
+    "stats_router",
 ]

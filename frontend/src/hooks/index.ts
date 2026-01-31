@@ -105,6 +105,29 @@ export {
 } from './useDisciplinary';
 
 /**
+ * Comunicados
+ * Gestão de comunicados internos
+ */
+export {
+  useAnnouncements,
+  useUnreadAnnouncements,
+  useAnnouncementDetail,
+  useAnnouncementReadStats,
+  useAnnouncementMutations
+} from './useAnnouncements';
+
+/**
+ * Notificações e Alertas Operacionais
+ * Gestão de notificações e alertas em tempo real
+ */
+export {
+  useNotifications as useOperationalNotifications,
+  useUnreadCount,
+  useAlerts,
+  useUserAlerts
+} from './useNotifications';
+
+/**
  * Reembolsos
  * Gerenciamento de solicitações de reembolso
  */
@@ -116,6 +139,20 @@ export {
   useReimbursementCategories,
   useReadyForPayment
 } from './useReimbursement';
+
+/**
+ * Fiscal de Diaristas
+ * Cálculo de retenções, RPA, documentos fiscais
+ */
+export { diaristFiscalService } from '@/lib/services/diarist-fiscal';
+export type {
+  RetencoesResponse,
+  DocumentoFiscal,
+  RelatorioRetencoesResponse,
+  RelatorioDiaristaResponse,
+  TabelaINSS,
+  TabelaIRRF,
+} from '@/lib/services/diarist-fiscal';
 
 // ============================================================================
 // MÓDULO CRM - GESTÃO DE LEADS
@@ -180,6 +217,96 @@ export {
   useGlobalShortcuts
 } from './useKeyboardShortcuts';
 export type { KeyboardShortcut } from './useKeyboardShortcuts';
+
+// ============================================================================
+// MÓDULO RECRUITMENT - RECRUTAMENTO E SELEÇÃO
+// ============================================================================
+
+/**
+ * Recruitment - Recrutamento e Seleção
+ * Hooks para gerenciamento de vagas, candidatos, candidaturas e entrevistas
+ */
+export * from './useRecruitment';
+
+// ============================================================================
+// MÓDULO AUDIT - AUDITORIA E COMPLIANCE
+// ============================================================================
+
+/**
+ * Audit - Auditoria e Compliance
+ * Hooks para logs de auditoria, regras de compliance e retenção de dados
+ */
+export * from './audit';
+
+// ============================================================================
+// MÓDULO CONFIG - CONFIGURAÇÕES DO SISTEMA
+// ============================================================================
+
+/**
+ * Config - Configurações do Sistema
+ * Hooks para tenants, settings, feature flags e dashboards
+ */
+export * from './useConfig';
+
+// ============================================================================
+// MÓDULO DOCUMENT KITS - KITS DOCUMENTAIS
+// ============================================================================
+
+/**
+ * Document Kits - Gestão de Kits Documentais
+ * Hooks para kits, items, assignments e IA
+ */
+export * from './document-kits';
+
+// ============================================================================
+// MÓDULO GOVERNMENT - INTEGRAÇÃO GOVERNAMENTAL
+// ============================================================================
+
+/**
+ * Government - Integração com Órgãos Governamentais
+ * Hooks para Receita Federal, NFS-e, eSocial, SEFAZ, SPED
+ */
+export * from './government';
+
+// ============================================================================
+// MÓDULO NOTIFICATIONS - NOTIFICAÇÕES MULTI-CANAL
+// ============================================================================
+
+/**
+ * Notifications - Sistema de Notificações
+ * Hooks para envio, templates, preferências e analytics
+ */
+export * from './notifications';
+
+// ============================================================================
+// MÓDULO BIDDING - LICITAÇÕES E CONTRATOS
+// ============================================================================
+
+/**
+ * Bidding - Licitações e Contratos
+ * Hooks para editais, propostas, contratos e certidões
+ */
+export * from './bidding';
+
+// ============================================================================
+// MÓDULO DOCUMENTS - DOCUMENT INTELLIGENCE
+// ============================================================================
+
+/**
+ * Documents - Document Intelligence (OCR, Classificação, Extração)
+ * Hooks para upload, OCR, classificação automática, extração de dados e templates
+ */
+export * from './documents';
+
+// ============================================================================
+// MÓDULO SECURITY LGPD - COMPLIANCE LGPD
+// ============================================================================
+
+/**
+ * Security LGPD - Compliance LGPD (Lei 13.709/2018)
+ * Hooks para consentimentos, criptografia, auditoria, direito ao esquecimento, PIA/DPIA, mascaramento
+ */
+export * from './security-lgpd';
 
 // ============================================================================
 // FEATURES - HOOKS DE FUNCIONALIDADES ESPECÍFICAS

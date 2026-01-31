@@ -8,7 +8,8 @@ from .shift import Shift, ShiftStatus
 from .allocation import Allocation, AllocationStatus
 from .substitution import Substitution, SubstitutionReason, SubstitutionStatus
 from .time_bank import TimeBank, TimeBankEntryType, TimeBankStatus
-# Occurrence foi movido para modules/operacional/occurrences/models/
+# Importar Occurrence para registrar no SQLAlchemy (necessário para relacionamentos)
+from modules.operacional.occurrences.models import Occurrence
 
 __all__ = [
     # Post

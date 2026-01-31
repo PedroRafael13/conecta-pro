@@ -254,7 +254,7 @@ class ClientFilter(BaseModel):
 class CondominiumBase(BaseModel):
     """Base schema for Condominium."""
     name: str = Field(..., min_length=2, max_length=200)
-    type: CondominiumType = Field(default=CondominiumType.RESIDENCIAL)
+    type: CondominiumType = Field(default=CondominiumType.RESIDENTIAL)
     administration_type: Optional[AdministrationType] = None
     cnpj: Optional[str] = Field(None, max_length=20)
 

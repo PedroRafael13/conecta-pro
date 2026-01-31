@@ -1,9 +1,12 @@
 """Controller para Document."""
 
+import hashlib
 import logging
+from pathlib import Path
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
@@ -52,6 +55,75 @@ async def create_document(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro interno ao criar documento",
+        ) from e
+
+
+@router.post("/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+async def upload_document(
+    file: UploadFile = File(...),
+    title: str = Form(...),
+    folder_id: str = Form(...),
+    document_type: str = Form(default="outro"),
+    category: str = Form(default="outro"),
+    confidentiality: str = Form(default="interno"),
+    description: Optional[str] = Form(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+) -> DocumentResponse:
+    """Upload de documento com arquivo."""
+    try:
+        # Diretório de upload
+        upload_dir = Path("/app/uploads/ged")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+
+        # Ler conteúdo do arquivo
+        content = await file.read()
+
+        # Calcular checksum SHA-256
+        checksum = hashlib.sha256(content).hexdigest()
+
+        # Nome único do arquivo
+        file_extension = Path(file.filename or "file").suffix.lstrip(".")
+        if not file_extension:
+            file_extension = "bin"
+        unique_filename = f"{checksum}.{file_extension}"
+        file_path = upload_dir / unique_filename
+
+        # Salvar arquivo
+        with open(file_path, "wb") as f:
+            f.write(content)
+
+        # Criar documento no banco
+        service = DocumentService(db)
+        document_data = DocumentCreate(
+            title=title,
+            description=description,
+            folder_id=folder_id,
+            document_type=DocumentType(document_type),
+            category=DocumentCategory(category),
+            confidentiality=DocumentConfidentiality(confidentiality),
+            file_name=file.filename or "file",
+            file_extension=file_extension,
+            file_path=str(file_path),
+            file_size_bytes=len(content),
+            mime_type=file.content_type or "application/octet-stream",
+            checksum=checksum,
+            owner_id=current_user["id"],
+            created_by=current_user["id"],
+        )
+
+        logger.info(f"Upload realizado: {file.filename} ({len(content)} bytes)")
+        return await service.create(document_data)
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        ) from e
+    except Exception as e:
+        logger.error(f"Erro ao fazer upload de documento: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro interno ao fazer upload: {str(e)}",
         ) from e
 
 
@@ -331,7 +403,7 @@ async def view_document(
 
 
 @router.post("/{document_id}/download", response_model=DocumentResponse)
-async def download_document(
+async def register_download(
     document_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -344,6 +416,81 @@ async def download_document(
             status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
         )
     return document
+
+
+@router.get("/{document_id}/download")
+async def download_file(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> FileResponse:
+    """Faz download do arquivo do documento."""
+    service = DocumentService(db)
+    document = await service.get_by_id(document_id)
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
+        )
+
+    file_path = Path(document.file_path)
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado no sistema"
+        )
+
+    # Registra o download
+    await service.download(document_id)
+
+    return FileResponse(
+        path=str(file_path),
+        filename=document.file_name,
+        media_type=document.mime_type,
+    )
+
+
+@router.get("/{document_id}/preview")
+async def get_preview_url(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> dict:
+    """Retorna URL de preview do documento."""
+    service = DocumentService(db)
+    document = await service.get_by_id(document_id)
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
+        )
+
+    # Se tem preview_path, usa ele, senão usa o arquivo original
+    preview_url = f"/api/v1/ged/documents/{document_id}/download"
+    if document.preview_path:
+        preview_url = document.preview_path
+
+    return {"url": preview_url}
+
+
+@router.get("/{document_id}/view-url")
+async def get_view_url(
+    document_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
+) -> dict:
+    """Retorna URL de visualização do documento."""
+    service = DocumentService(db)
+    document = await service.get_by_id(document_id)
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
+        )
+
+    # Registra a visualização
+    await service.view(document_id)
+
+    # URL para visualização (pode ser adaptado para viewer específico por tipo)
+    view_url = f"/api/v1/ged/documents/{document_id}/download"
+
+    return {"url": view_url}
 
 
 @router.get("/search/query", response_model=List[DocumentResponse])

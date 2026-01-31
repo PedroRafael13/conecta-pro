@@ -149,7 +149,7 @@ class ModelRegistry:
     """
 
     # Diretório base para armazenamento
-    DEFAULT_STORAGE_PATH = "/opt/conecta-pro/data/models"
+    DEFAULT_STORAGE_PATH = "/app/data/models"
 
     def __init__(
         self,
@@ -162,7 +162,15 @@ class ModelRegistry:
             storage_path: Caminho para armazenamento de modelos
         """
         self.storage_path = Path(storage_path or self.DEFAULT_STORAGE_PATH)
-        self.storage_path.mkdir(parents=True, exist_ok=True)
+        try:
+            self.storage_path.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            logger.warning(f"Não foi possível criar diretório de modelos: {e}")
+            # Fallback para diretório temporário
+            import tempfile
+            self.storage_path = Path(tempfile.gettempdir()) / "conecta_models"
+            self.storage_path.mkdir(parents=True, exist_ok=True)
+            logger.info(f"Usando diretório temporário: {self.storage_path}")
 
         # Registros em memória (em produção seria banco de dados)
         self._models: dict[str, dict[str, ModelVersion]] = {}

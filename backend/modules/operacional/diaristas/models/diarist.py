@@ -12,13 +12,14 @@ from sqlalchemy import (
     DateTime,
     Date,
     Time,
+    Enum as SAEnum,
     ForeignKey,
     Text,
     Integer,
     Numeric,
     Index,
 )
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID, JSONB, ARRAY, ENUM as PG_ENUM
 from sqlalchemy.orm import relationship
 
 from core.models.base import Base
@@ -99,27 +100,24 @@ class RecurrenceType(str, Enum):
 
 
 class ScheduleStatus(str, Enum):
-    """Status da agenda."""
+    """Status da agenda. Valores uppercase para alinhar com PG ENUM schedule_status."""
 
-    AGENDADO = "agendado"
-    CONFIRMADO = "confirmado"
-    EM_ANDAMENTO = "em_andamento"
-    CONCLUIDO = "concluido"
-    FALTA = "falta"
-    ATRASO = "atraso"
-    CANCELADO = "cancelado"
-    REAGENDADO = "reagendado"
+    AGENDADO = "AGENDADO"
+    CONFIRMADO = "CONFIRMADO"
+    EM_ANDAMENTO = "EM_ANDAMENTO"
+    CONCLUIDO = "CONCLUIDO"
+    CANCELADO = "CANCELADO"
+    NAO_COMPARECEU = "NAO_COMPARECEU"
 
 
 class PaymentStatus(str, Enum):
-    """Status do pagamento."""
+    """Status do pagamento. Valores uppercase para alinhar com PG ENUM payment_status."""
 
-    PENDENTE = "pendente"
-    APROVADO = "aprovado"
-    PAGO = "pago"
-    CANCELADO = "cancelado"
-    ESTORNADO = "estornado"
-    PARCIAL = "parcial"
+    PENDENTE = "PENDENTE"
+    APROVADO = "APROVADO"
+    PAGO = "PAGO"
+    CANCELADO = "CANCELADO"
+    ESTORNADO = "ESTORNADO"
 
 
 class PaymentMethod(str, Enum):
@@ -151,123 +149,62 @@ class Diarist(Base):
     __tablename__ = "diarists"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    condominio_id = Column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
-        nullable=False,
-        index=True,
-    )
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    ativo = Column(Boolean, default=True, nullable=False)
 
     # Dados pessoais
-    codigo = Column(String(50), nullable=False, index=True)
     nome = Column(String(200), nullable=False)
-    nome_social = Column(String(200))
     cpf = Column(String(14), nullable=False, index=True)
     rg = Column(String(20))
     data_nascimento = Column(Date)
-    genero = Column(String(20))
-    nacionalidade = Column(String(50), default="Brasileira")
-    estado_civil = Column(String(30))
 
     # Contato
-    email = Column(String(255))
     telefone = Column(String(20))
-    celular = Column(String(20))
-    whatsapp = Column(String(20))
-    contato_emergencia = Column(String(200))
     telefone_emergencia = Column(String(20))
+    email = Column(String(255))
+    foto_url = Column(String(500))
 
     # Endereco
-    cep = Column(String(10))
-    logradouro = Column(String(255))
-    numero = Column(String(20))
-    complemento = Column(String(100))
-    bairro = Column(String(100))
+    endereco = Column(String(500))
     cidade = Column(String(100))
     estado = Column(String(2))
+    cep = Column(String(10))
 
     # Profissional
-    tipo = Column(String(50), nullable=False, default=DiaristType.LIMPEZA.value)
-    especialidades = Column(JSONB, default=list)
+    tipos_servico = Column(ARRAY(String), default=[])  # Array de tipos (diarist_type_array[] no banco)
+    especialidades = Column(ARRAY(String), default=[])  # Array de strings
     experiencia_anos = Column(Integer, default=0)
-    certificacoes = Column(JSONB, default=list)
-    referencias = Column(JSONB, default=list)
+    referencias = Column(JSONB, default=dict)  # JSONB
+    documentos = Column(JSONB, default=dict)  # JSONB
 
     # Disponibilidade
-    dias_disponiveis = Column(JSONB, default=list)  # Lista de Weekday
-    horario_inicio = Column(Time, default=time(8, 0))
-    horario_fim = Column(Time, default=time(17, 0))
-    carga_horaria_max = Column(Integer, default=8)
+    dias_disponiveis = Column(ARRAY(String), default=[])  # Array de weekday (weekday_array[] no banco)
+    hora_inicio_disponivel = Column(Time, default=time(8, 0))
+    hora_fim_disponivel = Column(Time, default=time(17, 0))
     aceita_hora_extra = Column(Boolean, default=True)
-    distancia_max_km = Column(Integer, default=30)
-    regioes_atendimento = Column(JSONB, default=list)
 
     # Financeiro
+    valor_hora = Column(Numeric(10, 2))
     valor_diaria = Column(Numeric(10, 2), nullable=False, default=150.00)
     valor_hora_extra = Column(Numeric(10, 2), default=25.00)
-    valor_adicional_noturno = Column(Numeric(10, 2), default=30.00)
-    valor_adicional_feriado = Column(Numeric(10, 2), default=50.00)
-    forma_pagamento_preferida = Column(
-        String(30), default=PaymentMethod.PIX.value
-    )
 
     # Dados bancarios
     banco = Column(String(100))
     agencia = Column(String(20))
     conta = Column(String(30))
     tipo_conta = Column(String(20))
-    pix_chave = Column(String(100))
-    pix_tipo = Column(String(20))
-
-    # Documentos
-    documentos = Column(JSONB, default=list)
-    foto_url = Column(String(500))
-    contrato_url = Column(String(500))
-    exame_admissional_url = Column(String(500))
-    data_exame_admissional = Column(Date)
+    pix = Column(String(100))
 
     # Status
     status = Column(
         String(30), nullable=False, default=DiaristStatus.ATIVO.value, index=True
     )
-    motivo_status = Column(Text)
-    data_admissao = Column(Date, default=date.today)
-    data_desligamento = Column(Date)
-    motivo_desligamento = Column(Text)
-
-    # Bloqueio
-    is_blocked = Column(Boolean, default=False)
-    blocked_reason = Column(Text)
-    blocked_by = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    blocked_at = Column(DateTime)
 
     # Metricas
-    total_diarias = Column(Integer, default=0)
-    total_horas = Column(Numeric(10, 2), default=0)
-    total_recebido = Column(Numeric(12, 2), default=0)
-    media_avaliacao = Column(Numeric(3, 2), default=0)
+    avaliacao_media = Column(Numeric(3, 2), default=0)
     total_avaliacoes = Column(Integer, default=0)
-    taxa_comparecimento = Column(Numeric(5, 2), default=100)
-    taxa_pontualidade = Column(Numeric(5, 2), default=100)
-    ultima_diaria = Column(Date)
-    proxima_diaria = Column(Date)
-
-    # IA
-    score_confiabilidade = Column(Numeric(5, 2), default=50)
-    score_qualidade = Column(Numeric(5, 2), default=50)
-    perfil_ia = Column(JSONB, default=dict)
-    recomendacoes_ia = Column(JSONB, default=list)
-
-    # Metadata
-    tags = Column(JSONB, default=list)
-    observacoes = Column(Text)
-    extra_metadata = Column(JSONB, default=dict)
-
-    # Auditoria
-    created_by = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    updated_by = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    total_servicos = Column(Integer, default=0)
 
     # Relacionamentos
     assignments = relationship("DiaristAssignment", back_populates="diarist")
@@ -275,15 +212,10 @@ class Diarist(Base):
     payments = relationship("DiaristPayment", back_populates="diarist")
     evaluations = relationship("DiaristEvaluation", back_populates="diarist")
 
-    __table_args__ = (
-        Index("ix_diarists_cpf_condominio", "cpf", "condominio_id", unique=True),
-        Index("ix_diarists_codigo_condominio", "codigo", "condominio_id", unique=True),
-    )
-
     @property
     def is_ativo(self) -> bool:
         """Verifica se diarista esta ativo."""
-        return self.status == DiaristStatus.ATIVO.value and not self.is_blocked
+        return self.status == DiaristStatus.ATIVO.value and self.ativo
 
     @property
     def is_disponivel(self) -> bool:
@@ -308,135 +240,82 @@ class Diarist(Base):
             )
         )
 
-    @property
-    def endereco_completo(self) -> str:
-        """Retorna endereco completo."""
-        parts = []
-        if self.logradouro:
-            parts.append(self.logradouro)
-        if self.numero:
-            parts.append(self.numero)
-        if self.complemento:
-            parts.append(self.complemento)
-        if self.bairro:
-            parts.append(self.bairro)
-        if self.cidade:
-            parts.append(self.cidade)
-        if self.estado:
-            parts.append(self.estado)
-        return ", ".join(parts)
-
     def ativar(self) -> None:
         """Ativa diarista."""
         self.status = DiaristStatus.ATIVO.value
-        self.is_blocked = False
-        self.blocked_reason = None
-        self.blocked_by = None
-        self.blocked_at = None
+        self.ativo = True
 
-    def inativar(self, motivo: Optional[str] = None) -> None:
+    def inativar(self) -> None:
         """Inativa diarista."""
         self.status = DiaristStatus.INATIVO.value
-        self.motivo_status = motivo
+        self.ativo = False
 
-    def suspender(self, motivo: str) -> None:
+    def suspender(self) -> None:
         """Suspende diarista."""
         self.status = DiaristStatus.SUSPENSO.value
-        self.motivo_status = motivo
 
-    def bloquear(self, motivo: str, blocked_by: str) -> None:
+    def bloquear(self) -> None:
         """Bloqueia diarista."""
-        self.is_blocked = True
-        self.blocked_reason = motivo
-        self.blocked_by = UUID(blocked_by)
-        self.blocked_at = datetime.utcnow()
         self.status = DiaristStatus.BLOQUEADO.value
 
     def desbloquear(self) -> None:
         """Desbloqueia diarista."""
-        self.is_blocked = False
-        self.blocked_reason = None
-        self.blocked_by = None
-        self.blocked_at = None
         self.status = DiaristStatus.ATIVO.value
 
     def iniciar_ferias(self) -> None:
         """Inicia periodo de ferias."""
         self.status = DiaristStatus.FERIAS.value
 
-    def afastar(self, motivo: str) -> None:
+    def afastar(self) -> None:
         """Afasta diarista."""
         self.status = DiaristStatus.AFASTADO.value
-        self.motivo_status = motivo
 
-    def desligar(self, motivo: str) -> None:
+    def desligar(self) -> None:
         """Desliga diarista."""
         self.status = DiaristStatus.DESLIGADO.value
-        self.motivo_desligamento = motivo
-        self.data_desligamento = date.today()
+        self.ativo = False
 
-    def atualizar_metricas(
-        self,
-        diarias: int = 0,
-        horas: float = 0,
-        valor: float = 0,
-    ) -> None:
+    def atualizar_metricas(self, servicos: int = 1) -> None:
         """Atualiza metricas."""
-        self.total_diarias += diarias
-        self.total_horas = float(self.total_horas or 0) + horas
-        self.total_recebido = float(self.total_recebido or 0) + valor
-        self.ultima_diaria = date.today()
+        self.total_servicos = (self.total_servicos or 0) + servicos
 
     def atualizar_avaliacao(self, nota: float) -> None:
         """Atualiza media de avaliacao."""
         total = self.total_avaliacoes or 0
-        media = float(self.media_avaliacao or 0)
+        media = float(self.avaliacao_media or 0)
         nova_media = ((media * total) + nota) / (total + 1)
-        self.media_avaliacao = round(nova_media, 2)
+        self.avaliacao_media = round(nova_media, 2)
         self.total_avaliacoes = total + 1
 
 
 class DiaristAssignment(Base):
-    """Model de Alocacao de Diarista."""
+    """Model de Alocacao de Diarista.
+
+    Alinhado com a tabela real diarist_assignments no PostgreSQL.
+    Colunas reais: id, created_at, updated_at, ativo, diarist_id, condominio_id,
+    unidade_id, tipo, descricao, data_inicio, data_fim, recorrencia, dias_semana,
+    hora_inicio, hora_fim, valor_acordado, status, observacoes
+    """
 
     __tablename__ = "diarist_assignments"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    condominio_id = Column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
-        nullable=False,
-        index=True,
-    )
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    ativo = Column(Boolean, default=True, nullable=False)
+
     diarist_id = Column(
         PG_UUID(as_uuid=True),
         ForeignKey("diarists.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-
-    # Integracao com Operacional
-    post_id = Column(
+    condominio_id = Column(
         PG_UUID(as_uuid=True),
-        ForeignKey("posts.id", ondelete="SET NULL"),
-        nullable=True,
+        nullable=False,
         index=True,
     )
-    shift_id = Column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("shifts.id", ondelete="SET NULL"),
-        nullable=True,
-        index=True,
-    )
-    cliente_id = Column(
-        PG_UUID(as_uuid=True),
-        nullable=True,
-        index=True,
-    )
-    contrato_id = Column(
-        PG_UUID(as_uuid=True),
-        nullable=True,
-    )
+    unidade_id = Column(PG_UUID(as_uuid=True))
 
     # Tipo e status
     tipo = Column(
@@ -447,67 +326,29 @@ class DiaristAssignment(Base):
     )
 
     # Servico
-    servico_tipo = Column(String(50), nullable=False)
-    servico_descricao = Column(Text)
-    local_servico = Column(String(200))
-    unidade_id = Column(PG_UUID(as_uuid=True))
-    area_comum = Column(String(100))
+    descricao = Column(Text)
 
     # Periodo
     data_inicio = Column(Date, nullable=False)
     data_fim = Column(Date)
-    horario_inicio = Column(Time, default=time(8, 0))
-    horario_fim = Column(Time, default=time(17, 0))
-    carga_horaria = Column(Integer, default=8)
+    hora_inicio = Column(Time, default=time(8, 0))
+    hora_fim = Column(Time, default=time(17, 0))
 
     # Recorrencia
     recorrencia = Column(
         String(30), nullable=False, default=RecurrenceType.NENHUMA.value
     )
     dias_semana = Column(JSONB, default=list)
-    intervalo_dias = Column(Integer)
-    total_ocorrencias = Column(Integer)
-    ocorrencias_realizadas = Column(Integer, default=0)
 
     # Financeiro
     valor_acordado = Column(Numeric(10, 2), nullable=False)
-    valor_adicional = Column(Numeric(10, 2), default=0)
-    desconto = Column(Numeric(10, 2), default=0)
-    valor_total = Column(Numeric(10, 2))
-    forma_pagamento = Column(String(30))
-
-    # Responsavel
-    contratante_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    contratante_nome = Column(String(200))
-    aprovador_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    aprovado_at = Column(DateTime)
-
-    # Substituicao
-    substitui_assignment_id = Column(
-        PG_UUID(as_uuid=True), ForeignKey("diarist_assignments.id")
-    )
-    motivo_substituicao = Column(Text)
-
-    # Cancelamento
-    cancelado_por = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    cancelado_at = Column(DateTime)
-    motivo_cancelamento = Column(Text)
 
     # Observacoes
-    instrucoes = Column(Text)
     observacoes = Column(Text)
-    materiais_necessarios = Column(JSONB, default=list)
-
-    # Metadata
-    extra_metadata = Column(JSONB, default=dict)
-    created_by = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relacionamentos
     diarist = relationship("Diarist", back_populates="assignments")
     schedules = relationship("DiaristSchedule", back_populates="assignment")
-    payments = relationship("DiaristPayment", back_populates="assignment")
 
     __table_args__ = (
         Index("ix_diarist_assignments_periodo", "data_inicio", "data_fim"),
@@ -572,17 +413,18 @@ class DiaristAssignment(Base):
 
 
 class DiaristSchedule(Base):
-    """Model de Agenda de Diarista."""
+    """Model de Agenda de Diarista.
+
+    Mapeado para a tabela real do banco com colunas existentes.
+    """
 
     __tablename__ = "diarist_schedules"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    condominio_id = Column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
-        nullable=False,
-        index=True,
-    )
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    ativo = Column(Boolean, default=True, nullable=False)
+
     diarist_id = Column(
         PG_UUID(as_uuid=True),
         ForeignKey("diarists.id", ondelete="CASCADE"),
@@ -594,83 +436,43 @@ class DiaristSchedule(Base):
         ForeignKey("diarist_assignments.id", ondelete="CASCADE"),
         index=True,
     )
+    condominio_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
+    unidade_id = Column(PG_UUID(as_uuid=True))
 
-    # Data e horario
-    data = Column(Date, nullable=False, index=True)
-    horario_inicio_previsto = Column(Time, nullable=False)
-    horario_fim_previsto = Column(Time, nullable=False)
-    carga_horaria_prevista = Column(Integer, default=8)
+    # Data e horario (nomes reais do banco)
+    data_trabalho = Column(Date, nullable=False, index=True)
+    hora_inicio = Column(Time, nullable=False, default=time(8, 0))
+    hora_fim = Column(Time, nullable=False, default=time(17, 0))
 
-    # Check-in/out
-    checkin_at = Column(DateTime)
-    checkout_at = Column(DateTime)
+    # Check-in/out (nomes reais do banco)
+    checkin_real = Column(DateTime)
+    checkout_real = Column(DateTime)
     checkin_latitude = Column(Numeric(10, 8))
     checkin_longitude = Column(Numeric(11, 8))
     checkout_latitude = Column(Numeric(10, 8))
     checkout_longitude = Column(Numeric(11, 8))
-    checkin_foto_url = Column(String(500))
-    checkout_foto_url = Column(String(500))
-
-    # Horas
-    horas_trabalhadas = Column(Numeric(5, 2), default=0)
-    horas_extras = Column(Numeric(5, 2), default=0)
-    horas_noturnas = Column(Numeric(5, 2), default=0)
-    intervalo_minutos = Column(Integer, default=60)
-
-    # Status
-    status = Column(
-        String(30), nullable=False, default=ScheduleStatus.AGENDADO.value, index=True
-    )
-    motivo_status = Column(Text)
-    is_feriado = Column(Boolean, default=False)
-    is_fim_semana = Column(Boolean, default=False)
-
-    # Servico
-    servico_tipo = Column(String(50))
-    servico_descricao = Column(Text)
-    local_servico = Column(String(200))
-    tarefas = Column(JSONB, default=list)
-    tarefas_concluidas = Column(JSONB, default=list)
-
-    # Avaliacao rapida
-    avaliacao_nota = Column(Integer)  # 1-5
-    avaliacao_comentario = Column(Text)
-    avaliado_por = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    avaliado_at = Column(DateTime)
-
-    # Ocorrencias
-    ocorrencias = Column(JSONB, default=list)
-    materiais_usados = Column(JSONB, default=list)
 
     # Financeiro
-    valor_base = Column(Numeric(10, 2))
-    valor_hora_extra = Column(Numeric(10, 2), default=0)
-    valor_adicional = Column(Numeric(10, 2), default=0)
-    valor_desconto = Column(Numeric(10, 2), default=0)
-    valor_total = Column(Numeric(10, 2))
+    valor_previsto = Column(Numeric(10, 2))
+    valor_final = Column(Numeric(10, 2))
 
-    # Confirmacao
-    confirmado_por = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    confirmado_at = Column(DateTime)
+    # Status (ENUM PostgreSQL schedule_status com valores uppercase)
+    status = Column(
+        PG_ENUM('AGENDADO', 'CONFIRMADO', 'EM_ANDAMENTO', 'CONCLUIDO', 'CANCELADO', 'NAO_COMPARECEU',
+                name='schedule_status', create_type=False),
+        nullable=False, default="AGENDADO", index=True
+    )
 
-    # Reagendamento
-    reagendado_de = Column(PG_UUID(as_uuid=True), ForeignKey("diarist_schedules.id"))
-    reagendado_para = Column(Date)
-    motivo_reagendamento = Column(Text)
-
-    # Metadata
+    # Tarefas e observacoes
+    tarefas = Column(ARRAY(String), default=[])
     observacoes = Column(Text)
-    extra_metadata = Column(JSONB, default=dict)
-    created_by = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relacionamentos
     diarist = relationship("Diarist", back_populates="schedules")
     assignment = relationship("DiaristAssignment", back_populates="schedules")
 
     __table_args__ = (
-        Index("ix_diarist_schedules_data_diarist", "data", "diarist_id"),
+        Index("ix_diarist_schedules_data_diarist", "data_trabalho", "diarist_id"),
     )
 
     @property
@@ -686,19 +488,19 @@ class DiaristSchedule(Base):
     @property
     def teve_checkin(self) -> bool:
         """Verifica se teve check-in."""
-        return self.checkin_at is not None
+        return self.checkin_real is not None
 
     @property
     def teve_checkout(self) -> bool:
         """Verifica se teve check-out."""
-        return self.checkout_at is not None
+        return self.checkout_real is not None
 
     @property
     def duracao_minutos(self) -> Optional[int]:
         """Calcula duracao em minutos."""
-        if not self.checkin_at or not self.checkout_at:
+        if not self.checkin_real or not self.checkout_real:
             return None
-        delta = self.checkout_at - self.checkin_at
+        delta = self.checkout_real - self.checkin_real
         return int(delta.total_seconds() / 60)
 
     def confirmar(self) -> None:
@@ -709,161 +511,93 @@ class DiaristSchedule(Base):
         self,
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
-        foto_url: Optional[str] = None,
     ) -> None:
         """Registra check-in."""
-        self.checkin_at = datetime.utcnow()
+        self.checkin_real = datetime.utcnow()
         self.checkin_latitude = latitude
         self.checkin_longitude = longitude
-        self.checkin_foto_url = foto_url
         self.status = ScheduleStatus.EM_ANDAMENTO.value
 
     def fazer_checkout(
         self,
         latitude: Optional[float] = None,
         longitude: Optional[float] = None,
-        foto_url: Optional[str] = None,
     ) -> None:
         """Registra check-out."""
-        self.checkout_at = datetime.utcnow()
+        self.checkout_real = datetime.utcnow()
         self.checkout_latitude = latitude
         self.checkout_longitude = longitude
-        self.checkout_foto_url = foto_url
-        self.calcular_horas()
         self.status = ScheduleStatus.CONCLUIDO.value
 
-    def calcular_horas(self) -> None:
-        """Calcula horas trabalhadas."""
-        if not self.checkin_at or not self.checkout_at:
-            return
-
-        delta = self.checkout_at - self.checkin_at
-        total_minutos = delta.total_seconds() / 60
-        total_minutos -= self.intervalo_minutos or 60
-
-        horas = total_minutos / 60
-        carga = self.carga_horaria_prevista or 8
-
-        self.horas_trabalhadas = min(horas, carga)
-        self.horas_extras = max(0, horas - carga)
-
     def marcar_falta(self, motivo: Optional[str] = None) -> None:
-        """Marca como falta."""
-        self.status = ScheduleStatus.FALTA.value
+        """Marca como nao compareceu."""
+        self.status = ScheduleStatus.NAO_COMPARECEU.value
         self.motivo_status = motivo
-
-    def marcar_atraso(self) -> None:
-        """Marca como atraso."""
-        self.status = ScheduleStatus.ATRASO.value
 
     def cancelar(self, motivo: Optional[str] = None) -> None:
         """Cancela agenda."""
         self.status = ScheduleStatus.CANCELADO.value
-        self.motivo_status = motivo
 
-    def reagendar(self, nova_data: date, motivo: Optional[str] = None) -> None:
-        """Reagenda para outra data."""
-        self.reagendado_para = nova_data
-        self.motivo_reagendamento = motivo
-        self.status = ScheduleStatus.REAGENDADO.value
-
-    def avaliar(self, nota: int, comentario: str, avaliador_id: str) -> None:
-        """Registra avaliacao."""
-        self.avaliacao_nota = nota
-        self.avaliacao_comentario = comentario
-        self.avaliado_por = UUID(avaliador_id)
-        self.avaliado_at = datetime.utcnow()
-
-    def calcular_valor(self) -> None:
-        """Calcula valor total."""
-        base = float(self.valor_base or 0)
-        extra = float(self.valor_hora_extra or 0) * float(self.horas_extras or 0)
-        adicional = float(self.valor_adicional or 0)
-        desconto = float(self.valor_desconto or 0)
-        self.valor_total = base + extra + adicional - desconto
+    def calcular_valor_final(self) -> None:
+        """Define valor final igual ao previsto."""
+        self.valor_final = self.valor_previsto
 
 
 class DiaristPayment(Base):
-    """Model de Pagamento de Diarista."""
+    """Model de Pagamento de Diarista.
+
+    Mapeado para a tabela real do banco com colunas existentes.
+    """
 
     __tablename__ = "diarist_payments"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    condominio_id = Column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
-        nullable=False,
-        index=True,
-    )
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    ativo = Column(Boolean, default=True, nullable=False)
+
     diarist_id = Column(
         PG_UUID(as_uuid=True),
         ForeignKey("diarists.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    assignment_id = Column(
+    condominio_id = Column(
         PG_UUID(as_uuid=True),
-        ForeignKey("diarist_assignments.id", ondelete="SET NULL"),
+        nullable=False,
         index=True,
     )
 
-    # Periodo
-    periodo_inicio = Column(Date, nullable=False)
-    periodo_fim = Column(Date, nullable=False)
-    competencia = Column(String(7))  # YYYY-MM
-
-    # Valores
-    valor_diarias = Column(Numeric(10, 2), nullable=False, default=0)
-    quantidade_diarias = Column(Integer, default=0)
-    valor_horas_extras = Column(Numeric(10, 2), default=0)
-    quantidade_horas_extras = Column(Numeric(5, 2), default=0)
-    valor_adicional = Column(Numeric(10, 2), default=0)
-    descricao_adicional = Column(Text)
-    valor_desconto = Column(Numeric(10, 2), default=0)
-    descricao_desconto = Column(Text)
-    valor_bruto = Column(Numeric(10, 2))
-    valor_liquido = Column(Numeric(10, 2))
-
-    # Impostos/Retencoes
-    inss_retido = Column(Numeric(10, 2), default=0)
-    iss_retido = Column(Numeric(10, 2), default=0)
-    irrf_retido = Column(Numeric(10, 2), default=0)
-    outras_retencoes = Column(Numeric(10, 2), default=0)
-
-    # Pagamento
-    status = Column(
-        String(30), nullable=False, default=PaymentStatus.PENDENTE.value, index=True
-    )
-    forma_pagamento = Column(String(30))
+    # Datas
+    data_referencia = Column(Date, nullable=False)
     data_vencimento = Column(Date)
     data_pagamento = Column(Date)
+
+    # Valores
+    valor_bruto = Column(Numeric(10, 2))
+    retencao_inss = Column(Numeric(10, 2), default=0)
+    retencao_iss = Column(Numeric(10, 2), default=0)
+    retencao_irrf = Column(Numeric(10, 2), default=0)
+    outros_descontos = Column(Numeric(10, 2), default=0)
+    valor_liquido = Column(Numeric(10, 2))
+
+    # Pagamento
+    forma_pagamento = Column(String(30))
     comprovante_url = Column(String(500))
-    numero_documento = Column(String(100))
-    observacoes_pagamento = Column(Text)
-
-    # Aprovacao
-    aprovado_por = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    aprovado_at = Column(DateTime)
-    motivo_rejeicao = Column(Text)
-
-    # Estorno
-    estornado_por = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    estornado_at = Column(DateTime)
-    motivo_estorno = Column(Text)
+    status = Column(
+        PG_ENUM('PENDENTE', 'APROVADO', 'PAGO', 'CANCELADO', 'ESTORNADO',
+                name='payment_status', create_type=False),
+        nullable=False, default="PENDENTE", index=True
+    )
 
     # Schedules incluidos
     schedules_ids = Column(JSONB, default=list)
 
-    # Metadata
-    observacoes = Column(Text)
-    extra_metadata = Column(JSONB, default=dict)
-    created_by = Column(PG_UUID(as_uuid=True), ForeignKey("users.id"))
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Descricao
+    descricao = Column(Text)
 
     # Relacionamentos
     diarist = relationship("Diarist", back_populates="payments")
-    assignment = relationship("DiaristAssignment", back_populates="payments")
 
     @property
     def is_pago(self) -> bool:
@@ -884,32 +618,16 @@ class DiaristPayment(Base):
     def total_retencoes(self) -> float:
         """Calcula total de retencoes."""
         return (
-            float(self.inss_retido or 0)
-            + float(self.iss_retido or 0)
-            + float(self.irrf_retido or 0)
-            + float(self.outras_retencoes or 0)
+            float(self.retencao_inss or 0)
+            + float(self.retencao_iss or 0)
+            + float(self.retencao_irrf or 0)
+            + float(self.outros_descontos or 0)
         )
 
     def calcular_valores(self) -> None:
         """Calcula valores bruto e liquido."""
-        diarias = float(self.valor_diarias or 0)
-        extras = float(self.valor_horas_extras or 0)
-        adicional = float(self.valor_adicional or 0)
-        desconto = float(self.valor_desconto or 0)
-
-        self.valor_bruto = diarias + extras + adicional - desconto
-        self.valor_liquido = self.valor_bruto - self.total_retencoes
-
-    def aprovar(self, aprovador_id: str) -> None:
-        """Aprova pagamento."""
-        self.status = PaymentStatus.APROVADO.value
-        self.aprovado_por = UUID(aprovador_id)
-        self.aprovado_at = datetime.utcnow()
-
-    def rejeitar(self, motivo: str) -> None:
-        """Rejeita pagamento."""
-        self.status = PaymentStatus.CANCELADO.value
-        self.motivo_rejeicao = motivo
+        bruto = float(self.valor_bruto or 0)
+        self.valor_liquido = bruto - self.total_retencoes
 
     def pagar(
         self,
@@ -922,26 +640,23 @@ class DiaristPayment(Base):
         if comprovante_url:
             self.comprovante_url = comprovante_url
 
-    def estornar(self, motivo: str, estornado_por: str) -> None:
-        """Estorna pagamento."""
-        self.status = PaymentStatus.ESTORNADO.value
-        self.motivo_estorno = motivo
-        self.estornado_por = UUID(estornado_por)
-        self.estornado_at = datetime.utcnow()
-
 
 class DiaristEvaluation(Base):
-    """Model de Avaliacao de Diarista."""
+    """Model de Avaliacao de Diarista.
+
+    Alinhado com a tabela real diarist_evaluations no PostgreSQL.
+    Colunas reais: id, created_at, updated_at, ativo, diarist_id, schedule_id,
+    avaliador_id, nota_geral, nota_pontualidade, nota_qualidade,
+    nota_comportamento, nota_comunicacao, comentario, recomendaria
+    """
 
     __tablename__ = "diarist_evaluations"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    condominio_id = Column(
-        PG_UUID(as_uuid=True),
-        ForeignKey("condominios.id"),
-        nullable=False,
-        index=True,
-    )
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    ativo = Column(Boolean, default=True, nullable=False)
+
     diarist_id = Column(
         PG_UUID(as_uuid=True),
         ForeignKey("diarists.id", ondelete="CASCADE"),
@@ -953,47 +668,20 @@ class DiaristEvaluation(Base):
         ForeignKey("diarist_schedules.id", ondelete="SET NULL"),
         index=True,
     )
-
-    # Avaliador
     avaliador_id = Column(
         PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=False
     )
-    avaliador_nome = Column(String(200))
-    avaliador_tipo = Column(String(50))  # morador, sindico, administrador
 
     # Notas (1-5)
     nota_geral = Column(Integer, nullable=False)
     nota_pontualidade = Column(Integer)
     nota_qualidade = Column(Integer)
-    nota_profissionalismo = Column(Integer)
+    nota_comportamento = Column(Integer)
     nota_comunicacao = Column(Integer)
-    nota_cuidado = Column(Integer)
 
-    # Comentarios
+    # Feedback
     comentario = Column(Text)
-    pontos_positivos = Column(JSONB, default=list)
-    pontos_melhorar = Column(JSONB, default=list)
-
-    # Recomendacao
     recomendaria = Column(Boolean, default=True)
-    contrataria_novamente = Column(Boolean, default=True)
-
-    # Servico avaliado
-    servico_tipo = Column(String(50))
-    data_servico = Column(Date)
-
-    # Status
-    is_publicada = Column(Boolean, default=True)
-    is_anonima = Column(Boolean, default=False)
-
-    # Resposta do diarista
-    resposta = Column(Text)
-    resposta_at = Column(DateTime)
-
-    # Metadata
-    extra_metadata = Column(JSONB, default=dict)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relacionamentos
     diarist = relationship("Diarist", back_populates="evaluations")
@@ -1007,25 +695,11 @@ class DiaristEvaluation(Base):
                 self.nota_geral,
                 self.nota_pontualidade,
                 self.nota_qualidade,
-                self.nota_profissionalismo,
+                self.nota_comportamento,
                 self.nota_comunicacao,
-                self.nota_cuidado,
             ]
             if n is not None
         ]
         if not notas:
             return 0.0
         return round(sum(notas) / len(notas), 2)
-
-    def responder(self, resposta: str) -> None:
-        """Registra resposta do diarista."""
-        self.resposta = resposta
-        self.resposta_at = datetime.utcnow()
-
-    def ocultar(self) -> None:
-        """Oculta avaliacao."""
-        self.is_publicada = False
-
-    def publicar(self) -> None:
-        """Publica avaliacao."""
-        self.is_publicada = True

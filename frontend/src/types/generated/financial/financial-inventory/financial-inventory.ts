@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost200,
@@ -22,6 +35,7 @@ import type {
   ConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost200,
   FinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost200,
   GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams,
+  HTTPValidationError,
   InventoryStats,
   ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams,
   ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams,
@@ -55,435 +69,2636 @@ import type {
   WarehouseUpdate
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialInventory = () => {
+
 /**
  * Lista armazéns.
  * @summary List Warehouses
  */
-const listWarehousesApiV1FinancialInventoryInventoryWarehousesGet = <TData = AxiosResponse<WarehouseListResponse[]>>(
-    params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/warehouses`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listWarehousesApiV1FinancialInventoryInventoryWarehousesGet = (
+    params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WarehouseListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/warehouses`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListWarehousesApiV1FinancialInventoryInventoryWarehousesGetQueryKey = (params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/warehouses`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListWarehousesApiV1FinancialInventoryInventoryWarehousesGetQueryOptions = <TData = Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError = HTTPValidationError>(params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListWarehousesApiV1FinancialInventoryInventoryWarehousesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>> = ({ signal }) => listWarehousesApiV1FinancialInventoryInventoryWarehousesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>>
+export type ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetQueryError = HTTPValidationError
+
+
+export function useListWarehousesApiV1FinancialInventoryInventoryWarehousesGet<TData = Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListWarehousesApiV1FinancialInventoryInventoryWarehousesGet<TData = Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError = HTTPValidationError>(
+ params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListWarehousesApiV1FinancialInventoryInventoryWarehousesGet<TData = Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError = HTTPValidationError>(
+ params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Warehouses
+ */
+
+export function useListWarehousesApiV1FinancialInventoryInventoryWarehousesGet<TData = Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError = HTTPValidationError>(
+ params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWarehousesApiV1FinancialInventoryInventoryWarehousesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListWarehousesApiV1FinancialInventoryInventoryWarehousesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo armazém.
  * @summary Create Warehouse
  */
-const createWarehouseApiV1FinancialInventoryInventoryWarehousesPost = <TData = AxiosResponse<WarehouseResponse>>(
-    warehouseCreate: WarehouseCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/warehouses`,
-      warehouseCreate,options
-    );
-  }
-/**
+export const createWarehouseApiV1FinancialInventoryInventoryWarehousesPost = (
+    warehouseCreate: WarehouseCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WarehouseResponse>(
+      {url: `/api/v1/financial/inventory/inventory/warehouses`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: warehouseCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateWarehouseApiV1FinancialInventoryInventoryWarehousesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWarehouseApiV1FinancialInventoryInventoryWarehousesPost>>, TError,{data: WarehouseCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createWarehouseApiV1FinancialInventoryInventoryWarehousesPost>>, TError,{data: WarehouseCreate}, TContext> => {
+
+const mutationKey = ['createWarehouseApiV1FinancialInventoryInventoryWarehousesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createWarehouseApiV1FinancialInventoryInventoryWarehousesPost>>, {data: WarehouseCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createWarehouseApiV1FinancialInventoryInventoryWarehousesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateWarehouseApiV1FinancialInventoryInventoryWarehousesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createWarehouseApiV1FinancialInventoryInventoryWarehousesPost>>>
+    export type CreateWarehouseApiV1FinancialInventoryInventoryWarehousesPostMutationBody = WarehouseCreate
+    export type CreateWarehouseApiV1FinancialInventoryInventoryWarehousesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Warehouse
+ */
+export const useCreateWarehouseApiV1FinancialInventoryInventoryWarehousesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWarehouseApiV1FinancialInventoryInventoryWarehousesPost>>, TError,{data: WarehouseCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createWarehouseApiV1FinancialInventoryInventoryWarehousesPost>>,
+        TError,
+        {data: WarehouseCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateWarehouseApiV1FinancialInventoryInventoryWarehousesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatísticas dos armazéns.
  * @summary Get Warehouse Stats
  */
-const getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet = <TData = AxiosResponse<WarehouseStats>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/warehouses/stats`,options
-    );
-  }
+export const getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WarehouseStats>(
+      {url: `/api/v1/financial/inventory/inventory/warehouses/stats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGetQueryKey = () => {
+    return [
+    `/api/v1/financial/inventory/inventory/warehouses/stats`
+    ] as const;
+    }
+
+    
+export const getGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>> = ({ signal }) => getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>>
+export type GetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGetQueryError = unknown
+
+
+export function useGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet<TData = Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet<TData = Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet<TData = Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Warehouse Stats
+ */
+
+export function useGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet<TData = Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca armazém por ID.
  * @summary Get Warehouse
  */
-const getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet = <TData = AxiosResponse<WarehouseResponse>>(
-    warehouseId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}`,options
-    );
-  }
+export const getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet = (
+    warehouseId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WarehouseResponse>(
+      {url: `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGetQueryKey = (warehouseId?: string,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}`
+    ] as const;
+    }
+
+    
+export const getGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError = HTTPValidationError>(warehouseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGetQueryKey(warehouseId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>> = ({ signal }) => getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet(warehouseId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(warehouseId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>>
+export type GetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGetQueryError = HTTPValidationError
+
+
+export function useGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet<TData = Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError = HTTPValidationError>(
+ warehouseId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet<TData = Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError = HTTPValidationError>(
+ warehouseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet<TData = Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError = HTTPValidationError>(
+ warehouseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Warehouse
+ */
+
+export function useGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet<TData = Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError = HTTPValidationError>(
+ warehouseId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGetQueryOptions(warehouseId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza armazém.
  * @summary Update Warehouse
  */
-const updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch = <TData = AxiosResponse<WarehouseResponse>>(
+export const updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch = (
     warehouseId: string,
-    warehouseUpdate: WarehouseUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}`,
-      warehouseUpdate,options
-    );
-  }
-/**
+    warehouseUpdate: WarehouseUpdate,
+ ) => {
+      
+      
+      return customInstance<WarehouseResponse>(
+      {url: `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: warehouseUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch>>, TError,{warehouseId: string;data: WarehouseUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch>>, TError,{warehouseId: string;data: WarehouseUpdate}, TContext> => {
+
+const mutationKey = ['updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch>>, {warehouseId: string;data: WarehouseUpdate}> = (props) => {
+          const {warehouseId,data} = props ?? {};
+
+          return  updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch(warehouseId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch>>>
+    export type UpdateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatchMutationBody = WarehouseUpdate
+    export type UpdateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Warehouse
+ */
+export const useUpdateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch>>, TError,{warehouseId: string;data: WarehouseUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch>>,
+        TError,
+        {warehouseId: string;data: WarehouseUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Bloqueia armazém.
  * @summary Block Warehouse
  */
-const blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost = <TData = AxiosResponse<BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost200>>(
+export const blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost = (
     warehouseId: string,
-    params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}/block`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost200>(
+      {url: `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}/block`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getBlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost>>, TError,{warehouseId: string;params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost>>, TError,{warehouseId: string;params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams}, TContext> => {
+
+const mutationKey = ['blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost>>, {warehouseId: string;params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams}> = (props) => {
+          const {warehouseId,params} = props ?? {};
+
+          return  blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost(warehouseId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostMutationResult = NonNullable<Awaited<ReturnType<typeof blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost>>>
+    
+    export type BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Block Warehouse
+ */
+export const useBlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost>>, TError,{warehouseId: string;params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost>>,
+        TError,
+        {warehouseId: string;params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getBlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Desbloqueia armazém.
  * @summary Unblock Warehouse
  */
-const unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost = <TData = AxiosResponse<UnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost200>>(
-    warehouseId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}/unblock`,undefined,options
-    );
-  }
-/**
+export const unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost = (
+    warehouseId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<UnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost200>(
+      {url: `/api/v1/financial/inventory/inventory/warehouses/${warehouseId}/unblock`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getUnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost>>, TError,{warehouseId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost>>, TError,{warehouseId: string}, TContext> => {
+
+const mutationKey = ['unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost>>, {warehouseId: string}> = (props) => {
+          const {warehouseId} = props ?? {};
+
+          return  unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost(warehouseId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPostMutationResult = NonNullable<Awaited<ReturnType<typeof unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost>>>
+    
+    export type UnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Unblock Warehouse
+ */
+export const useUnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost>>, TError,{warehouseId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost>>,
+        TError,
+        {warehouseId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getUnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista itens em estoque.
  * @summary List Stock Items
  */
-const listStockItemsApiV1FinancialInventoryInventoryStockItemsGet = <TData = AxiosResponse<StockItemListResponse[]>>(
-    params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/stock-items`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listStockItemsApiV1FinancialInventoryInventoryStockItemsGet = (
+    params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockItemListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/stock-items`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListStockItemsApiV1FinancialInventoryInventoryStockItemsGetQueryKey = (params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/stock-items`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListStockItemsApiV1FinancialInventoryInventoryStockItemsGetQueryOptions = <TData = Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError = HTTPValidationError>(params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListStockItemsApiV1FinancialInventoryInventoryStockItemsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>> = ({ signal }) => listStockItemsApiV1FinancialInventoryInventoryStockItemsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>>
+export type ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetQueryError = HTTPValidationError
+
+
+export function useListStockItemsApiV1FinancialInventoryInventoryStockItemsGet<TData = Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListStockItemsApiV1FinancialInventoryInventoryStockItemsGet<TData = Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError = HTTPValidationError>(
+ params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListStockItemsApiV1FinancialInventoryInventoryStockItemsGet<TData = Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError = HTTPValidationError>(
+ params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Stock Items
+ */
+
+export function useListStockItemsApiV1FinancialInventoryInventoryStockItemsGet<TData = Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError = HTTPValidationError>(
+ params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listStockItemsApiV1FinancialInventoryInventoryStockItemsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListStockItemsApiV1FinancialInventoryInventoryStockItemsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de estoque.
  * @summary Get Stock Stats
  */
-const getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet = <TData = AxiosResponse<StockStats>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/stock-items/stats`,options
-    );
-  }
+export const getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockStats>(
+      {url: `/api/v1/financial/inventory/inventory/stock-items/stats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGetQueryKey = () => {
+    return [
+    `/api/v1/financial/inventory/inventory/stock-items/stats`
+    ] as const;
+    }
+
+    
+export const getGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>> = ({ signal }) => getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>>
+export type GetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGetQueryError = unknown
+
+
+export function useGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet<TData = Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet<TData = Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet<TData = Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Stock Stats
+ */
+
+export function useGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet<TData = Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista itens abaixo do estoque mínimo.
  * @summary List Low Stock Items
  */
-const listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet = <TData = AxiosResponse<StockItemListResponse[]>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/stock-items/low-stock`,options
-    );
-  }
+export const listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockItemListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/stock-items/low-stock`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGetQueryKey = () => {
+    return [
+    `/api/v1/financial/inventory/inventory/stock-items/low-stock`
+    ] as const;
+    }
+
+    
+export const getListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGetQueryOptions = <TData = Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>> = ({ signal }) => listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGetQueryResult = NonNullable<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>>
+export type ListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGetQueryError = unknown
+
+
+export function useListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet<TData = Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>,
+          TError,
+          Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet<TData = Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>,
+          TError,
+          Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet<TData = Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Low Stock Items
+ */
+
+export function useListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet<TData = Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista itens próximos do vencimento.
  * @summary List Expiring Items
  */
-const listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet = <TData = AxiosResponse<StockItemListResponse[]>>(
-    params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/stock-items/expiring`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet = (
+    params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockItemListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/stock-items/expiring`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetQueryKey = (params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/stock-items/expiring`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetQueryOptions = <TData = Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError = HTTPValidationError>(params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>> = ({ signal }) => listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetQueryResult = NonNullable<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>>
+export type ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetQueryError = HTTPValidationError
+
+
+export function useListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet<TData = Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>,
+          TError,
+          Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet<TData = Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError = HTTPValidationError>(
+ params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>,
+          TError,
+          Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet<TData = Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError = HTTPValidationError>(
+ params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Expiring Items
+ */
+
+export function useListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet<TData = Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError = HTTPValidationError>(
+ params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca item de estoque por ID.
  * @summary Get Stock Item
  */
-const getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet = <TData = AxiosResponse<StockItemResponse>>(
-    itemId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/stock-items/${itemId}`,options
-    );
-  }
+export const getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet = (
+    itemId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockItemResponse>(
+      {url: `/api/v1/financial/inventory/inventory/stock-items/${itemId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGetQueryKey = (itemId?: string,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/stock-items/${itemId}`
+    ] as const;
+    }
+
+    
+export const getGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError = HTTPValidationError>(itemId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGetQueryKey(itemId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>> = ({ signal }) => getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet(itemId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(itemId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>>
+export type GetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGetQueryError = HTTPValidationError
+
+
+export function useGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet<TData = Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError = HTTPValidationError>(
+ itemId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet<TData = Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError = HTTPValidationError>(
+ itemId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet<TData = Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError = HTTPValidationError>(
+ itemId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Stock Item
+ */
+
+export function useGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet<TData = Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError = HTTPValidationError>(
+ itemId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGetQueryOptions(itemId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Bloqueia item de estoque.
  * @summary Block Stock Item
  */
-const blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost = <TData = AxiosResponse<BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost200>>(
+export const blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost = (
     itemId: string,
-    params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/stock-items/${itemId}/block`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost200>(
+      {url: `/api/v1/financial/inventory/inventory/stock-items/${itemId}/block`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getBlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost>>, TError,{itemId: string;params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost>>, TError,{itemId: string;params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams}, TContext> => {
+
+const mutationKey = ['blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost>>, {itemId: string;params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams}> = (props) => {
+          const {itemId,params} = props ?? {};
+
+          return  blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost(itemId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostMutationResult = NonNullable<Awaited<ReturnType<typeof blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost>>>
+    
+    export type BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Block Stock Item
+ */
+export const useBlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost>>, TError,{itemId: string;params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost>>,
+        TError,
+        {itemId: string;params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getBlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Desbloqueia item de estoque.
  * @summary Unblock Stock Item
  */
-const unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost = <TData = AxiosResponse<UnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost200>>(
-    itemId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/stock-items/${itemId}/unblock`,undefined,options
-    );
-  }
-/**
+export const unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost = (
+    itemId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<UnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost200>(
+      {url: `/api/v1/financial/inventory/inventory/stock-items/${itemId}/unblock`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getUnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost>>, TError,{itemId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost>>, TError,{itemId: string}, TContext> => {
+
+const mutationKey = ['unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost>>, {itemId: string}> = (props) => {
+          const {itemId} = props ?? {};
+
+          return  unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost(itemId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPostMutationResult = NonNullable<Awaited<ReturnType<typeof unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost>>>
+    
+    export type UnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Unblock Stock Item
+ */
+export const useUnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost>>, TError,{itemId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost>>,
+        TError,
+        {itemId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getUnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista movimentações de estoque.
  * @summary List Movements
  */
-const listMovementsApiV1FinancialInventoryInventoryMovementsGet = <TData = AxiosResponse<StockMovementListResponse[]>>(
-    params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/movements`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listMovementsApiV1FinancialInventoryInventoryMovementsGet = (
+    params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockMovementListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/movements`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListMovementsApiV1FinancialInventoryInventoryMovementsGetQueryKey = (params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/movements`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListMovementsApiV1FinancialInventoryInventoryMovementsGetQueryOptions = <TData = Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError = HTTPValidationError>(params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMovementsApiV1FinancialInventoryInventoryMovementsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>> = ({ signal }) => listMovementsApiV1FinancialInventoryInventoryMovementsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListMovementsApiV1FinancialInventoryInventoryMovementsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>>
+export type ListMovementsApiV1FinancialInventoryInventoryMovementsGetQueryError = HTTPValidationError
+
+
+export function useListMovementsApiV1FinancialInventoryInventoryMovementsGet<TData = Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListMovementsApiV1FinancialInventoryInventoryMovementsGet<TData = Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError = HTTPValidationError>(
+ params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListMovementsApiV1FinancialInventoryInventoryMovementsGet<TData = Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError = HTTPValidationError>(
+ params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Movements
+ */
+
+export function useListMovementsApiV1FinancialInventoryInventoryMovementsGet<TData = Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError = HTTPValidationError>(
+ params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMovementsApiV1FinancialInventoryInventoryMovementsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListMovementsApiV1FinancialInventoryInventoryMovementsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria uma nova movimentação de estoque.
  * @summary Create Movement
  */
-const createMovementApiV1FinancialInventoryInventoryMovementsPost = <TData = AxiosResponse<StockMovementResponse>>(
-    stockMovementCreate: StockMovementCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/movements`,
-      stockMovementCreate,options
-    );
-  }
-/**
+export const createMovementApiV1FinancialInventoryInventoryMovementsPost = (
+    stockMovementCreate: StockMovementCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockMovementResponse>(
+      {url: `/api/v1/financial/inventory/inventory/movements`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: stockMovementCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateMovementApiV1FinancialInventoryInventoryMovementsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMovementApiV1FinancialInventoryInventoryMovementsPost>>, TError,{data: StockMovementCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createMovementApiV1FinancialInventoryInventoryMovementsPost>>, TError,{data: StockMovementCreate}, TContext> => {
+
+const mutationKey = ['createMovementApiV1FinancialInventoryInventoryMovementsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMovementApiV1FinancialInventoryInventoryMovementsPost>>, {data: StockMovementCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMovementApiV1FinancialInventoryInventoryMovementsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMovementApiV1FinancialInventoryInventoryMovementsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createMovementApiV1FinancialInventoryInventoryMovementsPost>>>
+    export type CreateMovementApiV1FinancialInventoryInventoryMovementsPostMutationBody = StockMovementCreate
+    export type CreateMovementApiV1FinancialInventoryInventoryMovementsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Movement
+ */
+export const useCreateMovementApiV1FinancialInventoryInventoryMovementsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMovementApiV1FinancialInventoryInventoryMovementsPost>>, TError,{data: StockMovementCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createMovementApiV1FinancialInventoryInventoryMovementsPost>>,
+        TError,
+        {data: StockMovementCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateMovementApiV1FinancialInventoryInventoryMovementsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatísticas de movimentações.
  * @summary Get Movement Stats
  */
-const getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet = <TData = AxiosResponse<MovementStats>>(
-    params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/movements/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet = (
+    params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<MovementStats>(
+      {url: `/api/v1/financial/inventory/inventory/movements/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetQueryKey = (params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/movements/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError = HTTPValidationError>(params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>> = ({ signal }) => getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>>
+export type GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet<TData = Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet<TData = Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError = HTTPValidationError>(
+ params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet<TData = Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError = HTTPValidationError>(
+ params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Movement Stats
+ */
+
+export function useGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet<TData = Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError = HTTPValidationError>(
+ params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista movimentações pendentes.
  * @summary List Pending Movements
  */
-const listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet = <TData = AxiosResponse<StockMovementListResponse[]>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/movements/pending`,options
-    );
-  }
+export const listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockMovementListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/movements/pending`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGetQueryKey = () => {
+    return [
+    `/api/v1/financial/inventory/inventory/movements/pending`
+    ] as const;
+    }
+
+    
+export const getListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGetQueryOptions = <TData = Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>> = ({ signal }) => listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGetQueryResult = NonNullable<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>>
+export type ListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGetQueryError = unknown
+
+
+export function useListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet<TData = Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet<TData = Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet<TData = Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Pending Movements
+ */
+
+export function useListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet<TData = Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca movimentação por ID.
  * @summary Get Movement
  */
-const getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet = <TData = AxiosResponse<StockMovementResponse>>(
-    movementId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/movements/${movementId}`,options
-    );
-  }
+export const getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet = (
+    movementId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockMovementResponse>(
+      {url: `/api/v1/financial/inventory/inventory/movements/${movementId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGetQueryKey = (movementId?: string,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/movements/${movementId}`
+    ] as const;
+    }
+
+    
+export const getGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError = HTTPValidationError>(movementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGetQueryKey(movementId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>> = ({ signal }) => getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet(movementId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(movementId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>>
+export type GetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGetQueryError = HTTPValidationError
+
+
+export function useGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet<TData = Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError = HTTPValidationError>(
+ movementId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet<TData = Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError = HTTPValidationError>(
+ movementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet<TData = Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError = HTTPValidationError>(
+ movementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Movement
+ */
+
+export function useGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet<TData = Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError = HTTPValidationError>(
+ movementId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGetQueryOptions(movementId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Confirma movimentação e atualiza estoque.
  * @summary Confirm Movement
  */
-const confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost = <TData = AxiosResponse<ConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost200>>(
-    movementId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/movements/${movementId}/confirm`,undefined,options
-    );
-  }
-/**
+export const confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost = (
+    movementId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost200>(
+      {url: `/api/v1/financial/inventory/inventory/movements/${movementId}/confirm`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost>>, TError,{movementId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost>>, TError,{movementId: string}, TContext> => {
+
+const mutationKey = ['confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost>>, {movementId: string}> = (props) => {
+          const {movementId} = props ?? {};
+
+          return  confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost(movementId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost>>>
+    
+    export type ConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Confirm Movement
+ */
+export const useConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost>>, TError,{movementId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost>>,
+        TError,
+        {movementId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela movimentação.
  * @summary Cancel Movement
  */
-const cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost = <TData = AxiosResponse<CancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost200>>(
-    movementId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/movements/${movementId}/cancel`,undefined,options
-    );
-  }
-/**
+export const cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost = (
+    movementId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost200>(
+      {url: `/api/v1/financial/inventory/inventory/movements/${movementId}/cancel`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getCancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost>>, TError,{movementId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost>>, TError,{movementId: string}, TContext> => {
+
+const mutationKey = ['cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost>>, {movementId: string}> = (props) => {
+          const {movementId} = props ?? {};
+
+          return  cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost(movementId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost>>>
+    
+    export type CancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancel Movement
+ */
+export const useCancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost>>, TError,{movementId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost>>,
+        TError,
+        {movementId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista inventários.
  * @summary List Inventories
  */
-const listInventoriesApiV1FinancialInventoryInventoryInventoriesGet = <TData = AxiosResponse<StockInventoryListResponse[]>>(
-    params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/inventories`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listInventoriesApiV1FinancialInventoryInventoryInventoriesGet = (
+    params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockInventoryListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/inventories`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListInventoriesApiV1FinancialInventoryInventoryInventoriesGetQueryKey = (params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/inventories`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListInventoriesApiV1FinancialInventoryInventoryInventoriesGetQueryOptions = <TData = Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError = HTTPValidationError>(params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInventoriesApiV1FinancialInventoryInventoryInventoriesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>> = ({ signal }) => listInventoriesApiV1FinancialInventoryInventoryInventoriesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>>
+export type ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetQueryError = HTTPValidationError
+
+
+export function useListInventoriesApiV1FinancialInventoryInventoryInventoriesGet<TData = Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListInventoriesApiV1FinancialInventoryInventoryInventoriesGet<TData = Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError = HTTPValidationError>(
+ params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListInventoriesApiV1FinancialInventoryInventoryInventoriesGet<TData = Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError = HTTPValidationError>(
+ params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Inventories
+ */
+
+export function useListInventoriesApiV1FinancialInventoryInventoryInventoriesGet<TData = Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError = HTTPValidationError>(
+ params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInventoriesApiV1FinancialInventoryInventoryInventoriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListInventoriesApiV1FinancialInventoryInventoryInventoriesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria um novo inventário.
  * @summary Create Inventory
  */
-const createInventoryApiV1FinancialInventoryInventoryInventoriesPost = <TData = AxiosResponse<StockInventoryResponse>>(
-    stockInventoryCreate: StockInventoryCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/inventories`,
-      stockInventoryCreate,options
-    );
-  }
-/**
+export const createInventoryApiV1FinancialInventoryInventoryInventoriesPost = (
+    stockInventoryCreate: StockInventoryCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockInventoryResponse>(
+      {url: `/api/v1/financial/inventory/inventory/inventories`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: stockInventoryCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateInventoryApiV1FinancialInventoryInventoryInventoriesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInventoryApiV1FinancialInventoryInventoryInventoriesPost>>, TError,{data: StockInventoryCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createInventoryApiV1FinancialInventoryInventoryInventoriesPost>>, TError,{data: StockInventoryCreate}, TContext> => {
+
+const mutationKey = ['createInventoryApiV1FinancialInventoryInventoryInventoriesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createInventoryApiV1FinancialInventoryInventoryInventoriesPost>>, {data: StockInventoryCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createInventoryApiV1FinancialInventoryInventoryInventoriesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateInventoryApiV1FinancialInventoryInventoryInventoriesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createInventoryApiV1FinancialInventoryInventoryInventoriesPost>>>
+    export type CreateInventoryApiV1FinancialInventoryInventoryInventoriesPostMutationBody = StockInventoryCreate
+    export type CreateInventoryApiV1FinancialInventoryInventoryInventoriesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Inventory
+ */
+export const useCreateInventoryApiV1FinancialInventoryInventoryInventoriesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createInventoryApiV1FinancialInventoryInventoryInventoriesPost>>, TError,{data: StockInventoryCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createInventoryApiV1FinancialInventoryInventoryInventoriesPost>>,
+        TError,
+        {data: StockInventoryCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateInventoryApiV1FinancialInventoryInventoryInventoriesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatísticas de inventários.
  * @summary Get Inventory Stats
  */
-const getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet = <TData = AxiosResponse<InventoryStats>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/inventories/stats`,options
-    );
-  }
+export const getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<InventoryStats>(
+      {url: `/api/v1/financial/inventory/inventory/inventories/stats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGetQueryKey = () => {
+    return [
+    `/api/v1/financial/inventory/inventory/inventories/stats`
+    ] as const;
+    }
+
+    
+export const getGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>> = ({ signal }) => getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>>
+export type GetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGetQueryError = unknown
+
+
+export function useGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet<TData = Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet<TData = Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet<TData = Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Inventory Stats
+ */
+
+export function useGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet<TData = Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca inventário por ID.
  * @summary Get Inventory
  */
-const getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet = <TData = AxiosResponse<StockInventoryResponse>>(
-    inventoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/inventories/${inventoryId}`,options
-    );
-  }
+export const getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet = (
+    inventoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockInventoryResponse>(
+      {url: `/api/v1/financial/inventory/inventory/inventories/${inventoryId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGetQueryKey = (inventoryId?: string,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/inventories/${inventoryId}`
+    ] as const;
+    }
+
+    
+export const getGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError = HTTPValidationError>(inventoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGetQueryKey(inventoryId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>> = ({ signal }) => getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet(inventoryId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(inventoryId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>>
+export type GetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGetQueryError = HTTPValidationError
+
+
+export function useGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet<TData = Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError = HTTPValidationError>(
+ inventoryId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet<TData = Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError = HTTPValidationError>(
+ inventoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet<TData = Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError = HTTPValidationError>(
+ inventoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Inventory
+ */
+
+export function useGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet<TData = Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError = HTTPValidationError>(
+ inventoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGetQueryOptions(inventoryId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Inicia inventário.
  * @summary Start Inventory
  */
-const startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost = <TData = AxiosResponse<StartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost200>>(
-    inventoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/inventories/${inventoryId}/start`,undefined,options
-    );
-  }
-/**
+export const startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost = (
+    inventoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost200>(
+      {url: `/api/v1/financial/inventory/inventory/inventories/${inventoryId}/start`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getStartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost>>, TError,{inventoryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost>>, TError,{inventoryId: string}, TContext> => {
+
+const mutationKey = ['startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost>>, {inventoryId: string}> = (props) => {
+          const {inventoryId} = props ?? {};
+
+          return  startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost(inventoryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPostMutationResult = NonNullable<Awaited<ReturnType<typeof startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost>>>
+    
+    export type StartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Start Inventory
+ */
+export const useStartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost>>, TError,{inventoryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost>>,
+        TError,
+        {inventoryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getStartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Finaliza inventário.
  * @summary Finalize Inventory
  */
-const finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost = <TData = AxiosResponse<FinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost200>>(
-    inventoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/inventories/${inventoryId}/finalize`,undefined,options
-    );
-  }
-/**
+export const finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost = (
+    inventoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<FinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost200>(
+      {url: `/api/v1/financial/inventory/inventory/inventories/${inventoryId}/finalize`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getFinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost>>, TError,{inventoryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost>>, TError,{inventoryId: string}, TContext> => {
+
+const mutationKey = ['finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost>>, {inventoryId: string}> = (props) => {
+          const {inventoryId} = props ?? {};
+
+          return  finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost(inventoryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type FinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePostMutationResult = NonNullable<Awaited<ReturnType<typeof finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost>>>
+    
+    export type FinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Finalize Inventory
+ */
+export const useFinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost>>, TError,{inventoryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost>>,
+        TError,
+        {inventoryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getFinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista reservas de estoque.
  * @summary List Reservations
  */
-const listReservationsApiV1FinancialInventoryInventoryReservationsGet = <TData = AxiosResponse<StockReservationListResponse[]>>(
-    params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/reservations`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listReservationsApiV1FinancialInventoryInventoryReservationsGet = (
+    params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockReservationListResponse[]>(
+      {url: `/api/v1/financial/inventory/inventory/reservations`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListReservationsApiV1FinancialInventoryInventoryReservationsGetQueryKey = (params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/reservations`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListReservationsApiV1FinancialInventoryInventoryReservationsGetQueryOptions = <TData = Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError = HTTPValidationError>(params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReservationsApiV1FinancialInventoryInventoryReservationsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>> = ({ signal }) => listReservationsApiV1FinancialInventoryInventoryReservationsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListReservationsApiV1FinancialInventoryInventoryReservationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>>
+export type ListReservationsApiV1FinancialInventoryInventoryReservationsGetQueryError = HTTPValidationError
+
+
+export function useListReservationsApiV1FinancialInventoryInventoryReservationsGet<TData = Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReservationsApiV1FinancialInventoryInventoryReservationsGet<TData = Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError = HTTPValidationError>(
+ params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReservationsApiV1FinancialInventoryInventoryReservationsGet<TData = Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError = HTTPValidationError>(
+ params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Reservations
+ */
+
+export function useListReservationsApiV1FinancialInventoryInventoryReservationsGet<TData = Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError = HTTPValidationError>(
+ params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReservationsApiV1FinancialInventoryInventoryReservationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListReservationsApiV1FinancialInventoryInventoryReservationsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria uma nova reserva de estoque.
  * @summary Create Reservation
  */
-const createReservationApiV1FinancialInventoryInventoryReservationsPost = <TData = AxiosResponse<StockReservationResponse>>(
-    stockReservationCreate: StockReservationCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/reservations`,
-      stockReservationCreate,options
-    );
-  }
-/**
+export const createReservationApiV1FinancialInventoryInventoryReservationsPost = (
+    stockReservationCreate: StockReservationCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockReservationResponse>(
+      {url: `/api/v1/financial/inventory/inventory/reservations`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: stockReservationCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateReservationApiV1FinancialInventoryInventoryReservationsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReservationApiV1FinancialInventoryInventoryReservationsPost>>, TError,{data: StockReservationCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createReservationApiV1FinancialInventoryInventoryReservationsPost>>, TError,{data: StockReservationCreate}, TContext> => {
+
+const mutationKey = ['createReservationApiV1FinancialInventoryInventoryReservationsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReservationApiV1FinancialInventoryInventoryReservationsPost>>, {data: StockReservationCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createReservationApiV1FinancialInventoryInventoryReservationsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReservationApiV1FinancialInventoryInventoryReservationsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createReservationApiV1FinancialInventoryInventoryReservationsPost>>>
+    export type CreateReservationApiV1FinancialInventoryInventoryReservationsPostMutationBody = StockReservationCreate
+    export type CreateReservationApiV1FinancialInventoryInventoryReservationsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Reservation
+ */
+export const useCreateReservationApiV1FinancialInventoryInventoryReservationsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReservationApiV1FinancialInventoryInventoryReservationsPost>>, TError,{data: StockReservationCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createReservationApiV1FinancialInventoryInventoryReservationsPost>>,
+        TError,
+        {data: StockReservationCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateReservationApiV1FinancialInventoryInventoryReservationsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatísticas de reservas.
  * @summary Get Reservation Stats
  */
-const getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet = <TData = AxiosResponse<ReservationStats>>(
-     options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/reservations/stats`,options
-    );
-  }
+export const getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet = (
+    
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReservationStats>(
+      {url: `/api/v1/financial/inventory/inventory/reservations/stats`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGetQueryKey = () => {
+    return [
+    `/api/v1/financial/inventory/inventory/reservations/stats`
+    ] as const;
+    }
+
+    
+export const getGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGetQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>> = ({ signal }) => getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet(signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>>
+export type GetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGetQueryError = unknown
+
+
+export function useGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet<TData = Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet<TData = Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet<TData = Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Reservation Stats
+ */
+
+export function useGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet<TData = Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca reserva por ID.
  * @summary Get Reservation
  */
-const getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet = <TData = AxiosResponse<StockReservationResponse>>(
-    reservationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/inventory/inventory/reservations/${reservationId}`,options
-    );
-  }
+export const getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet = (
+    reservationId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<StockReservationResponse>(
+      {url: `/api/v1/financial/inventory/inventory/reservations/${reservationId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGetQueryKey = (reservationId?: string,) => {
+    return [
+    `/api/v1/financial/inventory/inventory/reservations/${reservationId}`
+    ] as const;
+    }
+
+    
+export const getGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError = HTTPValidationError>(reservationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGetQueryKey(reservationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>> = ({ signal }) => getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet(reservationId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(reservationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>>
+export type GetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGetQueryError = HTTPValidationError
+
+
+export function useGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet<TData = Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError = HTTPValidationError>(
+ reservationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet<TData = Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError = HTTPValidationError>(
+ reservationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet<TData = Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError = HTTPValidationError>(
+ reservationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Reservation
+ */
+
+export function useGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet<TData = Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError = HTTPValidationError>(
+ reservationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGetQueryOptions(reservationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Libera quantidade da reserva.
  * @summary Release Reservation
  */
-const releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost = <TData = AxiosResponse<ReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost200>>(
+export const releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost = (
     reservationId: string,
-    stockReservationRelease: StockReservationRelease, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/reservations/${reservationId}/release`,
-      stockReservationRelease,options
-    );
-  }
-/**
+    stockReservationRelease: StockReservationRelease,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost200>(
+      {url: `/api/v1/financial/inventory/inventory/reservations/${reservationId}/release`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: stockReservationRelease, signal
+    },
+      );
+    }
+  
+
+
+export const getReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost>>, TError,{reservationId: string;data: StockReservationRelease}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost>>, TError,{reservationId: string;data: StockReservationRelease}, TContext> => {
+
+const mutationKey = ['releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost>>, {reservationId: string;data: StockReservationRelease}> = (props) => {
+          const {reservationId,data} = props ?? {};
+
+          return  releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost(reservationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePostMutationResult = NonNullable<Awaited<ReturnType<typeof releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost>>>
+    export type ReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePostMutationBody = StockReservationRelease
+    export type ReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Release Reservation
+ */
+export const useReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost>>, TError,{reservationId: string;data: StockReservationRelease}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost>>,
+        TError,
+        {reservationId: string;data: StockReservationRelease},
+        TContext
+      > => {
+
+      const mutationOptions = getReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela reserva.
  * @summary Cancel Reservation
  */
-const cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost = <TData = AxiosResponse<CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost200>>(
+export const cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost = (
     reservationId: string,
-    params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/inventory/inventory/reservations/${reservationId}/cancel`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {listWarehousesApiV1FinancialInventoryInventoryWarehousesGet,createWarehouseApiV1FinancialInventoryInventoryWarehousesPost,getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet,getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet,updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch,blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost,unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost,listStockItemsApiV1FinancialInventoryInventoryStockItemsGet,getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet,listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet,listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet,getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet,blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost,unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost,listMovementsApiV1FinancialInventoryInventoryMovementsGet,createMovementApiV1FinancialInventoryInventoryMovementsPost,getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet,listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet,getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet,confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost,cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost,listInventoriesApiV1FinancialInventoryInventoryInventoriesGet,createInventoryApiV1FinancialInventoryInventoryInventoriesPost,getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet,getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet,startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost,finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost,listReservationsApiV1FinancialInventoryInventoryReservationsGet,createReservationApiV1FinancialInventoryInventoryReservationsPost,getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet,getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet,releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost,cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost}};
-export type ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetResult = AxiosResponse<WarehouseListResponse[]>
-export type CreateWarehouseApiV1FinancialInventoryInventoryWarehousesPostResult = AxiosResponse<WarehouseResponse>
-export type GetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGetResult = AxiosResponse<WarehouseStats>
-export type GetWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGetResult = AxiosResponse<WarehouseResponse>
-export type UpdateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatchResult = AxiosResponse<WarehouseResponse>
-export type BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostResult = AxiosResponse<BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost200>
-export type UnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPostResult = AxiosResponse<UnblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost200>
-export type ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetResult = AxiosResponse<StockItemListResponse[]>
-export type GetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGetResult = AxiosResponse<StockStats>
-export type ListLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGetResult = AxiosResponse<StockItemListResponse[]>
-export type ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetResult = AxiosResponse<StockItemListResponse[]>
-export type GetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGetResult = AxiosResponse<StockItemResponse>
-export type BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostResult = AxiosResponse<BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost200>
-export type UnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPostResult = AxiosResponse<UnblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost200>
-export type ListMovementsApiV1FinancialInventoryInventoryMovementsGetResult = AxiosResponse<StockMovementListResponse[]>
-export type CreateMovementApiV1FinancialInventoryInventoryMovementsPostResult = AxiosResponse<StockMovementResponse>
-export type GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetResult = AxiosResponse<MovementStats>
-export type ListPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGetResult = AxiosResponse<StockMovementListResponse[]>
-export type GetMovementApiV1FinancialInventoryInventoryMovementsMovementIdGetResult = AxiosResponse<StockMovementResponse>
-export type ConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPostResult = AxiosResponse<ConfirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost200>
-export type CancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPostResult = AxiosResponse<CancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost200>
-export type ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetResult = AxiosResponse<StockInventoryListResponse[]>
-export type CreateInventoryApiV1FinancialInventoryInventoryInventoriesPostResult = AxiosResponse<StockInventoryResponse>
-export type GetInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGetResult = AxiosResponse<InventoryStats>
-export type GetInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGetResult = AxiosResponse<StockInventoryResponse>
-export type StartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPostResult = AxiosResponse<StartInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost200>
-export type FinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePostResult = AxiosResponse<FinalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost200>
-export type ListReservationsApiV1FinancialInventoryInventoryReservationsGetResult = AxiosResponse<StockReservationListResponse[]>
-export type CreateReservationApiV1FinancialInventoryInventoryReservationsPostResult = AxiosResponse<StockReservationResponse>
-export type GetReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGetResult = AxiosResponse<ReservationStats>
-export type GetReservationApiV1FinancialInventoryInventoryReservationsReservationIdGetResult = AxiosResponse<StockReservationResponse>
-export type ReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePostResult = AxiosResponse<ReleaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost200>
-export type CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostResult = AxiosResponse<CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost200>
+    params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost200>(
+      {url: `/api/v1/financial/inventory/inventory/reservations/${reservationId}/cancel`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost>>, TError,{reservationId: string;params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost>>, TError,{reservationId: string;params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams}, TContext> => {
+
+const mutationKey = ['cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost>>, {reservationId: string;params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams}> = (props) => {
+          const {reservationId,params} = props ?? {};
+
+          return  cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost(reservationId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost>>>
+    
+    export type CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancel Reservation
+ */
+export const useCancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost>>, TError,{reservationId: string;params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost>>,
+        TError,
+        {reservationId: string;params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

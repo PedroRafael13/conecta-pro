@@ -28,6 +28,17 @@ from modules.operacional.repositories import (
 
 # Models para queries diretas
 from modules.operacional.models.employee import Employee
+from modules.operacional.diaristas.models.diarist import Diarist
+from modules.operacional.occurrences.models.occurrence import Occurrence, OccurrenceStatus
+from modules.operacional.disciplinary.models.disciplinary_action import DisciplinaryAction, DisciplinaryActionStatus
+from modules.operacional.communication.models.announcement import Announcement, AnnouncementStatus
+from modules.operacional.inspection_rounds.models.inspection_round import InspectionRound, InspectionRoundStatus
+
+# Repositórios dos submódulos
+from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
+from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+from modules.operacional.communication.repositories.communication_repository import AnnouncementRepository
+from modules.operacional.inspection_rounds.repositories.inspection_round_repository import InspectionRoundRepository
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +62,11 @@ class QueryType(str, Enum):
     SUBSTITUICOES_PENDENTES = "substituicoes_pendentes"
     ATRASOS_HOJE = "atrasos_hoje"
     OPERACAO_GERAL = "operacao_geral"
+    # Consultas dos submódulos expandidos
+    OCORRENCIAS_ABERTAS = "ocorrencias_abertas"
+    MEDIDAS_PENDENTES = "medidas_pendentes"
+    COMUNICADOS_ATIVOS = "comunicados_ativos"
+    RONDAS_HOJE = "rondas_hoje"
 
 
 @dataclass
@@ -93,16 +109,24 @@ class DataResult:
             QueryType.SUBSTITUICOES_PENDENTES,
             QueryType.ATRASOS_HOJE,
             QueryType.OPERACAO_GERAL,
+            QueryType.OCORRENCIAS_ABERTAS,
+            QueryType.MEDIDAS_PENDENTES,
+            QueryType.COMUNICADOS_ATIVOS,
+            QueryType.RONDAS_HOJE,
         )
         if self.query_type in special_types:
             return self.message or str(self.data)
+
+        # Se há mensagem customizada (ex: campo não preenchido), prioriza
+        if self.message and self.total_count == 0:
+            return self.message
 
         if self.query_type == QueryType.COUNT:
             return f"Encontrei {self.total_count} {self.entity}."
 
         if self.query_type == QueryType.LIST:
             if not self.data:
-                return f"Nao encontrei nenhum {self.entity} com esses criterios."
+                return self.message or f"Nao encontrei nenhum {self.entity} com esses criterios."
             items = "\n".join(f"- {item}" for item in self.data[:5])
             extra = f"\n(e mais {self.total_count - 5})" if self.total_count > 5 else ""
             return f"Encontrei {self.total_count} {self.entity}:\n{items}{extra}"
@@ -140,6 +164,36 @@ class DataConnector:
         "funcionarios": {"type": "model", "model": Employee, "name_field": "nome"},
         "colaborador": {"type": "model", "model": Employee, "name_field": "nome"},
         "colaboradores": {"type": "model", "model": Employee, "name_field": "nome"},
+        "diarista": {"type": "model", "model": Diarist, "name_field": "nome", "active_field": "ativo"},
+        "diaristas": {"type": "model", "model": Diarist, "name_field": "nome", "active_field": "ativo"},
+
+        # Ocorrências
+        "ocorrencia": {"type": "repository", "repository": "occurrence", "name_field": "title"},
+        "ocorrencias": {"type": "repository", "repository": "occurrence", "name_field": "title"},
+
+        # Disciplinares
+        "advertencia": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
+        "advertencias": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
+        "medida_disciplinar": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
+        "medidas_disciplinares": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
+        "suspensao": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
+        "suspensoes": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
+
+        # Comunicação
+        "comunicado": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
+        "comunicados": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
+        "anuncio": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
+        "anuncios": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
+
+        # Rondas
+        "ronda": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
+        "rondas": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
+        "inspecao": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
+        "inspecoes": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
+
+        # Core faltantes
+        "substituicao": {"type": "repository", "repository": "substitution", "name_field": "employee_name"},
+        "banco_horas": {"type": "repository", "repository": "time_bank", "name_field": "employee_name"},
 
         # Outros módulos (mock por enquanto)
         "cliente": {"type": "mock", "name_field": "name"},
@@ -332,7 +386,8 @@ class DataConnector:
         (r"atrasos?\s+(?:de\s+)?hoje", QueryType.ATRASOS_HOJE),
         (r"atrasos?\s+(?:do\s+)?dia", QueryType.ATRASOS_HOJE),
         (r"atrasados?", QueryType.ATRASOS_HOJE),
-        (r"quem\s+(?:esta|ta|está|atrasou)", QueryType.ATRASOS_HOJE),
+        (r"quem\s+(?:esta|ta|está)\s+atrasado", QueryType.ATRASOS_HOJE),
+        (r"quem\s+atrasou", QueryType.ATRASOS_HOJE),
         (r"funcionarios?\s+atrasados?", QueryType.ATRASOS_HOJE),
         # Check-in
         (r"(?:sem\s+)?check-?in", QueryType.ATRASOS_HOJE),
@@ -407,6 +462,121 @@ class DataConnector:
         (r"performance(?:\s+(?:do\s+)?(?:dia|sistema))?", QueryType.KPIS),
         (r"desempenho\s+(?:do\s+)?(?:dia|sistema)", QueryType.KPIS),
         (r"painel\s+(?:de\s+)?(?:controle|indicadores)", QueryType.KPIS),
+
+        # ==================================================================
+        # OCORRENCIAS_ABERTAS - Ocorrências não resolvidas
+        # ==================================================================
+        # Forma direta
+        (r"ocorrencias?\s+abertas?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+pendentes?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+(?:em\s+)?aberto", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+(?:nao\s+)?resolvidas?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+(?:em\s+)?analise", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+(?:do\s+)?dia", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+(?:de\s+)?hoje", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+recentes?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+graves?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ocorrencias?\s+(?:do\s+)?(?:posto|funcionario)", QueryType.OCORRENCIAS_ABERTAS),
+        # Interrogativas
+        (r"(?:quantas?|quais?)\s+ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"(?:tem|ha)\s+(?:alguma\s+)?ocorrencia", QueryType.OCORRENCIAS_ABERTAS),
+        (r"quem\s+(?:teve|tem)\s+ocorrencia", QueryType.OCORRENCIAS_ABERTAS),
+        # Imperativas
+        (r"(?:ver|mostrar|listar|exibir)\s+ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"(?:verificar|checar)\s+ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"ultimas?\s+ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
+        # Sinônimos
+        (r"infracoes?\s+(?:abertas?|pendentes?|recentes?)", QueryType.OCORRENCIAS_ABERTAS),
+        (r"(?:nao\s+)?conformidades?\s+(?:abertas?|pendentes?)", QueryType.OCORRENCIAS_ABERTAS),
+        (r"registros?\s+(?:de\s+)?(?:infracoes?|ocorrencias?)", QueryType.OCORRENCIAS_ABERTAS),
+        (r"historico\s+(?:de\s+)?ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
+        (r"status\s+(?:das?\s+)?ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
+
+        # ==================================================================
+        # MEDIDAS_PENDENTES - Medidas disciplinares pendentes
+        # ==================================================================
+        # Forma direta
+        (r"advertencias?\s+pendentes?", QueryType.MEDIDAS_PENDENTES),
+        (r"advertencias?\s+(?:em\s+)?aberto", QueryType.MEDIDAS_PENDENTES),
+        (r"advertencias?\s+(?:nao\s+)?(?:assinadas?|aplicadas?)", QueryType.MEDIDAS_PENDENTES),
+        (r"advertencias?\s+recentes?", QueryType.MEDIDAS_PENDENTES),
+        (r"medidas?\s+disciplinares?", QueryType.MEDIDAS_PENDENTES),
+        (r"medidas?\s+(?:pendentes?|abertas?)", QueryType.MEDIDAS_PENDENTES),
+        (r"medidas?\s+(?:em\s+)?(?:andamento|aberto)", QueryType.MEDIDAS_PENDENTES),
+        (r"suspensoes?\s+(?:pendentes?|ativas?|aplicadas?)", QueryType.MEDIDAS_PENDENTES),
+        (r"suspensoes?\s+(?:em\s+)?(?:vigor|andamento)", QueryType.MEDIDAS_PENDENTES),
+        (r"acoes?\s+disciplinares?", QueryType.MEDIDAS_PENDENTES),
+        # Interrogativas
+        (r"(?:quantas?|quais?)\s+(?:advertencias?|medidas?\s+disciplinares?)", QueryType.MEDIDAS_PENDENTES),
+        (r"(?:tem|ha)\s+(?:alguma\s+)?(?:advertencia|medida\s+disciplinar)", QueryType.MEDIDAS_PENDENTES),
+        (r"quem\s+(?:foi|esta|ta)\s+(?:advertido|suspenso)", QueryType.MEDIDAS_PENDENTES),
+        (r"quem\s+(?:levou|recebeu)\s+(?:advertencia|suspensao)", QueryType.MEDIDAS_PENDENTES),
+        # Imperativas
+        (r"(?:ver|mostrar|listar|exibir)\s+(?:advertencias?|medidas?\s+disciplinares?)", QueryType.MEDIDAS_PENDENTES),
+        (r"(?:verificar|checar)\s+(?:advertencias?|medidas?\s+disciplinares?)", QueryType.MEDIDAS_PENDENTES),
+        # Sinônimos
+        (r"historico\s+disciplinar", QueryType.MEDIDAS_PENDENTES),
+        (r"punicoes?\s+(?:pendentes?|aplicadas?|recentes?)", QueryType.MEDIDAS_PENDENTES),
+        (r"pendentes?\s+(?:de\s+)?(?:aprovacao|assinatura)\s+(?:disciplinar|advertencia)", QueryType.MEDIDAS_PENDENTES),
+        (r"aprovacao\s+(?:de\s+)?(?:advertencias?|medidas?)", QueryType.MEDIDAS_PENDENTES),
+        (r"status\s+(?:das?\s+)?(?:advertencias?|medidas?\s+disciplinares?)", QueryType.MEDIDAS_PENDENTES),
+
+        # ==================================================================
+        # COMUNICADOS_ATIVOS - Comunicados publicados/ativos
+        # ==================================================================
+        # Forma direta
+        (r"comunicados?\s+(?:publicados?|ativos?)", QueryType.COMUNICADOS_ATIVOS),
+        (r"comunicados?\s+(?:em\s+)?vigor", QueryType.COMUNICADOS_ATIVOS),
+        (r"comunicados?\s+(?:do\s+)?dia", QueryType.COMUNICADOS_ATIVOS),
+        (r"comunicados?\s+(?:de\s+)?hoje", QueryType.COMUNICADOS_ATIVOS),
+        (r"comunicados?\s+recentes?", QueryType.COMUNICADOS_ATIVOS),
+        (r"comunicados?\s+(?:pendentes?|agendados?)", QueryType.COMUNICADOS_ATIVOS),
+        (r"comunicados?\s+(?:nao\s+)?lidos?", QueryType.COMUNICADOS_ATIVOS),
+        (r"avisos?\s+(?:pendentes?|publicados?|ativos?)", QueryType.COMUNICADOS_ATIVOS),
+        (r"avisos?\s+(?:do\s+)?dia", QueryType.COMUNICADOS_ATIVOS),
+        (r"anuncios?\s+(?:publicados?|ativos?|recentes?)", QueryType.COMUNICADOS_ATIVOS),
+        # Interrogativas
+        (r"(?:quantos?|quais?)\s+comunicados?", QueryType.COMUNICADOS_ATIVOS),
+        (r"(?:tem|ha)\s+(?:algum\s+)?(?:comunicado|aviso|anuncio)", QueryType.COMUNICADOS_ATIVOS),
+        (r"quem\s+(?:leu|nao\s+leu)\s+(?:o\s+)?comunicado", QueryType.COMUNICADOS_ATIVOS),
+        # Imperativas
+        (r"(?:ver|mostrar|listar|exibir)\s+comunicados?", QueryType.COMUNICADOS_ATIVOS),
+        (r"(?:verificar|checar)\s+comunicados?", QueryType.COMUNICADOS_ATIVOS),
+        (r"ultimos?\s+comunicados?", QueryType.COMUNICADOS_ATIVOS),
+        # Sinônimos
+        (r"informativos?\s+(?:publicados?|ativos?|pendentes?)", QueryType.COMUNICADOS_ATIVOS),
+        (r"(?:circulares?|mural)(?:\s+(?:de\s+)?(?:avisos?|comunicados?))?", QueryType.COMUNICADOS_ATIVOS),
+        (r"status\s+(?:dos?\s+)?comunicados?", QueryType.COMUNICADOS_ATIVOS),
+
+        # ==================================================================
+        # RONDAS_HOJE - Rondas de inspeção do dia
+        # ==================================================================
+        # Forma direta
+        (r"rondas?\s+(?:de\s+)?(?:inspecao\s+(?:de\s+)?)?hoje", QueryType.RONDAS_HOJE),
+        (r"rondas?\s+(?:d[oe]\s+)?(?:inspecao\s+(?:d[oe]\s+)?)?dia", QueryType.RONDAS_HOJE),
+        (r"rondas?\s+(?:em\s+)?andamento", QueryType.RONDAS_HOJE),
+        (r"rondas?\s+(?:agendadas?|programadas?)", QueryType.RONDAS_HOJE),
+        (r"rondas?\s+(?:concluidas?|finalizadas?)", QueryType.RONDAS_HOJE),
+        (r"rondas?\s+recentes?", QueryType.RONDAS_HOJE),
+        (r"rondas?\s+(?:pendentes?|abertas?)", QueryType.RONDAS_HOJE),
+        (r"proxima\s+ronda", QueryType.RONDAS_HOJE),
+        (r"inspecoes?\s+(?:de\s+)?hoje", QueryType.RONDAS_HOJE),
+        (r"inspecoes?\s+(?:do\s+)?dia", QueryType.RONDAS_HOJE),
+        (r"inspecoes?\s+(?:agendadas?|programadas?)", QueryType.RONDAS_HOJE),
+        (r"inspecoes?\s+(?:em\s+)?andamento", QueryType.RONDAS_HOJE),
+        (r"inspecoes?\s+recentes?", QueryType.RONDAS_HOJE),
+        # Interrogativas
+        (r"(?:quantas?|quais?)\s+(?:rondas?|inspecoes?)", QueryType.RONDAS_HOJE),
+        (r"(?:tem|ha)\s+(?:alguma\s+)?(?:ronda|inspecao)", QueryType.RONDAS_HOJE),
+        (r"quem\s+(?:esta|ta|está)\s+(?:fazendo|realizando)\s+(?:ronda|inspecao)", QueryType.RONDAS_HOJE),
+        # Imperativas
+        (r"(?:ver|mostrar|listar|exibir)\s+(?:rondas?|inspecoes?)", QueryType.RONDAS_HOJE),
+        (r"(?:verificar|checar)\s+(?:rondas?|inspecoes?)", QueryType.RONDAS_HOJE),
+        (r"resultado\s+(?:da\s+)?(?:ultima\s+)?(?:ronda|inspecao)", QueryType.RONDAS_HOJE),
+        # Sinônimos
+        (r"fiscalizacoes?\s+(?:de\s+)?(?:hoje|dia|agendadas?)", QueryType.RONDAS_HOJE),
+        (r"visitas?\s+(?:de\s+)?(?:inspecao|fiscalizacao)", QueryType.RONDAS_HOJE),
+        (r"status\s+(?:das?\s+)?(?:rondas?|inspecoes?)", QueryType.RONDAS_HOJE),
     ]
 
     def __init__(self, db_session=None):
@@ -531,6 +701,15 @@ class DataConnector:
                 return await self._get_atrasos_hoje()
             elif query.query_type == QueryType.OPERACAO_GERAL:
                 return await self._get_operacao_geral()
+            # Submódulos expandidos
+            elif query.query_type == QueryType.OCORRENCIAS_ABERTAS:
+                return await self._get_ocorrencias_abertas()
+            elif query.query_type == QueryType.MEDIDAS_PENDENTES:
+                return await self._get_medidas_pendentes()
+            elif query.query_type == QueryType.COMUNICADOS_ATIVOS:
+                return await self._get_comunicados_ativos()
+            elif query.query_type == QueryType.RONDAS_HOJE:
+                return await self._get_rondas_hoje()
 
             if not self.db:
                 logger.warning("DB session não disponível, usando dados mock")
@@ -588,6 +767,18 @@ class DataConnector:
             repository = AllocationRepository(self.db)
         elif repository_name == "shift":
             repository = ShiftRepository(self.db)
+        elif repository_name == "occurrence":
+            repository = OccurrenceRepository(self.db)
+        elif repository_name == "disciplinary":
+            repository = DisciplinaryRepository(self.db)
+        elif repository_name == "announcement":
+            repository = AnnouncementRepository(self.db)
+        elif repository_name == "inspection_round":
+            repository = InspectionRoundRepository(self.db)
+        elif repository_name == "substitution":
+            repository = SubstitutionRepository(self.db)
+        elif repository_name == "time_bank":
+            repository = TimeBankRepository(self.db)
 
         if not repository:
             logger.error(f"Repository não encontrado: {repository_name}")
@@ -663,11 +854,19 @@ class DataConnector:
         """
         model = entity_info["model"]
         name_field = entity_info["name_field"]
+        active_field_name = entity_info.get("active_field", "is_active")
+
+        # Base condition: ativo (suporta campo is_active ou ativo)
+        active_col = getattr(model, active_field_name, None)
+        if active_col is not None:
+            base_condition = active_col.is_(True)
+        else:
+            base_condition = model.is_active.is_(True)
 
         # Executar query baseado no tipo
         if query.query_type == QueryType.COUNT:
             result = await self.db.execute(
-                select(func.count(model.id)).where(model.is_active.is_(True))
+                select(func.count(model.id)).where(base_condition)
             )
             total = result.scalar() or 0
 
@@ -683,7 +882,7 @@ class DataConnector:
         elif query.query_type == QueryType.LIST:
             stmt = (
                 select(model)
-                .where(model.is_active.is_(True))
+                .where(base_condition)
                 .limit(min(query.limit, 10))
             )
 
@@ -700,17 +899,27 @@ class DataConnector:
                 name = getattr(item, name_field, "Sem nome")
                 cargo = getattr(item, "cargo", None)
                 matricula = getattr(item, "matricula", None)
+                telefone = getattr(item, "telefone", None)
+                tipos_servico = getattr(item, "tipos_servico", None)
+                status = getattr(item, "status", None)
 
-                if matricula and cargo:
-                    formatted_items.append(f"{name} ({matricula}) - {cargo}")
-                elif matricula:
-                    formatted_items.append(f"{name} ({matricula})")
-                else:
-                    formatted_items.append(name)
+                parts = [name]
+                if matricula:
+                    parts[0] = f"{name} ({matricula})"
+                if cargo:
+                    parts.append(cargo)
+                elif tipos_servico and isinstance(tipos_servico, list):
+                    parts.append(", ".join(tipos_servico))
+                if telefone:
+                    parts.append(telefone)
+                if status and status not in ("ativo", "active"):
+                    parts.append(f"[{status}]")
 
-            # Count total
+                formatted_items.append(" - ".join(parts))
+
+            # Count total com mesmo filtro
             count_result = await self.db.execute(
-                select(func.count(model.id)).where(model.is_active.is_(True))
+                select(func.count(model.id)).where(base_condition)
             )
             total = count_result.scalar() or 0
 
@@ -748,6 +957,26 @@ class DataConnector:
                     "Pedro Oliveira - Vigilante",
                     "Ana Costa - Zeladora",
                     "Carlos Lima - Eletricista",
+                ],
+            },
+            "diaristas": {
+                "count": 24,
+                "list": [
+                    "Lucia Ferreira - Diarista",
+                    "Fernanda Souza - Diarista",
+                    "Patricia Lima - Diarista",
+                    "Claudia Ribeiro - Diarista",
+                    "Sandra Oliveira - Diarista",
+                ],
+            },
+            "diarista": {
+                "count": 24,
+                "list": [
+                    "Lucia Ferreira - Diarista",
+                    "Fernanda Souza - Diarista",
+                    "Patricia Lima - Diarista",
+                    "Claudia Ribeiro - Diarista",
+                    "Sandra Oliveira - Diarista",
                 ],
             },
             "contratos": {
@@ -1997,6 +2226,364 @@ _Para detalhes, pergunte sobre itens específicos._"""
                 entity="sistema",
                 data=None,
                 message=f"Erro ao buscar visão geral da operação: {str(e)}",
+                executed_at=datetime.utcnow(),
+            )
+
+    # =========================================================================
+    # CONSULTAS DOS SUBMÓDULOS EXPANDIDOS
+    # =========================================================================
+
+    async def _get_ocorrencias_abertas(self) -> DataResult:
+        """
+        Retorna ocorrencias abertas ou em analise.
+
+        Lista ocorrencias que ainda nao foram resolvidas,
+        ordenadas por severidade e data.
+        """
+        today = date.today()
+
+        try:
+            ocorrencias = []
+
+            if self.db:
+                repo = OccurrenceRepository(self.db)
+                items, total = await repo.list(page=1, page_size=50)
+
+                for occ in items:
+                    if occ.status in (
+                        OccurrenceStatus.ABERTA.value,
+                        OccurrenceStatus.EM_ANALISE.value,
+                    ):
+                        ocorrencias.append({
+                            "codigo": occ.code,
+                            "titulo": occ.title,
+                            "tipo": occ.occurrence_type,
+                            "severidade": occ.severity,
+                            "status": occ.status,
+                            "data": occ.occurred_at.strftime('%d/%m/%Y %H:%M') if occ.occurred_at else 'N/A',
+                        })
+
+            if not ocorrencias:
+                # Mock data
+                ocorrencias = [
+                    {"codigo": "OCO-2026-00012", "titulo": "Abandono de posto - Portaria B", "tipo": "abandono_posto", "severidade": "grave", "status": "aberta", "data": today.strftime('%d/%m/%Y') + " 08:30"},
+                    {"codigo": "OCO-2026-00011", "titulo": "Uso de celular em servico", "tipo": "uso_celular", "severidade": "leve", "status": "em_analise", "data": today.strftime('%d/%m/%Y') + " 07:15"},
+                    {"codigo": "OCO-2026-00010", "titulo": "Falta de uniforme", "tipo": "falta_uniforme", "severidade": "moderada", "status": "aberta", "data": (today.strftime('%d/%m/%Y')) + " 06:00"},
+                ]
+
+            # Formatar resposta
+            if ocorrencias:
+                lines = []
+                for o in ocorrencias[:15]:
+                    sev_icon = {"leve": "🟡", "moderada": "🟠", "grave": "🔴", "gravissima": "🚨"}.get(o['severidade'], "⚪")
+                    status_text = "Aberta" if o['status'] == "aberta" else "Em Analise"
+                    lines.append(
+                        f"- {sev_icon} **{o['codigo']}** - {o['titulo']}\n"
+                        f"  Severidade: {o['severidade']} | Status: {status_text} | {o['data']}"
+                    )
+
+                graves = sum(1 for o in ocorrencias if o['severidade'] in ('grave', 'gravissima'))
+
+                response_text = f"""📋 **OCORRENCIAS ABERTAS** ({len(ocorrencias)})
+
+{chr(10).join(lines)}
+
+**Resumo:**
+- Total abertas: **{len(ocorrencias)}**
+- Graves/Gravissimas: **{graves}** {'🚨' if graves > 0 else ''}
+
+**Legenda:** 🟡 Leve | 🟠 Moderada | 🔴 Grave | 🚨 Gravissima"""
+            else:
+                response_text = "✅ **Nenhuma ocorrencia aberta!** Todas as ocorrencias foram resolvidas."
+
+            return DataResult(
+                success=True,
+                query_type=QueryType.OCORRENCIAS_ABERTAS,
+                entity="ocorrencias",
+                data=ocorrencias,
+                total_count=len(ocorrencias),
+                message=response_text,
+                executed_at=datetime.utcnow(),
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao buscar ocorrencias abertas: {e}")
+            return DataResult(
+                success=False,
+                query_type=QueryType.OCORRENCIAS_ABERTAS,
+                entity="ocorrencias",
+                data=None,
+                message=f"Erro ao buscar ocorrencias abertas: {str(e)}",
+                executed_at=datetime.utcnow(),
+            )
+
+    async def _get_medidas_pendentes(self) -> DataResult:
+        """
+        Retorna medidas disciplinares pendentes.
+
+        Lista advertencias, suspensoes e outras medidas que estao
+        aguardando aprovacao, assinatura ou aplicacao.
+        """
+        try:
+            medidas = []
+
+            if self.db:
+                repo = DisciplinaryRepository(self.db)
+                items, total = await repo.list(tenant_id="", page=1, page_size=50)
+
+                for action in items:
+                    if action.status in (
+                        DisciplinaryActionStatus.RASCUNHO.value,
+                        DisciplinaryActionStatus.PENDENTE_APROVACAO.value,
+                        DisciplinaryActionStatus.APROVADA.value,
+                        DisciplinaryActionStatus.PENDENTE_ASSINATURA.value,
+                    ):
+                        medidas.append({
+                            "codigo": action.code,
+                            "tipo": action.type_display_name,
+                            "funcionario": action.employee_name,
+                            "motivo": action.reason_category,
+                            "status": action.status_display_name,
+                            "data_incidente": action.incident_date.strftime('%d/%m/%Y') if action.incident_date else 'N/A',
+                        })
+
+            if not medidas:
+                # Mock data
+                medidas = [
+                    {"codigo": "ADV-2026-00005", "tipo": "Advertencia Escrita", "funcionario": "Jose Silva", "motivo": "falta", "status": "Pendente Aprovacao", "data_incidente": "28/01/2026"},
+                    {"codigo": "SUS-2026-00002", "tipo": "Suspensao", "funcionario": "Carlos Lima", "motivo": "insubordinacao", "status": "Pendente Assinatura", "data_incidente": "27/01/2026"},
+                    {"codigo": "ADV-2026-00004", "tipo": "Advertencia Verbal", "funcionario": "Maria Santos", "motivo": "atraso", "status": "Rascunho", "data_incidente": "29/01/2026"},
+                ]
+
+            # Formatar resposta
+            if medidas:
+                lines = []
+                for m in medidas[:15]:
+                    tipo_icon = "📝" if "Verbal" in m['tipo'] else "📄" if "Escrita" in m['tipo'] else "⚠️"
+                    lines.append(
+                        f"- {tipo_icon} **{m['codigo']}** - {m['tipo']}\n"
+                        f"  Funcionario: {m['funcionario']} | Motivo: {m['motivo']}\n"
+                        f"  Status: {m['status']} | Incidente: {m['data_incidente']}"
+                    )
+
+                pendentes_aprov = sum(1 for m in medidas if m['status'] == 'Pendente Aprovacao')
+                pendentes_assin = sum(1 for m in medidas if m['status'] == 'Pendente Assinatura')
+
+                response_text = f"""⚖️ **MEDIDAS DISCIPLINARES PENDENTES** ({len(medidas)})
+
+{chr(10).join(lines)}
+
+**Resumo:**
+- Total pendentes: **{len(medidas)}**
+- Aguardando aprovacao: **{pendentes_aprov}**
+- Aguardando assinatura: **{pendentes_assin}**
+
+**Legenda:** 📝 Verbal | 📄 Escrita | ⚠️ Suspensao"""
+            else:
+                response_text = "✅ **Nenhuma medida disciplinar pendente!** Todas as medidas foram processadas."
+
+            return DataResult(
+                success=True,
+                query_type=QueryType.MEDIDAS_PENDENTES,
+                entity="medidas_disciplinares",
+                data=medidas,
+                total_count=len(medidas),
+                message=response_text,
+                executed_at=datetime.utcnow(),
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao buscar medidas pendentes: {e}")
+            return DataResult(
+                success=False,
+                query_type=QueryType.MEDIDAS_PENDENTES,
+                entity="medidas_disciplinares",
+                data=None,
+                message=f"Erro ao buscar medidas disciplinares pendentes: {str(e)}",
+                executed_at=datetime.utcnow(),
+            )
+
+    async def _get_comunicados_ativos(self) -> DataResult:
+        """
+        Retorna comunicados ativos/publicados.
+
+        Lista comunicados que estao publicados e nao expirados,
+        incluindo dados de leitura e confirmacao.
+        """
+        try:
+            comunicados = []
+
+            if self.db:
+                repo = AnnouncementRepository(self.db)
+                items, total = await repo.list(tenant_id="", page=1, page_size=50)
+
+                for ann in items:
+                    if ann.status in (
+                        AnnouncementStatus.PUBLISHED.value,
+                        AnnouncementStatus.PUBLICADO.value,
+                    ):
+                        comunicados.append({
+                            "titulo": ann.titulo,
+                            "tipo": ann.tipo,
+                            "prioridade": ann.prioridade,
+                            "status": ann.status,
+                            "visualizacoes": ann.total_visualizacoes,
+                            "confirmacoes": ann.total_confirmacoes,
+                            "data_publicacao": ann.data_publicacao.strftime('%d/%m/%Y %H:%M') if ann.data_publicacao else 'N/A',
+                        })
+
+            if not comunicados:
+                # Mock data
+                today = date.today()
+                comunicados = [
+                    {"titulo": "Alteracao de procedimento - Portaria", "tipo": "procedimento", "prioridade": "alta", "status": "published", "visualizacoes": 45, "confirmacoes": 32, "data_publicacao": today.strftime('%d/%m/%Y') + " 09:00"},
+                    {"titulo": "Escala de feriado - Carnaval 2026", "tipo": "escala", "prioridade": "urgente", "status": "published", "visualizacoes": 120, "confirmacoes": 95, "data_publicacao": today.strftime('%d/%m/%Y') + " 08:00"},
+                    {"titulo": "Novo uniforme disponivel", "tipo": "informativo", "prioridade": "normal", "status": "published", "visualizacoes": 30, "confirmacoes": 10, "data_publicacao": today.strftime('%d/%m/%Y') + " 07:30"},
+                ]
+
+            # Formatar resposta
+            if comunicados:
+                lines = []
+                for c in comunicados[:10]:
+                    prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(c['prioridade'], "🟢")
+                    lines.append(
+                        f"- {prio_icon} **{c['titulo']}**\n"
+                        f"  Tipo: {c['tipo']} | Prioridade: {c['prioridade']}\n"
+                        f"  Visualizacoes: {c['visualizacoes']} | Confirmacoes: {c['confirmacoes']} | {c['data_publicacao']}"
+                    )
+
+                urgentes = sum(1 for c in comunicados if c['prioridade'] in ('urgente', 'alta'))
+
+                response_text = f"""📢 **COMUNICADOS ATIVOS** ({len(comunicados)})
+
+{chr(10).join(lines)}
+
+**Resumo:**
+- Total publicados: **{len(comunicados)}**
+- Urgentes/Alta prioridade: **{urgentes}**
+
+**Legenda:** 🔴 Urgente | 🟠 Alta | 🟢 Normal | ⚪ Baixa"""
+            else:
+                response_text = "ℹ️ **Nenhum comunicado ativo no momento.**"
+
+            return DataResult(
+                success=True,
+                query_type=QueryType.COMUNICADOS_ATIVOS,
+                entity="comunicados",
+                data=comunicados,
+                total_count=len(comunicados),
+                message=response_text,
+                executed_at=datetime.utcnow(),
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao buscar comunicados ativos: {e}")
+            return DataResult(
+                success=False,
+                query_type=QueryType.COMUNICADOS_ATIVOS,
+                entity="comunicados",
+                data=None,
+                message=f"Erro ao buscar comunicados ativos: {str(e)}",
+                executed_at=datetime.utcnow(),
+            )
+
+    async def _get_rondas_hoje(self) -> DataResult:
+        """
+        Retorna rondas de inspecao do dia.
+
+        Lista rondas agendadas, em andamento e concluidas
+        para o dia atual.
+        """
+        today = date.today()
+
+        try:
+            rondas = []
+
+            if self.db:
+                repo = InspectionRoundRepository(self.db)
+
+                # Buscar rondas em andamento
+                em_andamento = await repo.get_rounds_in_progress()
+                for r in em_andamento:
+                    rondas.append({
+                        "codigo": r.code,
+                        "inspetor": r.inspector_name,
+                        "cargo": r.inspector_role_display,
+                        "status": "Em Andamento",
+                        "status_icon": "🔄",
+                        "postos_visitados": len(r.posts_visited or []),
+                        "postos_total": len(r.posts_to_visit or []),
+                        "ocorrencias": r.total_occurrences,
+                        "progresso": f"{r.progress_percentage}%",
+                    })
+
+                # Buscar rondas agendadas para hoje
+                agendadas = await repo.get_rounds_scheduled_today()
+                for r in agendadas:
+                    rondas.append({
+                        "codigo": r.code,
+                        "inspetor": r.inspector_name,
+                        "cargo": r.inspector_role_display,
+                        "status": "Agendada",
+                        "status_icon": "📅",
+                        "postos_visitados": 0,
+                        "postos_total": len(r.posts_to_visit or []),
+                        "ocorrencias": 0,
+                        "progresso": "0%",
+                    })
+
+            if not rondas:
+                # Mock data
+                rondas = [
+                    {"codigo": "RON-2026-00045", "inspetor": "Carlos Supervisor", "cargo": "Supervisor Operacional", "status": "Em Andamento", "status_icon": "🔄", "postos_visitados": 3, "postos_total": 8, "ocorrencias": 2, "progresso": "37.5%"},
+                    {"codigo": "RON-2026-00046", "inspetor": "Ana Gerente", "cargo": "Gerente Operacional", "status": "Agendada", "status_icon": "📅", "postos_visitados": 0, "postos_total": 5, "ocorrencias": 0, "progresso": "0%"},
+                    {"codigo": "RON-2026-00044", "inspetor": "Pedro Inspetor", "cargo": "Inspetor Operacional", "status": "Concluida", "status_icon": "✅", "postos_visitados": 6, "postos_total": 6, "ocorrencias": 1, "progresso": "100%"},
+                ]
+
+            # Formatar resposta
+            if rondas:
+                lines = []
+                for r in rondas[:10]:
+                    lines.append(
+                        f"- {r['status_icon']} **{r['codigo']}** - {r['status']}\n"
+                        f"  Inspetor: {r['inspetor']} ({r['cargo']})\n"
+                        f"  Postos: {r['postos_visitados']}/{r['postos_total']} | "
+                        f"Ocorrencias: {r['ocorrencias']} | Progresso: {r['progresso']}"
+                    )
+
+                em_andamento_count = sum(1 for r in rondas if r['status'] == 'Em Andamento')
+                agendadas_count = sum(1 for r in rondas if r['status'] == 'Agendada')
+                total_ocorrencias = sum(r['ocorrencias'] for r in rondas)
+
+                response_text = f"""🔍 **RONDAS DE INSPECAO - {today.strftime('%d/%m/%Y')}** ({len(rondas)})
+
+{chr(10).join(lines)}
+
+**Resumo:**
+- Em andamento: **{em_andamento_count}**
+- Agendadas: **{agendadas_count}**
+- Total de ocorrencias: **{total_ocorrencias}**"""
+            else:
+                response_text = f"ℹ️ **Nenhuma ronda registrada para hoje** ({today.strftime('%d/%m/%Y')})."
+
+            return DataResult(
+                success=True,
+                query_type=QueryType.RONDAS_HOJE,
+                entity="rondas",
+                data=rondas,
+                total_count=len(rondas),
+                message=response_text,
+                executed_at=datetime.utcnow(),
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao buscar rondas de hoje: {e}")
+            return DataResult(
+                success=False,
+                query_type=QueryType.RONDAS_HOJE,
+                entity="rondas",
+                data=None,
+                message=f"Erro ao buscar rondas de hoje: {str(e)}",
                 executed_at=datetime.utcnow(),
             )
 

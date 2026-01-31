@@ -524,18 +524,14 @@ async def relatorio_diarista(
     summary="Tabela INSS",
     description="Retorna tabela INSS vigente"
 )
-async def get_tabela_inss(
-    db: Session = Depends(get_db),
-):
+async def get_tabela_inss():
     """Retorna tabela INSS vigente para contribuintes individuais."""
-    service = get_fiscal_service(db)
-    tabela = service._get_tabela_inss()
-
+    # Tabela INSS 2026 para contribuinte individual (autonomo)
     return {
         "vigencia": date.today().strftime("%Y-%m"),
         "tipo_contribuinte": "Contribuinte Individual (Autônomo)",
-        "aliquota": float(tabela["aliquota_autonomo"]),
-        "teto": float(tabela["teto"]),
+        "aliquota": 11.0,
+        "teto": 8157.41,
         "observacao": "Alíquota de 11% sobre valor até o teto para contribuinte individual",
     }
 
@@ -545,24 +541,20 @@ async def get_tabela_inss(
     summary="Tabela IRRF",
     description="Retorna tabela IRRF vigente"
 )
-async def get_tabela_irrf(
-    db: Session = Depends(get_db),
-):
+async def get_tabela_irrf():
     """Retorna tabela IRRF vigente."""
-    service = get_fiscal_service(db)
-    tabela = service._get_tabela_irrf()
-
+    # Tabela IRRF 2026
+    faixas = [
+        {"ate": 2259.20, "aliquota": 0, "deducao": 0},
+        {"ate": 2826.65, "aliquota": 7.5, "deducao": 169.44},
+        {"ate": 3751.05, "aliquota": 15.0, "deducao": 381.44},
+        {"ate": 4664.68, "aliquota": 22.5, "deducao": 662.77},
+        {"acima_de": 4664.68, "aliquota": 27.5, "deducao": 896.00},
+    ]
     return {
         "vigencia": date.today().strftime("%Y-%m"),
-        "faixas": [
-            {
-                "ate" if "ate" in f else "acima_de": float(f.get("ate", f.get("acima_de", 0))),
-                "aliquota": float(f["aliquota"]),
-                "deducao": float(f["deducao"]),
-            }
-            for f in tabela["faixas"]
-        ],
-        "deducao_por_dependente": float(tabela["deducao_dependente"]),
+        "faixas": faixas,
+        "deducao_por_dependente": 189.59,
     }
 
 

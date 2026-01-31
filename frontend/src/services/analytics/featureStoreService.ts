@@ -14,26 +14,23 @@ export const featureStoreService = {
   /**
    * Features de um usuário
    */
-  async getUserFeatures(userId: number, features?: string[]) {
-    const response = await getUserFeaturesApiV1AnalyticsFeaturesUserUserIdGet(userId.toString(), {
+  async getUserFeatures(userId: string, features?: string[]) {
+    return getUserFeaturesApiV1AnalyticsFeaturesUserUserIdGet(Number(userId), {
       features: features?.join(','),
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 
   /**
    * Listar features disponíveis
    */
   async listAvailableFeatures() {
-    const response = await listAvailableFeaturesApiV1AnalyticsFeaturesAvailableGet();
-    return response.data;
+    return listAvailableFeaturesApiV1AnalyticsFeaturesAvailableGet() as Promise<unknown>;
   },
 
   /**
    * Metadados de uma feature
    */
   async getFeatureMetadata(featureName: string) {
-    const response = await getFeatureMetadataApiV1AnalyticsFeaturesFeatureNameMetadataGet(featureName);
-    return response.data;
+    return getFeatureMetadataApiV1AnalyticsFeaturesFeatureNameMetadataGet(featureName) as Promise<unknown>;
   },
 };

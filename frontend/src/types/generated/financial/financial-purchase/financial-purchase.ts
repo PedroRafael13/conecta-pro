@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   ApprovalDelegateRequest,
@@ -35,6 +48,7 @@ import type {
   GoodsReceiptListResponse,
   GoodsReceiptResponse,
   GoodsReceiptUpdate,
+  HTTPValidationError,
   ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams,
   ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams,
   ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams,
@@ -88,921 +102,5206 @@ import type {
   SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialPurchase = () => {
+
 /**
  * Cria uma nova categoria de produto.
  * @summary Criar categoria de produto
  */
-const createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost = <TData = AxiosResponse<ProductCategoryResponse>>(
-    productCategoryCreate: ProductCategoryCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/categories`,
-      productCategoryCreate,options
-    );
-  }
-/**
+export const createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost = (
+    productCategoryCreate: ProductCategoryCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductCategoryResponse>(
+      {url: `/api/v1/financial/purchase/purchases/categories`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: productCategoryCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateProductCategoryApiV1FinancialPurchasePurchasesCategoriesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost>>, TError,{data: ProductCategoryCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost>>, TError,{data: ProductCategoryCreate}, TContext> => {
+
+const mutationKey = ['createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost>>, {data: ProductCategoryCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateProductCategoryApiV1FinancialPurchasePurchasesCategoriesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost>>>
+    export type CreateProductCategoryApiV1FinancialPurchasePurchasesCategoriesPostMutationBody = ProductCategoryCreate
+    export type CreateProductCategoryApiV1FinancialPurchasePurchasesCategoriesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar categoria de produto
+ */
+export const useCreateProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost>>, TError,{data: ProductCategoryCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost>>,
+        TError,
+        {data: ProductCategoryCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateProductCategoryApiV1FinancialPurchasePurchasesCategoriesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista categorias de produto.
  * @summary Listar categorias de produto
  */
-const listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet = <TData = AxiosResponse<ProductCategoryResponse[]>>(
-    params: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/categories`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet = (
+    params: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductCategoryResponse[]>(
+      {url: `/api/v1/financial/purchase/purchases/categories`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetQueryKey = (params?: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/categories`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetQueryOptions = <TData = Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError = HTTPValidationError>(params: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>> = ({ signal }) => listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>>
+export type ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetQueryError = HTTPValidationError
+
+
+export function useListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet<TData = Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet<TData = Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet<TData = Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar categorias de produto
+ */
+
+export function useListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet<TData = Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna árvore completa de categorias.
  * @summary Árvore de categorias
  */
-const getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet = <TData = AxiosResponse<ProductCategoryTreeResponse[]>>(
-    params: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/categories/tree`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet = (
+    params: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductCategoryTreeResponse[]>(
+      {url: `/api/v1/financial/purchase/purchases/categories/tree`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetQueryKey = (params?: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/categories/tree`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetQueryOptions = <TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError = HTTPValidationError>(params: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>> = ({ signal }) => getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>>
+export type GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetQueryError = HTTPValidationError
+
+
+export function useGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Árvore de categorias
+ */
+
+export function useGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de categorias.
  * @summary Estatísticas de categorias
  */
-const getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet = <TData = AxiosResponse<ProductCategoryStats>>(
-    params: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/categories/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet = (
+    params: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductCategoryStats>(
+      {url: `/api/v1/financial/purchase/purchases/categories/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetQueryKey = (params?: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/categories/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError = HTTPValidationError>(params: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>> = ({ signal }) => getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>>
+export type GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetQueryError = HTTPValidationError
+
+
+export function useGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet<TData = Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError = HTTPValidationError>(
+ params: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet<TData = Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError = HTTPValidationError>(
+ params: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet<TData = Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError = HTTPValidationError>(
+ params: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de categorias
+ */
+
+export function useGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet<TData = Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError = HTTPValidationError>(
+ params: GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca categoria por ID.
  * @summary Buscar categoria
  */
-const getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet = <TData = AxiosResponse<ProductCategoryResponse>>(
-    categoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/categories/${categoryId}`,options
-    );
-  }
+export const getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet = (
+    categoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductCategoryResponse>(
+      {url: `/api/v1/financial/purchase/purchases/categories/${categoryId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGetQueryKey = (categoryId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/categories/${categoryId}`
+    ] as const;
+    }
+
+    
+export const getGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError = HTTPValidationError>(categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGetQueryKey(categoryId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>> = ({ signal }) => getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet(categoryId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(categoryId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>>
+export type GetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGetQueryError = HTTPValidationError
+
+
+export function useGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar categoria
+ */
+
+export function useGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGetQueryOptions(categoryId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma categoria de produto.
  * @summary Atualizar categoria
  */
-const updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut = <TData = AxiosResponse<ProductCategoryResponse>>(
+export const updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut = (
     categoryId: string,
-    productCategoryUpdate: ProductCategoryUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/purchase/purchases/categories/${categoryId}`,
-      productCategoryUpdate,options
-    );
-  }
-/**
+    productCategoryUpdate: ProductCategoryUpdate,
+ ) => {
+      
+      
+      return customInstance<ProductCategoryResponse>(
+      {url: `/api/v1/financial/purchase/purchases/categories/${categoryId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: productCategoryUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut>>, TError,{categoryId: string;data: ProductCategoryUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut>>, TError,{categoryId: string;data: ProductCategoryUpdate}, TContext> => {
+
+const mutationKey = ['updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut>>, {categoryId: string;data: ProductCategoryUpdate}> = (props) => {
+          const {categoryId,data} = props ?? {};
+
+          return  updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut(categoryId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut>>>
+    export type UpdateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPutMutationBody = ProductCategoryUpdate
+    export type UpdateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar categoria
+ */
+export const useUpdateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut>>, TError,{categoryId: string;data: ProductCategoryUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut>>,
+        TError,
+        {categoryId: string;data: ProductCategoryUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui uma categoria (soft delete).
  * @summary Excluir categoria
  */
-const deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete = <TData = AxiosResponse<void>>(
-    categoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/purchase/purchases/categories/${categoryId}`,options
-    );
-  }
-/**
+export const deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete = (
+    categoryId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/purchase/purchases/categories/${categoryId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete>>, TError,{categoryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete>>, TError,{categoryId: string}, TContext> => {
+
+const mutationKey = ['deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete>>, {categoryId: string}> = (props) => {
+          const {categoryId} = props ?? {};
+
+          return  deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete(categoryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete>>>
+    
+    export type DeleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir categoria
+ */
+export const useDeleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete>>, TError,{categoryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete>>,
+        TError,
+        {categoryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria um novo produto.
  * @summary Criar produto
  */
-const createProductApiV1FinancialPurchasePurchasesProductsPost = <TData = AxiosResponse<ProductResponse>>(
-    productCreate: ProductCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/products`,
-      productCreate,options
-    );
-  }
-/**
+export const createProductApiV1FinancialPurchasePurchasesProductsPost = (
+    productCreate: ProductCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductResponse>(
+      {url: `/api/v1/financial/purchase/purchases/products`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: productCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateProductApiV1FinancialPurchasePurchasesProductsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProductApiV1FinancialPurchasePurchasesProductsPost>>, TError,{data: ProductCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createProductApiV1FinancialPurchasePurchasesProductsPost>>, TError,{data: ProductCreate}, TContext> => {
+
+const mutationKey = ['createProductApiV1FinancialPurchasePurchasesProductsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createProductApiV1FinancialPurchasePurchasesProductsPost>>, {data: ProductCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createProductApiV1FinancialPurchasePurchasesProductsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateProductApiV1FinancialPurchasePurchasesProductsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createProductApiV1FinancialPurchasePurchasesProductsPost>>>
+    export type CreateProductApiV1FinancialPurchasePurchasesProductsPostMutationBody = ProductCreate
+    export type CreateProductApiV1FinancialPurchasePurchasesProductsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar produto
+ */
+export const useCreateProductApiV1FinancialPurchasePurchasesProductsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createProductApiV1FinancialPurchasePurchasesProductsPost>>, TError,{data: ProductCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createProductApiV1FinancialPurchasePurchasesProductsPost>>,
+        TError,
+        {data: ProductCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateProductApiV1FinancialPurchasePurchasesProductsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista produtos com filtros.
  * @summary Listar produtos
  */
-const listProductsApiV1FinancialPurchasePurchasesProductsGet = <TData = AxiosResponse<ProductListResponse>>(
-    params: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/products`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listProductsApiV1FinancialPurchasePurchasesProductsGet = (
+    params: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductListResponse>(
+      {url: `/api/v1/financial/purchase/purchases/products`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListProductsApiV1FinancialPurchasePurchasesProductsGetQueryKey = (params?: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/products`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListProductsApiV1FinancialPurchasePurchasesProductsGetQueryOptions = <TData = Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError = HTTPValidationError>(params: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListProductsApiV1FinancialPurchasePurchasesProductsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>> = ({ signal }) => listProductsApiV1FinancialPurchasePurchasesProductsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListProductsApiV1FinancialPurchasePurchasesProductsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>>
+export type ListProductsApiV1FinancialPurchasePurchasesProductsGetQueryError = HTTPValidationError
+
+
+export function useListProductsApiV1FinancialPurchasePurchasesProductsGet<TData = Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError = HTTPValidationError>(
+ params: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListProductsApiV1FinancialPurchasePurchasesProductsGet<TData = Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError = HTTPValidationError>(
+ params: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListProductsApiV1FinancialPurchasePurchasesProductsGet<TData = Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError = HTTPValidationError>(
+ params: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar produtos
+ */
+
+export function useListProductsApiV1FinancialPurchasePurchasesProductsGet<TData = Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError = HTTPValidationError>(
+ params: ListProductsApiV1FinancialPurchasePurchasesProductsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listProductsApiV1FinancialPurchasePurchasesProductsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListProductsApiV1FinancialPurchasePurchasesProductsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de produtos.
  * @summary Estatísticas de produtos
  */
-const getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet = <TData = AxiosResponse<ProductStats>>(
-    params: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/products/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet = (
+    params: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductStats>(
+      {url: `/api/v1/financial/purchase/purchases/products/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetQueryKey = (params?: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/products/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError = HTTPValidationError>(params: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>> = ({ signal }) => getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>>
+export type GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet<TData = Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError = HTTPValidationError>(
+ params: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet<TData = Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError = HTTPValidationError>(
+ params: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet<TData = Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError = HTTPValidationError>(
+ params: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de produtos
+ */
+
+export function useGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet<TData = Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError = HTTPValidationError>(
+ params: GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca produto por ID.
  * @summary Buscar produto
  */
-const getProductApiV1FinancialPurchasePurchasesProductsProductIdGet = <TData = AxiosResponse<ProductResponse>>(
-    productId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/products/${productId}`,options
-    );
-  }
+export const getProductApiV1FinancialPurchasePurchasesProductsProductIdGet = (
+    productId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductResponse>(
+      {url: `/api/v1/financial/purchase/purchases/products/${productId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetProductApiV1FinancialPurchasePurchasesProductsProductIdGetQueryKey = (productId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/products/${productId}`
+    ] as const;
+    }
+
+    
+export const getGetProductApiV1FinancialPurchasePurchasesProductsProductIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError = HTTPValidationError>(productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProductApiV1FinancialPurchasePurchasesProductsProductIdGetQueryKey(productId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>> = ({ signal }) => getProductApiV1FinancialPurchasePurchasesProductsProductIdGet(productId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(productId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetProductApiV1FinancialPurchasePurchasesProductsProductIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>>
+export type GetProductApiV1FinancialPurchasePurchasesProductsProductIdGetQueryError = HTTPValidationError
+
+
+export function useGetProductApiV1FinancialPurchasePurchasesProductsProductIdGet<TData = Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProductApiV1FinancialPurchasePurchasesProductsProductIdGet<TData = Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProductApiV1FinancialPurchasePurchasesProductsProductIdGet<TData = Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar produto
+ */
+
+export function useGetProductApiV1FinancialPurchasePurchasesProductsProductIdGet<TData = Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProductApiV1FinancialPurchasePurchasesProductsProductIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetProductApiV1FinancialPurchasePurchasesProductsProductIdGetQueryOptions(productId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza um produto.
  * @summary Atualizar produto
  */
-const updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut = <TData = AxiosResponse<ProductResponse>>(
+export const updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut = (
     productId: string,
-    productUpdate: ProductUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/purchase/purchases/products/${productId}`,
-      productUpdate,options
-    );
-  }
-/**
+    productUpdate: ProductUpdate,
+ ) => {
+      
+      
+      return customInstance<ProductResponse>(
+      {url: `/api/v1/financial/purchase/purchases/products/${productId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: productUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateProductApiV1FinancialPurchasePurchasesProductsProductIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut>>, TError,{productId: string;data: ProductUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut>>, TError,{productId: string;data: ProductUpdate}, TContext> => {
+
+const mutationKey = ['updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut>>, {productId: string;data: ProductUpdate}> = (props) => {
+          const {productId,data} = props ?? {};
+
+          return  updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut(productId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateProductApiV1FinancialPurchasePurchasesProductsProductIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut>>>
+    export type UpdateProductApiV1FinancialPurchasePurchasesProductsProductIdPutMutationBody = ProductUpdate
+    export type UpdateProductApiV1FinancialPurchasePurchasesProductsProductIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar produto
+ */
+export const useUpdateProductApiV1FinancialPurchasePurchasesProductsProductIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut>>, TError,{productId: string;data: ProductUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut>>,
+        TError,
+        {productId: string;data: ProductUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateProductApiV1FinancialPurchasePurchasesProductsProductIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui um produto (soft delete).
  * @summary Excluir produto
  */
-const deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete = <TData = AxiosResponse<void>>(
-    productId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/purchase/purchases/products/${productId}`,options
-    );
-  }
-/**
+export const deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete = (
+    productId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/purchase/purchases/products/${productId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteProductApiV1FinancialPurchasePurchasesProductsProductIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete>>, TError,{productId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete>>, TError,{productId: string}, TContext> => {
+
+const mutationKey = ['deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete>>, {productId: string}> = (props) => {
+          const {productId} = props ?? {};
+
+          return  deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete(productId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteProductApiV1FinancialPurchasePurchasesProductsProductIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete>>>
+    
+    export type DeleteProductApiV1FinancialPurchasePurchasesProductsProductIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir produto
+ */
+export const useDeleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete>>, TError,{productId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete>>,
+        TError,
+        {productId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteProductApiV1FinancialPurchasePurchasesProductsProductIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Bloqueia um produto.
  * @summary Bloquear produto
  */
-const blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost = <TData = AxiosResponse<ProductResponse>>(
+export const blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost = (
     productId: string,
-    productBlockRequest: ProductBlockRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/products/${productId}/block`,
-      productBlockRequest,options
-    );
-  }
-/**
+    productBlockRequest: ProductBlockRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ProductResponse>(
+      {url: `/api/v1/financial/purchase/purchases/products/${productId}/block`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: productBlockRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getBlockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost>>, TError,{productId: string;data: ProductBlockRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost>>, TError,{productId: string;data: ProductBlockRequest}, TContext> => {
+
+const mutationKey = ['blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost>>, {productId: string;data: ProductBlockRequest}> = (props) => {
+          const {productId,data} = props ?? {};
+
+          return  blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost(productId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPostMutationResult = NonNullable<Awaited<ReturnType<typeof blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost>>>
+    export type BlockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPostMutationBody = ProductBlockRequest
+    export type BlockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Bloquear produto
+ */
+export const useBlockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost>>, TError,{productId: string;data: ProductBlockRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost>>,
+        TError,
+        {productId: string;data: ProductBlockRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getBlockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria uma nova requisição de compra.
  * @summary Criar requisição de compra
  */
-const createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost = <TData = AxiosResponse<PurchaseRequisitionResponse>>(
-    purchaseRequisitionCreate: PurchaseRequisitionCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/requisitions`,
-      purchaseRequisitionCreate,options
-    );
-  }
-/**
+export const createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost = (
+    purchaseRequisitionCreate: PurchaseRequisitionCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseRequisitionResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: purchaseRequisitionCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost>>, TError,{data: PurchaseRequisitionCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost>>, TError,{data: PurchaseRequisitionCreate}, TContext> => {
+
+const mutationKey = ['createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost>>, {data: PurchaseRequisitionCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost>>>
+    export type CreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPostMutationBody = PurchaseRequisitionCreate
+    export type CreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar requisição de compra
+ */
+export const useCreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost>>, TError,{data: PurchaseRequisitionCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost>>,
+        TError,
+        {data: PurchaseRequisitionCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista requisições com filtros.
  * @summary Listar requisições
  */
-const listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet = <TData = AxiosResponse<PurchaseRequisitionListResponse>>(
-    params: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/requisitions`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet = (
+    params: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseRequisitionListResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetQueryKey = (params?: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/requisitions`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError = HTTPValidationError>(params: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>> = ({ signal }) => listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>>
+export type ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetQueryError = HTTPValidationError
+
+
+export function useListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet<TData = Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError = HTTPValidationError>(
+ params: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet<TData = Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError = HTTPValidationError>(
+ params: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet<TData = Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError = HTTPValidationError>(
+ params: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar requisições
+ */
+
+export function useListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet<TData = Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError = HTTPValidationError>(
+ params: ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de requisições.
  * @summary Estatísticas de requisições
  */
-const getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet = <TData = AxiosResponse<RequisitionStats>>(
-    params: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/requisitions/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet = (
+    params: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<RequisitionStats>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetQueryKey = (params?: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/requisitions/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError = HTTPValidationError>(params: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>> = ({ signal }) => getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>>
+export type GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet<TData = Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError = HTTPValidationError>(
+ params: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet<TData = Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError = HTTPValidationError>(
+ params: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet<TData = Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError = HTTPValidationError>(
+ params: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de requisições
+ */
+
+export function useGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet<TData = Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError = HTTPValidationError>(
+ params: GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca requisição por ID.
  * @summary Buscar requisição
  */
-const getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet = <TData = AxiosResponse<PurchaseRequisitionResponse>>(
-    requisitionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}`,options
-    );
-  }
+export const getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet = (
+    requisitionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseRequisitionResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGetQueryKey = (requisitionId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}`
+    ] as const;
+    }
+
+    
+export const getGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError = HTTPValidationError>(requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGetQueryKey(requisitionId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>> = ({ signal }) => getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet(requisitionId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(requisitionId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>>
+export type GetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGetQueryError = HTTPValidationError
+
+
+export function useGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet<TData = Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet<TData = Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet<TData = Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar requisição
+ */
+
+export function useGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet<TData = Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGetQueryOptions(requisitionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma requisição.
  * @summary Atualizar requisição
  */
-const updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut = <TData = AxiosResponse<PurchaseRequisitionResponse>>(
+export const updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut = (
     requisitionId: string,
-    purchaseRequisitionUpdate: PurchaseRequisitionUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}`,
-      purchaseRequisitionUpdate,options
-    );
-  }
-/**
+    purchaseRequisitionUpdate: PurchaseRequisitionUpdate,
+ ) => {
+      
+      
+      return customInstance<PurchaseRequisitionResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: purchaseRequisitionUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut>>, TError,{requisitionId: string;data: PurchaseRequisitionUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut>>, TError,{requisitionId: string;data: PurchaseRequisitionUpdate}, TContext> => {
+
+const mutationKey = ['updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut>>, {requisitionId: string;data: PurchaseRequisitionUpdate}> = (props) => {
+          const {requisitionId,data} = props ?? {};
+
+          return  updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut(requisitionId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut>>>
+    export type UpdateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPutMutationBody = PurchaseRequisitionUpdate
+    export type UpdateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar requisição
+ */
+export const useUpdateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut>>, TError,{requisitionId: string;data: PurchaseRequisitionUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut>>,
+        TError,
+        {requisitionId: string;data: PurchaseRequisitionUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Submete requisição para aprovação.
  * @summary Submeter para aprovação
  */
-const submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost = <TData = AxiosResponse<PurchaseRequisitionResponse>>(
-    requisitionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/submit`,undefined,options
-    );
-  }
-/**
+export const submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost = (
+    requisitionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseRequisitionResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/submit`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getSubmitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost>>, TError,{requisitionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost>>, TError,{requisitionId: string}, TContext> => {
+
+const mutationKey = ['submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost>>, {requisitionId: string}> = (props) => {
+          const {requisitionId} = props ?? {};
+
+          return  submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost(requisitionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubmitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPostMutationResult = NonNullable<Awaited<ReturnType<typeof submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost>>>
+    
+    export type SubmitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Submeter para aprovação
+ */
+export const useSubmitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost>>, TError,{requisitionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost>>,
+        TError,
+        {requisitionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getSubmitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova uma requisição.
  * @summary Aprovar requisição
  */
-const approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost = <TData = AxiosResponse<PurchaseRequisitionResponse>>(
+export const approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost = (
     requisitionId: string,
-    approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody: ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/approve`,
-      approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody,options
-    );
-  }
-/**
+    approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody: ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseRequisitionResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost>>, TError,{requisitionId: string;data: ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost>>, TError,{requisitionId: string;data: ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody}, TContext> => {
+
+const mutationKey = ['approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost>>, {requisitionId: string;data: ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody}> = (props) => {
+          const {requisitionId,data} = props ?? {};
+
+          return  approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost(requisitionId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost>>>
+    export type ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostMutationBody = ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody
+    export type ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar requisição
+ */
+export const useApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost>>, TError,{requisitionId: string;data: ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost>>,
+        TError,
+        {requisitionId: string;data: ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostBody},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita uma requisição.
  * @summary Rejeitar requisição
  */
-const rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost = <TData = AxiosResponse<PurchaseRequisitionResponse>>(
+export const rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost = (
     requisitionId: string,
-    requisitionRejectRequest: RequisitionRejectRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/reject`,
-      requisitionRejectRequest,options
-    );
-  }
-/**
+    requisitionRejectRequest: RequisitionRejectRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseRequisitionResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/reject`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: requisitionRejectRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost>>, TError,{requisitionId: string;data: RequisitionRejectRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost>>, TError,{requisitionId: string;data: RequisitionRejectRequest}, TContext> => {
+
+const mutationKey = ['rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost>>, {requisitionId: string;data: RequisitionRejectRequest}> = (props) => {
+          const {requisitionId,data} = props ?? {};
+
+          return  rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost(requisitionId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost>>>
+    export type RejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPostMutationBody = RequisitionRejectRequest
+    export type RejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Rejeitar requisição
+ */
+export const useRejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost>>, TError,{requisitionId: string;data: RequisitionRejectRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost>>,
+        TError,
+        {requisitionId: string;data: RequisitionRejectRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela uma requisição.
  * @summary Cancelar requisição
  */
-const cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost = <TData = AxiosResponse<PurchaseRequisitionResponse>>(
+export const cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost = (
     requisitionId: string,
-    requisitionCancelRequest: RequisitionCancelRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/cancel`,
-      requisitionCancelRequest,options
-    );
-  }
-/**
+    requisitionCancelRequest: RequisitionCancelRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseRequisitionResponse>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/cancel`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: requisitionCancelRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getCancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost>>, TError,{requisitionId: string;data: RequisitionCancelRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost>>, TError,{requisitionId: string;data: RequisitionCancelRequest}, TContext> => {
+
+const mutationKey = ['cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost>>, {requisitionId: string;data: RequisitionCancelRequest}> = (props) => {
+          const {requisitionId,data} = props ?? {};
+
+          return  cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost(requisitionId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost>>>
+    export type CancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPostMutationBody = RequisitionCancelRequest
+    export type CancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancelar requisição
+ */
+export const useCancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost>>, TError,{requisitionId: string;data: RequisitionCancelRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost>>,
+        TError,
+        {requisitionId: string;data: RequisitionCancelRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Analisa riscos de uma requisição usando IA.
  * @summary Analisar riscos da requisição
  */
-const analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost = <TData = AxiosResponse<unknown>>(
-    requisitionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/analyze-risks`,undefined,options
-    );
-  }
-/**
+export const analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost = (
+    requisitionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/purchase/purchases/requisitions/${requisitionId}/analyze-risks`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getAnalyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost>>, TError,{requisitionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost>>, TError,{requisitionId: string}, TContext> => {
+
+const mutationKey = ['analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost>>, {requisitionId: string}> = (props) => {
+          const {requisitionId} = props ?? {};
+
+          return  analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost(requisitionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPostMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost>>>
+    
+    export type AnalyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Analisar riscos da requisição
+ */
+export const useAnalyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost>>, TError,{requisitionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost>>,
+        TError,
+        {requisitionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getAnalyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria uma nova cotação.
  * @summary Criar cotação
  */
-const createQuotationApiV1FinancialPurchasePurchasesQuotationsPost = <TData = AxiosResponse<PurchaseQuotationResponse>>(
-    purchaseQuotationCreate: PurchaseQuotationCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/quotations`,
-      purchaseQuotationCreate,options
-    );
-  }
-/**
+export const createQuotationApiV1FinancialPurchasePurchasesQuotationsPost = (
+    purchaseQuotationCreate: PurchaseQuotationCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseQuotationResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: purchaseQuotationCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateQuotationApiV1FinancialPurchasePurchasesQuotationsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createQuotationApiV1FinancialPurchasePurchasesQuotationsPost>>, TError,{data: PurchaseQuotationCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createQuotationApiV1FinancialPurchasePurchasesQuotationsPost>>, TError,{data: PurchaseQuotationCreate}, TContext> => {
+
+const mutationKey = ['createQuotationApiV1FinancialPurchasePurchasesQuotationsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createQuotationApiV1FinancialPurchasePurchasesQuotationsPost>>, {data: PurchaseQuotationCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createQuotationApiV1FinancialPurchasePurchasesQuotationsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateQuotationApiV1FinancialPurchasePurchasesQuotationsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createQuotationApiV1FinancialPurchasePurchasesQuotationsPost>>>
+    export type CreateQuotationApiV1FinancialPurchasePurchasesQuotationsPostMutationBody = PurchaseQuotationCreate
+    export type CreateQuotationApiV1FinancialPurchasePurchasesQuotationsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar cotação
+ */
+export const useCreateQuotationApiV1FinancialPurchasePurchasesQuotationsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createQuotationApiV1FinancialPurchasePurchasesQuotationsPost>>, TError,{data: PurchaseQuotationCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createQuotationApiV1FinancialPurchasePurchasesQuotationsPost>>,
+        TError,
+        {data: PurchaseQuotationCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateQuotationApiV1FinancialPurchasePurchasesQuotationsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista cotações com filtros.
  * @summary Listar cotações
  */
-const listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet = <TData = AxiosResponse<PurchaseQuotationListResponse>>(
-    params: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/quotations`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet = (
+    params: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseQuotationListResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetQueryKey = (params?: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/quotations`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetQueryOptions = <TData = Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError = HTTPValidationError>(params: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>> = ({ signal }) => listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>>
+export type ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetQueryError = HTTPValidationError
+
+
+export function useListQuotationsApiV1FinancialPurchasePurchasesQuotationsGet<TData = Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError = HTTPValidationError>(
+ params: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListQuotationsApiV1FinancialPurchasePurchasesQuotationsGet<TData = Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError = HTTPValidationError>(
+ params: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListQuotationsApiV1FinancialPurchasePurchasesQuotationsGet<TData = Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError = HTTPValidationError>(
+ params: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar cotações
+ */
+
+export function useListQuotationsApiV1FinancialPurchasePurchasesQuotationsGet<TData = Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError = HTTPValidationError>(
+ params: ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista cotações de uma requisição.
  * @summary Listar cotações de uma requisição
  */
-const listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet = <TData = AxiosResponse<PurchaseQuotationResponse[]>>(
-    requisitionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/quotations/by-requisition/${requisitionId}`,options
-    );
-  }
+export const listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet = (
+    requisitionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseQuotationResponse[]>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/by-requisition/${requisitionId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGetQueryKey = (requisitionId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/quotations/by-requisition/${requisitionId}`
+    ] as const;
+    }
+
+    
+export const getListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError = HTTPValidationError>(requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGetQueryKey(requisitionId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>> = ({ signal }) => listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet(requisitionId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(requisitionId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>>
+export type ListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGetQueryError = HTTPValidationError
+
+
+export function useListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet<TData = Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet<TData = Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet<TData = Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar cotações de uma requisição
+ */
+
+export function useListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet<TData = Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGetQueryOptions(requisitionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Compara cotações de uma requisição usando IA.
  * @summary Comparar cotações
  */
-const compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet = <TData = AxiosResponse<QuotationComparisonResponse>>(
-    requisitionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/quotations/compare/${requisitionId}`,options
-    );
-  }
+export const compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet = (
+    requisitionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<QuotationComparisonResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/compare/${requisitionId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGetQueryKey = (requisitionId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/quotations/compare/${requisitionId}`
+    ] as const;
+    }
+
+    
+export const getCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError = HTTPValidationError>(requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGetQueryKey(requisitionId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>> = ({ signal }) => compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet(requisitionId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(requisitionId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>>
+export type CompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGetQueryError = HTTPValidationError
+
+
+export function useCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet<TData = Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet<TData = Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet<TData = Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Comparar cotações
+ */
+
+export function useCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet<TData = Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError = HTTPValidationError>(
+ requisitionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGetQueryOptions(requisitionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de cotações.
  * @summary Estatísticas de cotações
  */
-const getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet = <TData = AxiosResponse<QuotationStats>>(
-    params: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/quotations/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet = (
+    params: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<QuotationStats>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetQueryKey = (params?: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/quotations/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError = HTTPValidationError>(params: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>> = ({ signal }) => getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>>
+export type GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet<TData = Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError = HTTPValidationError>(
+ params: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet<TData = Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError = HTTPValidationError>(
+ params: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet<TData = Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError = HTTPValidationError>(
+ params: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de cotações
+ */
+
+export function useGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet<TData = Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError = HTTPValidationError>(
+ params: GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca cotação por ID.
  * @summary Buscar cotação
  */
-const getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet = <TData = AxiosResponse<PurchaseQuotationResponse>>(
-    quotationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/quotations/${quotationId}`,options
-    );
-  }
+export const getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet = (
+    quotationId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseQuotationResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/${quotationId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGetQueryKey = (quotationId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/quotations/${quotationId}`
+    ] as const;
+    }
+
+    
+export const getGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError = HTTPValidationError>(quotationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGetQueryKey(quotationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>> = ({ signal }) => getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet(quotationId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(quotationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>>
+export type GetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGetQueryError = HTTPValidationError
+
+
+export function useGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet<TData = Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError = HTTPValidationError>(
+ quotationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet<TData = Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError = HTTPValidationError>(
+ quotationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet<TData = Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError = HTTPValidationError>(
+ quotationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar cotação
+ */
+
+export function useGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet<TData = Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError = HTTPValidationError>(
+ quotationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGetQueryOptions(quotationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma cotação.
  * @summary Atualizar cotação
  */
-const updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut = <TData = AxiosResponse<PurchaseQuotationResponse>>(
+export const updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut = (
     quotationId: string,
-    purchaseQuotationUpdate: PurchaseQuotationUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/purchase/purchases/quotations/${quotationId}`,
-      purchaseQuotationUpdate,options
-    );
-  }
-/**
+    purchaseQuotationUpdate: PurchaseQuotationUpdate,
+ ) => {
+      
+      
+      return customInstance<PurchaseQuotationResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/${quotationId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: purchaseQuotationUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut>>, TError,{quotationId: string;data: PurchaseQuotationUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut>>, TError,{quotationId: string;data: PurchaseQuotationUpdate}, TContext> => {
+
+const mutationKey = ['updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut>>, {quotationId: string;data: PurchaseQuotationUpdate}> = (props) => {
+          const {quotationId,data} = props ?? {};
+
+          return  updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut(quotationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut>>>
+    export type UpdateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPutMutationBody = PurchaseQuotationUpdate
+    export type UpdateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar cotação
+ */
+export const useUpdateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut>>, TError,{quotationId: string;data: PurchaseQuotationUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut>>,
+        TError,
+        {quotationId: string;data: PurchaseQuotationUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Pontua uma cotação.
  * @summary Pontuar cotação
  */
-const scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost = <TData = AxiosResponse<PurchaseQuotationResponse>>(
+export const scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost = (
     quotationId: string,
-    quotationScoreRequest: QuotationScoreRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/quotations/${quotationId}/score`,
-      quotationScoreRequest,options
-    );
-  }
-/**
+    quotationScoreRequest: QuotationScoreRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseQuotationResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/${quotationId}/score`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: quotationScoreRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getScoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost>>, TError,{quotationId: string;data: QuotationScoreRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost>>, TError,{quotationId: string;data: QuotationScoreRequest}, TContext> => {
+
+const mutationKey = ['scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost>>, {quotationId: string;data: QuotationScoreRequest}> = (props) => {
+          const {quotationId,data} = props ?? {};
+
+          return  scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost(quotationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ScoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePostMutationResult = NonNullable<Awaited<ReturnType<typeof scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost>>>
+    export type ScoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePostMutationBody = QuotationScoreRequest
+    export type ScoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Pontuar cotação
+ */
+export const useScoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost>>, TError,{quotationId: string;data: QuotationScoreRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost>>,
+        TError,
+        {quotationId: string;data: QuotationScoreRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getScoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Seleciona uma cotação como vencedora.
  * @summary Selecionar cotação
  */
-const selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost = <TData = AxiosResponse<PurchaseQuotationResponse>>(
+export const selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost = (
     quotationId: string,
-    selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody: SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/quotations/${quotationId}/select`,
-      selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody,options
-    );
-  }
-/**
+    selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody: SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseQuotationResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/${quotationId}/select`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody, signal
+    },
+      );
+    }
+  
+
+
+export const getSelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost>>, TError,{quotationId: string;data: SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost>>, TError,{quotationId: string;data: SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody}, TContext> => {
+
+const mutationKey = ['selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost>>, {quotationId: string;data: SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody}> = (props) => {
+          const {quotationId,data} = props ?? {};
+
+          return  selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost(quotationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostMutationResult = NonNullable<Awaited<ReturnType<typeof selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost>>>
+    export type SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostMutationBody = SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody
+    export type SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Selecionar cotação
+ */
+export const useSelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost>>, TError,{quotationId: string;data: SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost>>,
+        TError,
+        {quotationId: string;data: SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostBody},
+        TContext
+      > => {
+
+      const mutationOptions = getSelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita uma cotação.
  * @summary Rejeitar cotação
  */
-const rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost = <TData = AxiosResponse<PurchaseQuotationResponse>>(
+export const rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost = (
     quotationId: string,
-    quotationRejectRequest: QuotationRejectRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/quotations/${quotationId}/reject`,
-      quotationRejectRequest,options
-    );
-  }
-/**
+    quotationRejectRequest: QuotationRejectRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseQuotationResponse>(
+      {url: `/api/v1/financial/purchase/purchases/quotations/${quotationId}/reject`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: quotationRejectRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost>>, TError,{quotationId: string;data: QuotationRejectRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost>>, TError,{quotationId: string;data: QuotationRejectRequest}, TContext> => {
+
+const mutationKey = ['rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost>>, {quotationId: string;data: QuotationRejectRequest}> = (props) => {
+          const {quotationId,data} = props ?? {};
+
+          return  rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost(quotationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost>>>
+    export type RejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPostMutationBody = QuotationRejectRequest
+    export type RejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Rejeitar cotação
+ */
+export const useRejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost>>, TError,{quotationId: string;data: QuotationRejectRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost>>,
+        TError,
+        {quotationId: string;data: QuotationRejectRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria uma nova ordem de compra.
  * @summary Criar ordem de compra
  */
-const createOrderApiV1FinancialPurchasePurchasesOrdersPost = <TData = AxiosResponse<PurchaseOrderResponse>>(
-    purchaseOrderCreate: PurchaseOrderCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/orders`,
-      purchaseOrderCreate,options
-    );
-  }
-/**
+export const createOrderApiV1FinancialPurchasePurchasesOrdersPost = (
+    purchaseOrderCreate: PurchaseOrderCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: purchaseOrderCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateOrderApiV1FinancialPurchasePurchasesOrdersPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrderApiV1FinancialPurchasePurchasesOrdersPost>>, TError,{data: PurchaseOrderCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createOrderApiV1FinancialPurchasePurchasesOrdersPost>>, TError,{data: PurchaseOrderCreate}, TContext> => {
+
+const mutationKey = ['createOrderApiV1FinancialPurchasePurchasesOrdersPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createOrderApiV1FinancialPurchasePurchasesOrdersPost>>, {data: PurchaseOrderCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createOrderApiV1FinancialPurchasePurchasesOrdersPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateOrderApiV1FinancialPurchasePurchasesOrdersPostMutationResult = NonNullable<Awaited<ReturnType<typeof createOrderApiV1FinancialPurchasePurchasesOrdersPost>>>
+    export type CreateOrderApiV1FinancialPurchasePurchasesOrdersPostMutationBody = PurchaseOrderCreate
+    export type CreateOrderApiV1FinancialPurchasePurchasesOrdersPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar ordem de compra
+ */
+export const useCreateOrderApiV1FinancialPurchasePurchasesOrdersPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createOrderApiV1FinancialPurchasePurchasesOrdersPost>>, TError,{data: PurchaseOrderCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createOrderApiV1FinancialPurchasePurchasesOrdersPost>>,
+        TError,
+        {data: PurchaseOrderCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateOrderApiV1FinancialPurchasePurchasesOrdersPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista ordens de compra com filtros.
  * @summary Listar ordens de compra
  */
-const listOrdersApiV1FinancialPurchasePurchasesOrdersGet = <TData = AxiosResponse<PurchaseOrderListResponse>>(
-    params: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/orders`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listOrdersApiV1FinancialPurchasePurchasesOrdersGet = (
+    params: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderListResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListOrdersApiV1FinancialPurchasePurchasesOrdersGetQueryKey = (params?: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/orders`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListOrdersApiV1FinancialPurchasePurchasesOrdersGetQueryOptions = <TData = Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError = HTTPValidationError>(params: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListOrdersApiV1FinancialPurchasePurchasesOrdersGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>> = ({ signal }) => listOrdersApiV1FinancialPurchasePurchasesOrdersGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListOrdersApiV1FinancialPurchasePurchasesOrdersGetQueryResult = NonNullable<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>>
+export type ListOrdersApiV1FinancialPurchasePurchasesOrdersGetQueryError = HTTPValidationError
+
+
+export function useListOrdersApiV1FinancialPurchasePurchasesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError = HTTPValidationError>(
+ params: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrdersApiV1FinancialPurchasePurchasesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError = HTTPValidationError>(
+ params: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>,
+          TError,
+          Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListOrdersApiV1FinancialPurchasePurchasesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError = HTTPValidationError>(
+ params: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar ordens de compra
+ */
+
+export function useListOrdersApiV1FinancialPurchasePurchasesOrdersGet<TData = Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError = HTTPValidationError>(
+ params: ListOrdersApiV1FinancialPurchasePurchasesOrdersGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listOrdersApiV1FinancialPurchasePurchasesOrdersGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListOrdersApiV1FinancialPurchasePurchasesOrdersGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de ordens de compra.
  * @summary Estatísticas de ordens
  */
-const getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet = <TData = AxiosResponse<OrderStats>>(
-    params: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/orders/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet = (
+    params: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<OrderStats>(
+      {url: `/api/v1/financial/purchase/purchases/orders/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetQueryKey = (params?: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/orders/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError = HTTPValidationError>(params: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>> = ({ signal }) => getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>>
+export type GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetQueryError = HTTPValidationError
+
+
+export function useGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de ordens
+ */
+
+export function useGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet<TData = Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError = HTTPValidationError>(
+ params: GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca ordem de compra por ID.
  * @summary Buscar ordem
  */
-const getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet = <TData = AxiosResponse<PurchaseOrderResponse>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/orders/${orderId}`,options
-    );
-  }
+export const getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders/${orderId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGetQueryKey = (orderId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/orders/${orderId}`
+    ] as const;
+    }
+
+    
+export const getGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError = HTTPValidationError>(orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGetQueryKey(orderId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>> = ({ signal }) => getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet(orderId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(orderId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>>
+export type GetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGetQueryError = HTTPValidationError
+
+
+export function useGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar ordem
+ */
+
+export function useGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet<TData = Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGetQueryOptions(orderId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma ordem de compra.
  * @summary Atualizar ordem
  */
-const updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut = <TData = AxiosResponse<PurchaseOrderResponse>>(
+export const updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut = (
     orderId: string,
-    purchaseOrderUpdate: PurchaseOrderUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/purchase/purchases/orders/${orderId}`,
-      purchaseOrderUpdate,options
-    );
-  }
-/**
+    purchaseOrderUpdate: PurchaseOrderUpdate,
+ ) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders/${orderId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: purchaseOrderUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut>>, TError,{orderId: string;data: PurchaseOrderUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut>>, TError,{orderId: string;data: PurchaseOrderUpdate}, TContext> => {
+
+const mutationKey = ['updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut>>, {orderId: string;data: PurchaseOrderUpdate}> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut(orderId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut>>>
+    export type UpdateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPutMutationBody = PurchaseOrderUpdate
+    export type UpdateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar ordem
+ */
+export const useUpdateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut>>, TError,{orderId: string;data: PurchaseOrderUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut>>,
+        TError,
+        {orderId: string;data: PurchaseOrderUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova uma ordem de compra.
  * @summary Aprovar ordem
  */
-const approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost = <TData = AxiosResponse<PurchaseOrderResponse>>(
+export const approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost = (
     orderId: string,
-    approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody: ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/orders/${orderId}/approve`,
-      approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody,options
-    );
-  }
-/**
+    approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody: ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders/${orderId}/approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost>>, TError,{orderId: string;data: ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost>>, TError,{orderId: string;data: ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody}, TContext> => {
+
+const mutationKey = ['approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost>>, {orderId: string;data: ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody}> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost(orderId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost>>>
+    export type ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostMutationBody = ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody
+    export type ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar ordem
+ */
+export const useApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost>>, TError,{orderId: string;data: ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost>>,
+        TError,
+        {orderId: string;data: ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostBody},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita uma ordem de compra.
  * @summary Rejeitar ordem
  */
-const rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost = <TData = AxiosResponse<PurchaseOrderResponse>>(
+export const rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost = (
     orderId: string,
-    orderRejectRequest: OrderRejectRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/orders/${orderId}/reject`,
-      orderRejectRequest,options
-    );
-  }
-/**
+    orderRejectRequest: OrderRejectRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders/${orderId}/reject`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: orderRejectRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost>>, TError,{orderId: string;data: OrderRejectRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost>>, TError,{orderId: string;data: OrderRejectRequest}, TContext> => {
+
+const mutationKey = ['rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost>>, {orderId: string;data: OrderRejectRequest}> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost(orderId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost>>>
+    export type RejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPostMutationBody = OrderRejectRequest
+    export type RejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Rejeitar ordem
+ */
+export const useRejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost>>, TError,{orderId: string;data: OrderRejectRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost>>,
+        TError,
+        {orderId: string;data: OrderRejectRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Marca ordem como enviada para fornecedor.
  * @summary Enviar ordem para fornecedor
  */
-const sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost = <TData = AxiosResponse<PurchaseOrderResponse>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/orders/${orderId}/send`,undefined,options
-    );
-  }
-/**
+export const sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders/${orderId}/send`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getSendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost>>, TError,{orderId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost>>, TError,{orderId: string}, TContext> => {
+
+const mutationKey = ['sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost>>, {orderId: string}> = (props) => {
+          const {orderId} = props ?? {};
+
+          return  sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost(orderId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPostMutationResult = NonNullable<Awaited<ReturnType<typeof sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost>>>
+    
+    export type SendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Enviar ordem para fornecedor
+ */
+export const useSendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost>>, TError,{orderId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost>>,
+        TError,
+        {orderId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getSendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Confirma ordem pelo fornecedor.
  * @summary Confirmar ordem pelo fornecedor
  */
-const confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost = <TData = AxiosResponse<PurchaseOrderResponse>>(
+export const confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost = (
     orderId: string,
-    params?: ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/orders/${orderId}/confirm`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders/${orderId}/confirm`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost>>, TError,{orderId: string;params?: ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost>>, TError,{orderId: string;params?: ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostParams}, TContext> => {
+
+const mutationKey = ['confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost>>, {orderId: string;params?: ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostParams}> = (props) => {
+          const {orderId,params} = props ?? {};
+
+          return  confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost(orderId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost>>>
+    
+    export type ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Confirmar ordem pelo fornecedor
+ */
+export const useConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost>>, TError,{orderId: string;params?: ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost>>,
+        TError,
+        {orderId: string;params?: ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela uma ordem de compra.
  * @summary Cancelar ordem
  */
-const cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost = <TData = AxiosResponse<PurchaseOrderResponse>>(
+export const cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost = (
     orderId: string,
-    orderCancelRequest: OrderCancelRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/orders/${orderId}/cancel`,
-      orderCancelRequest,options
-    );
-  }
-/**
+    orderCancelRequest: OrderCancelRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseOrderResponse>(
+      {url: `/api/v1/financial/purchase/purchases/orders/${orderId}/cancel`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: orderCancelRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getCancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost>>, TError,{orderId: string;data: OrderCancelRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost>>, TError,{orderId: string;data: OrderCancelRequest}, TContext> => {
+
+const mutationKey = ['cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost>>, {orderId: string;data: OrderCancelRequest}> = (props) => {
+          const {orderId,data} = props ?? {};
+
+          return  cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost(orderId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost>>>
+    export type CancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPostMutationBody = OrderCancelRequest
+    export type CancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancelar ordem
+ */
+export const useCancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost>>, TError,{orderId: string;data: OrderCancelRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost>>,
+        TError,
+        {orderId: string;data: OrderCancelRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria um novo recebimento de mercadorias.
  * @summary Criar recebimento
  */
-const createReceiptApiV1FinancialPurchasePurchasesReceiptsPost = <TData = AxiosResponse<GoodsReceiptResponse>>(
-    goodsReceiptCreate: GoodsReceiptCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/receipts`,
-      goodsReceiptCreate,options
-    );
-  }
-/**
+export const createReceiptApiV1FinancialPurchasePurchasesReceiptsPost = (
+    goodsReceiptCreate: GoodsReceiptCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: goodsReceiptCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateReceiptApiV1FinancialPurchasePurchasesReceiptsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReceiptApiV1FinancialPurchasePurchasesReceiptsPost>>, TError,{data: GoodsReceiptCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createReceiptApiV1FinancialPurchasePurchasesReceiptsPost>>, TError,{data: GoodsReceiptCreate}, TContext> => {
+
+const mutationKey = ['createReceiptApiV1FinancialPurchasePurchasesReceiptsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReceiptApiV1FinancialPurchasePurchasesReceiptsPost>>, {data: GoodsReceiptCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createReceiptApiV1FinancialPurchasePurchasesReceiptsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReceiptApiV1FinancialPurchasePurchasesReceiptsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createReceiptApiV1FinancialPurchasePurchasesReceiptsPost>>>
+    export type CreateReceiptApiV1FinancialPurchasePurchasesReceiptsPostMutationBody = GoodsReceiptCreate
+    export type CreateReceiptApiV1FinancialPurchasePurchasesReceiptsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar recebimento
+ */
+export const useCreateReceiptApiV1FinancialPurchasePurchasesReceiptsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReceiptApiV1FinancialPurchasePurchasesReceiptsPost>>, TError,{data: GoodsReceiptCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createReceiptApiV1FinancialPurchasePurchasesReceiptsPost>>,
+        TError,
+        {data: GoodsReceiptCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateReceiptApiV1FinancialPurchasePurchasesReceiptsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista recebimentos com filtros.
  * @summary Listar recebimentos
  */
-const listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet = <TData = AxiosResponse<GoodsReceiptListResponse>>(
-    params: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/receipts`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet = (
+    params: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptListResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetQueryKey = (params?: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/receipts`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetQueryOptions = <TData = Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError = HTTPValidationError>(params: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>> = ({ signal }) => listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>>
+export type ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetQueryError = HTTPValidationError
+
+
+export function useListReceiptsApiV1FinancialPurchasePurchasesReceiptsGet<TData = Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError = HTTPValidationError>(
+ params: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReceiptsApiV1FinancialPurchasePurchasesReceiptsGet<TData = Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError = HTTPValidationError>(
+ params: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReceiptsApiV1FinancialPurchasePurchasesReceiptsGet<TData = Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError = HTTPValidationError>(
+ params: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar recebimentos
+ */
+
+export function useListReceiptsApiV1FinancialPurchasePurchasesReceiptsGet<TData = Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError = HTTPValidationError>(
+ params: ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista recebimentos de uma ordem de compra.
  * @summary Listar recebimentos de uma ordem
  */
-const listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet = <TData = AxiosResponse<GoodsReceiptResponse[]>>(
-    orderId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/receipts/by-order/${orderId}`,options
-    );
-  }
+export const listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet = (
+    orderId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse[]>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/by-order/${orderId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGetQueryKey = (orderId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/receipts/by-order/${orderId}`
+    ] as const;
+    }
+
+    
+export const getListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGetQueryOptions = <TData = Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError = HTTPValidationError>(orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGetQueryKey(orderId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>> = ({ signal }) => listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet(orderId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(orderId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>>
+export type ListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGetQueryError = HTTPValidationError
+
+
+export function useListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet<TData = Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet<TData = Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet<TData = Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar recebimentos de uma ordem
+ */
+
+export function useListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet<TData = Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError = HTTPValidationError>(
+ orderId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGetQueryOptions(orderId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de recebimentos.
  * @summary Estatísticas de recebimentos
  */
-const getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet = <TData = AxiosResponse<ReceiptStats>>(
-    params: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/receipts/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet = (
+    params: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceiptStats>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetQueryKey = (params?: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/receipts/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError = HTTPValidationError>(params: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>> = ({ signal }) => getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>>
+export type GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet<TData = Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError = HTTPValidationError>(
+ params: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet<TData = Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError = HTTPValidationError>(
+ params: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet<TData = Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError = HTTPValidationError>(
+ params: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de recebimentos
+ */
+
+export function useGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet<TData = Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError = HTTPValidationError>(
+ params: GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca recebimento por ID.
  * @summary Buscar recebimento
  */
-const getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet = <TData = AxiosResponse<GoodsReceiptResponse>>(
-    receiptId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/receipts/${receiptId}`,options
-    );
-  }
+export const getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet = (
+    receiptId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/${receiptId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGetQueryKey = (receiptId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/receipts/${receiptId}`
+    ] as const;
+    }
+
+    
+export const getGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError = HTTPValidationError>(receiptId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGetQueryKey(receiptId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>> = ({ signal }) => getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet(receiptId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(receiptId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>>
+export type GetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGetQueryError = HTTPValidationError
+
+
+export function useGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet<TData = Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError = HTTPValidationError>(
+ receiptId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet<TData = Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError = HTTPValidationError>(
+ receiptId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet<TData = Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError = HTTPValidationError>(
+ receiptId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar recebimento
+ */
+
+export function useGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet<TData = Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError = HTTPValidationError>(
+ receiptId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGetQueryOptions(receiptId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza um recebimento.
  * @summary Atualizar recebimento
  */
-const updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut = <TData = AxiosResponse<GoodsReceiptResponse>>(
+export const updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut = (
     receiptId: string,
-    goodsReceiptUpdate: GoodsReceiptUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/purchase/purchases/receipts/${receiptId}`,
-      goodsReceiptUpdate,options
-    );
-  }
-/**
+    goodsReceiptUpdate: GoodsReceiptUpdate,
+ ) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/${receiptId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: goodsReceiptUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut>>, TError,{receiptId: string;data: GoodsReceiptUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut>>, TError,{receiptId: string;data: GoodsReceiptUpdate}, TContext> => {
+
+const mutationKey = ['updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut>>, {receiptId: string;data: GoodsReceiptUpdate}> = (props) => {
+          const {receiptId,data} = props ?? {};
+
+          return  updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut(receiptId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut>>>
+    export type UpdateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPutMutationBody = GoodsReceiptUpdate
+    export type UpdateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar recebimento
+ */
+export const useUpdateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut>>, TError,{receiptId: string;data: GoodsReceiptUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut>>,
+        TError,
+        {receiptId: string;data: GoodsReceiptUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Realiza inspeção do recebimento.
  * @summary Realizar inspeção
  */
-const inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost = <TData = AxiosResponse<GoodsReceiptResponse>>(
+export const inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost = (
     receiptId: string,
-    receiptInspectionRequest: ReceiptInspectionRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/receipts/${receiptId}/inspect`,
-      receiptInspectionRequest,options
-    );
-  }
-/**
+    receiptInspectionRequest: ReceiptInspectionRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/${receiptId}/inspect`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: receiptInspectionRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getInspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost>>, TError,{receiptId: string;data: ReceiptInspectionRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost>>, TError,{receiptId: string;data: ReceiptInspectionRequest}, TContext> => {
+
+const mutationKey = ['inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost>>, {receiptId: string;data: ReceiptInspectionRequest}> = (props) => {
+          const {receiptId,data} = props ?? {};
+
+          return  inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost(receiptId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPostMutationResult = NonNullable<Awaited<ReturnType<typeof inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost>>>
+    export type InspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPostMutationBody = ReceiptInspectionRequest
+    export type InspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Realizar inspeção
+ */
+export const useInspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost>>, TError,{receiptId: string;data: ReceiptInspectionRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost>>,
+        TError,
+        {receiptId: string;data: ReceiptInspectionRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getInspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova o recebimento.
  * @summary Aprovar recebimento
  */
-const approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost = <TData = AxiosResponse<GoodsReceiptResponse>>(
+export const approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost = (
     receiptId: string,
-    approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody: ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/receipts/${receiptId}/approve`,
-      approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody,options
-    );
-  }
-/**
+    approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody: ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/${receiptId}/approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost>>, TError,{receiptId: string;data: ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost>>, TError,{receiptId: string;data: ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody}, TContext> => {
+
+const mutationKey = ['approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost>>, {receiptId: string;data: ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody}> = (props) => {
+          const {receiptId,data} = props ?? {};
+
+          return  approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost(receiptId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost>>>
+    export type ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostMutationBody = ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody
+    export type ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar recebimento
+ */
+export const useApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost>>, TError,{receiptId: string;data: ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost>>,
+        TError,
+        {receiptId: string;data: ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostBody},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita o recebimento.
  * @summary Rejeitar recebimento
  */
-const rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost = <TData = AxiosResponse<GoodsReceiptResponse>>(
+export const rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost = (
     receiptId: string,
-    receiptRejectRequest: ReceiptRejectRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/receipts/${receiptId}/reject`,
-      receiptRejectRequest,options
-    );
-  }
-/**
+    receiptRejectRequest: ReceiptRejectRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/${receiptId}/reject`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: receiptRejectRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost>>, TError,{receiptId: string;data: ReceiptRejectRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost>>, TError,{receiptId: string;data: ReceiptRejectRequest}, TContext> => {
+
+const mutationKey = ['rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost>>, {receiptId: string;data: ReceiptRejectRequest}> = (props) => {
+          const {receiptId,data} = props ?? {};
+
+          return  rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost(receiptId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost>>>
+    export type RejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPostMutationBody = ReceiptRejectRequest
+    export type RejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Rejeitar recebimento
+ */
+export const useRejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost>>, TError,{receiptId: string;data: ReceiptRejectRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost>>,
+        TError,
+        {receiptId: string;data: ReceiptRejectRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Registra divergência no recebimento.
  * @summary Registrar divergência
  */
-const registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost = <TData = AxiosResponse<GoodsReceiptResponse>>(
+export const registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost = (
     receiptId: string,
-    receiptDivergenceRequest: ReceiptDivergenceRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/receipts/${receiptId}/divergence`,
-      receiptDivergenceRequest,options
-    );
-  }
-/**
+    receiptDivergenceRequest: ReceiptDivergenceRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/${receiptId}/divergence`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: receiptDivergenceRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRegisterDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost>>, TError,{receiptId: string;data: ReceiptDivergenceRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost>>, TError,{receiptId: string;data: ReceiptDivergenceRequest}, TContext> => {
+
+const mutationKey = ['registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost>>, {receiptId: string;data: ReceiptDivergenceRequest}> = (props) => {
+          const {receiptId,data} = props ?? {};
+
+          return  registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost(receiptId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePostMutationResult = NonNullable<Awaited<ReturnType<typeof registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost>>>
+    export type RegisterDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePostMutationBody = ReceiptDivergenceRequest
+    export type RegisterDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Registrar divergência
+ */
+export const useRegisterDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost>>, TError,{receiptId: string;data: ReceiptDivergenceRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost>>,
+        TError,
+        {receiptId: string;data: ReceiptDivergenceRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRegisterDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Assina o recebimento.
  * @summary Assinar recebimento
  */
-const signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost = <TData = AxiosResponse<GoodsReceiptResponse>>(
+export const signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost = (
     receiptId: string,
-    receiptSignRequest: ReceiptSignRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/receipts/${receiptId}/sign`,
-      receiptSignRequest,options
-    );
-  }
-/**
+    receiptSignRequest: ReceiptSignRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GoodsReceiptResponse>(
+      {url: `/api/v1/financial/purchase/purchases/receipts/${receiptId}/sign`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: receiptSignRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getSignReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost>>, TError,{receiptId: string;data: ReceiptSignRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost>>, TError,{receiptId: string;data: ReceiptSignRequest}, TContext> => {
+
+const mutationKey = ['signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost>>, {receiptId: string;data: ReceiptSignRequest}> = (props) => {
+          const {receiptId,data} = props ?? {};
+
+          return  signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost(receiptId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SignReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPostMutationResult = NonNullable<Awaited<ReturnType<typeof signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost>>>
+    export type SignReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPostMutationBody = ReceiptSignRequest
+    export type SignReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Assinar recebimento
+ */
+export const useSignReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost>>, TError,{receiptId: string;data: ReceiptSignRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost>>,
+        TError,
+        {receiptId: string;data: ReceiptSignRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getSignReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna aprovações pendentes do usuário atual.
  * @summary Minhas aprovações pendentes
  */
-const getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet = <TData = AxiosResponse<MyApprovalsResponse>>(
-    params: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/approvals/my`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet = (
+    params: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<MyApprovalsResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/my`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetQueryKey = (params?: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/approvals/my`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetQueryOptions = <TData = Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError = HTTPValidationError>(params: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>> = ({ signal }) => getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetQueryResult = NonNullable<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>>
+export type GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetQueryError = HTTPValidationError
+
+
+export function useGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet<TData = Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError = HTTPValidationError>(
+ params: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet<TData = Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError = HTTPValidationError>(
+ params: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet<TData = Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError = HTTPValidationError>(
+ params: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Minhas aprovações pendentes
+ */
+
+export function useGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet<TData = Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError = HTTPValidationError>(
+ params: GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista aprovações com filtros.
  * @summary Listar aprovações
  */
-const listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet = <TData = AxiosResponse<PurchaseApprovalListResponse>>(
-    params: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/approvals`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet = (
+    params: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseApprovalListResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetQueryKey = (params?: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/approvals`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetQueryOptions = <TData = Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError = HTTPValidationError>(params: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>> = ({ signal }) => listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>>
+export type ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetQueryError = HTTPValidationError
+
+
+export function useListApprovalsApiV1FinancialPurchasePurchasesApprovalsGet<TData = Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError = HTTPValidationError>(
+ params: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListApprovalsApiV1FinancialPurchasePurchasesApprovalsGet<TData = Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError = HTTPValidationError>(
+ params: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListApprovalsApiV1FinancialPurchasePurchasesApprovalsGet<TData = Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError = HTTPValidationError>(
+ params: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar aprovações
+ */
+
+export function useListApprovalsApiV1FinancialPurchasePurchasesApprovalsGet<TData = Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError = HTTPValidationError>(
+ params: ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de aprovações.
  * @summary Estatísticas de aprovações
  */
-const getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet = <TData = AxiosResponse<ApprovalStats>>(
-    params: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/approvals/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet = (
+    params: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ApprovalStats>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetQueryKey = (params?: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/approvals/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError = HTTPValidationError>(params: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>> = ({ signal }) => getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>>
+export type GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet<TData = Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError = HTTPValidationError>(
+ params: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet<TData = Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError = HTTPValidationError>(
+ params: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet<TData = Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError = HTTPValidationError>(
+ params: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de aprovações
+ */
+
+export function useGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet<TData = Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError = HTTPValidationError>(
+ params: GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca aprovação por ID.
  * @summary Buscar aprovação
  */
-const getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet = <TData = AxiosResponse<PurchaseApprovalResponse>>(
-    approvalId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/approvals/${approvalId}`,options
-    );
-  }
+export const getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet = (
+    approvalId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseApprovalResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/${approvalId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGetQueryKey = (approvalId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/approvals/${approvalId}`
+    ] as const;
+    }
+
+    
+export const getGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError = HTTPValidationError>(approvalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGetQueryKey(approvalId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>> = ({ signal }) => getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet(approvalId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(approvalId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>>
+export type GetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGetQueryError = HTTPValidationError
+
+
+export function useGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet<TData = Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError = HTTPValidationError>(
+ approvalId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet<TData = Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError = HTTPValidationError>(
+ approvalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet<TData = Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError = HTTPValidationError>(
+ approvalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar aprovação
+ */
+
+export function useGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet<TData = Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError = HTTPValidationError>(
+ approvalId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGetQueryOptions(approvalId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Aprova uma solicitação.
  * @summary Aprovar
  */
-const approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost = <TData = AxiosResponse<PurchaseApprovalResponse>>(
+export const approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost = (
     approvalId: string,
-    approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody: ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/approvals/${approvalId}/approve`,
-      approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody,options
-    );
-  }
-/**
+    approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody: ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseApprovalResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/${approvalId}/approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost>>, TError,{approvalId: string;data: ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost>>, TError,{approvalId: string;data: ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody}, TContext> => {
+
+const mutationKey = ['approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost>>, {approvalId: string;data: ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody}> = (props) => {
+          const {approvalId,data} = props ?? {};
+
+          return  approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost(approvalId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost>>>
+    export type ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostMutationBody = ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody
+    export type ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar
+ */
+export const useApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost>>, TError,{approvalId: string;data: ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost>>,
+        TError,
+        {approvalId: string;data: ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostBody},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita uma solicitação.
  * @summary Rejeitar
  */
-const rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost = <TData = AxiosResponse<PurchaseApprovalResponse>>(
+export const rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost = (
     approvalId: string,
-    approvalRejectRequest: ApprovalRejectRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/approvals/${approvalId}/reject`,
-      approvalRejectRequest,options
-    );
-  }
-/**
+    approvalRejectRequest: ApprovalRejectRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseApprovalResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/${approvalId}/reject`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approvalRejectRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost>>, TError,{approvalId: string;data: ApprovalRejectRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost>>, TError,{approvalId: string;data: ApprovalRejectRequest}, TContext> => {
+
+const mutationKey = ['rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost>>, {approvalId: string;data: ApprovalRejectRequest}> = (props) => {
+          const {approvalId,data} = props ?? {};
+
+          return  rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost(approvalId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost>>>
+    export type RejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPostMutationBody = ApprovalRejectRequest
+    export type RejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Rejeitar
+ */
+export const useRejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost>>, TError,{approvalId: string;data: ApprovalRejectRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost>>,
+        TError,
+        {approvalId: string;data: ApprovalRejectRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Delega aprovação para outro usuário.
  * @summary Delegar aprovação
  */
-const delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost = <TData = AxiosResponse<PurchaseApprovalResponse>>(
+export const delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost = (
     approvalId: string,
-    approvalDelegateRequest: ApprovalDelegateRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/approvals/${approvalId}/delegate`,
-      approvalDelegateRequest,options
-    );
-  }
-/**
+    approvalDelegateRequest: ApprovalDelegateRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseApprovalResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/${approvalId}/delegate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approvalDelegateRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getDelegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost>>, TError,{approvalId: string;data: ApprovalDelegateRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost>>, TError,{approvalId: string;data: ApprovalDelegateRequest}, TContext> => {
+
+const mutationKey = ['delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost>>, {approvalId: string;data: ApprovalDelegateRequest}> = (props) => {
+          const {approvalId,data} = props ?? {};
+
+          return  delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost(approvalId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DelegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePostMutationResult = NonNullable<Awaited<ReturnType<typeof delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost>>>
+    export type DelegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePostMutationBody = ApprovalDelegateRequest
+    export type DelegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Delegar aprovação
+ */
+export const useDelegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost>>, TError,{approvalId: string;data: ApprovalDelegateRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost>>,
+        TError,
+        {approvalId: string;data: ApprovalDelegateRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getDelegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Solicita informações adicionais.
  * @summary Solicitar informações
  */
-const requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost = <TData = AxiosResponse<PurchaseApprovalResponse>>(
+export const requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost = (
     approvalId: string,
-    approvalInfoRequest: ApprovalInfoRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/approvals/${approvalId}/request-info`,
-      approvalInfoRequest,options
-    );
-  }
-/**
+    approvalInfoRequest: ApprovalInfoRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseApprovalResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/${approvalId}/request-info`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approvalInfoRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRequestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost>>, TError,{approvalId: string;data: ApprovalInfoRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost>>, TError,{approvalId: string;data: ApprovalInfoRequest}, TContext> => {
+
+const mutationKey = ['requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost>>, {approvalId: string;data: ApprovalInfoRequest}> = (props) => {
+          const {approvalId,data} = props ?? {};
+
+          return  requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost(approvalId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPostMutationResult = NonNullable<Awaited<ReturnType<typeof requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost>>>
+    export type RequestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPostMutationBody = ApprovalInfoRequest
+    export type RequestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Solicitar informações
+ */
+export const useRequestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost>>, TError,{approvalId: string;data: ApprovalInfoRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost>>,
+        TError,
+        {approvalId: string;data: ApprovalInfoRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRequestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Fornece informações solicitadas.
  * @summary Fornecer informações
  */
-const provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost = <TData = AxiosResponse<PurchaseApprovalResponse>>(
+export const provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost = (
     approvalId: string,
-    approvalInfoProvideRequest: ApprovalInfoProvideRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/approvals/${approvalId}/provide-info`,
-      approvalInfoProvideRequest,options
-    );
-  }
-/**
+    approvalInfoProvideRequest: ApprovalInfoProvideRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PurchaseApprovalResponse>(
+      {url: `/api/v1/financial/purchase/purchases/approvals/${approvalId}/provide-info`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: approvalInfoProvideRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getProvideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost>>, TError,{approvalId: string;data: ApprovalInfoProvideRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost>>, TError,{approvalId: string;data: ApprovalInfoProvideRequest}, TContext> => {
+
+const mutationKey = ['provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost>>, {approvalId: string;data: ApprovalInfoProvideRequest}> = (props) => {
+          const {approvalId,data} = props ?? {};
+
+          return  provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost(approvalId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProvideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPostMutationResult = NonNullable<Awaited<ReturnType<typeof provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost>>>
+    export type ProvideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPostMutationBody = ApprovalInfoProvideRequest
+    export type ProvideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Fornecer informações
+ */
+export const useProvideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost>>, TError,{approvalId: string;data: ApprovalInfoProvideRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost>>,
+        TError,
+        {approvalId: string;data: ApprovalInfoProvideRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getProvideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Sugere fornecedores para um produto usando IA.
  * @summary Sugerir fornecedores
  */
-const suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost = <TData = AxiosResponse<unknown>>(
-    params: SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/ai/suggest-suppliers`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+export const suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost = (
+    params: SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/purchase/purchases/ai/suggest-suppliers`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getSuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost>>, TError,{params: SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost>>, TError,{params: SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams}, TContext> => {
+
+const mutationKey = ['suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost>>, {params: SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost(params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostMutationResult = NonNullable<Awaited<ReturnType<typeof suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost>>>
+    
+    export type SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Sugerir fornecedores
+ */
+export const useSuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost>>, TError,{params: SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost>>,
+        TError,
+        {params: SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getSuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Analisa performance de um fornecedor usando IA.
  * @summary Analisar fornecedor
  */
-const analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet = <TData = AxiosResponse<unknown>>(
-    supplierId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/ai/supplier-analysis/${supplierId}`,options
-    );
-  }
+export const analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet = (
+    supplierId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/purchase/purchases/ai/supplier-analysis/${supplierId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGetQueryKey = (supplierId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/ai/supplier-analysis/${supplierId}`
+    ] as const;
+    }
+
+    
+export const getAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError = HTTPValidationError>(supplierId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGetQueryKey(supplierId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>> = ({ signal }) => analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet(supplierId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(supplierId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>>
+export type AnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGetQueryError = HTTPValidationError
+
+
+export function useAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet<TData = Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError = HTTPValidationError>(
+ supplierId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet<TData = Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError = HTTPValidationError>(
+ supplierId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet<TData = Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError = HTTPValidationError>(
+ supplierId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Analisar fornecedor
+ */
+
+export function useAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet<TData = Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError = HTTPValidationError>(
+ supplierId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGetQueryOptions(supplierId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Prevê demanda futura de um produto usando IA.
  * @summary Prever demanda
  */
-const predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost = <TData = AxiosResponse<unknown>>(
-    params: PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/purchase/purchases/ai/predict-demand`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+export const predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost = (
+    params: PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/purchase/purchases/ai/predict-demand`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getPredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost>>, TError,{params: PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost>>, TError,{params: PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostParams}, TContext> => {
+
+const mutationKey = ['predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost>>, {params: PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost(params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostMutationResult = NonNullable<Awaited<ReturnType<typeof predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost>>>
+    
+    export type PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Prever demanda
+ */
+export const usePredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost>>, TError,{params: PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost>>,
+        TError,
+        {params: PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getPredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula ponto de reposição de um produto usando IA.
  * @summary Calcular ponto de reposição
  */
-const calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet = <TData = AxiosResponse<unknown>>(
-    productId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/purchase/purchases/ai/reorder-point/${productId}`,options
-    );
-  }
-return {createProductCategoryApiV1FinancialPurchasePurchasesCategoriesPost,listProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGet,getCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGet,getCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGet,getProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGet,updateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPut,deleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDelete,createProductApiV1FinancialPurchasePurchasesProductsPost,listProductsApiV1FinancialPurchasePurchasesProductsGet,getProductStatsApiV1FinancialPurchasePurchasesProductsStatsGet,getProductApiV1FinancialPurchasePurchasesProductsProductIdGet,updateProductApiV1FinancialPurchasePurchasesProductsProductIdPut,deleteProductApiV1FinancialPurchasePurchasesProductsProductIdDelete,blockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPost,createRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost,listRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet,getRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet,getRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGet,updateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPut,submitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPost,approveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePost,rejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPost,cancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPost,analyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPost,createQuotationApiV1FinancialPurchasePurchasesQuotationsPost,listQuotationsApiV1FinancialPurchasePurchasesQuotationsGet,listQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGet,compareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGet,getQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGet,getQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGet,updateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPut,scoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePost,selectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPost,rejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPost,createOrderApiV1FinancialPurchasePurchasesOrdersPost,listOrdersApiV1FinancialPurchasePurchasesOrdersGet,getOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGet,getOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGet,updateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPut,approveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePost,rejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPost,sendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPost,confirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPost,cancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPost,createReceiptApiV1FinancialPurchasePurchasesReceiptsPost,listReceiptsApiV1FinancialPurchasePurchasesReceiptsGet,listReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGet,getReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGet,getReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGet,updateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPut,inspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPost,approveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePost,rejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPost,registerDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePost,signReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPost,getMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGet,listApprovalsApiV1FinancialPurchasePurchasesApprovalsGet,getApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGet,getApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGet,approveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePost,rejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPost,delegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePost,requestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPost,provideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPost,suggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPost,analyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGet,predictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPost,calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet}};
-export type CreateProductCategoryApiV1FinancialPurchasePurchasesCategoriesPostResult = AxiosResponse<ProductCategoryResponse>
-export type ListProductCategoriesApiV1FinancialPurchasePurchasesCategoriesGetResult = AxiosResponse<ProductCategoryResponse[]>
-export type GetCategoryTreeApiV1FinancialPurchasePurchasesCategoriesTreeGetResult = AxiosResponse<ProductCategoryTreeResponse[]>
-export type GetCategoryStatsApiV1FinancialPurchasePurchasesCategoriesStatsGetResult = AxiosResponse<ProductCategoryStats>
-export type GetProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdGetResult = AxiosResponse<ProductCategoryResponse>
-export type UpdateProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdPutResult = AxiosResponse<ProductCategoryResponse>
-export type DeleteProductCategoryApiV1FinancialPurchasePurchasesCategoriesCategoryIdDeleteResult = AxiosResponse<void>
-export type CreateProductApiV1FinancialPurchasePurchasesProductsPostResult = AxiosResponse<ProductResponse>
-export type ListProductsApiV1FinancialPurchasePurchasesProductsGetResult = AxiosResponse<ProductListResponse>
-export type GetProductStatsApiV1FinancialPurchasePurchasesProductsStatsGetResult = AxiosResponse<ProductStats>
-export type GetProductApiV1FinancialPurchasePurchasesProductsProductIdGetResult = AxiosResponse<ProductResponse>
-export type UpdateProductApiV1FinancialPurchasePurchasesProductsProductIdPutResult = AxiosResponse<ProductResponse>
-export type DeleteProductApiV1FinancialPurchasePurchasesProductsProductIdDeleteResult = AxiosResponse<void>
-export type BlockProductApiV1FinancialPurchasePurchasesProductsProductIdBlockPostResult = AxiosResponse<ProductResponse>
-export type CreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPostResult = AxiosResponse<PurchaseRequisitionResponse>
-export type ListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetResult = AxiosResponse<PurchaseRequisitionListResponse>
-export type GetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGetResult = AxiosResponse<RequisitionStats>
-export type GetRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdGetResult = AxiosResponse<PurchaseRequisitionResponse>
-export type UpdateRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdPutResult = AxiosResponse<PurchaseRequisitionResponse>
-export type SubmitRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdSubmitPostResult = AxiosResponse<PurchaseRequisitionResponse>
-export type ApproveRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdApprovePostResult = AxiosResponse<PurchaseRequisitionResponse>
-export type RejectRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdRejectPostResult = AxiosResponse<PurchaseRequisitionResponse>
-export type CancelRequisitionApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdCancelPostResult = AxiosResponse<PurchaseRequisitionResponse>
-export type AnalyzeRequisitionRisksApiV1FinancialPurchasePurchasesRequisitionsRequisitionIdAnalyzeRisksPostResult = AxiosResponse<unknown>
-export type CreateQuotationApiV1FinancialPurchasePurchasesQuotationsPostResult = AxiosResponse<PurchaseQuotationResponse>
-export type ListQuotationsApiV1FinancialPurchasePurchasesQuotationsGetResult = AxiosResponse<PurchaseQuotationListResponse>
-export type ListQuotationsByRequisitionApiV1FinancialPurchasePurchasesQuotationsByRequisitionRequisitionIdGetResult = AxiosResponse<PurchaseQuotationResponse[]>
-export type CompareQuotationsApiV1FinancialPurchasePurchasesQuotationsCompareRequisitionIdGetResult = AxiosResponse<QuotationComparisonResponse>
-export type GetQuotationStatsApiV1FinancialPurchasePurchasesQuotationsStatsGetResult = AxiosResponse<QuotationStats>
-export type GetQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdGetResult = AxiosResponse<PurchaseQuotationResponse>
-export type UpdateQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdPutResult = AxiosResponse<PurchaseQuotationResponse>
-export type ScoreQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdScorePostResult = AxiosResponse<PurchaseQuotationResponse>
-export type SelectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdSelectPostResult = AxiosResponse<PurchaseQuotationResponse>
-export type RejectQuotationApiV1FinancialPurchasePurchasesQuotationsQuotationIdRejectPostResult = AxiosResponse<PurchaseQuotationResponse>
-export type CreateOrderApiV1FinancialPurchasePurchasesOrdersPostResult = AxiosResponse<PurchaseOrderResponse>
-export type ListOrdersApiV1FinancialPurchasePurchasesOrdersGetResult = AxiosResponse<PurchaseOrderListResponse>
-export type GetOrderStatsApiV1FinancialPurchasePurchasesOrdersStatsGetResult = AxiosResponse<OrderStats>
-export type GetOrderApiV1FinancialPurchasePurchasesOrdersOrderIdGetResult = AxiosResponse<PurchaseOrderResponse>
-export type UpdateOrderApiV1FinancialPurchasePurchasesOrdersOrderIdPutResult = AxiosResponse<PurchaseOrderResponse>
-export type ApproveOrderApiV1FinancialPurchasePurchasesOrdersOrderIdApprovePostResult = AxiosResponse<PurchaseOrderResponse>
-export type RejectOrderApiV1FinancialPurchasePurchasesOrdersOrderIdRejectPostResult = AxiosResponse<PurchaseOrderResponse>
-export type SendOrderApiV1FinancialPurchasePurchasesOrdersOrderIdSendPostResult = AxiosResponse<PurchaseOrderResponse>
-export type ConfirmOrderApiV1FinancialPurchasePurchasesOrdersOrderIdConfirmPostResult = AxiosResponse<PurchaseOrderResponse>
-export type CancelOrderApiV1FinancialPurchasePurchasesOrdersOrderIdCancelPostResult = AxiosResponse<PurchaseOrderResponse>
-export type CreateReceiptApiV1FinancialPurchasePurchasesReceiptsPostResult = AxiosResponse<GoodsReceiptResponse>
-export type ListReceiptsApiV1FinancialPurchasePurchasesReceiptsGetResult = AxiosResponse<GoodsReceiptListResponse>
-export type ListReceiptsByOrderApiV1FinancialPurchasePurchasesReceiptsByOrderOrderIdGetResult = AxiosResponse<GoodsReceiptResponse[]>
-export type GetReceiptStatsApiV1FinancialPurchasePurchasesReceiptsStatsGetResult = AxiosResponse<ReceiptStats>
-export type GetReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdGetResult = AxiosResponse<GoodsReceiptResponse>
-export type UpdateReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdPutResult = AxiosResponse<GoodsReceiptResponse>
-export type InspectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdInspectPostResult = AxiosResponse<GoodsReceiptResponse>
-export type ApproveReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdApprovePostResult = AxiosResponse<GoodsReceiptResponse>
-export type RejectReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdRejectPostResult = AxiosResponse<GoodsReceiptResponse>
-export type RegisterDivergenceApiV1FinancialPurchasePurchasesReceiptsReceiptIdDivergencePostResult = AxiosResponse<GoodsReceiptResponse>
-export type SignReceiptApiV1FinancialPurchasePurchasesReceiptsReceiptIdSignPostResult = AxiosResponse<GoodsReceiptResponse>
-export type GetMyApprovalsApiV1FinancialPurchasePurchasesApprovalsMyGetResult = AxiosResponse<MyApprovalsResponse>
-export type ListApprovalsApiV1FinancialPurchasePurchasesApprovalsGetResult = AxiosResponse<PurchaseApprovalListResponse>
-export type GetApprovalStatsApiV1FinancialPurchasePurchasesApprovalsStatsGetResult = AxiosResponse<ApprovalStats>
-export type GetApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdGetResult = AxiosResponse<PurchaseApprovalResponse>
-export type ApproveApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdApprovePostResult = AxiosResponse<PurchaseApprovalResponse>
-export type RejectApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdRejectPostResult = AxiosResponse<PurchaseApprovalResponse>
-export type DelegateApprovalApiV1FinancialPurchasePurchasesApprovalsApprovalIdDelegatePostResult = AxiosResponse<PurchaseApprovalResponse>
-export type RequestInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdRequestInfoPostResult = AxiosResponse<PurchaseApprovalResponse>
-export type ProvideInfoApiV1FinancialPurchasePurchasesApprovalsApprovalIdProvideInfoPostResult = AxiosResponse<PurchaseApprovalResponse>
-export type SuggestSuppliersApiV1FinancialPurchasePurchasesAiSuggestSuppliersPostResult = AxiosResponse<unknown>
-export type AnalyzeSupplierApiV1FinancialPurchasePurchasesAiSupplierAnalysisSupplierIdGetResult = AxiosResponse<unknown>
-export type PredictDemandApiV1FinancialPurchasePurchasesAiPredictDemandPostResult = AxiosResponse<unknown>
-export type CalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGetResult = AxiosResponse<unknown>
+export const calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet = (
+    productId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/purchase/purchases/ai/reorder-point/${productId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGetQueryKey = (productId?: string,) => {
+    return [
+    `/api/v1/financial/purchase/purchases/ai/reorder-point/${productId}`
+    ] as const;
+    }
+
+    
+export const getCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGetQueryOptions = <TData = Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError = HTTPValidationError>(productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGetQueryKey(productId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>> = ({ signal }) => calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet(productId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(productId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>>
+export type CalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGetQueryError = HTTPValidationError
+
+
+export function useCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet<TData = Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet<TData = Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet<TData = Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Calcular ponto de reposição
+ */
+
+export function useCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet<TData = Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError = HTTPValidationError>(
+ productId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof calculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCalculateReorderPointApiV1FinancialPurchasePurchasesAiReorderPointProductIdGetQueryOptions(productId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

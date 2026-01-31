@@ -34,6 +34,12 @@ from modules.operacional.occurrences import occurrence_router
 # Disciplinary - Medidas Administrativas
 from modules.operacional.disciplinary import router as disciplinary_router
 
+# Communication - Comunicados, Notificacoes, Alertas
+from modules.operacional.communication import communication_router
+
+# Inspection Rounds - Rondas de Inspecao
+from modules.operacional.inspection_rounds import inspection_round_router
+
 # ===================================================================
 # MÓDULO FINANCIAL - Gestão Financeira Completa
 # ===================================================================
@@ -150,6 +156,11 @@ from modules.operacional.diaristas.controllers import (
 from modules.document_kits.controllers import router as document_kit_router
 
 # ===================================================================
+# MÓDULO DOCUMENTS - Document Intelligence (OCR/IA)
+# ===================================================================
+from modules.documents.controllers import router as documents_router
+
+# ===================================================================
 # MÓDULO EQUIPMENT_MANAGEMENT - Gestão de Equipamentos
 # ===================================================================
 from modules.equipment_management.controllers import (
@@ -173,6 +184,7 @@ from modules.ged.controllers import (
     share_router,
     tag_router,
     signature_router,
+    stats_router,
 )
 
 # ===================================================================
@@ -227,6 +239,8 @@ router.include_router(reports_router, prefix="/operacional", tags=["Operacional 
 router.include_router(operacional_dashboard_router, prefix="/operacional", tags=["Operacional - Dashboard"])
 router.include_router(kpi_trends_router, prefix="/operacional", tags=["Operacional - KPI Trends"])
 router.include_router(disciplinary_router, prefix="/operacional", tags=["Operacional - Medidas Administrativas"])
+router.include_router(communication_router, prefix="/operacional", tags=["Operacional - Comunicacao"])
+router.include_router(inspection_round_router, prefix="/operacional/rondas", tags=["Operacional - Rondas de Inspecao"])
 
 # ===================================================================
 # FINANCIAL - GESTÃO FINANCEIRA COMPLETA
@@ -318,6 +332,11 @@ router.include_router(diarist_fiscal_router, prefix="/operacional/diaristas/fisc
 router.include_router(document_kit_router, prefix="/document-kits", tags=["Document Kits - Kits Documentais"])
 
 # ===================================================================
+# DOCUMENTS - DOCUMENT INTELLIGENCE (OCR/IA)
+# ===================================================================
+router.include_router(documents_router, prefix="", tags=["Documents - Document Intelligence"])
+
+# ===================================================================
 # EQUIPMENT MANAGEMENT - GESTÃO DE EQUIPAMENTOS
 # ===================================================================
 router.include_router(equipment_router, prefix="/equipment", tags=["Equipment - Equipamentos"])
@@ -338,6 +357,7 @@ router.include_router(version_router, prefix="/ged/versions", tags=["GED - Vers�
 router.include_router(share_router, prefix="/ged/shares", tags=["GED - Compartilhamentos"])
 router.include_router(tag_router, prefix="/ged/tags", tags=["GED - Tags"])
 router.include_router(signature_router, prefix="/ged/signatures", tags=["GED - Assinaturas"])
+router.include_router(stats_router, prefix="/ged", tags=["GED - Estatísticas"])
 
 # ===================================================================
 # INTEGRATIONS - API GATEWAY E INTEGRAÇÕES
@@ -411,16 +431,14 @@ router.include_router(fase5_router, tags=["Fase 5 - Grand Finale"])
 # ===================================================================
 # FASE 3 - SECURITY LGPD (Seguranca e Compliance LGPD)
 # ===================================================================
-# TODO: Corrigir PYTHONPATH para incluir /opt/conecta-pro
-# from modules.security_lgpd import security_lgpd_router
-# router.include_router(security_lgpd_router, prefix="/security", tags=["Security - LGPD Compliance"])
+from modules.security_lgpd import security_lgpd_router
+router.include_router(security_lgpd_router, prefix="/security")
 
 # ===================================================================
 # FASE 3 - HEALTH OCCUPATIONAL (Saude Ocupacional NR-4/6/7/9)
 # ===================================================================
-# TODO: Corrigir erro de tipo Session no endpoint PCMSO
-# from modules.health_occupational import health_occupational_router
-# router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
+from modules.health_occupational import health_occupational_router
+router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
 
 # ===================================================================
 # FASE 3 - GOVERNMENT INTEGRATIONS (eSocial, SEFAZ, FGTS/INSS)
@@ -488,3 +506,20 @@ router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Rei
 # ===================================================================
 from modules.search import search_router
 router.include_router(search_router, tags=["Search - Busca Global"])
+
+# ===================================================================
+# SCHEDULER - AGENDAMENTO DE TAREFAS (Sprint 35)
+# ===================================================================
+from modules.scheduler.controllers import router as scheduler_router
+router.include_router(scheduler_router, prefix="/scheduler", tags=["Scheduler - Agendamento de Tarefas"])
+
+# ===================================================================
+# NOTIFICATIONS - NOTIFICATION HUB (Sprint 36, 37, 03)
+# ===================================================================
+from modules.notifications.controllers import router as notification_router
+from modules.notifications.controllers import intelligent_router as intelligent_notification_router
+from modules.notifications.push.controllers import router as push_notification_router
+
+router.include_router(notification_router, prefix="/notifications", tags=["Notifications - Hub"])
+router.include_router(intelligent_notification_router, prefix="/notifications/intelligent", tags=["Notifications - Intelligent"])
+router.include_router(push_notification_router, prefix="/notifications/push", tags=["Notifications - Push"])

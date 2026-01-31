@@ -22,46 +22,41 @@ export const fraudDetectionService = {
    * Analisar transação para detecção de fraude
    */
   async analyzeTransaction(transaction: TransactionAnalysisRequest): Promise<FraudAlertResponse> {
-    const response = await analyzeTransactionApiV1AnalyticsFraudAnalyzePost(transaction);
-    return response.data;
+    return analyzeTransactionApiV1AnalyticsFraudAnalyzePost(transaction) as Promise<FraudAlertResponse>;
   },
 
   /**
    * Listar alertas de fraude
    */
   async getFraudAlerts(minRisk?: string, acknowledged?: boolean, limit = 50) {
-    const response = await getFraudAlertsApiV1AnalyticsFraudAlertsGet({
+    return getFraudAlertsApiV1AnalyticsFraudAlertsGet({
       min_risk: minRisk,
       acknowledged,
       limit,
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 
   /**
    * Atualizar status de alerta de fraude
    */
   async updateAlertStatus(alertId: string, newStatus: string, notes?: string) {
-    const response = await updateAlertStatusApiV1AnalyticsFraudAlertsAlertIdStatusPut(alertId, {
+    return updateAlertStatusApiV1AnalyticsFraudAlertsAlertIdStatusPut(alertId, {
       new_status: newStatus,
       notes,
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 
   /**
    * Analytics de fraude
    */
   async getFraudAnalytics() {
-    const response = await getFraudAnalyticsApiV1AnalyticsFraudAnalyticsGet();
-    return response.data;
+    return getFraudAnalyticsApiV1AnalyticsFraudAnalyticsGet() as Promise<unknown>;
   },
 
   /**
    * Perfil de risco de usuário
    */
-  async getUserRiskProfile(userId: number) {
-    const response = await getUserRiskProfileApiV1AnalyticsFraudUserUserIdRiskGet(userId.toString());
-    return response.data;
+  async getUserRiskProfile(userId: string) {
+    return getUserRiskProfileApiV1AnalyticsFraudUserUserIdRiskGet(Number(userId)) as Promise<unknown>;
   },
 };

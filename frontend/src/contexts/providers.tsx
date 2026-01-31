@@ -7,9 +7,22 @@ import { ProductivityProvider } from '@/components/ProductivityProvider';
 import { DraftCleanupProvider } from '@/components/providers/draft-cleanup-provider';
 import { PushNotificationProvider } from '@/features/notifications';
 import { cleanupExpiredDrafts } from '@/hooks/useAutoSave';
+import { toast } from '@/components/ui/use-toast';
 
 interface ProvidersProps {
   children: ReactNode;
+}
+
+/**
+ * Extrai mensagem de erro de diferentes tipos de erro
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String(error.message);
+  }
+  return 'Erro desconhecido';
 }
 
 export function Providers({ children }: ProvidersProps) {
@@ -25,6 +38,15 @@ export function Providers({ children }: ProvidersProps) {
           },
           mutations: {
             retry: 0,
+            onError: (error) => {
+              toast({
+                title: "Erro na operação",
+                description: getErrorMessage(error),
+                variant: "destructive",
+              });
+            },
+            // onSuccess pode ser sobrescrito por mutation individual
+            // usando meta: { showSuccessToast: false } nas options
           },
         },
       })

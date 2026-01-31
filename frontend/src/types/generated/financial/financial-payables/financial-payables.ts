@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams,
@@ -18,6 +31,7 @@ import type {
   GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams,
   GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams,
   GetStatsApiV1FinancialPayablesPayablesStatsGetParams,
+  HTTPValidationError,
   ListAccountsApiV1FinancialPayablesPayablesGetParams,
   PayableAccountCreate,
   PayableAccountListResponse,
@@ -38,309 +52,1662 @@ import type {
   RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialPayables = () => {
+
 /**
  * Cria uma nova conta a pagar.
  * @summary Criar conta a pagar
  */
-const createAccountApiV1FinancialPayablesPayablesPost = <TData = AxiosResponse<PayableAccountResponse>>(
-    payableAccountCreate: PayableAccountCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables`,
-      payableAccountCreate,options
-    );
-  }
-/**
+export const createAccountApiV1FinancialPayablesPayablesPost = (
+    payableAccountCreate: PayableAccountCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountResponse>(
+      {url: `/api/v1/financial/payables/payables`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payableAccountCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateAccountApiV1FinancialPayablesPayablesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAccountApiV1FinancialPayablesPayablesPost>>, TError,{data: PayableAccountCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createAccountApiV1FinancialPayablesPayablesPost>>, TError,{data: PayableAccountCreate}, TContext> => {
+
+const mutationKey = ['createAccountApiV1FinancialPayablesPayablesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAccountApiV1FinancialPayablesPayablesPost>>, {data: PayableAccountCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAccountApiV1FinancialPayablesPayablesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAccountApiV1FinancialPayablesPayablesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createAccountApiV1FinancialPayablesPayablesPost>>>
+    export type CreateAccountApiV1FinancialPayablesPayablesPostMutationBody = PayableAccountCreate
+    export type CreateAccountApiV1FinancialPayablesPayablesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar conta a pagar
+ */
+export const useCreateAccountApiV1FinancialPayablesPayablesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAccountApiV1FinancialPayablesPayablesPost>>, TError,{data: PayableAccountCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createAccountApiV1FinancialPayablesPayablesPost>>,
+        TError,
+        {data: PayableAccountCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateAccountApiV1FinancialPayablesPayablesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista contas a pagar com filtros.
  * @summary Listar contas a pagar
  */
-const listAccountsApiV1FinancialPayablesPayablesGet = <TData = AxiosResponse<PayableAccountListResponse[]>>(
-    params: ListAccountsApiV1FinancialPayablesPayablesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listAccountsApiV1FinancialPayablesPayablesGet = (
+    params: ListAccountsApiV1FinancialPayablesPayablesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountListResponse[]>(
+      {url: `/api/v1/financial/payables/payables`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListAccountsApiV1FinancialPayablesPayablesGetQueryKey = (params?: ListAccountsApiV1FinancialPayablesPayablesGetParams,) => {
+    return [
+    `/api/v1/financial/payables/payables`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListAccountsApiV1FinancialPayablesPayablesGetQueryOptions = <TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError = HTTPValidationError>(params: ListAccountsApiV1FinancialPayablesPayablesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAccountsApiV1FinancialPayablesPayablesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>> = ({ signal }) => listAccountsApiV1FinancialPayablesPayablesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListAccountsApiV1FinancialPayablesPayablesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>>
+export type ListAccountsApiV1FinancialPayablesPayablesGetQueryError = HTTPValidationError
+
+
+export function useListAccountsApiV1FinancialPayablesPayablesGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialPayablesPayablesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAccountsApiV1FinancialPayablesPayablesGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialPayablesPayablesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAccountsApiV1FinancialPayablesPayablesGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialPayablesPayablesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar contas a pagar
+ */
+
+export function useListAccountsApiV1FinancialPayablesPayablesGet<TData = Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError = HTTPValidationError>(
+ params: ListAccountsApiV1FinancialPayablesPayablesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAccountsApiV1FinancialPayablesPayablesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListAccountsApiV1FinancialPayablesPayablesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas de contas a pagar.
  * @summary Estatísticas de contas a pagar
  */
-const getStatsApiV1FinancialPayablesPayablesStatsGet = <TData = AxiosResponse<PayableAccountStats>>(
-    params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getStatsApiV1FinancialPayablesPayablesStatsGet = (
+    params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountStats>(
+      {url: `/api/v1/financial/payables/payables/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetStatsApiV1FinancialPayablesPayablesStatsGetQueryKey = (params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams,) => {
+    return [
+    `/api/v1/financial/payables/payables/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetStatsApiV1FinancialPayablesPayablesStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError = HTTPValidationError>(params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStatsApiV1FinancialPayablesPayablesStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>> = ({ signal }) => getStatsApiV1FinancialPayablesPayablesStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStatsApiV1FinancialPayablesPayablesStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>>
+export type GetStatsApiV1FinancialPayablesPayablesStatsGetQueryError = HTTPValidationError
+
+
+export function useGetStatsApiV1FinancialPayablesPayablesStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetStatsApiV1FinancialPayablesPayablesStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStatsApiV1FinancialPayablesPayablesStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStatsApiV1FinancialPayablesPayablesStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas de contas a pagar
+ */
+
+export function useGetStatsApiV1FinancialPayablesPayablesStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError = HTTPValidationError>(
+ params?: GetStatsApiV1FinancialPayablesPayablesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialPayablesPayablesStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStatsApiV1FinancialPayablesPayablesStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna contas vencidas.
  * @summary Contas vencidas
  */
-const getOverdueApiV1FinancialPayablesPayablesOverdueGet = <TData = AxiosResponse<PayableAccountListResponse[]>>(
-    params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables/overdue`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getOverdueApiV1FinancialPayablesPayablesOverdueGet = (
+    params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountListResponse[]>(
+      {url: `/api/v1/financial/payables/payables/overdue`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOverdueApiV1FinancialPayablesPayablesOverdueGetQueryKey = (params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams,) => {
+    return [
+    `/api/v1/financial/payables/payables/overdue`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetOverdueApiV1FinancialPayablesPayablesOverdueGetQueryOptions = <TData = Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError = HTTPValidationError>(params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOverdueApiV1FinancialPayablesPayablesOverdueGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>> = ({ signal }) => getOverdueApiV1FinancialPayablesPayablesOverdueGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOverdueApiV1FinancialPayablesPayablesOverdueGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>>
+export type GetOverdueApiV1FinancialPayablesPayablesOverdueGetQueryError = HTTPValidationError
+
+
+export function useGetOverdueApiV1FinancialPayablesPayablesOverdueGet<TData = Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOverdueApiV1FinancialPayablesPayablesOverdueGet<TData = Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError = HTTPValidationError>(
+ params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOverdueApiV1FinancialPayablesPayablesOverdueGet<TData = Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError = HTTPValidationError>(
+ params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Contas vencidas
+ */
+
+export function useGetOverdueApiV1FinancialPayablesPayablesOverdueGet<TData = Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError = HTTPValidationError>(
+ params?: GetOverdueApiV1FinancialPayablesPayablesOverdueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1FinancialPayablesPayablesOverdueGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOverdueApiV1FinancialPayablesPayablesOverdueGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna contas a vencer nos próximos dias.
  * @summary Contas a vencer
  */
-const getDueSoonApiV1FinancialPayablesPayablesDueSoonGet = <TData = AxiosResponse<PayableAccountListResponse[]>>(
-    params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables/due-soon`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getDueSoonApiV1FinancialPayablesPayablesDueSoonGet = (
+    params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountListResponse[]>(
+      {url: `/api/v1/financial/payables/payables/due-soon`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDueSoonApiV1FinancialPayablesPayablesDueSoonGetQueryKey = (params?: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams,) => {
+    return [
+    `/api/v1/financial/payables/payables/due-soon`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDueSoonApiV1FinancialPayablesPayablesDueSoonGetQueryOptions = <TData = Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError = HTTPValidationError>(params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDueSoonApiV1FinancialPayablesPayablesDueSoonGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>> = ({ signal }) => getDueSoonApiV1FinancialPayablesPayablesDueSoonGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>>
+export type GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetQueryError = HTTPValidationError
+
+
+export function useGetDueSoonApiV1FinancialPayablesPayablesDueSoonGet<TData = Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError = HTTPValidationError>(
+ params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDueSoonApiV1FinancialPayablesPayablesDueSoonGet<TData = Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError = HTTPValidationError>(
+ params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDueSoonApiV1FinancialPayablesPayablesDueSoonGet<TData = Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError = HTTPValidationError>(
+ params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Contas a vencer
+ */
+
+export function useGetDueSoonApiV1FinancialPayablesPayablesDueSoonGet<TData = Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError = HTTPValidationError>(
+ params: GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueSoonApiV1FinancialPayablesPayablesDueSoonGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDueSoonApiV1FinancialPayablesPayablesDueSoonGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca conta por ID.
  * @summary Buscar conta a pagar
  */
-const getAccountApiV1FinancialPayablesPayablesAccountIdGet = <TData = AxiosResponse<PayableAccountResponse>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables/${accountId}`,options
-    );
-  }
+export const getAccountApiV1FinancialPayablesPayablesAccountIdGet = (
+    accountId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountResponse>(
+      {url: `/api/v1/financial/payables/payables/${accountId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAccountApiV1FinancialPayablesPayablesAccountIdGetQueryKey = (accountId?: string,) => {
+    return [
+    `/api/v1/financial/payables/payables/${accountId}`
+    ] as const;
+    }
+
+    
+export const getGetAccountApiV1FinancialPayablesPayablesAccountIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError = HTTPValidationError>(accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAccountApiV1FinancialPayablesPayablesAccountIdGetQueryKey(accountId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>> = ({ signal }) => getAccountApiV1FinancialPayablesPayablesAccountIdGet(accountId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(accountId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAccountApiV1FinancialPayablesPayablesAccountIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>>
+export type GetAccountApiV1FinancialPayablesPayablesAccountIdGetQueryError = HTTPValidationError
+
+
+export function useGetAccountApiV1FinancialPayablesPayablesAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountApiV1FinancialPayablesPayablesAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAccountApiV1FinancialPayablesPayablesAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar conta a pagar
+ */
+
+export function useGetAccountApiV1FinancialPayablesPayablesAccountIdGet<TData = Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAccountApiV1FinancialPayablesPayablesAccountIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAccountApiV1FinancialPayablesPayablesAccountIdGetQueryOptions(accountId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma conta a pagar.
  * @summary Atualizar conta a pagar
  */
-const updateAccountApiV1FinancialPayablesPayablesAccountIdPut = <TData = AxiosResponse<PayableAccountResponse>>(
+export const updateAccountApiV1FinancialPayablesPayablesAccountIdPut = (
     accountId: string,
-    payableAccountUpdate: PayableAccountUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/payables/payables/${accountId}`,
-      payableAccountUpdate,options
-    );
-  }
-/**
+    payableAccountUpdate: PayableAccountUpdate,
+ ) => {
+      
+      
+      return customInstance<PayableAccountResponse>(
+      {url: `/api/v1/financial/payables/payables/${accountId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: payableAccountUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateAccountApiV1FinancialPayablesPayablesAccountIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAccountApiV1FinancialPayablesPayablesAccountIdPut>>, TError,{accountId: string;data: PayableAccountUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateAccountApiV1FinancialPayablesPayablesAccountIdPut>>, TError,{accountId: string;data: PayableAccountUpdate}, TContext> => {
+
+const mutationKey = ['updateAccountApiV1FinancialPayablesPayablesAccountIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAccountApiV1FinancialPayablesPayablesAccountIdPut>>, {accountId: string;data: PayableAccountUpdate}> = (props) => {
+          const {accountId,data} = props ?? {};
+
+          return  updateAccountApiV1FinancialPayablesPayablesAccountIdPut(accountId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAccountApiV1FinancialPayablesPayablesAccountIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateAccountApiV1FinancialPayablesPayablesAccountIdPut>>>
+    export type UpdateAccountApiV1FinancialPayablesPayablesAccountIdPutMutationBody = PayableAccountUpdate
+    export type UpdateAccountApiV1FinancialPayablesPayablesAccountIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar conta a pagar
+ */
+export const useUpdateAccountApiV1FinancialPayablesPayablesAccountIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAccountApiV1FinancialPayablesPayablesAccountIdPut>>, TError,{accountId: string;data: PayableAccountUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateAccountApiV1FinancialPayablesPayablesAccountIdPut>>,
+        TError,
+        {accountId: string;data: PayableAccountUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateAccountApiV1FinancialPayablesPayablesAccountIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui uma conta a pagar (soft delete).
  * @summary Excluir conta a pagar
  */
-const deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete = <TData = AxiosResponse<void>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/payables/payables/${accountId}`,options
-    );
-  }
-/**
+export const deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete = (
+    accountId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/payables/payables/${accountId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteAccountApiV1FinancialPayablesPayablesAccountIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete>>, TError,{accountId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete>>, TError,{accountId: string}, TContext> => {
+
+const mutationKey = ['deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete>>, {accountId: string}> = (props) => {
+          const {accountId} = props ?? {};
+
+          return  deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete(accountId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAccountApiV1FinancialPayablesPayablesAccountIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete>>>
+    
+    export type DeleteAccountApiV1FinancialPayablesPayablesAccountIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir conta a pagar
+ */
+export const useDeleteAccountApiV1FinancialPayablesPayablesAccountIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete>>, TError,{accountId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete>>,
+        TError,
+        {accountId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteAccountApiV1FinancialPayablesPayablesAccountIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova uma conta para pagamento.
  * @summary Aprovar conta
  */
-const approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost = <TData = AxiosResponse<PayableAccountResponse>>(
+export const approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost = (
     accountId: string,
-    params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/${accountId}/approve`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountResponse>(
+      {url: `/api/v1/financial/payables/payables/${accountId}/approve`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost>>, TError,{accountId: string;params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost>>, TError,{accountId: string;params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams}, TContext> => {
+
+const mutationKey = ['approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost>>, {accountId: string;params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams}> = (props) => {
+          const {accountId,params} = props ?? {};
+
+          return  approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost(accountId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost>>>
+    
+    export type ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar conta
+ */
+export const useApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost>>, TError,{accountId: string;params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost>>,
+        TError,
+        {accountId: string;params?: ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aprova múltiplas contas.
  * @summary Aprovar múltiplas contas
  */
-const bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost = <TData = AxiosResponse<unknown>>(
-    payableBulkApproveRequest: PayableBulkApproveRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/bulk-approve`,
-      payableBulkApproveRequest,options
-    );
-  }
-/**
+export const bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost = (
+    payableBulkApproveRequest: PayableBulkApproveRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/payables/payables/bulk-approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payableBulkApproveRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getBulkApproveApiV1FinancialPayablesPayablesBulkApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost>>, TError,{data: PayableBulkApproveRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost>>, TError,{data: PayableBulkApproveRequest}, TContext> => {
+
+const mutationKey = ['bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost>>, {data: PayableBulkApproveRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkApproveApiV1FinancialPayablesPayablesBulkApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost>>>
+    export type BulkApproveApiV1FinancialPayablesPayablesBulkApprovePostMutationBody = PayableBulkApproveRequest
+    export type BulkApproveApiV1FinancialPayablesPayablesBulkApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Aprovar múltiplas contas
+ */
+export const useBulkApproveApiV1FinancialPayablesPayablesBulkApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost>>, TError,{data: PayableBulkApproveRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost>>,
+        TError,
+        {data: PayableBulkApproveRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getBulkApproveApiV1FinancialPayablesPayablesBulkApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Rejeita uma conta.
  * @summary Rejeitar conta
  */
-const rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost = <TData = AxiosResponse<PayableAccountResponse>>(
+export const rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost = (
     accountId: string,
-    params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/${accountId}/reject`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountResponse>(
+      {url: `/api/v1/financial/payables/payables/${accountId}/reject`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getRejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost>>, TError,{accountId: string;params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost>>, TError,{accountId: string;params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams}, TContext> => {
+
+const mutationKey = ['rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost>>, {accountId: string;params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams}> = (props) => {
+          const {accountId,params} = props ?? {};
+
+          return  rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost(accountId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostMutationResult = NonNullable<Awaited<ReturnType<typeof rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost>>>
+    
+    export type RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Rejeitar conta
+ */
+export const useRejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost>>, TError,{accountId: string;params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost>>,
+        TError,
+        {accountId: string;params: RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getRejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Agenda pagamento de uma conta.
  * @summary Agendar pagamento
  */
-const schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost = <TData = AxiosResponse<PayableAccountResponse>>(
+export const schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost = (
     accountId: string,
-    payableScheduleRequest: PayableScheduleRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/${accountId}/schedule`,
-      payableScheduleRequest,options
-    );
-  }
-/**
+    payableScheduleRequest: PayableScheduleRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableAccountResponse>(
+      {url: `/api/v1/financial/payables/payables/${accountId}/schedule`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payableScheduleRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getSchedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost>>, TError,{accountId: string;data: PayableScheduleRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost>>, TError,{accountId: string;data: PayableScheduleRequest}, TContext> => {
+
+const mutationKey = ['schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost>>, {accountId: string;data: PayableScheduleRequest}> = (props) => {
+          const {accountId,data} = props ?? {};
+
+          return  schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost(accountId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SchedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePostMutationResult = NonNullable<Awaited<ReturnType<typeof schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost>>>
+    export type SchedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePostMutationBody = PayableScheduleRequest
+    export type SchedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Agendar pagamento
+ */
+export const useSchedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost>>, TError,{accountId: string;data: PayableScheduleRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost>>,
+        TError,
+        {accountId: string;data: PayableScheduleRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getSchedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista parcelas de uma conta.
  * @summary Listar parcelas
  */
-const listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet = <TData = AxiosResponse<PayableInstallmentResponse[]>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables/${accountId}/installments`,options
-    );
-  }
+export const listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet = (
+    accountId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableInstallmentResponse[]>(
+      {url: `/api/v1/financial/payables/payables/${accountId}/installments`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGetQueryKey = (accountId?: string,) => {
+    return [
+    `/api/v1/financial/payables/payables/${accountId}/installments`
+    ] as const;
+    }
+
+    
+export const getListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGetQueryOptions = <TData = Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError = HTTPValidationError>(accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGetQueryKey(accountId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>> = ({ signal }) => listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet(accountId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(accountId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>>
+export type ListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGetQueryError = HTTPValidationError
+
+
+export function useListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet<TData = Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError = HTTPValidationError>(
+ accountId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet<TData = Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet<TData = Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar parcelas
+ */
+
+export function useListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet<TData = Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGetQueryOptions(accountId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna parcelas pendentes.
  * @summary Parcelas pendentes
  */
-const getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet = <TData = AxiosResponse<PayableInstallmentResponse[]>>(
-    params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables/installments/pending`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet = (
+    params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableInstallmentResponse[]>(
+      {url: `/api/v1/financial/payables/payables/installments/pending`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetQueryKey = (params?: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams,) => {
+    return [
+    `/api/v1/financial/payables/payables/installments/pending`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetQueryOptions = <TData = Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError = HTTPValidationError>(params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>> = ({ signal }) => getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>>
+export type GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetQueryError = HTTPValidationError
+
+
+export function useGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet<TData = Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet<TData = Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet<TData = Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Parcelas pendentes
+ */
+
+export function useGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet<TData = Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma parcela.
  * @summary Atualizar parcela
  */
-const updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut = <TData = AxiosResponse<PayableInstallmentResponse>>(
+export const updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut = (
     installmentId: string,
-    payableInstallmentUpdate: PayableInstallmentUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/payables/payables/installments/${installmentId}`,
-      payableInstallmentUpdate,options
-    );
-  }
-/**
+    payableInstallmentUpdate: PayableInstallmentUpdate,
+ ) => {
+      
+      
+      return customInstance<PayableInstallmentResponse>(
+      {url: `/api/v1/financial/payables/payables/installments/${installmentId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: payableInstallmentUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut>>, TError,{installmentId: string;data: PayableInstallmentUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut>>, TError,{installmentId: string;data: PayableInstallmentUpdate}, TContext> => {
+
+const mutationKey = ['updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut>>, {installmentId: string;data: PayableInstallmentUpdate}> = (props) => {
+          const {installmentId,data} = props ?? {};
+
+          return  updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut(installmentId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut>>>
+    export type UpdateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPutMutationBody = PayableInstallmentUpdate
+    export type UpdateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar parcela
+ */
+export const useUpdateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut>>, TError,{installmentId: string;data: PayableInstallmentUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut>>,
+        TError,
+        {installmentId: string;data: PayableInstallmentUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Renegocia uma parcela.
  * @summary Renegociar parcela
  */
-const renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost = <TData = AxiosResponse<PayableInstallmentResponse>>(
+export const renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost = (
     installmentId: string,
-    payableInstallmentRenegotiateRequest: PayableInstallmentRenegotiateRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/installments/${installmentId}/renegotiate`,
-      payableInstallmentRenegotiateRequest,options
-    );
-  }
-/**
+    payableInstallmentRenegotiateRequest: PayableInstallmentRenegotiateRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayableInstallmentResponse>(
+      {url: `/api/v1/financial/payables/payables/installments/${installmentId}/renegotiate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payableInstallmentRenegotiateRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getRenegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost>>, TError,{installmentId: string;data: PayableInstallmentRenegotiateRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost>>, TError,{installmentId: string;data: PayableInstallmentRenegotiateRequest}, TContext> => {
+
+const mutationKey = ['renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost>>, {installmentId: string;data: PayableInstallmentRenegotiateRequest}> = (props) => {
+          const {installmentId,data} = props ?? {};
+
+          return  renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost(installmentId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RenegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePostMutationResult = NonNullable<Awaited<ReturnType<typeof renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost>>>
+    export type RenegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePostMutationBody = PayableInstallmentRenegotiateRequest
+    export type RenegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Renegociar parcela
+ */
+export const useRenegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost>>, TError,{installmentId: string;data: PayableInstallmentRenegotiateRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost>>,
+        TError,
+        {installmentId: string;data: PayableInstallmentRenegotiateRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getRenegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Registra pagamento de uma parcela.
  * @summary Registrar pagamento
  */
-const registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost = <TData = AxiosResponse<PayablePaymentResponse>>(
+export const registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost = (
     installmentId: string,
-    payablePaymentCreate: PayablePaymentCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/installments/${installmentId}/pay`,
-      payablePaymentCreate,options
-    );
-  }
-/**
+    payablePaymentCreate: PayablePaymentCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayablePaymentResponse>(
+      {url: `/api/v1/financial/payables/payables/installments/${installmentId}/pay`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payablePaymentCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getRegisterPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost>>, TError,{installmentId: string;data: PayablePaymentCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost>>, TError,{installmentId: string;data: PayablePaymentCreate}, TContext> => {
+
+const mutationKey = ['registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost>>, {installmentId: string;data: PayablePaymentCreate}> = (props) => {
+          const {installmentId,data} = props ?? {};
+
+          return  registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost(installmentId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPostMutationResult = NonNullable<Awaited<ReturnType<typeof registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost>>>
+    export type RegisterPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPostMutationBody = PayablePaymentCreate
+    export type RegisterPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Registrar pagamento
+ */
+export const useRegisterPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost>>, TError,{installmentId: string;data: PayablePaymentCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost>>,
+        TError,
+        {installmentId: string;data: PayablePaymentCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getRegisterPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Processa pagamento em lote.
  * @summary Pagamento em lote
  */
-const bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost = <TData = AxiosResponse<unknown>>(
-    payableBulkPaymentRequest: PayableBulkPaymentRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/bulk-payment`,
-      payableBulkPaymentRequest,options
-    );
-  }
-/**
+export const bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost = (
+    payableBulkPaymentRequest: PayableBulkPaymentRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/payables/payables/bulk-payment`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payableBulkPaymentRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getBulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost>>, TError,{data: PayableBulkPaymentRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost>>, TError,{data: PayableBulkPaymentRequest}, TContext> => {
+
+const mutationKey = ['bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost>>, {data: PayableBulkPaymentRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPostMutationResult = NonNullable<Awaited<ReturnType<typeof bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost>>>
+    export type BulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPostMutationBody = PayableBulkPaymentRequest
+    export type BulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Pagamento em lote
+ */
+export const useBulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost>>, TError,{data: PayableBulkPaymentRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost>>,
+        TError,
+        {data: PayableBulkPaymentRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getBulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Estorna um pagamento.
  * @summary Estornar pagamento
  */
-const reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost = <TData = AxiosResponse<PayablePaymentResponse>>(
+export const reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost = (
     paymentId: string,
-    payablePaymentReverseRequest: PayablePaymentReverseRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/payments/${paymentId}/reverse`,
-      payablePaymentReverseRequest,options
-    );
-  }
-/**
+    payablePaymentReverseRequest: PayablePaymentReverseRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayablePaymentResponse>(
+      {url: `/api/v1/financial/payables/payables/payments/${paymentId}/reverse`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payablePaymentReverseRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getReversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost>>, TError,{paymentId: string;data: PayablePaymentReverseRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost>>, TError,{paymentId: string;data: PayablePaymentReverseRequest}, TContext> => {
+
+const mutationKey = ['reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost>>, {paymentId: string;data: PayablePaymentReverseRequest}> = (props) => {
+          const {paymentId,data} = props ?? {};
+
+          return  reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost(paymentId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePostMutationResult = NonNullable<Awaited<ReturnType<typeof reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost>>>
+    export type ReversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePostMutationBody = PayablePaymentReverseRequest
+    export type ReversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Estornar pagamento
+ */
+export const useReversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost>>, TError,{paymentId: string;data: PayablePaymentReverseRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost>>,
+        TError,
+        {paymentId: string;data: PayablePaymentReverseRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getReversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Reconcilia pagamento com extrato bancário.
  * @summary Reconciliar pagamento
  */
-const reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost = <TData = AxiosResponse<PayablePaymentResponse>>(
+export const reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost = (
     paymentId: string,
-    payablePaymentReconcileRequest: PayablePaymentReconcileRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/payments/${paymentId}/reconcile`,
-      payablePaymentReconcileRequest,options
-    );
-  }
-/**
+    payablePaymentReconcileRequest: PayablePaymentReconcileRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayablePaymentResponse>(
+      {url: `/api/v1/financial/payables/payables/payments/${paymentId}/reconcile`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: payablePaymentReconcileRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getReconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost>>, TError,{paymentId: string;data: PayablePaymentReconcileRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost>>, TError,{paymentId: string;data: PayablePaymentReconcileRequest}, TContext> => {
+
+const mutationKey = ['reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost>>, {paymentId: string;data: PayablePaymentReconcileRequest}> = (props) => {
+          const {paymentId,data} = props ?? {};
+
+          return  reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost(paymentId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePostMutationResult = NonNullable<Awaited<ReturnType<typeof reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost>>>
+    export type ReconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePostMutationBody = PayablePaymentReconcileRequest
+    export type ReconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Reconciliar pagamento
+ */
+export const useReconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost>>, TError,{paymentId: string;data: PayablePaymentReconcileRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost>>,
+        TError,
+        {paymentId: string;data: PayablePaymentReconcileRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getReconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna pagamentos pendentes de reconciliação.
  * @summary Pagamentos pendentes de reconciliação
  */
-const getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet = <TData = AxiosResponse<PayablePaymentResponse[]>>(
-    params: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/payables/payables/payments/pending-reconciliation`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet = (
+    params: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PayablePaymentResponse[]>(
+      {url: `/api/v1/financial/payables/payables/payments/pending-reconciliation`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetQueryKey = (params?: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams,) => {
+    return [
+    `/api/v1/financial/payables/payables/payments/pending-reconciliation`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetQueryOptions = <TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError = HTTPValidationError>(params: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>> = ({ signal }) => getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>>
+export type GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetQueryError = HTTPValidationError
+
+
+export function useGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Pagamentos pendentes de reconciliação
+ */
+
+export function useGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Processa contas recorrentes e gera novas.
  * @summary Processar contas recorrentes
  */
-const processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost = <TData = AxiosResponse<unknown>>(
-    params: ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/payables/payables/process-recurring`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {createAccountApiV1FinancialPayablesPayablesPost,listAccountsApiV1FinancialPayablesPayablesGet,getStatsApiV1FinancialPayablesPayablesStatsGet,getOverdueApiV1FinancialPayablesPayablesOverdueGet,getDueSoonApiV1FinancialPayablesPayablesDueSoonGet,getAccountApiV1FinancialPayablesPayablesAccountIdGet,updateAccountApiV1FinancialPayablesPayablesAccountIdPut,deleteAccountApiV1FinancialPayablesPayablesAccountIdDelete,approveAccountApiV1FinancialPayablesPayablesAccountIdApprovePost,bulkApproveApiV1FinancialPayablesPayablesBulkApprovePost,rejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPost,schedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePost,listInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGet,getPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGet,updateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPut,renegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePost,registerPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPost,bulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPost,reversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePost,reconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePost,getPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGet,processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost}};
-export type CreateAccountApiV1FinancialPayablesPayablesPostResult = AxiosResponse<PayableAccountResponse>
-export type ListAccountsApiV1FinancialPayablesPayablesGetResult = AxiosResponse<PayableAccountListResponse[]>
-export type GetStatsApiV1FinancialPayablesPayablesStatsGetResult = AxiosResponse<PayableAccountStats>
-export type GetOverdueApiV1FinancialPayablesPayablesOverdueGetResult = AxiosResponse<PayableAccountListResponse[]>
-export type GetDueSoonApiV1FinancialPayablesPayablesDueSoonGetResult = AxiosResponse<PayableAccountListResponse[]>
-export type GetAccountApiV1FinancialPayablesPayablesAccountIdGetResult = AxiosResponse<PayableAccountResponse>
-export type UpdateAccountApiV1FinancialPayablesPayablesAccountIdPutResult = AxiosResponse<PayableAccountResponse>
-export type DeleteAccountApiV1FinancialPayablesPayablesAccountIdDeleteResult = AxiosResponse<void>
-export type ApproveAccountApiV1FinancialPayablesPayablesAccountIdApprovePostResult = AxiosResponse<PayableAccountResponse>
-export type BulkApproveApiV1FinancialPayablesPayablesBulkApprovePostResult = AxiosResponse<unknown>
-export type RejectAccountApiV1FinancialPayablesPayablesAccountIdRejectPostResult = AxiosResponse<PayableAccountResponse>
-export type SchedulePaymentApiV1FinancialPayablesPayablesAccountIdSchedulePostResult = AxiosResponse<PayableAccountResponse>
-export type ListInstallmentsApiV1FinancialPayablesPayablesAccountIdInstallmentsGetResult = AxiosResponse<PayableInstallmentResponse[]>
-export type GetPendingInstallmentsApiV1FinancialPayablesPayablesInstallmentsPendingGetResult = AxiosResponse<PayableInstallmentResponse[]>
-export type UpdateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPutResult = AxiosResponse<PayableInstallmentResponse>
-export type RenegotiateInstallmentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdRenegotiatePostResult = AxiosResponse<PayableInstallmentResponse>
-export type RegisterPaymentApiV1FinancialPayablesPayablesInstallmentsInstallmentIdPayPostResult = AxiosResponse<PayablePaymentResponse>
-export type BulkPaymentApiV1FinancialPayablesPayablesBulkPaymentPostResult = AxiosResponse<unknown>
-export type ReversePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReversePostResult = AxiosResponse<PayablePaymentResponse>
-export type ReconcilePaymentApiV1FinancialPayablesPayablesPaymentsPaymentIdReconcilePostResult = AxiosResponse<PayablePaymentResponse>
-export type GetPendingReconciliationApiV1FinancialPayablesPayablesPaymentsPendingReconciliationGetResult = AxiosResponse<PayablePaymentResponse[]>
-export type ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostResult = AxiosResponse<unknown>
+export const processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost = (
+    params: ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/payables/payables/process-recurring`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost>>, TError,{params: ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost>>, TError,{params: ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostParams}, TContext> => {
+
+const mutationKey = ['processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost>>, {params: ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost(params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostMutationResult = NonNullable<Awaited<ReturnType<typeof processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost>>>
+    
+    export type ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Processar contas recorrentes
+ */
+export const useProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost>>, TError,{params: ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof processRecurringApiV1FinancialPayablesPayablesProcessRecurringPost>>,
+        TError,
+        {params: ProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getProcessRecurringApiV1FinancialPayablesPayablesProcessRecurringPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

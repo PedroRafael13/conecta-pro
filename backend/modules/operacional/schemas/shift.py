@@ -5,7 +5,7 @@ Schemas Pydantic para Shift (Turno de Trabalho).
 from datetime import date, datetime, time
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from modules.operacional.models.shift import ShiftStatus
 
@@ -90,10 +90,29 @@ class ShiftResponse(BaseModel):
     updated_at: datetime
 
     # Propriedades calculadas
-    is_future: bool
-    is_today: bool
-    is_filled: bool
-    was_worked: bool
+    @computed_field
+    @property
+    def is_future(self) -> bool:
+        """Turno futuro."""
+        return self.shift_date > date.today()
+
+    @computed_field
+    @property
+    def is_today(self) -> bool:
+        """Turno de hoje."""
+        return self.shift_date == date.today()
+
+    @computed_field
+    @property
+    def is_filled(self) -> bool:
+        """Turno com funcionário alocado."""
+        return self.employee_id is not None
+
+    @computed_field
+    @property
+    def was_worked(self) -> bool:
+        """Turno trabalhado."""
+        return self.status == "completed"
 
 
 class ShiftListResponse(BaseModel):

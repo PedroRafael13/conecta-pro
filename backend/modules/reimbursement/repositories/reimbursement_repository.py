@@ -73,12 +73,18 @@ class ReimbursementRepository:
         await self.session.flush()
 
         # Adiciona itens se fornecidos
+        total = Decimal("0.00")
         if data.items:
             for item_data in data.items:
-                await self.create_item(request.id, item_data)
+                item = await self.create_item(request.id, item_data)
+                if item and item.amount:
+                    total += item.amount
 
-        # Recalcula total
-        request.total_amount = request.calculate_total()
+        # Define total
+        request.total_amount = total
+
+        # Refresh para carregar relacionamentos
+        await self.session.refresh(request, ["items", "attachments"])
 
         return request
 
@@ -113,16 +119,19 @@ class ReimbursementRepository:
 
     async def list_requests(
         self,
-        condominio_id: UUID,
+        condominio_id: Optional[UUID],
         filters: Optional[ReimbursementRequestFilter] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> Tuple[List[ReimbursementRequest], int]:
-        """Lista solicitações com filtros e paginação."""
+        """Lista solicitações com filtros e paginação. Se condominio_id for None, lista todos."""
         query = select(ReimbursementRequest).where(
-            ReimbursementRequest.condominio_id == condominio_id,
             ReimbursementRequest.is_active == True,  # noqa: E712
         )
+
+        # Filtra por condomínio se especificado
+        if condominio_id is not None:
+            query = query.where(ReimbursementRequest.condominio_id == condominio_id)
 
         # Aplica filtros
         if filters:
@@ -253,17 +262,18 @@ class ReimbursementRepository:
 
     async def get_stats(
         self,
-        condominio_id: UUID,
+        condominio_id: Optional[UUID],
         requester_id: Optional[UUID] = None,
     ) -> ReimbursementRequestStats:
-        """Retorna estatísticas de reembolsos."""
-        base_query = select(ReimbursementRequest).where(
-            ReimbursementRequest.condominio_id == condominio_id,
-            ReimbursementRequest.is_active == True,  # noqa: E712
-        )
-
+        """Retorna estatísticas de reembolsos. Se condominio_id for None, retorna de todos."""
+        # Base conditions
+        base_conditions = [ReimbursementRequest.is_active == True]  # noqa: E712
+        if condominio_id is not None:
+            base_conditions.append(ReimbursementRequest.condominio_id == condominio_id)
         if requester_id:
-            base_query = base_query.where(ReimbursementRequest.requester_id == requester_id)
+            base_conditions.append(ReimbursementRequest.requester_id == requester_id)
+
+        base_query = select(ReimbursementRequest).where(*base_conditions)
 
         # Total
         count_result = await self.session.execute(
@@ -275,13 +285,7 @@ class ReimbursementRepository:
         status_query = select(
             ReimbursementRequest.status,
             func.count().label("count"),
-        ).where(
-            ReimbursementRequest.condominio_id == condominio_id,
-            ReimbursementRequest.is_active == True,  # noqa: E712
-        )
-        if requester_id:
-            status_query = status_query.where(ReimbursementRequest.requester_id == requester_id)
-        status_query = status_query.group_by(ReimbursementRequest.status)
+        ).where(*base_conditions).group_by(ReimbursementRequest.status)
 
         status_result = await self.session.execute(status_query)
         by_status = {row.status: row.count for row in status_result}
@@ -291,45 +295,34 @@ class ReimbursementRepository:
             func.sum(ReimbursementRequest.total_amount).label("total_amount"),
             func.sum(ReimbursementRequest.approved_amount).label("total_approved"),
             func.sum(ReimbursementRequest.paid_amount).label("total_paid"),
-        ).where(
-            ReimbursementRequest.condominio_id == condominio_id,
-            ReimbursementRequest.is_active == True,  # noqa: E712
-        )
-        if requester_id:
-            values_query = values_query.where(ReimbursementRequest.requester_id == requester_id)
+        ).where(*base_conditions)
 
         values_result = await self.session.execute(values_query)
         values_row = values_result.first()
 
         # Pendentes
-        pending_query = select(
-            func.count().label("count"),
-            func.sum(ReimbursementRequest.total_amount).label("amount"),
-        ).where(
-            ReimbursementRequest.condominio_id == condominio_id,
-            ReimbursementRequest.is_active == True,  # noqa: E712
+        pending_conditions = base_conditions + [
             ReimbursementRequest.status.in_([
                 ReimbursementStatus.PENDENTE.value,
                 ReimbursementStatus.EM_ANALISE.value,
-            ]),
-        )
-        if requester_id:
-            pending_query = pending_query.where(ReimbursementRequest.requester_id == requester_id)
+            ])
+        ]
+        pending_query = select(
+            func.count().label("count"),
+            func.sum(ReimbursementRequest.total_amount).label("amount"),
+        ).where(*pending_conditions)
 
         pending_result = await self.session.execute(pending_query)
         pending_row = pending_result.first()
 
         # Aprovados aguardando pagamento
+        approved_conditions = base_conditions + [
+            ReimbursementRequest.status == ReimbursementStatus.APROVADO.value
+        ]
         approved_query = select(
             func.count().label("count"),
             func.sum(ReimbursementRequest.approved_amount).label("amount"),
-        ).where(
-            ReimbursementRequest.condominio_id == condominio_id,
-            ReimbursementRequest.is_active == True,  # noqa: E712
-            ReimbursementRequest.status == ReimbursementStatus.APROVADO.value,
-        )
-        if requester_id:
-            approved_query = approved_query.where(ReimbursementRequest.requester_id == requester_id)
+        ).where(*approved_conditions)
 
         approved_result = await self.session.execute(approved_query)
         approved_row = approved_result.first()
@@ -479,12 +472,15 @@ class ReimbursementRepository:
 
     async def list_categories(
         self,
-        condominio_id: UUID,
+        condominio_id: Optional[UUID],
     ) -> List[ReimbursementCategory]:
-        """Lista categorias de reembolso."""
+        """Lista categorias de reembolso. Se condominio_id for None, lista todas."""
+        conditions = [ReimbursementCategory.is_active == True]  # noqa: E712
+        if condominio_id is not None:
+            conditions.append(ReimbursementCategory.condominio_id == condominio_id)
+
         query = select(ReimbursementCategory).where(
-            ReimbursementCategory.condominio_id == condominio_id,
-            ReimbursementCategory.is_active == True,  # noqa: E712
+            *conditions
         ).order_by(ReimbursementCategory.name)
 
         result = await self.session.execute(query)

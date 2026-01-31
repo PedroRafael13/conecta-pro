@@ -313,9 +313,19 @@ class BaseWizard(ABC):
                 return "Por favor, informe um numero valido."
 
         if step.step_type == StepType.CHOICE:
+            # Match exato por número ou texto
             valid_options = [str(i + 1) for i in range(len(step.options))]
             valid_options.extend([o.lower() for o in step.options])
             if user_input.lower() not in valid_options:
+                # Fuzzy match: substring parcial (mínimo 3 chars)
+                if len(user_input.strip()) >= 3:
+                    input_lower = user_input.lower().strip()
+                    matched = any(
+                        input_lower in opt.lower() or opt.lower().startswith(input_lower)
+                        for opt in step.options
+                    )
+                    if matched:
+                        return None  # Aceita fuzzy match
                 return f"Por favor, escolha uma opcao valida: {', '.join(step.options)}"
 
         # Validacoes customizadas
@@ -356,6 +366,16 @@ class BaseWizard(ABC):
                     return step.options[idx]
             except ValueError:
                 pass
+            # Match exato (case insensitive)
+            for opt in step.options:
+                if user_input.lower().strip() == opt.lower():
+                    return opt
+            # Fuzzy match: substring parcial
+            input_lower = user_input.lower().strip()
+            if len(input_lower) >= 3:
+                for opt in step.options:
+                    if input_lower in opt.lower() or opt.lower().startswith(input_lower):
+                        return opt
             return user_input
 
         if step.step_type == StepType.CONFIRMATION:

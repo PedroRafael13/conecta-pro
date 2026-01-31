@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem,
@@ -65,6 +78,7 @@ import type {
   GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams,
   GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams,
   GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams,
+  HTTPValidationError,
   InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams,
   KPICreate,
   KPIHistory,
@@ -102,908 +116,4541 @@ import type {
   WidgetUpdate
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialBiDashboard = () => {
+
 /**
  * Cria novo dashboard.
  * @summary Create Dashboard
  */
-const createDashboardApiV1FinancialBiDashboardBiDashboardsPost = <TData = AxiosResponse<DashboardResponse>>(
+export const createDashboardApiV1FinancialBiDashboardBiDashboardsPost = (
     dashboardCreate: DashboardCreate,
-    params: CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/dashboards`,
-      dashboardCreate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: dashboardCreate,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateDashboardApiV1FinancialBiDashboardBiDashboardsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDashboardApiV1FinancialBiDashboardBiDashboardsPost>>, TError,{data: DashboardCreate;params: CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createDashboardApiV1FinancialBiDashboardBiDashboardsPost>>, TError,{data: DashboardCreate;params: CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostParams}, TContext> => {
+
+const mutationKey = ['createDashboardApiV1FinancialBiDashboardBiDashboardsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDashboardApiV1FinancialBiDashboardBiDashboardsPost>>, {data: DashboardCreate;params: CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  createDashboardApiV1FinancialBiDashboardBiDashboardsPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createDashboardApiV1FinancialBiDashboardBiDashboardsPost>>>
+    export type CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostMutationBody = DashboardCreate
+    export type CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Dashboard
+ */
+export const useCreateDashboardApiV1FinancialBiDashboardBiDashboardsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDashboardApiV1FinancialBiDashboardBiDashboardsPost>>, TError,{data: DashboardCreate;params: CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createDashboardApiV1FinancialBiDashboardBiDashboardsPost>>,
+        TError,
+        {data: DashboardCreate;params: CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateDashboardApiV1FinancialBiDashboardBiDashboardsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista dashboards com filtros.
  * @summary List Dashboards
  */
-const listDashboardsApiV1FinancialBiDashboardBiDashboardsGet = <TData = AxiosResponse<DashboardListResponse>>(
-    params: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/dashboards`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listDashboardsApiV1FinancialBiDashboardBiDashboardsGet = (
+    params: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardListResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListDashboardsApiV1FinancialBiDashboardBiDashboardsGetQueryKey = (params?: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/dashboards`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListDashboardsApiV1FinancialBiDashboardBiDashboardsGetQueryOptions = <TData = Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError = HTTPValidationError>(params: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDashboardsApiV1FinancialBiDashboardBiDashboardsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>> = ({ signal }) => listDashboardsApiV1FinancialBiDashboardBiDashboardsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>>
+export type ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetQueryError = HTTPValidationError
+
+
+export function useListDashboardsApiV1FinancialBiDashboardBiDashboardsGet<TData = Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError = HTTPValidationError>(
+ params: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDashboardsApiV1FinancialBiDashboardBiDashboardsGet<TData = Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError = HTTPValidationError>(
+ params: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDashboardsApiV1FinancialBiDashboardBiDashboardsGet<TData = Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError = HTTPValidationError>(
+ params: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Dashboards
+ */
+
+export function useListDashboardsApiV1FinancialBiDashboardBiDashboardsGet<TData = Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError = HTTPValidationError>(
+ params: ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDashboardsApiV1FinancialBiDashboardBiDashboardsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListDashboardsApiV1FinancialBiDashboardBiDashboardsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca dashboard por ID.
  * @summary Get Dashboard
  */
-const getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet = <TData = AxiosResponse<DashboardResponse>>(
+export const getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet = (
     dashboardId: string,
-    params: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetQueryKey = (dashboardId?: string,
+    params?: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError = HTTPValidationError>(dashboardId: string,
+    params: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetQueryKey(dashboardId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>> = ({ signal }) => getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet(dashboardId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(dashboardId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>>
+export type GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetQueryError = HTTPValidationError
+
+
+export function useGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Dashboard
+ */
+
+export function useGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetQueryOptions(dashboardId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza dashboard.
  * @summary Update Dashboard
  */
-const updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut = <TData = AxiosResponse<DashboardResponse>>(
+export const updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut = (
     dashboardId: string,
     dashboardUpdate: DashboardUpdate,
-    params: UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}`,
-      dashboardUpdate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutParams,
+ ) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: dashboardUpdate,
+        params
+    },
+      );
+    }
+  
+
+
+export const getUpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut>>, TError,{dashboardId: string;data: DashboardUpdate;params: UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut>>, TError,{dashboardId: string;data: DashboardUpdate;params: UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutParams}, TContext> => {
+
+const mutationKey = ['updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut>>, {dashboardId: string;data: DashboardUpdate;params: UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutParams}> = (props) => {
+          const {dashboardId,data,params} = props ?? {};
+
+          return  updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut(dashboardId,data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut>>>
+    export type UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutMutationBody = DashboardUpdate
+    export type UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Dashboard
+ */
+export const useUpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut>>, TError,{dashboardId: string;data: DashboardUpdate;params: UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut>>,
+        TError,
+        {dashboardId: string;data: DashboardUpdate;params: UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutParams},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Deleta dashboard.
  * @summary Delete Dashboard
  */
-const deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete = <TData = AxiosResponse<void>>(
+export const deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete = (
     dashboardId: string,
-    params: DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteParams,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}`, method: 'DELETE',
+        params
+    },
+      );
+    }
+  
+
+
+export const getDeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete>>, TError,{dashboardId: string;params: DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete>>, TError,{dashboardId: string;params: DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteParams}, TContext> => {
+
+const mutationKey = ['deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete>>, {dashboardId: string;params: DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteParams}> = (props) => {
+          const {dashboardId,params} = props ?? {};
+
+          return  deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete(dashboardId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete>>>
+    
+    export type DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Dashboard
+ */
+export const useDeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete>>, TError,{dashboardId: string;params: DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete>>,
+        TError,
+        {dashboardId: string;params: DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteParams},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Publica dashboard.
  * @summary Publish Dashboard
  */
-const publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost = <TData = AxiosResponse<DashboardResponse>>(
+export const publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost = (
     dashboardId: string,
-    params: PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/publish`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/publish`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getPublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost>>, TError,{dashboardId: string;params: PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost>>, TError,{dashboardId: string;params: PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostParams}, TContext> => {
+
+const mutationKey = ['publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost>>, {dashboardId: string;params: PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostParams}> = (props) => {
+          const {dashboardId,params} = props ?? {};
+
+          return  publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost(dashboardId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostMutationResult = NonNullable<Awaited<ReturnType<typeof publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost>>>
+    
+    export type PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Publish Dashboard
+ */
+export const usePublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost>>, TError,{dashboardId: string;params: PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost>>,
+        TError,
+        {dashboardId: string;params: PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getPublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Arquiva dashboard.
  * @summary Archive Dashboard
  */
-const archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost = <TData = AxiosResponse<DashboardResponse>>(
+export const archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost = (
     dashboardId: string,
-    params: ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/archive`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/archive`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost>>, TError,{dashboardId: string;params: ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost>>, TError,{dashboardId: string;params: ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostParams}, TContext> => {
+
+const mutationKey = ['archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost>>, {dashboardId: string;params: ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostParams}> = (props) => {
+          const {dashboardId,params} = props ?? {};
+
+          return  archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost(dashboardId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostMutationResult = NonNullable<Awaited<ReturnType<typeof archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost>>>
+    
+    export type ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Archive Dashboard
+ */
+export const useArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost>>, TError,{dashboardId: string;params: ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost>>,
+        TError,
+        {dashboardId: string;params: ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Alterna favorito do dashboard.
  * @summary Toggle Dashboard Favorite
  */
-const toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost = <TData = AxiosResponse<DashboardResponse>>(
+export const toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost = (
     dashboardId: string,
-    params: ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/favorite`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/favorite`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost>>, TError,{dashboardId: string;params: ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost>>, TError,{dashboardId: string;params: ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostParams}, TContext> => {
+
+const mutationKey = ['toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost>>, {dashboardId: string;params: ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostParams}> = (props) => {
+          const {dashboardId,params} = props ?? {};
+
+          return  toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost(dashboardId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostMutationResult = NonNullable<Awaited<ReturnType<typeof toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost>>>
+    
+    export type ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Toggle Dashboard Favorite
+ */
+export const useToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost>>, TError,{dashboardId: string;params: ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost>>,
+        TError,
+        {dashboardId: string;params: ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Define dashboard como padrao.
  * @summary Set Default Dashboard
  */
-const setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost = <TData = AxiosResponse<DashboardResponse>>(
+export const setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost = (
     dashboardId: string,
-    params: SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/set-default`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/set-default`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getSetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost>>, TError,{dashboardId: string;params: SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost>>, TError,{dashboardId: string;params: SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostParams}, TContext> => {
+
+const mutationKey = ['setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost>>, {dashboardId: string;params: SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostParams}> = (props) => {
+          const {dashboardId,params} = props ?? {};
+
+          return  setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost(dashboardId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostMutationResult = NonNullable<Awaited<ReturnType<typeof setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost>>>
+    
+    export type SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Set Default Dashboard
+ */
+export const useSetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost>>, TError,{dashboardId: string;params: SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost>>,
+        TError,
+        {dashboardId: string;params: SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getSetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca dashboard padrao.
  * @summary Get Default Dashboard
  */
-const getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet = <TData = AxiosResponse<DashboardResponse>>(
-    params: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/default`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet = (
+    params: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/default`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetQueryKey = (params?: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/dashboards/default`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetQueryOptions = <TData = Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError = HTTPValidationError>(params: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>> = ({ signal }) => getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>>
+export type GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetQueryError = HTTPValidationError
+
+
+export function useGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet<TData = Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError = HTTPValidationError>(
+ params: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet<TData = Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError = HTTPValidationError>(
+ params: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet<TData = Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError = HTTPValidationError>(
+ params: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Default Dashboard
+ */
+
+export function useGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet<TData = Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError = HTTPValidationError>(
+ params: GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Duplica dashboard.
  * @summary Duplicate Dashboard
  */
-const duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost = <TData = AxiosResponse<DashboardResponse>>(
+export const duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost = (
     dashboardId: string,
-    params: DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/duplicate`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/duplicate`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getDuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost>>, TError,{dashboardId: string;params: DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost>>, TError,{dashboardId: string;params: DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostParams}, TContext> => {
+
+const mutationKey = ['duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost>>, {dashboardId: string;params: DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostParams}> = (props) => {
+          const {dashboardId,params} = props ?? {};
+
+          return  duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost(dashboardId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostMutationResult = NonNullable<Awaited<ReturnType<typeof duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost>>>
+    
+    export type DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Duplicate Dashboard
+ */
+export const useDuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost>>, TError,{dashboardId: string;params: DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost>>,
+        TError,
+        {dashboardId: string;params: DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getDuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna estatisticas de dashboards.
  * @summary Get Dashboard Stats
  */
-const getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet = <TData = AxiosResponse<DashboardStats>>(
-    params: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet = (
+    params: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DashboardStats>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetQueryKey = (params?: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/dashboards/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError = HTTPValidationError>(params: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>> = ({ signal }) => getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>>
+export type GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet<TData = Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError = HTTPValidationError>(
+ params: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet<TData = Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError = HTTPValidationError>(
+ params: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet<TData = Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError = HTTPValidationError>(
+ params: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Dashboard Stats
+ */
+
+export function useGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet<TData = Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError = HTTPValidationError>(
+ params: GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria novo widget.
  * @summary Create Widget
  */
-const createWidgetApiV1FinancialBiDashboardBiWidgetsPost = <TData = AxiosResponse<WidgetResponse>>(
+export const createWidgetApiV1FinancialBiDashboardBiWidgetsPost = (
     widgetCreate: WidgetCreate,
-    params: CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/widgets`,
-      widgetCreate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WidgetResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: widgetCreate,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateWidgetApiV1FinancialBiDashboardBiWidgetsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWidgetApiV1FinancialBiDashboardBiWidgetsPost>>, TError,{data: WidgetCreate;params: CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createWidgetApiV1FinancialBiDashboardBiWidgetsPost>>, TError,{data: WidgetCreate;params: CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostParams}, TContext> => {
+
+const mutationKey = ['createWidgetApiV1FinancialBiDashboardBiWidgetsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createWidgetApiV1FinancialBiDashboardBiWidgetsPost>>, {data: WidgetCreate;params: CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  createWidgetApiV1FinancialBiDashboardBiWidgetsPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createWidgetApiV1FinancialBiDashboardBiWidgetsPost>>>
+    export type CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostMutationBody = WidgetCreate
+    export type CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Widget
+ */
+export const useCreateWidgetApiV1FinancialBiDashboardBiWidgetsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createWidgetApiV1FinancialBiDashboardBiWidgetsPost>>, TError,{data: WidgetCreate;params: CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createWidgetApiV1FinancialBiDashboardBiWidgetsPost>>,
+        TError,
+        {data: WidgetCreate;params: CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateWidgetApiV1FinancialBiDashboardBiWidgetsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista widgets com filtros.
  * @summary List Widgets
  */
-const listWidgetsApiV1FinancialBiDashboardBiWidgetsGet = <TData = AxiosResponse<WidgetResponse[]>>(
-    params: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/widgets`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listWidgetsApiV1FinancialBiDashboardBiWidgetsGet = (
+    params: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WidgetResponse[]>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListWidgetsApiV1FinancialBiDashboardBiWidgetsGetQueryKey = (params?: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/widgets`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListWidgetsApiV1FinancialBiDashboardBiWidgetsGetQueryOptions = <TData = Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError = HTTPValidationError>(params: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListWidgetsApiV1FinancialBiDashboardBiWidgetsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>> = ({ signal }) => listWidgetsApiV1FinancialBiDashboardBiWidgetsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>>
+export type ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetQueryError = HTTPValidationError
+
+
+export function useListWidgetsApiV1FinancialBiDashboardBiWidgetsGet<TData = Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError = HTTPValidationError>(
+ params: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListWidgetsApiV1FinancialBiDashboardBiWidgetsGet<TData = Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError = HTTPValidationError>(
+ params: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListWidgetsApiV1FinancialBiDashboardBiWidgetsGet<TData = Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError = HTTPValidationError>(
+ params: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Widgets
+ */
+
+export function useListWidgetsApiV1FinancialBiDashboardBiWidgetsGet<TData = Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError = HTTPValidationError>(
+ params: ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listWidgetsApiV1FinancialBiDashboardBiWidgetsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListWidgetsApiV1FinancialBiDashboardBiWidgetsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca widget por ID.
  * @summary Get Widget
  */
-const getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet = <TData = AxiosResponse<WidgetResponse>>(
+export const getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet = (
     widgetId: string,
-    params: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WidgetResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetQueryKey = (widgetId?: string,
+    params?: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError = HTTPValidationError>(widgetId: string,
+    params: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetQueryKey(widgetId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>> = ({ signal }) => getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet(widgetId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(widgetId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>>
+export type GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetQueryError = HTTPValidationError
+
+
+export function useGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet<TData = Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet<TData = Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet<TData = Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Widget
+ */
+
+export function useGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet<TData = Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetQueryOptions(widgetId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza widget.
  * @summary Update Widget
  */
-const updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut = <TData = AxiosResponse<WidgetResponse>>(
+export const updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut = (
     widgetId: string,
     widgetUpdate: WidgetUpdate,
-    params: UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}`,
-      widgetUpdate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutParams,
+ ) => {
+      
+      
+      return customInstance<WidgetResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: widgetUpdate,
+        params
+    },
+      );
+    }
+  
+
+
+export const getUpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut>>, TError,{widgetId: string;data: WidgetUpdate;params: UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut>>, TError,{widgetId: string;data: WidgetUpdate;params: UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutParams}, TContext> => {
+
+const mutationKey = ['updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut>>, {widgetId: string;data: WidgetUpdate;params: UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutParams}> = (props) => {
+          const {widgetId,data,params} = props ?? {};
+
+          return  updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut(widgetId,data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut>>>
+    export type UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutMutationBody = WidgetUpdate
+    export type UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Widget
+ */
+export const useUpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut>>, TError,{widgetId: string;data: WidgetUpdate;params: UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut>>,
+        TError,
+        {widgetId: string;data: WidgetUpdate;params: UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutParams},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Deleta widget.
  * @summary Delete Widget
  */
-const deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete = <TData = AxiosResponse<void>>(
+export const deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete = (
     widgetId: string,
-    params: DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteParams,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}`, method: 'DELETE',
+        params
+    },
+      );
+    }
+  
+
+
+export const getDeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete>>, TError,{widgetId: string;params: DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete>>, TError,{widgetId: string;params: DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteParams}, TContext> => {
+
+const mutationKey = ['deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete>>, {widgetId: string;params: DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteParams}> = (props) => {
+          const {widgetId,params} = props ?? {};
+
+          return  deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete(widgetId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete>>>
+    
+    export type DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Widget
+ */
+export const useDeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete>>, TError,{widgetId: string;params: DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete>>,
+        TError,
+        {widgetId: string;params: DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteParams},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca dados do widget.
  * @summary Get Widget Data
  */
-const getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet = <TData = AxiosResponse<WidgetData>>(
+export const getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet = (
     widgetId: string,
-    params: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/data`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WidgetData>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/data`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetQueryKey = (widgetId?: string,
+    params?: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/data`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetQueryOptions = <TData = Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError = HTTPValidationError>(widgetId: string,
+    params: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetQueryKey(widgetId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>> = ({ signal }) => getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet(widgetId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(widgetId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetQueryResult = NonNullable<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>>
+export type GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetQueryError = HTTPValidationError
+
+
+export function useGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet<TData = Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet<TData = Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>,
+          TError,
+          Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet<TData = Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Widget Data
+ */
+
+export function useGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet<TData = Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError = HTTPValidationError>(
+ widgetId: string,
+    params: GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetQueryOptions(widgetId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Forca refresh dos dados do widget.
  * @summary Refresh Widget Data
  */
-const refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost = <TData = AxiosResponse<WidgetData>>(
+export const refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost = (
     widgetId: string,
-    params: RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/refresh`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WidgetData>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/refresh`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getRefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost>>, TError,{widgetId: string;params: RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost>>, TError,{widgetId: string;params: RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostParams}, TContext> => {
+
+const mutationKey = ['refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost>>, {widgetId: string;params: RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostParams}> = (props) => {
+          const {widgetId,params} = props ?? {};
+
+          return  refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost(widgetId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostMutationResult = NonNullable<Awaited<ReturnType<typeof refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost>>>
+    
+    export type RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Refresh Widget Data
+ */
+export const useRefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost>>, TError,{widgetId: string;params: RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost>>,
+        TError,
+        {widgetId: string;params: RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getRefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Atualiza posicao do widget.
  * @summary Update Widget Position
  */
-const updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut = <TData = AxiosResponse<unknown>>(
+export const updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut = (
     widgetId: string,
-    params: UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/position`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutParams,
+ ) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/position`, method: 'PUT',
+        params
+    },
+      );
+    }
+  
+
+
+export const getUpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut>>, TError,{widgetId: string;params: UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut>>, TError,{widgetId: string;params: UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutParams}, TContext> => {
+
+const mutationKey = ['updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut>>, {widgetId: string;params: UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutParams}> = (props) => {
+          const {widgetId,params} = props ?? {};
+
+          return  updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut(widgetId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut>>>
+    
+    export type UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Widget Position
+ */
+export const useUpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut>>, TError,{widgetId: string;params: UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut>>,
+        TError,
+        {widgetId: string;params: UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutParams},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Define visibilidade do widget.
  * @summary Set Widget Visibility
  */
-const setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut = <TData = AxiosResponse<unknown>>(
+export const setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut = (
     widgetId: string,
-    params: SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/visibility`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutParams,
+ ) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/visibility`, method: 'PUT',
+        params
+    },
+      );
+    }
+  
+
+
+export const getSetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut>>, TError,{widgetId: string;params: SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut>>, TError,{widgetId: string;params: SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutParams}, TContext> => {
+
+const mutationKey = ['setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut>>, {widgetId: string;params: SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutParams}> = (props) => {
+          const {widgetId,params} = props ?? {};
+
+          return  setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut(widgetId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutMutationResult = NonNullable<Awaited<ReturnType<typeof setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut>>>
+    
+    export type SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Set Widget Visibility
+ */
+export const useSetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut>>, TError,{widgetId: string;params: SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut>>,
+        TError,
+        {widgetId: string;params: SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutParams},
+        TContext
+      > => {
+
+      const mutationOptions = getSetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Clona widget para outro dashboard.
  * @summary Clone Widget
  */
-const cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost = <TData = AxiosResponse<WidgetResponse>>(
+export const cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost = (
     widgetId: string,
-    params: CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/clone`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WidgetResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/widgets/${widgetId}/clone`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost>>, TError,{widgetId: string;params: CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost>>, TError,{widgetId: string;params: CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostParams}, TContext> => {
+
+const mutationKey = ['cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost>>, {widgetId: string;params: CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostParams}> = (props) => {
+          const {widgetId,params} = props ?? {};
+
+          return  cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost(widgetId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostMutationResult = NonNullable<Awaited<ReturnType<typeof cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost>>>
+    
+    export type CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Clone Widget
+ */
+export const useCloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost>>, TError,{widgetId: string;params: CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost>>,
+        TError,
+        {widgetId: string;params: CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista widgets de um dashboard.
  * @summary Get Dashboard Widgets
  */
-const getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet = <TData = AxiosResponse<WidgetResponse[]>>(
+export const getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet = (
     dashboardId: string,
-    params: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/widgets`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<WidgetResponse[]>(
+      {url: `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/widgets`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetQueryKey = (dashboardId?: string,
+    params?: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/dashboards/${dashboardId}/widgets`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError = HTTPValidationError>(dashboardId: string,
+    params: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetQueryKey(dashboardId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>> = ({ signal }) => getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet(dashboardId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(dashboardId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>>
+export type GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetQueryError = HTTPValidationError
+
+
+export function useGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet<TData = Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet<TData = Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet<TData = Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Dashboard Widgets
+ */
+
+export function useGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet<TData = Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError = HTTPValidationError>(
+ dashboardId: string,
+    params: GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetQueryOptions(dashboardId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria novo KPI.
  * @summary Create Kpi
  */
-const createKpiApiV1FinancialBiDashboardBiKpisPost = <TData = AxiosResponse<KPIResponse>>(
+export const createKpiApiV1FinancialBiDashboardBiKpisPost = (
     kPICreate: KPICreate,
-    params: CreateKpiApiV1FinancialBiDashboardBiKpisPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/kpis`,
-      kPICreate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CreateKpiApiV1FinancialBiDashboardBiKpisPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPIResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: kPICreate,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateKpiApiV1FinancialBiDashboardBiKpisPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createKpiApiV1FinancialBiDashboardBiKpisPost>>, TError,{data: KPICreate;params: CreateKpiApiV1FinancialBiDashboardBiKpisPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createKpiApiV1FinancialBiDashboardBiKpisPost>>, TError,{data: KPICreate;params: CreateKpiApiV1FinancialBiDashboardBiKpisPostParams}, TContext> => {
+
+const mutationKey = ['createKpiApiV1FinancialBiDashboardBiKpisPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createKpiApiV1FinancialBiDashboardBiKpisPost>>, {data: KPICreate;params: CreateKpiApiV1FinancialBiDashboardBiKpisPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  createKpiApiV1FinancialBiDashboardBiKpisPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateKpiApiV1FinancialBiDashboardBiKpisPostMutationResult = NonNullable<Awaited<ReturnType<typeof createKpiApiV1FinancialBiDashboardBiKpisPost>>>
+    export type CreateKpiApiV1FinancialBiDashboardBiKpisPostMutationBody = KPICreate
+    export type CreateKpiApiV1FinancialBiDashboardBiKpisPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Kpi
+ */
+export const useCreateKpiApiV1FinancialBiDashboardBiKpisPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createKpiApiV1FinancialBiDashboardBiKpisPost>>, TError,{data: KPICreate;params: CreateKpiApiV1FinancialBiDashboardBiKpisPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createKpiApiV1FinancialBiDashboardBiKpisPost>>,
+        TError,
+        {data: KPICreate;params: CreateKpiApiV1FinancialBiDashboardBiKpisPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateKpiApiV1FinancialBiDashboardBiKpisPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista KPIs com filtros.
  * @summary List Kpis
  */
-const listKpisApiV1FinancialBiDashboardBiKpisGet = <TData = AxiosResponse<KPIResponse[]>>(
-    params: ListKpisApiV1FinancialBiDashboardBiKpisGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/kpis`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listKpisApiV1FinancialBiDashboardBiKpisGet = (
+    params: ListKpisApiV1FinancialBiDashboardBiKpisGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPIResponse[]>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListKpisApiV1FinancialBiDashboardBiKpisGetQueryKey = (params?: ListKpisApiV1FinancialBiDashboardBiKpisGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/kpis`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListKpisApiV1FinancialBiDashboardBiKpisGetQueryOptions = <TData = Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError = HTTPValidationError>(params: ListKpisApiV1FinancialBiDashboardBiKpisGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListKpisApiV1FinancialBiDashboardBiKpisGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>> = ({ signal }) => listKpisApiV1FinancialBiDashboardBiKpisGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListKpisApiV1FinancialBiDashboardBiKpisGetQueryResult = NonNullable<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>>
+export type ListKpisApiV1FinancialBiDashboardBiKpisGetQueryError = HTTPValidationError
+
+
+export function useListKpisApiV1FinancialBiDashboardBiKpisGet<TData = Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError = HTTPValidationError>(
+ params: ListKpisApiV1FinancialBiDashboardBiKpisGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>,
+          TError,
+          Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListKpisApiV1FinancialBiDashboardBiKpisGet<TData = Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError = HTTPValidationError>(
+ params: ListKpisApiV1FinancialBiDashboardBiKpisGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>,
+          TError,
+          Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListKpisApiV1FinancialBiDashboardBiKpisGet<TData = Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError = HTTPValidationError>(
+ params: ListKpisApiV1FinancialBiDashboardBiKpisGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Kpis
+ */
+
+export function useListKpisApiV1FinancialBiDashboardBiKpisGet<TData = Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError = HTTPValidationError>(
+ params: ListKpisApiV1FinancialBiDashboardBiKpisGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listKpisApiV1FinancialBiDashboardBiKpisGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListKpisApiV1FinancialBiDashboardBiKpisGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca KPI por ID.
  * @summary Get Kpi
  */
-const getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet = <TData = AxiosResponse<KPIResponse>>(
+export const getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet = (
     kpiId: string,
-    params: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPIResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetQueryKey = (kpiId?: string,
+    params?: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError = HTTPValidationError>(kpiId: string,
+    params: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetQueryKey(kpiId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>> = ({ signal }) => getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet(kpiId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(kpiId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>>
+export type GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetQueryError = HTTPValidationError
+
+
+export function useGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGet<TData = Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGet<TData = Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGet<TData = Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Kpi
+ */
+
+export function useGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGet<TData = Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetQueryOptions(kpiId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza KPI.
  * @summary Update Kpi
  */
-const updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut = <TData = AxiosResponse<KPIResponse>>(
+export const updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut = (
     kpiId: string,
     kPIUpdate: KPIUpdate,
-    params: UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}`,
-      kPIUpdate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutParams,
+ ) => {
+      
+      
+      return customInstance<KPIResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: kPIUpdate,
+        params
+    },
+      );
+    }
+  
+
+
+export const getUpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut>>, TError,{kpiId: string;data: KPIUpdate;params: UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut>>, TError,{kpiId: string;data: KPIUpdate;params: UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutParams}, TContext> => {
+
+const mutationKey = ['updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut>>, {kpiId: string;data: KPIUpdate;params: UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutParams}> = (props) => {
+          const {kpiId,data,params} = props ?? {};
+
+          return  updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut(kpiId,data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut>>>
+    export type UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutMutationBody = KPIUpdate
+    export type UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Kpi
+ */
+export const useUpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut>>, TError,{kpiId: string;data: KPIUpdate;params: UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut>>,
+        TError,
+        {kpiId: string;data: KPIUpdate;params: UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutParams},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Deleta KPI.
  * @summary Delete Kpi
  */
-const deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete = <TData = AxiosResponse<void>>(
+export const deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete = (
     kpiId: string,
-    params: DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteParams,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}`, method: 'DELETE',
+        params
+    },
+      );
+    }
+  
+
+
+export const getDeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete>>, TError,{kpiId: string;params: DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete>>, TError,{kpiId: string;params: DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteParams}, TContext> => {
+
+const mutationKey = ['deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete>>, {kpiId: string;params: DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteParams}> = (props) => {
+          const {kpiId,params} = props ?? {};
+
+          return  deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete(kpiId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete>>>
+    
+    export type DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Kpi
+ */
+export const useDeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete>>, TError,{kpiId: string;params: DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete>>,
+        TError,
+        {kpiId: string;params: DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteParams},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula valor atual do KPI.
  * @summary Calculate Kpi
  */
-const calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost = <TData = AxiosResponse<KPIValue>>(
+export const calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost = (
     kpiId: string,
-    params: CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}/calculate`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPIValue>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}/calculate`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost>>, TError,{kpiId: string;params: CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost>>, TError,{kpiId: string;params: CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostParams}, TContext> => {
+
+const mutationKey = ['calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost>>, {kpiId: string;params: CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostParams}> = (props) => {
+          const {kpiId,params} = props ?? {};
+
+          return  calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost(kpiId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostMutationResult = NonNullable<Awaited<ReturnType<typeof calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost>>>
+    
+    export type CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calculate Kpi
+ */
+export const useCalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost>>, TError,{kpiId: string;params: CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost>>,
+        TError,
+        {kpiId: string;params: CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Busca historico de valores do KPI.
  * @summary Get Kpi History
  */
-const getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet = <TData = AxiosResponse<KPIHistory>>(
+export const getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet = (
     kpiId: string,
-    params: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}/history`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPIHistory>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}/history`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetQueryKey = (kpiId?: string,
+    params?: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/kpis/${kpiId}/history`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetQueryOptions = <TData = Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError = HTTPValidationError>(kpiId: string,
+    params: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetQueryKey(kpiId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>> = ({ signal }) => getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet(kpiId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(kpiId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetQueryResult = NonNullable<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>>
+export type GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetQueryError = HTTPValidationError
+
+
+export function useGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet<TData = Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet<TData = Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet<TData = Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Kpi History
+ */
+
+export function useGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet<TData = Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError = HTTPValidationError>(
+ kpiId: string,
+    params: GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetQueryOptions(kpiId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista KPIs para resumo.
  * @summary Get Kpis Summary
  */
-const getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet = <TData = AxiosResponse<KPIResponse[]>>(
-    params: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/kpis/summary`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet = (
+    params: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPIResponse[]>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/summary`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetQueryKey = (params?: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/kpis/summary`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetQueryOptions = <TData = Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError = HTTPValidationError>(params: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>> = ({ signal }) => getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetQueryResult = NonNullable<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>>
+export type GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetQueryError = HTTPValidationError
+
+
+export function useGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet<TData = Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError = HTTPValidationError>(
+ params: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet<TData = Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError = HTTPValidationError>(
+ params: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet<TData = Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError = HTTPValidationError>(
+ params: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Kpis Summary
+ */
+
+export function useGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet<TData = Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError = HTTPValidationError>(
+ params: GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista KPIs em alerta.
  * @summary Get Kpis Alerts
  */
-const getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet = <TData = AxiosResponse<KPIResponse[]>>(
-    params: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/kpis/alerts`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet = (
+    params: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPIResponse[]>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/alerts`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetQueryKey = (params?: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/kpis/alerts`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetQueryOptions = <TData = Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError = HTTPValidationError>(params: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>> = ({ signal }) => getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>>
+export type GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetQueryError = HTTPValidationError
+
+
+export function useGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet<TData = Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError = HTTPValidationError>(
+ params: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet<TData = Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError = HTTPValidationError>(
+ params: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet<TData = Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError = HTTPValidationError>(
+ params: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Kpis Alerts
+ */
+
+export function useGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet<TData = Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError = HTTPValidationError>(
+ params: GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas de KPIs.
  * @summary Get Kpis Stats
  */
-const getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet = <TData = AxiosResponse<KPISummary>>(
-    params: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/kpis/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet = (
+    params: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<KPISummary>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetQueryKey = (params?: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/kpis/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError = HTTPValidationError>(params: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>> = ({ signal }) => getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>>
+export type GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetQueryError = HTTPValidationError
+
+
+export function useGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet<TData = Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError = HTTPValidationError>(
+ params: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet<TData = Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError = HTTPValidationError>(
+ params: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet<TData = Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError = HTTPValidationError>(
+ params: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Kpis Stats
+ */
+
+export function useGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet<TData = Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError = HTTPValidationError>(
+ params: GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Calcula todos os KPIs pendentes.
  * @summary Calculate All Kpis
  */
-const calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost = <TData = AxiosResponse<unknown>>(
-    params: CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/kpis/calculate-all`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+export const calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost = (
+    params: CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/kpis/calculate-all`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost>>, TError,{params: CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost>>, TError,{params: CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostParams}, TContext> => {
+
+const mutationKey = ['calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost>>, {params: CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost(params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostMutationResult = NonNullable<Awaited<ReturnType<typeof calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost>>>
+    
+    export type CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calculate All Kpis
+ */
+export const useCalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost>>, TError,{params: CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost>>,
+        TError,
+        {params: CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria novo relatorio agendado.
  * @summary Create Report
  */
-const createReportApiV1FinancialBiDashboardBiReportsPost = <TData = AxiosResponse<ReportResponse>>(
+export const createReportApiV1FinancialBiDashboardBiReportsPost = (
     reportCreate: ReportCreate,
-    params: CreateReportApiV1FinancialBiDashboardBiReportsPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/reports`,
-      reportCreate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CreateReportApiV1FinancialBiDashboardBiReportsPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReportResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: reportCreate,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateReportApiV1FinancialBiDashboardBiReportsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReportApiV1FinancialBiDashboardBiReportsPost>>, TError,{data: ReportCreate;params: CreateReportApiV1FinancialBiDashboardBiReportsPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createReportApiV1FinancialBiDashboardBiReportsPost>>, TError,{data: ReportCreate;params: CreateReportApiV1FinancialBiDashboardBiReportsPostParams}, TContext> => {
+
+const mutationKey = ['createReportApiV1FinancialBiDashboardBiReportsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createReportApiV1FinancialBiDashboardBiReportsPost>>, {data: ReportCreate;params: CreateReportApiV1FinancialBiDashboardBiReportsPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  createReportApiV1FinancialBiDashboardBiReportsPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateReportApiV1FinancialBiDashboardBiReportsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createReportApiV1FinancialBiDashboardBiReportsPost>>>
+    export type CreateReportApiV1FinancialBiDashboardBiReportsPostMutationBody = ReportCreate
+    export type CreateReportApiV1FinancialBiDashboardBiReportsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Report
+ */
+export const useCreateReportApiV1FinancialBiDashboardBiReportsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createReportApiV1FinancialBiDashboardBiReportsPost>>, TError,{data: ReportCreate;params: CreateReportApiV1FinancialBiDashboardBiReportsPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createReportApiV1FinancialBiDashboardBiReportsPost>>,
+        TError,
+        {data: ReportCreate;params: CreateReportApiV1FinancialBiDashboardBiReportsPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateReportApiV1FinancialBiDashboardBiReportsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista relatorios com filtros.
  * @summary List Reports
  */
-const listReportsApiV1FinancialBiDashboardBiReportsGet = <TData = AxiosResponse<ReportResponse[]>>(
-    params: ListReportsApiV1FinancialBiDashboardBiReportsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/reports`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listReportsApiV1FinancialBiDashboardBiReportsGet = (
+    params: ListReportsApiV1FinancialBiDashboardBiReportsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReportResponse[]>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListReportsApiV1FinancialBiDashboardBiReportsGetQueryKey = (params?: ListReportsApiV1FinancialBiDashboardBiReportsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/reports`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListReportsApiV1FinancialBiDashboardBiReportsGetQueryOptions = <TData = Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError = HTTPValidationError>(params: ListReportsApiV1FinancialBiDashboardBiReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListReportsApiV1FinancialBiDashboardBiReportsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>> = ({ signal }) => listReportsApiV1FinancialBiDashboardBiReportsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListReportsApiV1FinancialBiDashboardBiReportsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>>
+export type ListReportsApiV1FinancialBiDashboardBiReportsGetQueryError = HTTPValidationError
+
+
+export function useListReportsApiV1FinancialBiDashboardBiReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError = HTTPValidationError>(
+ params: ListReportsApiV1FinancialBiDashboardBiReportsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReportsApiV1FinancialBiDashboardBiReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError = HTTPValidationError>(
+ params: ListReportsApiV1FinancialBiDashboardBiReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListReportsApiV1FinancialBiDashboardBiReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError = HTTPValidationError>(
+ params: ListReportsApiV1FinancialBiDashboardBiReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Reports
+ */
+
+export function useListReportsApiV1FinancialBiDashboardBiReportsGet<TData = Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError = HTTPValidationError>(
+ params: ListReportsApiV1FinancialBiDashboardBiReportsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listReportsApiV1FinancialBiDashboardBiReportsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListReportsApiV1FinancialBiDashboardBiReportsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca relatorio por ID.
  * @summary Get Report
  */
-const getReportApiV1FinancialBiDashboardBiReportsReportIdGet = <TData = AxiosResponse<ReportResponse>>(
+export const getReportApiV1FinancialBiDashboardBiReportsReportIdGet = (
     reportId: string,
-    params: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/reports/${reportId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReportResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports/${reportId}`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetReportApiV1FinancialBiDashboardBiReportsReportIdGetQueryKey = (reportId?: string,
+    params?: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/reports/${reportId}`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetReportApiV1FinancialBiDashboardBiReportsReportIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError = HTTPValidationError>(reportId: string,
+    params: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetReportApiV1FinancialBiDashboardBiReportsReportIdGetQueryKey(reportId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>> = ({ signal }) => getReportApiV1FinancialBiDashboardBiReportsReportIdGet(reportId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(reportId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetReportApiV1FinancialBiDashboardBiReportsReportIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>>
+export type GetReportApiV1FinancialBiDashboardBiReportsReportIdGetQueryError = HTTPValidationError
+
+
+export function useGetReportApiV1FinancialBiDashboardBiReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string,
+    params: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportApiV1FinancialBiDashboardBiReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string,
+    params: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetReportApiV1FinancialBiDashboardBiReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string,
+    params: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Report
+ */
+
+export function useGetReportApiV1FinancialBiDashboardBiReportsReportIdGet<TData = Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError = HTTPValidationError>(
+ reportId: string,
+    params: GetReportApiV1FinancialBiDashboardBiReportsReportIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getReportApiV1FinancialBiDashboardBiReportsReportIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetReportApiV1FinancialBiDashboardBiReportsReportIdGetQueryOptions(reportId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza relatorio.
  * @summary Update Report
  */
-const updateReportApiV1FinancialBiDashboardBiReportsReportIdPut = <TData = AxiosResponse<ReportResponse>>(
+export const updateReportApiV1FinancialBiDashboardBiReportsReportIdPut = (
     reportId: string,
     reportUpdate: ReportUpdate,
-    params: UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bi-dashboard/bi/reports/${reportId}`,
-      reportUpdate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutParams,
+ ) => {
+      
+      
+      return customInstance<ReportResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports/${reportId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: reportUpdate,
+        params
+    },
+      );
+    }
+  
+
+
+export const getUpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReportApiV1FinancialBiDashboardBiReportsReportIdPut>>, TError,{reportId: string;data: ReportUpdate;params: UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateReportApiV1FinancialBiDashboardBiReportsReportIdPut>>, TError,{reportId: string;data: ReportUpdate;params: UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutParams}, TContext> => {
+
+const mutationKey = ['updateReportApiV1FinancialBiDashboardBiReportsReportIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateReportApiV1FinancialBiDashboardBiReportsReportIdPut>>, {reportId: string;data: ReportUpdate;params: UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutParams}> = (props) => {
+          const {reportId,data,params} = props ?? {};
+
+          return  updateReportApiV1FinancialBiDashboardBiReportsReportIdPut(reportId,data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateReportApiV1FinancialBiDashboardBiReportsReportIdPut>>>
+    export type UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutMutationBody = ReportUpdate
+    export type UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Report
+ */
+export const useUpdateReportApiV1FinancialBiDashboardBiReportsReportIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateReportApiV1FinancialBiDashboardBiReportsReportIdPut>>, TError,{reportId: string;data: ReportUpdate;params: UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateReportApiV1FinancialBiDashboardBiReportsReportIdPut>>,
+        TError,
+        {reportId: string;data: ReportUpdate;params: UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutParams},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Deleta relatorio.
  * @summary Delete Report
  */
-const deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete = <TData = AxiosResponse<void>>(
+export const deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete = (
     reportId: string,
-    params: DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/bi-dashboard/bi/reports/${reportId}`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteParams,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports/${reportId}`, method: 'DELETE',
+        params
+    },
+      );
+    }
+  
+
+
+export const getDeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete>>, TError,{reportId: string;params: DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete>>, TError,{reportId: string;params: DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteParams}, TContext> => {
+
+const mutationKey = ['deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete>>, {reportId: string;params: DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteParams}> = (props) => {
+          const {reportId,params} = props ?? {};
+
+          return  deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete(reportId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete>>>
+    
+    export type DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Report
+ */
+export const useDeleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete>>, TError,{reportId: string;params: DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete>>,
+        TError,
+        {reportId: string;params: DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteParams},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Pausa agendamento do relatorio.
  * @summary Pause Report
  */
-const pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost = <TData = AxiosResponse<ReportResponse>>(
+export const pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost = (
     reportId: string,
-    params: PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/reports/${reportId}/pause`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReportResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports/${reportId}/pause`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getPauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost>>, TError,{reportId: string;params: PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost>>, TError,{reportId: string;params: PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostParams}, TContext> => {
+
+const mutationKey = ['pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost>>, {reportId: string;params: PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostParams}> = (props) => {
+          const {reportId,params} = props ?? {};
+
+          return  pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost(reportId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostMutationResult = NonNullable<Awaited<ReturnType<typeof pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost>>>
+    
+    export type PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Pause Report
+ */
+export const usePauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost>>, TError,{reportId: string;params: PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost>>,
+        TError,
+        {reportId: string;params: PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getPauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retoma agendamento do relatorio.
  * @summary Resume Report
  */
-const resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost = <TData = AxiosResponse<ReportResponse>>(
+export const resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost = (
     reportId: string,
-    params: ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/reports/${reportId}/resume`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReportResponse>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports/${reportId}/resume`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost>>, TError,{reportId: string;params: ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost>>, TError,{reportId: string;params: ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostParams}, TContext> => {
+
+const mutationKey = ['resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost>>, {reportId: string;params: ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostParams}> = (props) => {
+          const {reportId,params} = props ?? {};
+
+          return  resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost(reportId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostMutationResult = NonNullable<Awaited<ReturnType<typeof resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost>>>
+    
+    export type ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Resume Report
+ */
+export const useResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost>>, TError,{reportId: string;params: ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost>>,
+        TError,
+        {reportId: string;params: ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Executa relatorio imediatamente.
  * @summary Execute Report Now
  */
-const executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost = <TData = AxiosResponse<unknown>>(
+export const executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost = (
     reportId: string,
-    params: ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/reports/${reportId}/execute`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports/${reportId}/execute`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost>>, TError,{reportId: string;params: ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost>>, TError,{reportId: string;params: ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostParams}, TContext> => {
+
+const mutationKey = ['executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost>>, {reportId: string;params: ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostParams}> = (props) => {
+          const {reportId,params} = props ?? {};
+
+          return  executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost(reportId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostMutationResult = NonNullable<Awaited<ReturnType<typeof executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost>>>
+    
+    export type ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Execute Report Now
+ */
+export const useExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost>>, TError,{reportId: string;params: ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost>>,
+        TError,
+        {reportId: string;params: ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista relatorios prontos para execucao.
  * @summary Get Due Reports
  */
-const getDueReportsApiV1FinancialBiDashboardBiReportsDueGet = <TData = AxiosResponse<ReportResponse[]>>(
-    params: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/reports/due`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getDueReportsApiV1FinancialBiDashboardBiReportsDueGet = (
+    params: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReportResponse[]>(
+      {url: `/api/v1/financial/bi-dashboard/bi/reports/due`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDueReportsApiV1FinancialBiDashboardBiReportsDueGetQueryKey = (params?: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/reports/due`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDueReportsApiV1FinancialBiDashboardBiReportsDueGetQueryOptions = <TData = Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError = HTTPValidationError>(params: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDueReportsApiV1FinancialBiDashboardBiReportsDueGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>> = ({ signal }) => getDueReportsApiV1FinancialBiDashboardBiReportsDueGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>>
+export type GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetQueryError = HTTPValidationError
+
+
+export function useGetDueReportsApiV1FinancialBiDashboardBiReportsDueGet<TData = Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError = HTTPValidationError>(
+ params: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDueReportsApiV1FinancialBiDashboardBiReportsDueGet<TData = Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError = HTTPValidationError>(
+ params: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDueReportsApiV1FinancialBiDashboardBiReportsDueGet<TData = Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError = HTTPValidationError>(
+ params: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Due Reports
+ */
+
+export function useGetDueReportsApiV1FinancialBiDashboardBiReportsDueGet<TData = Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError = HTTPValidationError>(
+ params: GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDueReportsApiV1FinancialBiDashboardBiReportsDueGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDueReportsApiV1FinancialBiDashboardBiReportsDueGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatisticas do cache.
  * @summary Get Cache Stats
  */
-const getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet = <TData = AxiosResponse<CacheStats>>(
-    params: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/cache/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet = (
+    params: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CacheStats>(
+      {url: `/api/v1/financial/bi-dashboard/bi/cache/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetQueryKey = (params?: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/cache/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError = HTTPValidationError>(params: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>> = ({ signal }) => getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>>
+export type GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetQueryError = HTTPValidationError
+
+
+export function useGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet<TData = Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError = HTTPValidationError>(
+ params: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet<TData = Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError = HTTPValidationError>(
+ params: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet<TData = Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError = HTTPValidationError>(
+ params: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Cache Stats
+ */
+
+export function useGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet<TData = Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError = HTTPValidationError>(
+ params: GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Invalida cache.
  * @summary Invalidate Cache
  */
-const invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost = <TData = AxiosResponse<unknown>>(
+export const invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost = (
     cacheInvalidate: CacheInvalidate,
-    params: InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/cache/invalidate`,
-      cacheInvalidate,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/cache/invalidate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cacheInvalidate,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getInvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost>>, TError,{data: CacheInvalidate;params: InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost>>, TError,{data: CacheInvalidate;params: InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams}, TContext> => {
+
+const mutationKey = ['invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost>>, {data: CacheInvalidate;params: InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostMutationResult = NonNullable<Awaited<ReturnType<typeof invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost>>>
+    export type InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostMutationBody = CacheInvalidate
+    export type InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Invalidate Cache
+ */
+export const useInvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost>>, TError,{data: CacheInvalidate;params: InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost>>,
+        TError,
+        {data: CacheInvalidate;params: InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getInvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Limpa cache expirado.
  * @summary Cleanup Cache
  */
-const cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost = <TData = AxiosResponse<unknown>>(
-    params: CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/cache/cleanup`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+export const cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost = (
+    params: CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/cache/cleanup`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost>>, TError,{params: CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost>>, TError,{params: CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostParams}, TContext> => {
+
+const mutationKey = ['cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost>>, {params: CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost(params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostMutationResult = NonNullable<Awaited<ReturnType<typeof cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost>>>
+    
+    export type CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cleanup Cache
+ */
+export const useCleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost>>, TError,{params: CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost>>,
+        TError,
+        {params: CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Detecta anomalias nos dados.
  * @summary Detect Anomalies
  */
-const detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost = <TData = AxiosResponse<unknown>>(
+export const detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost = (
     detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem[],
-    params?: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/analytics/anomalies`,
-      detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/analytics/anomalies`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getDetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost>>, TError,{data: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem[];params?: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost>>, TError,{data: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem[];params?: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostParams}, TContext> => {
+
+const mutationKey = ['detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost>>, {data: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem[];params?: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostMutationResult = NonNullable<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost>>>
+    export type DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostMutationBody = DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem[]
+    export type DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Detect Anomalies
+ */
+export const useDetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost>>, TError,{data: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem[];params?: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost>>,
+        TError,
+        {data: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostBodyItem[];params?: DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getDetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula tendencia dos dados.
  * @summary Calculate Trend
  */
-const calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost = <TData = AxiosResponse<unknown>>(
-    calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem: CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[], options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/analytics/trend`,
-      calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem,options
-    );
-  }
-/**
+export const calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost = (
+    calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem: CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[],
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/analytics/trend`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem, signal
+    },
+      );
+    }
+  
+
+
+export const getCalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost>>, TError,{data: CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[]}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost>>, TError,{data: CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[]}, TContext> => {
+
+const mutationKey = ['calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost>>, {data: CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[]}> = (props) => {
+          const {data} = props ?? {};
+
+          return  calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostMutationResult = NonNullable<Awaited<ReturnType<typeof calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost>>>
+    export type CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostMutationBody = CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[]
+    export type CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calculate Trend
+ */
+export const useCalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost>>, TError,{data: CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[]}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost>>,
+        TError,
+        {data: CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostBodyItem[]},
+        TContext
+      > => {
+
+      const mutationOptions = getCalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Analisa distribuicao dos dados.
  * @summary Analyze Distribution
  */
-const analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost = <TData = AxiosResponse<unknown>>(
-    analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem: AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[], options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/analytics/distribution`,
-      analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem,options
-    );
-  }
-/**
+export const analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost = (
+    analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem: AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[],
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/analytics/distribution`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem, signal
+    },
+      );
+    }
+  
+
+
+export const getAnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost>>, TError,{data: AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[]}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost>>, TError,{data: AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[]}, TContext> => {
+
+const mutationKey = ['analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost>>, {data: AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[]}> = (props) => {
+          const {data} = props ?? {};
+
+          return  analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost>>>
+    export type AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostMutationBody = AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[]
+    export type AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Analyze Distribution
+ */
+export const useAnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost>>, TError,{data: AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[]}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost>>,
+        TError,
+        {data: AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostBodyItem[]},
+        TContext
+      > => {
+
+      const mutationOptions = getAnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula taxa de crescimento.
  * @summary Calculate Growth Rate
  */
-const calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost = <TData = AxiosResponse<unknown>>(
+export const calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost = (
     calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem[],
-    params?: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/analytics/growth-rate`,
-      calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/analytics/growth-rate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost>>, TError,{data: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem[];params?: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost>>, TError,{data: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem[];params?: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostParams}, TContext> => {
+
+const mutationKey = ['calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost>>, {data: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem[];params?: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostMutationResult = NonNullable<Awaited<ReturnType<typeof calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost>>>
+    export type CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostMutationBody = CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem[]
+    export type CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calculate Growth Rate
+ */
+export const useCalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost>>, TError,{data: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem[];params?: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost>>,
+        TError,
+        {data: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostBodyItem[];params?: CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Sugere metas baseado em historico.
  * @summary Suggest Targets
  */
-const suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost = <TData = AxiosResponse<unknown>>(
+export const suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost = (
     suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem[],
-    params?: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/analytics/suggest-targets`,
-      suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/analytics/suggest-targets`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getSuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost>>, TError,{data: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem[];params?: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost>>, TError,{data: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem[];params?: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostParams}, TContext> => {
+
+const mutationKey = ['suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost>>, {data: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem[];params?: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostMutationResult = NonNullable<Awaited<ReturnType<typeof suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost>>>
+    export type SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostMutationBody = SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem[]
+    export type SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Suggest Targets
+ */
+export const useSuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost>>, TError,{data: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem[];params?: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost>>,
+        TError,
+        {data: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostBodyItem[];params?: SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getSuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Analisa variancia orcamento vs realizado.
  * @summary Analyze Variance
  */
-const analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost = <TData = AxiosResponse<unknown>>(
-    params: AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/analytics/variance`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+export const analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost = (
+    params: AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/analytics/variance`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getAnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost>>, TError,{params: AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost>>, TError,{params: AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostParams}, TContext> => {
+
+const mutationKey = ['analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost>>, {params: AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost(params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostMutationResult = NonNullable<Awaited<ReturnType<typeof analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost>>>
+    
+    export type AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Analyze Variance
+ */
+export const useAnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost>>, TError,{params: AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost>>,
+        TError,
+        {params: AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getAnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Gera previsao com cenarios.
  * @summary Generate Forecast
  */
-const generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost = <TData = AxiosResponse<unknown>>(
+export const generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost = (
     generateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem[],
-    params?: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/forecast/generate`,
-      generateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/forecast/generate`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: generateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getGenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost>>, TError,{data: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem[];params?: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost>>, TError,{data: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem[];params?: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostParams}, TContext> => {
+
+const mutationKey = ['generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost>>, {data: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem[];params?: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostMutationResult = NonNullable<Awaited<ReturnType<typeof generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost>>>
+    export type GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostMutationBody = GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem[]
+    export type GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Generate Forecast
+ */
+export const useGenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost>>, TError,{data: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem[];params?: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost>>,
+        TError,
+        {data: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostBodyItem[];params?: GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getGenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Previsao por media movel.
  * @summary Moving Average Forecast
  */
-const movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost = <TData = AxiosResponse<unknown>>(
+export const movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost = (
     movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem[],
-    params?: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/forecast/moving-average`,
-      movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/forecast/moving-average`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getMovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost>>, TError,{data: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem[];params?: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost>>, TError,{data: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem[];params?: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostParams}, TContext> => {
+
+const mutationKey = ['movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost>>, {data: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem[];params?: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostMutationResult = NonNullable<Awaited<ReturnType<typeof movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost>>>
+    export type MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostMutationBody = MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem[]
+    export type MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Moving Average Forecast
+ */
+export const useMovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost>>, TError,{data: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem[];params?: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost>>,
+        TError,
+        {data: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostBodyItem[];params?: MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getMovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula ponto de equilibrio.
  * @summary Calculate Break Even
  */
-const calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost = <TData = AxiosResponse<unknown>>(
-    params: CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/forecast/break-even`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+export const calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost = (
+    params: CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/forecast/break-even`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost>>, TError,{params: CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost>>, TError,{params: CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostParams}, TContext> => {
+
+const mutationKey = ['calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost>>, {params: CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost(params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostMutationResult = NonNullable<Awaited<ReturnType<typeof calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost>>>
+    
+    export type CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calculate Break Even
+ */
+export const useCalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost>>, TError,{params: CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost>>,
+        TError,
+        {params: CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Projeta fluxo de caixa.
  * @summary Project Cash Flow
  */
-const projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost = <TData = AxiosResponse<unknown>>(
+export const projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost = (
     bodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost: BodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost,
-    params: ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/forecast/cash-flow-projection`,
-      bodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/forecast/cash-flow-projection`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: bodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost>>, TError,{data: BodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost;params: ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost>>, TError,{data: BodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost;params: ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostParams}, TContext> => {
+
+const mutationKey = ['projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost>>, {data: BodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost;params: ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostMutationResult = NonNullable<Awaited<ReturnType<typeof projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost>>>
+    export type ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostMutationBody = BodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost
+    export type ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Project Cash Flow
+ */
+export const useProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost>>, TError,{data: BodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost;params: ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost>>,
+        TError,
+        {data: BodyProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost;params: ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula Valor Presente Liquido.
  * @summary Calculate Npv
  */
-const calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost = <TData = AxiosResponse<unknown>>(
+export const calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost = (
     calculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem[],
-    params: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/forecast/npv`,
-      calculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/forecast/npv`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: calculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost>>, TError,{data: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem[];params: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost>>, TError,{data: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem[];params: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostParams}, TContext> => {
+
+const mutationKey = ['calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost>>, {data: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem[];params: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostMutationResult = NonNullable<Awaited<ReturnType<typeof calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost>>>
+    export type CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostMutationBody = CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem[]
+    export type CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calculate Npv
+ */
+export const useCalculateNpvApiV1FinancialBiDashboardBiForecastNpvPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost>>, TError,{data: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem[];params: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost>>,
+        TError,
+        {data: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostBodyItem[];params: CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula periodo de payback.
  * @summary Calculate Payback
  */
-const calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost = <TData = AxiosResponse<unknown>>(
+export const calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost = (
     calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem[],
-    params: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bi-dashboard/bi/forecast/payback`,
-      calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/forecast/payback`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost>>, TError,{data: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem[];params: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost>>, TError,{data: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem[];params: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostParams}, TContext> => {
+
+const mutationKey = ['calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost>>, {data: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem[];params: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostMutationResult = NonNullable<Awaited<ReturnType<typeof calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost>>>
+    export type CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostMutationBody = CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem[]
+    export type CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Calculate Payback
+ */
+export const useCalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost>>, TError,{data: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem[];params: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost>>,
+        TError,
+        {data: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostBodyItem[];params: CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna resumo financeiro consolidado.
  * @summary Get Financial Summary
  */
-const getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet = <TData = AxiosResponse<unknown>>(
-    params: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/summary/financial`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet = (
+    params: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/summary/financial`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetQueryKey = (params?: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/summary/financial`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetQueryOptions = <TData = Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError = HTTPValidationError>(params: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>> = ({ signal }) => getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetQueryResult = NonNullable<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>>
+export type GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetQueryError = HTTPValidationError
+
+
+export function useGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet<TData = Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError = HTTPValidationError>(
+ params: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>,
+          TError,
+          Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet<TData = Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError = HTTPValidationError>(
+ params: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>,
+          TError,
+          Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet<TData = Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError = HTTPValidationError>(
+ params: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Financial Summary
+ */
+
+export function useGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet<TData = Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError = HTTPValidationError>(
+ params: GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Compara metricas entre periodos.
  * @summary Compare Periods
  */
-const comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet = <TData = AxiosResponse<unknown>>(
-    params: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bi-dashboard/bi/summary/compare`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {createDashboardApiV1FinancialBiDashboardBiDashboardsPost,listDashboardsApiV1FinancialBiDashboardBiDashboardsGet,getDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet,updateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPut,deleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDelete,publishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPost,archiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePost,toggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePost,setDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPost,getDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGet,duplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePost,getDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet,createWidgetApiV1FinancialBiDashboardBiWidgetsPost,listWidgetsApiV1FinancialBiDashboardBiWidgetsGet,getWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGet,updateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPut,deleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDelete,getWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGet,refreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPost,updateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPut,setWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPut,cloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePost,getDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGet,createKpiApiV1FinancialBiDashboardBiKpisPost,listKpisApiV1FinancialBiDashboardBiKpisGet,getKpiApiV1FinancialBiDashboardBiKpisKpiIdGet,updateKpiApiV1FinancialBiDashboardBiKpisKpiIdPut,deleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDelete,calculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePost,getKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGet,getKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGet,getKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGet,getKpisStatsApiV1FinancialBiDashboardBiKpisStatsGet,calculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPost,createReportApiV1FinancialBiDashboardBiReportsPost,listReportsApiV1FinancialBiDashboardBiReportsGet,getReportApiV1FinancialBiDashboardBiReportsReportIdGet,updateReportApiV1FinancialBiDashboardBiReportsReportIdPut,deleteReportApiV1FinancialBiDashboardBiReportsReportIdDelete,pauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePost,resumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePost,executeReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePost,getDueReportsApiV1FinancialBiDashboardBiReportsDueGet,getCacheStatsApiV1FinancialBiDashboardBiCacheStatsGet,invalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePost,cleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPost,detectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPost,calculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPost,analyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPost,calculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePost,suggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPost,analyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePost,generateForecastApiV1FinancialBiDashboardBiForecastGeneratePost,movingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePost,calculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPost,projectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPost,calculateNpvApiV1FinancialBiDashboardBiForecastNpvPost,calculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPost,getFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGet,comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet}};
-export type CreateDashboardApiV1FinancialBiDashboardBiDashboardsPostResult = AxiosResponse<DashboardResponse>
-export type ListDashboardsApiV1FinancialBiDashboardBiDashboardsGetResult = AxiosResponse<DashboardListResponse>
-export type GetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGetResult = AxiosResponse<DashboardResponse>
-export type UpdateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPutResult = AxiosResponse<DashboardResponse>
-export type DeleteDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDeleteResult = AxiosResponse<void>
-export type PublishDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdPublishPostResult = AxiosResponse<DashboardResponse>
-export type ArchiveDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdArchivePostResult = AxiosResponse<DashboardResponse>
-export type ToggleDashboardFavoriteApiV1FinancialBiDashboardBiDashboardsDashboardIdFavoritePostResult = AxiosResponse<DashboardResponse>
-export type SetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdSetDefaultPostResult = AxiosResponse<DashboardResponse>
-export type GetDefaultDashboardApiV1FinancialBiDashboardBiDashboardsDefaultGetResult = AxiosResponse<DashboardResponse>
-export type DuplicateDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdDuplicatePostResult = AxiosResponse<DashboardResponse>
-export type GetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGetResult = AxiosResponse<DashboardStats>
-export type CreateWidgetApiV1FinancialBiDashboardBiWidgetsPostResult = AxiosResponse<WidgetResponse>
-export type ListWidgetsApiV1FinancialBiDashboardBiWidgetsGetResult = AxiosResponse<WidgetResponse[]>
-export type GetWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdGetResult = AxiosResponse<WidgetResponse>
-export type UpdateWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdPutResult = AxiosResponse<WidgetResponse>
-export type DeleteWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdDeleteResult = AxiosResponse<void>
-export type GetWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdDataGetResult = AxiosResponse<WidgetData>
-export type RefreshWidgetDataApiV1FinancialBiDashboardBiWidgetsWidgetIdRefreshPostResult = AxiosResponse<WidgetData>
-export type UpdateWidgetPositionApiV1FinancialBiDashboardBiWidgetsWidgetIdPositionPutResult = AxiosResponse<unknown>
-export type SetWidgetVisibilityApiV1FinancialBiDashboardBiWidgetsWidgetIdVisibilityPutResult = AxiosResponse<unknown>
-export type CloneWidgetApiV1FinancialBiDashboardBiWidgetsWidgetIdClonePostResult = AxiosResponse<WidgetResponse>
-export type GetDashboardWidgetsApiV1FinancialBiDashboardBiDashboardsDashboardIdWidgetsGetResult = AxiosResponse<WidgetResponse[]>
-export type CreateKpiApiV1FinancialBiDashboardBiKpisPostResult = AxiosResponse<KPIResponse>
-export type ListKpisApiV1FinancialBiDashboardBiKpisGetResult = AxiosResponse<KPIResponse[]>
-export type GetKpiApiV1FinancialBiDashboardBiKpisKpiIdGetResult = AxiosResponse<KPIResponse>
-export type UpdateKpiApiV1FinancialBiDashboardBiKpisKpiIdPutResult = AxiosResponse<KPIResponse>
-export type DeleteKpiApiV1FinancialBiDashboardBiKpisKpiIdDeleteResult = AxiosResponse<void>
-export type CalculateKpiApiV1FinancialBiDashboardBiKpisKpiIdCalculatePostResult = AxiosResponse<KPIValue>
-export type GetKpiHistoryApiV1FinancialBiDashboardBiKpisKpiIdHistoryGetResult = AxiosResponse<KPIHistory>
-export type GetKpisSummaryApiV1FinancialBiDashboardBiKpisSummaryGetResult = AxiosResponse<KPIResponse[]>
-export type GetKpisAlertsApiV1FinancialBiDashboardBiKpisAlertsGetResult = AxiosResponse<KPIResponse[]>
-export type GetKpisStatsApiV1FinancialBiDashboardBiKpisStatsGetResult = AxiosResponse<KPISummary>
-export type CalculateAllKpisApiV1FinancialBiDashboardBiKpisCalculateAllPostResult = AxiosResponse<unknown>
-export type CreateReportApiV1FinancialBiDashboardBiReportsPostResult = AxiosResponse<ReportResponse>
-export type ListReportsApiV1FinancialBiDashboardBiReportsGetResult = AxiosResponse<ReportResponse[]>
-export type GetReportApiV1FinancialBiDashboardBiReportsReportIdGetResult = AxiosResponse<ReportResponse>
-export type UpdateReportApiV1FinancialBiDashboardBiReportsReportIdPutResult = AxiosResponse<ReportResponse>
-export type DeleteReportApiV1FinancialBiDashboardBiReportsReportIdDeleteResult = AxiosResponse<void>
-export type PauseReportApiV1FinancialBiDashboardBiReportsReportIdPausePostResult = AxiosResponse<ReportResponse>
-export type ResumeReportApiV1FinancialBiDashboardBiReportsReportIdResumePostResult = AxiosResponse<ReportResponse>
-export type ExecuteReportNowApiV1FinancialBiDashboardBiReportsReportIdExecutePostResult = AxiosResponse<unknown>
-export type GetDueReportsApiV1FinancialBiDashboardBiReportsDueGetResult = AxiosResponse<ReportResponse[]>
-export type GetCacheStatsApiV1FinancialBiDashboardBiCacheStatsGetResult = AxiosResponse<CacheStats>
-export type InvalidateCacheApiV1FinancialBiDashboardBiCacheInvalidatePostResult = AxiosResponse<unknown>
-export type CleanupCacheApiV1FinancialBiDashboardBiCacheCleanupPostResult = AxiosResponse<unknown>
-export type DetectAnomaliesApiV1FinancialBiDashboardBiAnalyticsAnomaliesPostResult = AxiosResponse<unknown>
-export type CalculateTrendApiV1FinancialBiDashboardBiAnalyticsTrendPostResult = AxiosResponse<unknown>
-export type AnalyzeDistributionApiV1FinancialBiDashboardBiAnalyticsDistributionPostResult = AxiosResponse<unknown>
-export type CalculateGrowthRateApiV1FinancialBiDashboardBiAnalyticsGrowthRatePostResult = AxiosResponse<unknown>
-export type SuggestTargetsApiV1FinancialBiDashboardBiAnalyticsSuggestTargetsPostResult = AxiosResponse<unknown>
-export type AnalyzeVarianceApiV1FinancialBiDashboardBiAnalyticsVariancePostResult = AxiosResponse<unknown>
-export type GenerateForecastApiV1FinancialBiDashboardBiForecastGeneratePostResult = AxiosResponse<unknown>
-export type MovingAverageForecastApiV1FinancialBiDashboardBiForecastMovingAveragePostResult = AxiosResponse<unknown>
-export type CalculateBreakEvenApiV1FinancialBiDashboardBiForecastBreakEvenPostResult = AxiosResponse<unknown>
-export type ProjectCashFlowApiV1FinancialBiDashboardBiForecastCashFlowProjectionPostResult = AxiosResponse<unknown>
-export type CalculateNpvApiV1FinancialBiDashboardBiForecastNpvPostResult = AxiosResponse<unknown>
-export type CalculatePaybackApiV1FinancialBiDashboardBiForecastPaybackPostResult = AxiosResponse<unknown>
-export type GetFinancialSummaryApiV1FinancialBiDashboardBiSummaryFinancialGetResult = AxiosResponse<unknown>
-export type ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetResult = AxiosResponse<unknown>
+export const comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet = (
+    params: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<unknown>(
+      {url: `/api/v1/financial/bi-dashboard/bi/summary/compare`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetQueryKey = (params?: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams,) => {
+    return [
+    `/api/v1/financial/bi-dashboard/bi/summary/compare`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetQueryOptions = <TData = Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError = HTTPValidationError>(params: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>> = ({ signal }) => comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetQueryResult = NonNullable<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>>
+export type ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetQueryError = HTTPValidationError
+
+
+export function useComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet<TData = Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError = HTTPValidationError>(
+ params: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>,
+          TError,
+          Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet<TData = Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError = HTTPValidationError>(
+ params: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>,
+          TError,
+          Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet<TData = Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError = HTTPValidationError>(
+ params: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Compare Periods
+ */
+
+export function useComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet<TData = Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError = HTTPValidationError>(
+ params: ComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof comparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getComparePeriodsApiV1FinancialBiDashboardBiSummaryCompareGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

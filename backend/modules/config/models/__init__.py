@@ -25,12 +25,6 @@ from modules.config.models.feature_flag import (
     FlagType,
     RolloutStrategy,
 )
-from modules.config.models.notification_template import (
-    NotificationTemplate,
-    NotificationChannel,
-    NotificationType,
-    TemplateStatus,
-)
 
 __all__ = [
     # Tenant
@@ -51,9 +45,4 @@ __all__ = [
     "FlagStatus",
     "FlagType",
     "RolloutStrategy",
-    # NotificationTemplate
-    "NotificationTemplate",
-    "NotificationChannel",
-    "NotificationType",
-    "TemplateStatus",
 ]

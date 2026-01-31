@@ -116,11 +116,20 @@ class SubstituicaoAgent:
         (r"quem\s+(?:esta|ta|está)\s+livre", SubstituicaoIntent.DISPONIBILIDADE),
     ]
 
-    def __init__(self, db=None, substitution_repo=None, employee_repo=None, notification_service=None):
+    def __init__(self, db=None, substitution_repo=None, employee_repo=None, notification_service=None, data_connector=None):
         self.db = db
         self.substitution_repo = substitution_repo
         self.employee_repo = employee_repo
         self.notification_service = notification_service
+        self.data_connector = data_connector
+        # Se tem db mas não tem data_connector, criar automaticamente
+        if db and not data_connector:
+            try:
+                from modules.ai.bartolo.services.data_connector import DataConnector
+                self.data_connector = DataConnector(db)
+            except Exception as e:
+                logger.warning(f"Não foi possível criar DataConnector: {e}")
+                self.data_connector = None
 
     async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
         """Processa mensagem relacionada a substituicoes"""
@@ -153,12 +162,46 @@ class SubstituicaoAgent:
         return None
 
     async def _handle_buscar_substituto(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Busca substituto ideal"""
+        """Busca substituto ideal usando dados reais do DataConnector"""
         import re
 
         # Tenta extrair funcionario ou turno
         func_match = re.search(r"(?:do|da|para)\s+(\w+)", message.lower())
 
+        # Tentar buscar funcionários de folga (candidatos reais)
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_funcionarios_folga()
+                if result.success and result.data:
+                    candidatos = result.data[:10]
+                    lines = []
+                    for c in candidatos:
+                        lines.append(f"- **{c['nome']}** ({c.get('matricula', 'N/A')}) - {c.get('cargo', 'N/A')}")
+
+                    response = f"""**Buscando Substitutos**
+
+**Funcionários disponíveis hoje ({result.total_count}):**
+
+{chr(10).join(lines)}
+
+**Critérios de seleção:**
+- Proximidade do posto (GPS)
+- Disponibilidade no horário
+- Histórico de aceitação
+- Custo (hora normal vs extra)
+- Habilidades necessárias
+
+Informe o turno e data para filtrar os melhores candidatos."""
+                    return {
+                        "response": response,
+                        "intent": SubstituicaoIntent.BUSCAR_SUBSTITUTO.value,
+                        "data": {"candidatos": candidatos, "total_disponiveis": result.total_count},
+                        "suggestions": ["Turno de hoje", "Turno de amanhã", "Ver turnos sem cobertura"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar substitutos via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**Buscando Substitutos**
 
@@ -177,7 +220,42 @@ Para encontrar o melhor substituto, preciso saber:
         }
 
     async def _handle_urgente(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Substituicao urgente/emergencia"""
+        """Substituicao urgente/emergencia usando dados reais do DataConnector"""
+        # Tentar buscar dados reais para emergência
+        if self.data_connector:
+            try:
+                folga_result = await self.data_connector._get_funcionarios_folga()
+                cobertura_result = await self.data_connector._get_cobertura_critica()
+
+                parts = ["**SUBSTITUICAO URGENTE**\n\nModo emergência ativado!"]
+
+                if cobertura_result.success and cobertura_result.data:
+                    postos = cobertura_result.data[:5]
+                    parts.append(f"\n**Postos críticos ({len(cobertura_result.data)}):**")
+                    for p in postos:
+                        parts.append(f"- 🔴 **{p['nome']}** - {p['alocados']}/{p['requeridos']} ({p['cobertura']}%)")
+
+                if folga_result.success and folga_result.data:
+                    parts.append(f"\n**Funcionários disponíveis para convocação:** {folga_result.total_count}")
+                    for f in folga_result.data[:5]:
+                        parts.append(f"- {f['nome']} ({f.get('cargo', 'N/A')})")
+
+                parts.append("\n**Informe o posto que precisa de cobertura imediata:**")
+
+                return {
+                    "response": "\n".join(parts),
+                    "intent": SubstituicaoIntent.URGENTE.value,
+                    "data": {
+                        "postos_criticos": cobertura_result.data if cobertura_result.success else [],
+                        "disponiveis": folga_result.total_count if folga_result.success else 0,
+                    },
+                    "suggestions": ["Listar postos críticos", "Ver funcionários disponíveis", "Notificar supervisor"],
+                    "priority": "high",
+                }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar dados urgentes via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**SUBSTITUICAO URGENTE**
 
@@ -202,8 +280,22 @@ Modo emergencia ativado! Vou:
         }
 
     async def _handle_pendentes(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Lista substituicoes pendentes"""
-        # Em producao, consultaria o banco
+        """Lista substituicoes pendentes usando dados reais do DataConnector"""
+        # Tentar buscar dados reais
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_substituicoes_pendentes()
+                if result.success and result.message:
+                    return {
+                        "response": result.message,
+                        "intent": SubstituicaoIntent.PENDENTES.value,
+                        "data": {"substituicoes": result.data, "pending_count": result.total_count},
+                        "suggestions": ["Ver detalhes", "Buscar substitutos", "Resolver pendências"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar substituições pendentes via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**Substituicoes Pendentes**
 
@@ -221,7 +313,42 @@ Modo emergencia ativado! Vou:
         }
 
     async def _handle_historico(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Historico de substituicoes"""
+        """Historico de substituicoes usando dados reais do DataConnector"""
+        # Tentar buscar dados reais de substituições
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_substituicoes_pendentes()
+                if result.success:
+                    total = result.total_count
+                    subs = result.data or []
+
+                    # Contar por status
+                    sem_substituto = sum(1 for s in subs if s.get('substituto') in ('A definir', None, 'N/A'))
+                    com_substituto = total - sem_substituto
+
+                    response = f"""**Histórico de Substituições**
+
+- Total registradas: **{total}**
+- Com substituto definido: **{com_substituto}**
+- Sem substituto: **{sem_substituto}**
+
+"""
+                    if subs:
+                        response += "**Últimas substituições:**\n"
+                        for s in subs[:5]:
+                            sub_text = s.get('substituto', 'A definir')
+                            response += f"- **{s.get('funcionario_ausente', 'N/A')}** → {sub_text} | {s.get('posto', 'N/A')} | {s.get('data', 'N/A')}\n"
+
+                    return {
+                        "response": response,
+                        "intent": SubstituicaoIntent.HISTORICO.value,
+                        "data": {"total": total, "substituicoes": subs},
+                        "suggestions": ["Ver por funcionário", "Exportar relatório", "Filtrar por posto"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar histórico via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**Historico de Substituicoes (ultimos 30 dias)**
 
@@ -239,7 +366,47 @@ Modo emergencia ativado! Vou:
         }
 
     async def _handle_custo(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Calcula custo de substituicao"""
+        """Calcula custo de substituicao usando dados reais do DataConnector"""
+        # Tentar buscar dados reais de custo
+        if self.data_connector:
+            try:
+                he_result = await self.data_connector._get_hora_extra_ranking()
+                kpis_result = await self.data_connector._get_main_kpis()
+
+                parts = ["**Cálculo de Custo de Substituição**\n"]
+
+                if kpis_result.success and kpis_result.data:
+                    custo_mensal = kpis_result.data.get('custo_mensal_total', 0)
+                    subs_ativas = kpis_result.data.get('substituicoes_ativas', 0)
+                    parts.append(f"**Dados atuais:**")
+                    parts.append(f"- Custo mensal total: **R$ {custo_mensal:,.2f}**")
+                    parts.append(f"- Substituições ativas: **{subs_ativas}**")
+
+                if he_result.success and he_result.data:
+                    total_he = sum(f.get('horas_extras', 0) for f in he_result.data)
+                    parts.append(f"- Horas extras acumuladas: **{total_he:.1f}h**")
+
+                parts.append(f"\n**Fórmula:**")
+                parts.append(f"- Hora normal: R$ Base")
+                parts.append(f"- Hora extra (até 50%): R$ Base x 1.5")
+                parts.append(f"- Hora extra (acima 50%): R$ Base x 2.0")
+                parts.append(f"- Adicional noturno: +20%")
+                parts.append(f"- Adicional domingo/feriado: +100%")
+                parts.append(f"\nInforme o turno para calcular o custo estimado.")
+
+                return {
+                    "response": "\n".join(parts),
+                    "intent": SubstituicaoIntent.CUSTO.value,
+                    "data": {
+                        "custo_mensal": kpis_result.data.get('custo_mensal_total', 0) if kpis_result.success else 0,
+                        "horas_extras_total": total_he if he_result.success else 0,
+                    },
+                    "suggestions": ["Simular custo", "Ver custos do mês", "Comparar opções"],
+                }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar custo de substituição via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**Calculo de Custo de Substituicao**
 
@@ -256,7 +423,23 @@ Informe o turno para calcular o custo estimado.""",
         }
 
     async def _handle_disponibilidade(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Verifica disponibilidade de funcionarios"""
+        """Verifica disponibilidade de funcionarios usando dados reais do DataConnector"""
+        # Tentar buscar dados reais
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_funcionarios_folga()
+                if result.success and result.message:
+                    response = result.message + "\n\n**Filtros disponíveis:**\n- Por proximidade (GPS)\n- Por habilidade\n- Por custo\n- Por histórico de aceitação\n\nQual critério priorizar?"
+                    return {
+                        "response": response,
+                        "intent": SubstituicaoIntent.DISPONIBILIDADE.value,
+                        "data": {"disponiveis": result.data, "total": result.total_count},
+                        "suggestions": ["Mais próximos", "Menor custo", "Mais confiáveis"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar disponibilidade via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**Funcionarios Disponiveis**
 

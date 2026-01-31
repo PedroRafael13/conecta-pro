@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   ABCDashboard,
@@ -66,6 +79,7 @@ import type {
   GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams,
   GetStatsApiV1FinancialCostingCostingStatsGetParams,
   GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams,
+  HTTPValidationError,
   ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams,
   ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams,
   ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams,
@@ -76,683 +90,3982 @@ import type {
   RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost200
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialAbcCosting = () => {
+
 /**
  * Lista cost drivers com filtros.
  * @summary List Drivers
  */
-const listDriversApiV1FinancialCostingCostingDriversGet = <TData = AxiosResponse<CostDriverResponse[]>>(
-    params?: ListDriversApiV1FinancialCostingCostingDriversGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/drivers`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listDriversApiV1FinancialCostingCostingDriversGet = (
+    params?: ListDriversApiV1FinancialCostingCostingDriversGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostDriverResponse[]>(
+      {url: `/api/v1/financial/costing/costing/drivers`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListDriversApiV1FinancialCostingCostingDriversGetQueryKey = (params?: ListDriversApiV1FinancialCostingCostingDriversGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/drivers`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListDriversApiV1FinancialCostingCostingDriversGetQueryOptions = <TData = Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError = HTTPValidationError>(params?: ListDriversApiV1FinancialCostingCostingDriversGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDriversApiV1FinancialCostingCostingDriversGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>> = ({ signal }) => listDriversApiV1FinancialCostingCostingDriversGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListDriversApiV1FinancialCostingCostingDriversGetQueryResult = NonNullable<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>>
+export type ListDriversApiV1FinancialCostingCostingDriversGetQueryError = HTTPValidationError
+
+
+export function useListDriversApiV1FinancialCostingCostingDriversGet<TData = Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListDriversApiV1FinancialCostingCostingDriversGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDriversApiV1FinancialCostingCostingDriversGet<TData = Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError = HTTPValidationError>(
+ params?: ListDriversApiV1FinancialCostingCostingDriversGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDriversApiV1FinancialCostingCostingDriversGet<TData = Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError = HTTPValidationError>(
+ params?: ListDriversApiV1FinancialCostingCostingDriversGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Drivers
+ */
+
+export function useListDriversApiV1FinancialCostingCostingDriversGet<TData = Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError = HTTPValidationError>(
+ params?: ListDriversApiV1FinancialCostingCostingDriversGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDriversApiV1FinancialCostingCostingDriversGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListDriversApiV1FinancialCostingCostingDriversGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria novo cost driver.
  * @summary Create Driver
  */
-const createDriverApiV1FinancialCostingCostingDriversPost = <TData = AxiosResponse<CostDriverResponse>>(
-    costDriverCreate: CostDriverCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/drivers`,
-      costDriverCreate,options
-    );
-  }
-/**
+export const createDriverApiV1FinancialCostingCostingDriversPost = (
+    costDriverCreate: CostDriverCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostDriverResponse>(
+      {url: `/api/v1/financial/costing/costing/drivers`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costDriverCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateDriverApiV1FinancialCostingCostingDriversPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDriverApiV1FinancialCostingCostingDriversPost>>, TError,{data: CostDriverCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createDriverApiV1FinancialCostingCostingDriversPost>>, TError,{data: CostDriverCreate}, TContext> => {
+
+const mutationKey = ['createDriverApiV1FinancialCostingCostingDriversPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDriverApiV1FinancialCostingCostingDriversPost>>, {data: CostDriverCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDriverApiV1FinancialCostingCostingDriversPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDriverApiV1FinancialCostingCostingDriversPostMutationResult = NonNullable<Awaited<ReturnType<typeof createDriverApiV1FinancialCostingCostingDriversPost>>>
+    export type CreateDriverApiV1FinancialCostingCostingDriversPostMutationBody = CostDriverCreate
+    export type CreateDriverApiV1FinancialCostingCostingDriversPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Driver
+ */
+export const useCreateDriverApiV1FinancialCostingCostingDriversPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDriverApiV1FinancialCostingCostingDriversPost>>, TError,{data: CostDriverCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createDriverApiV1FinancialCostingCostingDriversPost>>,
+        TError,
+        {data: CostDriverCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateDriverApiV1FinancialCostingCostingDriversPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém cost driver por ID.
  * @summary Get Driver
  */
-const getDriverApiV1FinancialCostingCostingDriversDriverIdGet = <TData = AxiosResponse<CostDriverResponse>>(
-    driverId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/drivers/${driverId}`,options
-    );
-  }
+export const getDriverApiV1FinancialCostingCostingDriversDriverIdGet = (
+    driverId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostDriverResponse>(
+      {url: `/api/v1/financial/costing/costing/drivers/${driverId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDriverApiV1FinancialCostingCostingDriversDriverIdGetQueryKey = (driverId?: string,) => {
+    return [
+    `/api/v1/financial/costing/costing/drivers/${driverId}`
+    ] as const;
+    }
+
+    
+export const getGetDriverApiV1FinancialCostingCostingDriversDriverIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError = HTTPValidationError>(driverId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDriverApiV1FinancialCostingCostingDriversDriverIdGetQueryKey(driverId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>> = ({ signal }) => getDriverApiV1FinancialCostingCostingDriversDriverIdGet(driverId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(driverId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDriverApiV1FinancialCostingCostingDriversDriverIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>>
+export type GetDriverApiV1FinancialCostingCostingDriversDriverIdGetQueryError = HTTPValidationError
+
+
+export function useGetDriverApiV1FinancialCostingCostingDriversDriverIdGet<TData = Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError = HTTPValidationError>(
+ driverId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDriverApiV1FinancialCostingCostingDriversDriverIdGet<TData = Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError = HTTPValidationError>(
+ driverId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDriverApiV1FinancialCostingCostingDriversDriverIdGet<TData = Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError = HTTPValidationError>(
+ driverId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Driver
+ */
+
+export function useGetDriverApiV1FinancialCostingCostingDriversDriverIdGet<TData = Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError = HTTPValidationError>(
+ driverId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverApiV1FinancialCostingCostingDriversDriverIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDriverApiV1FinancialCostingCostingDriversDriverIdGetQueryOptions(driverId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza cost driver.
  * @summary Update Driver
  */
-const updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch = <TData = AxiosResponse<CostDriverResponse>>(
+export const updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch = (
     driverId: string,
-    costDriverUpdate: CostDriverUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/costing/costing/drivers/${driverId}`,
-      costDriverUpdate,options
-    );
-  }
-/**
+    costDriverUpdate: CostDriverUpdate,
+ ) => {
+      
+      
+      return customInstance<CostDriverResponse>(
+      {url: `/api/v1/financial/costing/costing/drivers/${driverId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: costDriverUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch>>, TError,{driverId: string;data: CostDriverUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch>>, TError,{driverId: string;data: CostDriverUpdate}, TContext> => {
+
+const mutationKey = ['updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch>>, {driverId: string;data: CostDriverUpdate}> = (props) => {
+          const {driverId,data} = props ?? {};
+
+          return  updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch(driverId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch>>>
+    export type UpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatchMutationBody = CostDriverUpdate
+    export type UpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Driver
+ */
+export const useUpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch>>, TError,{driverId: string;data: CostDriverUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch>>,
+        TError,
+        {driverId: string;data: CostDriverUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Remove cost driver (soft delete).
  * @summary Delete Driver
  */
-const deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete = <TData = AxiosResponse<void>>(
-    driverId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/costing/costing/drivers/${driverId}`,options
-    );
-  }
-/**
+export const deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete = (
+    driverId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/costing/costing/drivers/${driverId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteDriverApiV1FinancialCostingCostingDriversDriverIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete>>, TError,{driverId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete>>, TError,{driverId: string}, TContext> => {
+
+const mutationKey = ['deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete>>, {driverId: string}> = (props) => {
+          const {driverId} = props ?? {};
+
+          return  deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete(driverId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteDriverApiV1FinancialCostingCostingDriversDriverIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete>>>
+    
+    export type DeleteDriverApiV1FinancialCostingCostingDriversDriverIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Driver
+ */
+export const useDeleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete>>, TError,{driverId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete>>,
+        TError,
+        {driverId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteDriverApiV1FinancialCostingCostingDriversDriverIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém estatísticas dos cost drivers.
  * @summary Get Driver Stats
  */
-const getDriverStatsApiV1FinancialCostingCostingDriversStatsGet = <TData = AxiosResponse<GetDriverStatsApiV1FinancialCostingCostingDriversStatsGet200>>(
-    params?: GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/drivers/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getDriverStatsApiV1FinancialCostingCostingDriversStatsGet = (
+    params?: GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetDriverStatsApiV1FinancialCostingCostingDriversStatsGet200>(
+      {url: `/api/v1/financial/costing/costing/drivers/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDriverStatsApiV1FinancialCostingCostingDriversStatsGetQueryKey = (params?: GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/drivers/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDriverStatsApiV1FinancialCostingCostingDriversStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError = HTTPValidationError>(params?: GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDriverStatsApiV1FinancialCostingCostingDriversStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>> = ({ signal }) => getDriverStatsApiV1FinancialCostingCostingDriversStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>>
+export type GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetQueryError = HTTPValidationError
+
+
+export function useGetDriverStatsApiV1FinancialCostingCostingDriversStatsGet<TData = Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDriverStatsApiV1FinancialCostingCostingDriversStatsGet<TData = Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError = HTTPValidationError>(
+ params?: GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDriverStatsApiV1FinancialCostingCostingDriversStatsGet<TData = Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError = HTTPValidationError>(
+ params?: GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Driver Stats
+ */
+
+export function useGetDriverStatsApiV1FinancialCostingCostingDriversStatsGet<TData = Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError = HTTPValidationError>(
+ params?: GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDriverStatsApiV1FinancialCostingCostingDriversStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDriverStatsApiV1FinancialCostingCostingDriversStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista atividades de custo com filtros.
  * @summary List Activities
  */
-const listActivitiesApiV1FinancialCostingCostingActivitiesGet = <TData = AxiosResponse<CostActivityResponse[]>>(
-    params?: ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/activities`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listActivitiesApiV1FinancialCostingCostingActivitiesGet = (
+    params?: ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostActivityResponse[]>(
+      {url: `/api/v1/financial/costing/costing/activities`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListActivitiesApiV1FinancialCostingCostingActivitiesGetQueryKey = (params?: ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/activities`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListActivitiesApiV1FinancialCostingCostingActivitiesGetQueryOptions = <TData = Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError = HTTPValidationError>(params?: ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListActivitiesApiV1FinancialCostingCostingActivitiesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>> = ({ signal }) => listActivitiesApiV1FinancialCostingCostingActivitiesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListActivitiesApiV1FinancialCostingCostingActivitiesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>>
+export type ListActivitiesApiV1FinancialCostingCostingActivitiesGetQueryError = HTTPValidationError
+
+
+export function useListActivitiesApiV1FinancialCostingCostingActivitiesGet<TData = Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListActivitiesApiV1FinancialCostingCostingActivitiesGet<TData = Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError = HTTPValidationError>(
+ params?: ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListActivitiesApiV1FinancialCostingCostingActivitiesGet<TData = Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError = HTTPValidationError>(
+ params?: ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Activities
+ */
+
+export function useListActivitiesApiV1FinancialCostingCostingActivitiesGet<TData = Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError = HTTPValidationError>(
+ params?: ListActivitiesApiV1FinancialCostingCostingActivitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listActivitiesApiV1FinancialCostingCostingActivitiesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListActivitiesApiV1FinancialCostingCostingActivitiesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria nova atividade de custo.
  * @summary Create Activity
  */
-const createActivityApiV1FinancialCostingCostingActivitiesPost = <TData = AxiosResponse<CostActivityResponse>>(
-    costActivityCreate: CostActivityCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/activities`,
-      costActivityCreate,options
-    );
-  }
-/**
+export const createActivityApiV1FinancialCostingCostingActivitiesPost = (
+    costActivityCreate: CostActivityCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostActivityResponse>(
+      {url: `/api/v1/financial/costing/costing/activities`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costActivityCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateActivityApiV1FinancialCostingCostingActivitiesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createActivityApiV1FinancialCostingCostingActivitiesPost>>, TError,{data: CostActivityCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createActivityApiV1FinancialCostingCostingActivitiesPost>>, TError,{data: CostActivityCreate}, TContext> => {
+
+const mutationKey = ['createActivityApiV1FinancialCostingCostingActivitiesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createActivityApiV1FinancialCostingCostingActivitiesPost>>, {data: CostActivityCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createActivityApiV1FinancialCostingCostingActivitiesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateActivityApiV1FinancialCostingCostingActivitiesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createActivityApiV1FinancialCostingCostingActivitiesPost>>>
+    export type CreateActivityApiV1FinancialCostingCostingActivitiesPostMutationBody = CostActivityCreate
+    export type CreateActivityApiV1FinancialCostingCostingActivitiesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Activity
+ */
+export const useCreateActivityApiV1FinancialCostingCostingActivitiesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createActivityApiV1FinancialCostingCostingActivitiesPost>>, TError,{data: CostActivityCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createActivityApiV1FinancialCostingCostingActivitiesPost>>,
+        TError,
+        {data: CostActivityCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateActivityApiV1FinancialCostingCostingActivitiesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém atividade por ID.
  * @summary Get Activity
  */
-const getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet = <TData = AxiosResponse<CostActivityResponse>>(
-    activityId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/activities/${activityId}`,options
-    );
-  }
+export const getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet = (
+    activityId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostActivityResponse>(
+      {url: `/api/v1/financial/costing/costing/activities/${activityId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGetQueryKey = (activityId?: string,) => {
+    return [
+    `/api/v1/financial/costing/costing/activities/${activityId}`
+    ] as const;
+    }
+
+    
+export const getGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError = HTTPValidationError>(activityId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGetQueryKey(activityId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>> = ({ signal }) => getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet(activityId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(activityId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetActivityApiV1FinancialCostingCostingActivitiesActivityIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>>
+export type GetActivityApiV1FinancialCostingCostingActivitiesActivityIdGetQueryError = HTTPValidationError
+
+
+export function useGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGet<TData = Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError = HTTPValidationError>(
+ activityId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGet<TData = Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError = HTTPValidationError>(
+ activityId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGet<TData = Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError = HTTPValidationError>(
+ activityId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Activity
+ */
+
+export function useGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGet<TData = Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError = HTTPValidationError>(
+ activityId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetActivityApiV1FinancialCostingCostingActivitiesActivityIdGetQueryOptions(activityId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza atividade de custo.
  * @summary Update Activity
  */
-const updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch = <TData = AxiosResponse<CostActivityResponse>>(
+export const updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch = (
     activityId: string,
-    costActivityUpdate: CostActivityUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/costing/costing/activities/${activityId}`,
-      costActivityUpdate,options
-    );
-  }
-/**
+    costActivityUpdate: CostActivityUpdate,
+ ) => {
+      
+      
+      return customInstance<CostActivityResponse>(
+      {url: `/api/v1/financial/costing/costing/activities/${activityId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: costActivityUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch>>, TError,{activityId: string;data: CostActivityUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch>>, TError,{activityId: string;data: CostActivityUpdate}, TContext> => {
+
+const mutationKey = ['updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch>>, {activityId: string;data: CostActivityUpdate}> = (props) => {
+          const {activityId,data} = props ?? {};
+
+          return  updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch(activityId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch>>>
+    export type UpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatchMutationBody = CostActivityUpdate
+    export type UpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Activity
+ */
+export const useUpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch>>, TError,{activityId: string;data: CostActivityUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch>>,
+        TError,
+        {activityId: string;data: CostActivityUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Remove atividade (soft delete).
  * @summary Delete Activity
  */
-const deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete = <TData = AxiosResponse<void>>(
-    activityId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/costing/costing/activities/${activityId}`,options
-    );
-  }
-/**
+export const deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete = (
+    activityId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/costing/costing/activities/${activityId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete>>, TError,{activityId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete>>, TError,{activityId: string}, TContext> => {
+
+const mutationKey = ['deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete>>, {activityId: string}> = (props) => {
+          const {activityId} = props ?? {};
+
+          return  deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete(activityId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete>>>
+    
+    export type DeleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Activity
+ */
+export const useDeleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete>>, TError,{activityId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete>>,
+        TError,
+        {activityId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista pools de custo com filtros.
  * @summary List Pools
  */
-const listPoolsApiV1FinancialCostingCostingPoolsGet = <TData = AxiosResponse<CostPoolResponse[]>>(
-    params?: ListPoolsApiV1FinancialCostingCostingPoolsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/pools`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listPoolsApiV1FinancialCostingCostingPoolsGet = (
+    params?: ListPoolsApiV1FinancialCostingCostingPoolsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostPoolResponse[]>(
+      {url: `/api/v1/financial/costing/costing/pools`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListPoolsApiV1FinancialCostingCostingPoolsGetQueryKey = (params?: ListPoolsApiV1FinancialCostingCostingPoolsGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/pools`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListPoolsApiV1FinancialCostingCostingPoolsGetQueryOptions = <TData = Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError = HTTPValidationError>(params?: ListPoolsApiV1FinancialCostingCostingPoolsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListPoolsApiV1FinancialCostingCostingPoolsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>> = ({ signal }) => listPoolsApiV1FinancialCostingCostingPoolsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListPoolsApiV1FinancialCostingCostingPoolsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>>
+export type ListPoolsApiV1FinancialCostingCostingPoolsGetQueryError = HTTPValidationError
+
+
+export function useListPoolsApiV1FinancialCostingCostingPoolsGet<TData = Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListPoolsApiV1FinancialCostingCostingPoolsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPoolsApiV1FinancialCostingCostingPoolsGet<TData = Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError = HTTPValidationError>(
+ params?: ListPoolsApiV1FinancialCostingCostingPoolsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListPoolsApiV1FinancialCostingCostingPoolsGet<TData = Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError = HTTPValidationError>(
+ params?: ListPoolsApiV1FinancialCostingCostingPoolsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Pools
+ */
+
+export function useListPoolsApiV1FinancialCostingCostingPoolsGet<TData = Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError = HTTPValidationError>(
+ params?: ListPoolsApiV1FinancialCostingCostingPoolsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listPoolsApiV1FinancialCostingCostingPoolsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListPoolsApiV1FinancialCostingCostingPoolsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria novo pool de custo.
  * @summary Create Pool
  */
-const createPoolApiV1FinancialCostingCostingPoolsPost = <TData = AxiosResponse<CostPoolResponse>>(
-    costPoolCreate: CostPoolCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/pools`,
-      costPoolCreate,options
-    );
-  }
-/**
+export const createPoolApiV1FinancialCostingCostingPoolsPost = (
+    costPoolCreate: CostPoolCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostPoolResponse>(
+      {url: `/api/v1/financial/costing/costing/pools`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costPoolCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreatePoolApiV1FinancialCostingCostingPoolsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPoolApiV1FinancialCostingCostingPoolsPost>>, TError,{data: CostPoolCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createPoolApiV1FinancialCostingCostingPoolsPost>>, TError,{data: CostPoolCreate}, TContext> => {
+
+const mutationKey = ['createPoolApiV1FinancialCostingCostingPoolsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPoolApiV1FinancialCostingCostingPoolsPost>>, {data: CostPoolCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createPoolApiV1FinancialCostingCostingPoolsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreatePoolApiV1FinancialCostingCostingPoolsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createPoolApiV1FinancialCostingCostingPoolsPost>>>
+    export type CreatePoolApiV1FinancialCostingCostingPoolsPostMutationBody = CostPoolCreate
+    export type CreatePoolApiV1FinancialCostingCostingPoolsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Pool
+ */
+export const useCreatePoolApiV1FinancialCostingCostingPoolsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPoolApiV1FinancialCostingCostingPoolsPost>>, TError,{data: CostPoolCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createPoolApiV1FinancialCostingCostingPoolsPost>>,
+        TError,
+        {data: CostPoolCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreatePoolApiV1FinancialCostingCostingPoolsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém pool por ID.
  * @summary Get Pool
  */
-const getPoolApiV1FinancialCostingCostingPoolsPoolIdGet = <TData = AxiosResponse<CostPoolResponse>>(
-    poolId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/pools/${poolId}`,options
-    );
-  }
+export const getPoolApiV1FinancialCostingCostingPoolsPoolIdGet = (
+    poolId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostPoolResponse>(
+      {url: `/api/v1/financial/costing/costing/pools/${poolId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPoolApiV1FinancialCostingCostingPoolsPoolIdGetQueryKey = (poolId?: string,) => {
+    return [
+    `/api/v1/financial/costing/costing/pools/${poolId}`
+    ] as const;
+    }
+
+    
+export const getGetPoolApiV1FinancialCostingCostingPoolsPoolIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError = HTTPValidationError>(poolId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPoolApiV1FinancialCostingCostingPoolsPoolIdGetQueryKey(poolId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>> = ({ signal }) => getPoolApiV1FinancialCostingCostingPoolsPoolIdGet(poolId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(poolId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPoolApiV1FinancialCostingCostingPoolsPoolIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>>
+export type GetPoolApiV1FinancialCostingCostingPoolsPoolIdGetQueryError = HTTPValidationError
+
+
+export function useGetPoolApiV1FinancialCostingCostingPoolsPoolIdGet<TData = Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError = HTTPValidationError>(
+ poolId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPoolApiV1FinancialCostingCostingPoolsPoolIdGet<TData = Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError = HTTPValidationError>(
+ poolId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPoolApiV1FinancialCostingCostingPoolsPoolIdGet<TData = Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError = HTTPValidationError>(
+ poolId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Pool
+ */
+
+export function useGetPoolApiV1FinancialCostingCostingPoolsPoolIdGet<TData = Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError = HTTPValidationError>(
+ poolId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolApiV1FinancialCostingCostingPoolsPoolIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPoolApiV1FinancialCostingCostingPoolsPoolIdGetQueryOptions(poolId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza pool de custo.
  * @summary Update Pool
  */
-const updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch = <TData = AxiosResponse<CostPoolResponse>>(
+export const updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch = (
     poolId: string,
-    costPoolUpdate: CostPoolUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/costing/costing/pools/${poolId}`,
-      costPoolUpdate,options
-    );
-  }
-/**
+    costPoolUpdate: CostPoolUpdate,
+ ) => {
+      
+      
+      return customInstance<CostPoolResponse>(
+      {url: `/api/v1/financial/costing/costing/pools/${poolId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: costPoolUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch>>, TError,{poolId: string;data: CostPoolUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch>>, TError,{poolId: string;data: CostPoolUpdate}, TContext> => {
+
+const mutationKey = ['updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch>>, {poolId: string;data: CostPoolUpdate}> = (props) => {
+          const {poolId,data} = props ?? {};
+
+          return  updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch(poolId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch>>>
+    export type UpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatchMutationBody = CostPoolUpdate
+    export type UpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Pool
+ */
+export const useUpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch>>, TError,{poolId: string;data: CostPoolUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch>>,
+        TError,
+        {poolId: string;data: CostPoolUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Remove pool (soft delete).
  * @summary Delete Pool
  */
-const deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete = <TData = AxiosResponse<void>>(
-    poolId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/costing/costing/pools/${poolId}`,options
-    );
-  }
-/**
+export const deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete = (
+    poolId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/costing/costing/pools/${poolId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeletePoolApiV1FinancialCostingCostingPoolsPoolIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete>>, TError,{poolId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete>>, TError,{poolId: string}, TContext> => {
+
+const mutationKey = ['deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete>>, {poolId: string}> = (props) => {
+          const {poolId} = props ?? {};
+
+          return  deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete(poolId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeletePoolApiV1FinancialCostingCostingPoolsPoolIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete>>>
+    
+    export type DeletePoolApiV1FinancialCostingCostingPoolsPoolIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Pool
+ */
+export const useDeletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete>>, TError,{poolId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete>>,
+        TError,
+        {poolId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeletePoolApiV1FinancialCostingCostingPoolsPoolIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Adiciona custo a um pool.
  * @summary Add Cost To Pool
  */
-const addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost = <TData = AxiosResponse<CostPoolResponse>>(
+export const addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost = (
     poolId: string,
-    costPoolAddCost: CostPoolAddCost, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/pools/${poolId}/add-cost`,
-      costPoolAddCost,options
-    );
-  }
-/**
+    costPoolAddCost: CostPoolAddCost,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostPoolResponse>(
+      {url: `/api/v1/financial/costing/costing/pools/${poolId}/add-cost`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costPoolAddCost, signal
+    },
+      );
+    }
+  
+
+
+export const getAddCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost>>, TError,{poolId: string;data: CostPoolAddCost}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost>>, TError,{poolId: string;data: CostPoolAddCost}, TContext> => {
+
+const mutationKey = ['addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost>>, {poolId: string;data: CostPoolAddCost}> = (props) => {
+          const {poolId,data} = props ?? {};
+
+          return  addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost(poolId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPostMutationResult = NonNullable<Awaited<ReturnType<typeof addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost>>>
+    export type AddCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPostMutationBody = CostPoolAddCost
+    export type AddCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Add Cost To Pool
+ */
+export const useAddCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost>>, TError,{poolId: string;data: CostPoolAddCost}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost>>,
+        TError,
+        {poolId: string;data: CostPoolAddCost},
+        TContext
+      > => {
+
+      const mutationOptions = getAddCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém distribuição de custos do pool para atividades.
  * @summary Get Pool Distribution
  */
-const getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet = <TData = AxiosResponse<GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet200>>(
+export const getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet = (
     poolId: string,
-    params: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/pools/${poolId}/distribution`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+    params: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet200>(
+      {url: `/api/v1/financial/costing/costing/pools/${poolId}/distribution`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetQueryKey = (poolId?: string,
+    params?: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/pools/${poolId}/distribution`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetQueryOptions = <TData = Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError = HTTPValidationError>(poolId: string,
+    params: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetQueryKey(poolId,params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>> = ({ signal }) => getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet(poolId,params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(poolId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>>
+export type GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetQueryError = HTTPValidationError
+
+
+export function useGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet<TData = Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError = HTTPValidationError>(
+ poolId: string,
+    params: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet<TData = Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError = HTTPValidationError>(
+ poolId: string,
+    params: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet<TData = Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError = HTTPValidationError>(
+ poolId: string,
+    params: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Pool Distribution
+ */
+
+export function useGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet<TData = Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError = HTTPValidationError>(
+ poolId: string,
+    params: GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetQueryOptions(poolId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista objetos de custo com filtros.
  * @summary List Objects
  */
-const listObjectsApiV1FinancialCostingCostingObjectsGet = <TData = AxiosResponse<CostObjectResponse[]>>(
-    params?: ListObjectsApiV1FinancialCostingCostingObjectsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/objects`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listObjectsApiV1FinancialCostingCostingObjectsGet = (
+    params?: ListObjectsApiV1FinancialCostingCostingObjectsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostObjectResponse[]>(
+      {url: `/api/v1/financial/costing/costing/objects`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListObjectsApiV1FinancialCostingCostingObjectsGetQueryKey = (params?: ListObjectsApiV1FinancialCostingCostingObjectsGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/objects`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListObjectsApiV1FinancialCostingCostingObjectsGetQueryOptions = <TData = Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError = HTTPValidationError>(params?: ListObjectsApiV1FinancialCostingCostingObjectsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListObjectsApiV1FinancialCostingCostingObjectsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>> = ({ signal }) => listObjectsApiV1FinancialCostingCostingObjectsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListObjectsApiV1FinancialCostingCostingObjectsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>>
+export type ListObjectsApiV1FinancialCostingCostingObjectsGetQueryError = HTTPValidationError
+
+
+export function useListObjectsApiV1FinancialCostingCostingObjectsGet<TData = Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListObjectsApiV1FinancialCostingCostingObjectsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListObjectsApiV1FinancialCostingCostingObjectsGet<TData = Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError = HTTPValidationError>(
+ params?: ListObjectsApiV1FinancialCostingCostingObjectsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListObjectsApiV1FinancialCostingCostingObjectsGet<TData = Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError = HTTPValidationError>(
+ params?: ListObjectsApiV1FinancialCostingCostingObjectsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Objects
+ */
+
+export function useListObjectsApiV1FinancialCostingCostingObjectsGet<TData = Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError = HTTPValidationError>(
+ params?: ListObjectsApiV1FinancialCostingCostingObjectsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listObjectsApiV1FinancialCostingCostingObjectsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListObjectsApiV1FinancialCostingCostingObjectsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria novo objeto de custo.
  * @summary Create Object
  */
-const createObjectApiV1FinancialCostingCostingObjectsPost = <TData = AxiosResponse<CostObjectResponse>>(
-    costObjectCreate: CostObjectCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/objects`,
-      costObjectCreate,options
-    );
-  }
-/**
+export const createObjectApiV1FinancialCostingCostingObjectsPost = (
+    costObjectCreate: CostObjectCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostObjectResponse>(
+      {url: `/api/v1/financial/costing/costing/objects`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costObjectCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateObjectApiV1FinancialCostingCostingObjectsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createObjectApiV1FinancialCostingCostingObjectsPost>>, TError,{data: CostObjectCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createObjectApiV1FinancialCostingCostingObjectsPost>>, TError,{data: CostObjectCreate}, TContext> => {
+
+const mutationKey = ['createObjectApiV1FinancialCostingCostingObjectsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createObjectApiV1FinancialCostingCostingObjectsPost>>, {data: CostObjectCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createObjectApiV1FinancialCostingCostingObjectsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateObjectApiV1FinancialCostingCostingObjectsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createObjectApiV1FinancialCostingCostingObjectsPost>>>
+    export type CreateObjectApiV1FinancialCostingCostingObjectsPostMutationBody = CostObjectCreate
+    export type CreateObjectApiV1FinancialCostingCostingObjectsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Object
+ */
+export const useCreateObjectApiV1FinancialCostingCostingObjectsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createObjectApiV1FinancialCostingCostingObjectsPost>>, TError,{data: CostObjectCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createObjectApiV1FinancialCostingCostingObjectsPost>>,
+        TError,
+        {data: CostObjectCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateObjectApiV1FinancialCostingCostingObjectsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém objeto de custo por ID.
  * @summary Get Object
  */
-const getObjectApiV1FinancialCostingCostingObjectsObjectIdGet = <TData = AxiosResponse<CostObjectResponse>>(
-    objectId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/objects/${objectId}`,options
-    );
-  }
+export const getObjectApiV1FinancialCostingCostingObjectsObjectIdGet = (
+    objectId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostObjectResponse>(
+      {url: `/api/v1/financial/costing/costing/objects/${objectId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetObjectApiV1FinancialCostingCostingObjectsObjectIdGetQueryKey = (objectId?: string,) => {
+    return [
+    `/api/v1/financial/costing/costing/objects/${objectId}`
+    ] as const;
+    }
+
+    
+export const getGetObjectApiV1FinancialCostingCostingObjectsObjectIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError = HTTPValidationError>(objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetObjectApiV1FinancialCostingCostingObjectsObjectIdGetQueryKey(objectId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>> = ({ signal }) => getObjectApiV1FinancialCostingCostingObjectsObjectIdGet(objectId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(objectId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetObjectApiV1FinancialCostingCostingObjectsObjectIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>>
+export type GetObjectApiV1FinancialCostingCostingObjectsObjectIdGetQueryError = HTTPValidationError
+
+
+export function useGetObjectApiV1FinancialCostingCostingObjectsObjectIdGet<TData = Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError = HTTPValidationError>(
+ objectId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetObjectApiV1FinancialCostingCostingObjectsObjectIdGet<TData = Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError = HTTPValidationError>(
+ objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetObjectApiV1FinancialCostingCostingObjectsObjectIdGet<TData = Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError = HTTPValidationError>(
+ objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Object
+ */
+
+export function useGetObjectApiV1FinancialCostingCostingObjectsObjectIdGet<TData = Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError = HTTPValidationError>(
+ objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getObjectApiV1FinancialCostingCostingObjectsObjectIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetObjectApiV1FinancialCostingCostingObjectsObjectIdGetQueryOptions(objectId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza objeto de custo.
  * @summary Update Object
  */
-const updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch = <TData = AxiosResponse<CostObjectResponse>>(
+export const updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch = (
     objectId: string,
-    costObjectUpdate: CostObjectUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.patch(
-      `/api/v1/financial/costing/costing/objects/${objectId}`,
-      costObjectUpdate,options
-    );
-  }
-/**
+    costObjectUpdate: CostObjectUpdate,
+ ) => {
+      
+      
+      return customInstance<CostObjectResponse>(
+      {url: `/api/v1/financial/costing/costing/objects/${objectId}`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: costObjectUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatchMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch>>, TError,{objectId: string;data: CostObjectUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch>>, TError,{objectId: string;data: CostObjectUpdate}, TContext> => {
+
+const mutationKey = ['updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch>>, {objectId: string;data: CostObjectUpdate}> = (props) => {
+          const {objectId,data} = props ?? {};
+
+          return  updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch(objectId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch>>>
+    export type UpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatchMutationBody = CostObjectUpdate
+    export type UpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatchMutationError = HTTPValidationError
+
+    /**
+ * @summary Update Object
+ */
+export const useUpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch>>, TError,{objectId: string;data: CostObjectUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch>>,
+        TError,
+        {objectId: string;data: CostObjectUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatchMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Remove objeto de custo (soft delete).
  * @summary Delete Object
  */
-const deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete = <TData = AxiosResponse<void>>(
-    objectId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/costing/costing/objects/${objectId}`,options
-    );
-  }
-/**
+export const deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete = (
+    objectId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/costing/costing/objects/${objectId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteObjectApiV1FinancialCostingCostingObjectsObjectIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete>>, TError,{objectId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete>>, TError,{objectId: string}, TContext> => {
+
+const mutationKey = ['deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete>>, {objectId: string}> = (props) => {
+          const {objectId} = props ?? {};
+
+          return  deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete(objectId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteObjectApiV1FinancialCostingCostingObjectsObjectIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete>>>
+    
+    export type DeleteObjectApiV1FinancialCostingCostingObjectsObjectIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Delete Object
+ */
+export const useDeleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete>>, TError,{objectId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete>>,
+        TError,
+        {objectId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteObjectApiV1FinancialCostingCostingObjectsObjectIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Adiciona custo direto a um objeto.
  * @summary Add Direct Cost
  */
-const addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost = <TData = AxiosResponse<CostObjectResponse>>(
+export const addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost = (
     objectId: string,
-    costObjectAddDirectCost: CostObjectAddDirectCost, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/objects/${objectId}/add-direct-cost`,
-      costObjectAddDirectCost,options
-    );
-  }
-/**
+    costObjectAddDirectCost: CostObjectAddDirectCost,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostObjectResponse>(
+      {url: `/api/v1/financial/costing/costing/objects/${objectId}/add-direct-cost`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costObjectAddDirectCost, signal
+    },
+      );
+    }
+  
+
+
+export const getAddDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost>>, TError,{objectId: string;data: CostObjectAddDirectCost}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost>>, TError,{objectId: string;data: CostObjectAddDirectCost}, TContext> => {
+
+const mutationKey = ['addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost>>, {objectId: string;data: CostObjectAddDirectCost}> = (props) => {
+          const {objectId,data} = props ?? {};
+
+          return  addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost(objectId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AddDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPostMutationResult = NonNullable<Awaited<ReturnType<typeof addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost>>>
+    export type AddDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPostMutationBody = CostObjectAddDirectCost
+    export type AddDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Add Direct Cost
+ */
+export const useAddDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost>>, TError,{objectId: string;data: CostObjectAddDirectCost}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost>>,
+        TError,
+        {objectId: string;data: CostObjectAddDirectCost},
+        TContext
+      > => {
+
+      const mutationOptions = getAddDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Calcula ponto de equilíbrio do objeto.
  * @summary Get Break Even
  */
-const getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet = <TData = AxiosResponse<GetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet200>>(
-    objectId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/objects/${objectId}/break-even`,options
-    );
-  }
+export const getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet = (
+    objectId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet200>(
+      {url: `/api/v1/financial/costing/costing/objects/${objectId}/break-even`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGetQueryKey = (objectId?: string,) => {
+    return [
+    `/api/v1/financial/costing/costing/objects/${objectId}/break-even`
+    ] as const;
+    }
+
+    
+export const getGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGetQueryOptions = <TData = Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError = HTTPValidationError>(objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGetQueryKey(objectId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>> = ({ signal }) => getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet(objectId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(objectId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGetQueryResult = NonNullable<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>>
+export type GetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGetQueryError = HTTPValidationError
+
+
+export function useGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet<TData = Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError = HTTPValidationError>(
+ objectId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet<TData = Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError = HTTPValidationError>(
+ objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet<TData = Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError = HTTPValidationError>(
+ objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Break Even
+ */
+
+export function useGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet<TData = Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError = HTTPValidationError>(
+ objectId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGetQueryOptions(objectId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém ranking de lucratividade dos objetos.
  * @summary Get Profitability Ranking
  */
-const getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet = <TData = AxiosResponse<GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet200Item[]>>(
-    params?: GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/objects/ranking/profitability`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet = (
+    params?: GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet200Item[]>(
+      {url: `/api/v1/financial/costing/costing/objects/ranking/profitability`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetQueryKey = (params?: GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/objects/ranking/profitability`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetQueryOptions = <TData = Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError = HTTPValidationError>(params?: GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>> = ({ signal }) => getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetQueryResult = NonNullable<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>>
+export type GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetQueryError = HTTPValidationError
+
+
+export function useGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet<TData = Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet<TData = Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError = HTTPValidationError>(
+ params?: GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet<TData = Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError = HTTPValidationError>(
+ params?: GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Profitability Ranking
+ */
+
+export function useGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet<TData = Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError = HTTPValidationError>(
+ params?: GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista objetos não lucrativos.
  * @summary Get Unprofitable Objects
  */
-const getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet = <TData = AxiosResponse<CostObjectResponse[]>>(
-    params?: GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/objects/unprofitable`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet = (
+    params?: GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostObjectResponse[]>(
+      {url: `/api/v1/financial/costing/costing/objects/unprofitable`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetQueryKey = (params?: GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/objects/unprofitable`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetQueryOptions = <TData = Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError = HTTPValidationError>(params?: GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>> = ({ signal }) => getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetQueryResult = NonNullable<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>>
+export type GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetQueryError = HTTPValidationError
+
+
+export function useGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet<TData = Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>,
+          TError,
+          Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet<TData = Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError = HTTPValidationError>(
+ params?: GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>,
+          TError,
+          Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet<TData = Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError = HTTPValidationError>(
+ params?: GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Unprofitable Objects
+ */
+
+export function useGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet<TData = Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError = HTTPValidationError>(
+ params?: GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista alocações de custo com filtros.
  * @summary List Allocations
  */
-const listAllocationsApiV1FinancialCostingCostingAllocationsGet = <TData = AxiosResponse<CostAllocationResponse[]>>(
-    params?: ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/allocations`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listAllocationsApiV1FinancialCostingCostingAllocationsGet = (
+    params?: ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse[]>(
+      {url: `/api/v1/financial/costing/costing/allocations`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListAllocationsApiV1FinancialCostingCostingAllocationsGetQueryKey = (params?: ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/allocations`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListAllocationsApiV1FinancialCostingCostingAllocationsGetQueryOptions = <TData = Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError = HTTPValidationError>(params?: ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAllocationsApiV1FinancialCostingCostingAllocationsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>> = ({ signal }) => listAllocationsApiV1FinancialCostingCostingAllocationsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListAllocationsApiV1FinancialCostingCostingAllocationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>>
+export type ListAllocationsApiV1FinancialCostingCostingAllocationsGetQueryError = HTTPValidationError
+
+
+export function useListAllocationsApiV1FinancialCostingCostingAllocationsGet<TData = Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAllocationsApiV1FinancialCostingCostingAllocationsGet<TData = Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError = HTTPValidationError>(
+ params?: ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAllocationsApiV1FinancialCostingCostingAllocationsGet<TData = Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError = HTTPValidationError>(
+ params?: ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Allocations
+ */
+
+export function useListAllocationsApiV1FinancialCostingCostingAllocationsGet<TData = Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError = HTTPValidationError>(
+ params?: ListAllocationsApiV1FinancialCostingCostingAllocationsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAllocationsApiV1FinancialCostingCostingAllocationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListAllocationsApiV1FinancialCostingCostingAllocationsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria nova alocação de custo.
  * @summary Create Allocation
  */
-const createAllocationApiV1FinancialCostingCostingAllocationsPost = <TData = AxiosResponse<CostAllocationResponse>>(
-    costAllocationCreate: CostAllocationCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations`,
-      costAllocationCreate,options
-    );
-  }
-/**
+export const createAllocationApiV1FinancialCostingCostingAllocationsPost = (
+    costAllocationCreate: CostAllocationCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse>(
+      {url: `/api/v1/financial/costing/costing/allocations`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costAllocationCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateAllocationApiV1FinancialCostingCostingAllocationsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAllocationApiV1FinancialCostingCostingAllocationsPost>>, TError,{data: CostAllocationCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createAllocationApiV1FinancialCostingCostingAllocationsPost>>, TError,{data: CostAllocationCreate}, TContext> => {
+
+const mutationKey = ['createAllocationApiV1FinancialCostingCostingAllocationsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAllocationApiV1FinancialCostingCostingAllocationsPost>>, {data: CostAllocationCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAllocationApiV1FinancialCostingCostingAllocationsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAllocationApiV1FinancialCostingCostingAllocationsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createAllocationApiV1FinancialCostingCostingAllocationsPost>>>
+    export type CreateAllocationApiV1FinancialCostingCostingAllocationsPostMutationBody = CostAllocationCreate
+    export type CreateAllocationApiV1FinancialCostingCostingAllocationsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Create Allocation
+ */
+export const useCreateAllocationApiV1FinancialCostingCostingAllocationsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAllocationApiV1FinancialCostingCostingAllocationsPost>>, TError,{data: CostAllocationCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createAllocationApiV1FinancialCostingCostingAllocationsPost>>,
+        TError,
+        {data: CostAllocationCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateAllocationApiV1FinancialCostingCostingAllocationsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém alocação por ID.
  * @summary Get Allocation
  */
-const getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet = <TData = AxiosResponse<CostAllocationResponse>>(
-    allocationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/allocations/${allocationId}`,options
-    );
-  }
+export const getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet = (
+    allocationId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse>(
+      {url: `/api/v1/financial/costing/costing/allocations/${allocationId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGetQueryKey = (allocationId?: string,) => {
+    return [
+    `/api/v1/financial/costing/costing/allocations/${allocationId}`
+    ] as const;
+    }
+
+    
+export const getGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError = HTTPValidationError>(allocationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGetQueryKey(allocationId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>> = ({ signal }) => getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet(allocationId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(allocationId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>>
+export type GetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGetQueryError = HTTPValidationError
+
+
+export function useGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet<TData = Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError = HTTPValidationError>(
+ allocationId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet<TData = Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError = HTTPValidationError>(
+ allocationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet<TData = Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError = HTTPValidationError>(
+ allocationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Allocation
+ */
+
+export function useGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet<TData = Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError = HTTPValidationError>(
+ allocationId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGetQueryOptions(allocationId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Aprova uma alocação pendente.
  * @summary Approve Allocation
  */
-const approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost = <TData = AxiosResponse<CostAllocationResponse>>(
+export const approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost = (
     allocationId: string,
-    costAllocationApprove: CostAllocationApprove, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations/${allocationId}/approve`,
-      costAllocationApprove,options
-    );
-  }
-/**
+    costAllocationApprove: CostAllocationApprove,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse>(
+      {url: `/api/v1/financial/costing/costing/allocations/${allocationId}/approve`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costAllocationApprove, signal
+    },
+      );
+    }
+  
+
+
+export const getApproveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost>>, TError,{allocationId: string;data: CostAllocationApprove}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost>>, TError,{allocationId: string;data: CostAllocationApprove}, TContext> => {
+
+const mutationKey = ['approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost>>, {allocationId: string;data: CostAllocationApprove}> = (props) => {
+          const {allocationId,data} = props ?? {};
+
+          return  approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost(allocationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ApproveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePostMutationResult = NonNullable<Awaited<ReturnType<typeof approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost>>>
+    export type ApproveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePostMutationBody = CostAllocationApprove
+    export type ApproveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Approve Allocation
+ */
+export const useApproveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost>>, TError,{allocationId: string;data: CostAllocationApprove}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost>>,
+        TError,
+        {allocationId: string;data: CostAllocationApprove},
+        TContext
+      > => {
+
+      const mutationOptions = getApproveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Executa uma alocação aprovada.
  * @summary Execute Allocation
  */
-const executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost = <TData = AxiosResponse<CostAllocationResponse>>(
-    allocationId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations/${allocationId}/execute`,undefined,options
-    );
-  }
-/**
+export const executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost = (
+    allocationId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse>(
+      {url: `/api/v1/financial/costing/costing/allocations/${allocationId}/execute`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getExecuteAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost>>, TError,{allocationId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost>>, TError,{allocationId: string}, TContext> => {
+
+const mutationKey = ['executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost>>, {allocationId: string}> = (props) => {
+          const {allocationId} = props ?? {};
+
+          return  executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost(allocationId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExecuteAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePostMutationResult = NonNullable<Awaited<ReturnType<typeof executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost>>>
+    
+    export type ExecuteAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Execute Allocation
+ */
+export const useExecuteAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost>>, TError,{allocationId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost>>,
+        TError,
+        {allocationId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getExecuteAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Reverte uma alocação executada.
  * @summary Reverse Allocation
  */
-const reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost = <TData = AxiosResponse<CostAllocationResponse>>(
+export const reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost = (
     allocationId: string,
-    costAllocationReverse: CostAllocationReverse, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations/${allocationId}/reverse`,
-      costAllocationReverse,options
-    );
-  }
-/**
+    costAllocationReverse: CostAllocationReverse,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse>(
+      {url: `/api/v1/financial/costing/costing/allocations/${allocationId}/reverse`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costAllocationReverse, signal
+    },
+      );
+    }
+  
+
+
+export const getReverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost>>, TError,{allocationId: string;data: CostAllocationReverse}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost>>, TError,{allocationId: string;data: CostAllocationReverse}, TContext> => {
+
+const mutationKey = ['reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost>>, {allocationId: string;data: CostAllocationReverse}> = (props) => {
+          const {allocationId,data} = props ?? {};
+
+          return  reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost(allocationId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePostMutationResult = NonNullable<Awaited<ReturnType<typeof reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost>>>
+    export type ReverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePostMutationBody = CostAllocationReverse
+    export type ReverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Reverse Allocation
+ */
+export const useReverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost>>, TError,{allocationId: string;data: CostAllocationReverse}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost>>,
+        TError,
+        {allocationId: string;data: CostAllocationReverse},
+        TContext
+      > => {
+
+      const mutationOptions = getReverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Executa múltiplas alocações em lote.
  * @summary Batch Execute Allocations
  */
-const batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost = <TData = AxiosResponse<BatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost200>>(
-    costAllocationBatch: CostAllocationBatch, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations/batch-execute`,
-      costAllocationBatch,options
-    );
-  }
-/**
+export const batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost = (
+    costAllocationBatch: CostAllocationBatch,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost200>(
+      {url: `/api/v1/financial/costing/costing/allocations/batch-execute`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costAllocationBatch, signal
+    },
+      );
+    }
+  
+
+
+export const getBatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost>>, TError,{data: CostAllocationBatch}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost>>, TError,{data: CostAllocationBatch}, TContext> => {
+
+const mutationKey = ['batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost>>, {data: CostAllocationBatch}> = (props) => {
+          const {data} = props ?? {};
+
+          return  batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePostMutationResult = NonNullable<Awaited<ReturnType<typeof batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost>>>
+    export type BatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePostMutationBody = CostAllocationBatch
+    export type BatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Batch Execute Allocations
+ */
+export const useBatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost>>, TError,{data: CostAllocationBatch}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost>>,
+        TError,
+        {data: CostAllocationBatch},
+        TContext
+      > => {
+
+      const mutationOptions = getBatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aloca custos de um pool para múltiplas atividades.
  * @summary Allocate Pool To Activities
  */
-const allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost = <TData = AxiosResponse<CostAllocationResponse[]>>(
+export const allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost = (
     allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem[],
-    params: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations/pool-to-activities`,
-      allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse[]>(
+      {url: `/api/v1/financial/costing/costing/allocations/pool-to-activities`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getAllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost>>, TError,{data: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem[];params: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost>>, TError,{data: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem[];params: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostParams}, TContext> => {
+
+const mutationKey = ['allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost>>, {data: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem[];params: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostMutationResult = NonNullable<Awaited<ReturnType<typeof allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost>>>
+    export type AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostMutationBody = AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem[]
+    export type AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Allocate Pool To Activities
+ */
+export const useAllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost>>, TError,{data: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem[];params: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost>>,
+        TError,
+        {data: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostBodyItem[];params: AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getAllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aloca custos de uma atividade para múltiplos objetos.
  * @summary Allocate Activity To Objects
  */
-const allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost = <TData = AxiosResponse<CostAllocationResponse[]>>(
+export const allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost = (
     allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem[],
-    params: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations/activity-to-objects`,
-      allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse[]>(
+      {url: `/api/v1/financial/costing/costing/allocations/activity-to-objects`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getAllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost>>, TError,{data: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem[];params: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost>>, TError,{data: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem[];params: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostParams}, TContext> => {
+
+const mutationKey = ['allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost>>, {data: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem[];params: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostMutationResult = NonNullable<Awaited<ReturnType<typeof allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost>>>
+    export type AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostMutationBody = AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem[]
+    export type AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Allocate Activity To Objects
+ */
+export const useAllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost>>, TError,{data: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem[];params: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost>>,
+        TError,
+        {data: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostBodyItem[];params: AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getAllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Aloca custos proporcionalmente ao consumo de um driver.
  * @summary Allocate By Driver
  */
-const allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost = <TData = AxiosResponse<CostAllocationResponse[]>>(
+export const allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost = (
     allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem[],
-    params: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/allocations/by-driver`,
-      allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAllocationResponse[]>(
+      {url: `/api/v1/financial/costing/costing/allocations/by-driver`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getAllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost>>, TError,{data: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem[];params: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost>>, TError,{data: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem[];params: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostParams}, TContext> => {
+
+const mutationKey = ['allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost>>, {data: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem[];params: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostMutationResult = NonNullable<Awaited<ReturnType<typeof allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost>>>
+    export type AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostMutationBody = AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem[]
+    export type AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Allocate By Driver
+ */
+export const useAllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost>>, TError,{data: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem[];params: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost>>,
+        TError,
+        {data: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostBodyItem[];params: AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getAllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Obtém resumo das alocações do período.
  * @summary Get Allocation Summary
  */
-const getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet = <TData = AxiosResponse<AllocationSummary>>(
-    params: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/allocations/summary`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet = (
+    params: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AllocationSummary>(
+      {url: `/api/v1/financial/costing/costing/allocations/summary`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetQueryKey = (params?: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/allocations/summary`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetQueryOptions = <TData = Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError = HTTPValidationError>(params: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>> = ({ signal }) => getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>>
+export type GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetQueryError = HTTPValidationError
+
+
+export function useGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet<TData = Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet<TData = Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet<TData = Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Allocation Summary
+ */
+
+export function useGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet<TData = Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Lista análises de custo.
  * @summary List Analyses
  */
-const listAnalysesApiV1FinancialCostingCostingAnalysesGet = <TData = AxiosResponse<CostAnalysisResponse[]>>(
-    params?: ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/analyses`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listAnalysesApiV1FinancialCostingCostingAnalysesGet = (
+    params?: ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAnalysisResponse[]>(
+      {url: `/api/v1/financial/costing/costing/analyses`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListAnalysesApiV1FinancialCostingCostingAnalysesGetQueryKey = (params?: ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/analyses`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListAnalysesApiV1FinancialCostingCostingAnalysesGetQueryOptions = <TData = Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError = HTTPValidationError>(params?: ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAnalysesApiV1FinancialCostingCostingAnalysesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>> = ({ signal }) => listAnalysesApiV1FinancialCostingCostingAnalysesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListAnalysesApiV1FinancialCostingCostingAnalysesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>>
+export type ListAnalysesApiV1FinancialCostingCostingAnalysesGetQueryError = HTTPValidationError
+
+
+export function useListAnalysesApiV1FinancialCostingCostingAnalysesGet<TData = Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError = HTTPValidationError>(
+ params: undefined |  ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAnalysesApiV1FinancialCostingCostingAnalysesGet<TData = Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError = HTTPValidationError>(
+ params?: ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListAnalysesApiV1FinancialCostingCostingAnalysesGet<TData = Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError = HTTPValidationError>(
+ params?: ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Analyses
+ */
+
+export function useListAnalysesApiV1FinancialCostingCostingAnalysesGet<TData = Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError = HTTPValidationError>(
+ params?: ListAnalysesApiV1FinancialCostingCostingAnalysesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAnalysesApiV1FinancialCostingCostingAnalysesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListAnalysesApiV1FinancialCostingCostingAnalysesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém análise por ID.
  * @summary Get Analysis
  */
-const getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet = <TData = AxiosResponse<CostAnalysisResponse>>(
-    analysisId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/analyses/${analysisId}`,options
-    );
-  }
+export const getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet = (
+    analysisId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostAnalysisResponse>(
+      {url: `/api/v1/financial/costing/costing/analyses/${analysisId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGetQueryKey = (analysisId?: string,) => {
+    return [
+    `/api/v1/financial/costing/costing/analyses/${analysisId}`
+    ] as const;
+    }
+
+    
+export const getGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError = HTTPValidationError>(analysisId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGetQueryKey(analysisId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>> = ({ signal }) => getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet(analysisId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(analysisId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>>
+export type GetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGetQueryError = HTTPValidationError
+
+
+export function useGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet<TData = Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError = HTTPValidationError>(
+ analysisId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet<TData = Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError = HTTPValidationError>(
+ analysisId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet<TData = Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError = HTTPValidationError>(
+ analysisId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Analysis
+ */
+
+export function useGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet<TData = Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError = HTTPValidationError>(
+ analysisId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGetQueryOptions(analysisId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Executa custeio ABC completo para o período.
  * @summary Run Abc Costing
  */
-const runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost = <TData = AxiosResponse<RunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost200>>(
-    costAnalysisRun: CostAnalysisRun, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/analyses/run-abc`,
-      costAnalysisRun,options
-    );
-  }
-/**
+export const runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost = (
+    costAnalysisRun: CostAnalysisRun,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<RunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost200>(
+      {url: `/api/v1/financial/costing/costing/analyses/run-abc`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costAnalysisRun, signal
+    },
+      );
+    }
+  
+
+
+export const getRunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost>>, TError,{data: CostAnalysisRun}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost>>, TError,{data: CostAnalysisRun}, TContext> => {
+
+const mutationKey = ['runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost>>, {data: CostAnalysisRun}> = (props) => {
+          const {data} = props ?? {};
+
+          return  runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPostMutationResult = NonNullable<Awaited<ReturnType<typeof runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost>>>
+    export type RunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPostMutationBody = CostAnalysisRun
+    export type RunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Run Abc Costing
+ */
+export const useRunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost>>, TError,{data: CostAnalysisRun}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost>>,
+        TError,
+        {data: CostAnalysisRun},
+        TContext
+      > => {
+
+      const mutationOptions = getRunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Executa análise de custos com IA.
  * @summary Run Ai Analysis
  */
-const runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost = <TData = AxiosResponse<RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost200>>(
-    costAnalysisRun: CostAnalysisRun, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/costing/costing/analyses/run-ai`,
-      costAnalysisRun,options
-    );
-  }
-/**
+export const runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost = (
+    costAnalysisRun: CostAnalysisRun,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost200>(
+      {url: `/api/v1/financial/costing/costing/analyses/run-ai`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: costAnalysisRun, signal
+    },
+      );
+    }
+  
+
+
+export const getRunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost>>, TError,{data: CostAnalysisRun}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost>>, TError,{data: CostAnalysisRun}, TContext> => {
+
+const mutationKey = ['runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost>>, {data: CostAnalysisRun}> = (props) => {
+          const {data} = props ?? {};
+
+          return  runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPostMutationResult = NonNullable<Awaited<ReturnType<typeof runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost>>>
+    export type RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPostMutationBody = CostAnalysisRun
+    export type RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Run Ai Analysis
+ */
+export const useRunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost>>, TError,{data: CostAnalysisRun}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost>>,
+        TError,
+        {data: CostAnalysisRun},
+        TContext
+      > => {
+
+      const mutationOptions = getRunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Analisa lucratividade dos objetos de custo.
  * @summary Analyze Profitability
  */
-const analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet = <TData = AxiosResponse<AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet200>>(
-    params?: AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/analyses/profitability`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet = (
+    params?: AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet200>(
+      {url: `/api/v1/financial/costing/costing/analyses/profitability`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetQueryKey = (params?: AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/analyses/profitability`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError = HTTPValidationError>(params?: AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>> = ({ signal }) => analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>>
+export type AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetQueryError = HTTPValidationError
+
+
+export function useAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet<TData = Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError = HTTPValidationError>(
+ params: undefined |  AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet<TData = Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet<TData = Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Analyze Profitability
+ */
+
+export function useAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet<TData = Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Analisa capacidade ociosa dos drivers.
  * @summary Analyze Idle Capacity
  */
-const analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet = <TData = AxiosResponse<AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet200>>(
-    params?: AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/analyses/idle-capacity`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet = (
+    params?: AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet200>(
+      {url: `/api/v1/financial/costing/costing/analyses/idle-capacity`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetQueryKey = (params?: AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/analyses/idle-capacity`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError = HTTPValidationError>(params?: AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>> = ({ signal }) => analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetQueryResult = NonNullable<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>>
+export type AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetQueryError = HTTPValidationError
+
+
+export function useAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet<TData = Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError = HTTPValidationError>(
+ params: undefined |  AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet<TData = Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>,
+          TError,
+          Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet<TData = Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Analyze Idle Capacity
+ */
+
+export function useAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet<TData = Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError = HTTPValidationError>(
+ params?: AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getAnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Detecta anomalias nos custos.
  * @summary Detect Anomalies
  */
-const detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet = <TData = AxiosResponse<DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet200>>(
-    params?: DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/analyses/anomalies`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet = (
+    params?: DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet200>(
+      {url: `/api/v1/financial/costing/costing/analyses/anomalies`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetQueryKey = (params?: DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/analyses/anomalies`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetQueryOptions = <TData = Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError = HTTPValidationError>(params?: DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>> = ({ signal }) => detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetQueryResult = NonNullable<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>>
+export type DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetQueryError = HTTPValidationError
+
+
+export function useDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError = HTTPValidationError>(
+ params: undefined |  DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>,
+          TError,
+          Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError = HTTPValidationError>(
+ params?: DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>,
+          TError,
+          Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError = HTTPValidationError>(
+ params?: DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Detect Anomalies
+ */
+
+export function useDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError = HTTPValidationError>(
+ params?: DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém sugestões de otimização de custos.
  * @summary Get Optimization Suggestions
  */
-const getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet = <TData = AxiosResponse<GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet200Item[]>>(
-    params?: GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/analyses/optimization-suggestions`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet = (
+    params?: GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet200Item[]>(
+      {url: `/api/v1/financial/costing/costing/analyses/optimization-suggestions`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetQueryKey = (params?: GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/analyses/optimization-suggestions`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetQueryOptions = <TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError = HTTPValidationError>(params?: GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>> = ({ signal }) => getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>>
+export type GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetQueryError = HTTPValidationError
+
+
+export function useGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError = HTTPValidationError>(
+ params?: GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError = HTTPValidationError>(
+ params?: GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Optimization Suggestions
+ */
+
+export function useGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError = HTTPValidationError>(
+ params?: GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Projeta custos futuros.
  * @summary Forecast Costs
  */
-const forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet = <TData = AxiosResponse<ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGet200>>(
-    params?: ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/analyses/forecast`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet = (
+    params?: ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGet200>(
+      {url: `/api/v1/financial/costing/costing/analyses/forecast`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetQueryKey = (params?: ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/analyses/forecast`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetQueryOptions = <TData = Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError = HTTPValidationError>(params?: ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>> = ({ signal }) => forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetQueryResult = NonNullable<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>>
+export type ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetQueryError = HTTPValidationError
+
+
+export function useForecastCostsApiV1FinancialCostingCostingAnalysesForecastGet<TData = Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError = HTTPValidationError>(
+ params: undefined |  ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>,
+          TError,
+          Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useForecastCostsApiV1FinancialCostingCostingAnalysesForecastGet<TData = Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError = HTTPValidationError>(
+ params?: ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>,
+          TError,
+          Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useForecastCostsApiV1FinancialCostingCostingAnalysesForecastGet<TData = Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError = HTTPValidationError>(
+ params?: ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Forecast Costs
+ */
+
+export function useForecastCostsApiV1FinancialCostingCostingAnalysesForecastGet<TData = Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError = HTTPValidationError>(
+ params?: ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém dashboard de custeio ABC.
  * @summary Get Dashboard
  */
-const getDashboardApiV1FinancialCostingCostingDashboardGet = <TData = AxiosResponse<ABCDashboard>>(
-    params?: GetDashboardApiV1FinancialCostingCostingDashboardGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/dashboard`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getDashboardApiV1FinancialCostingCostingDashboardGet = (
+    params?: GetDashboardApiV1FinancialCostingCostingDashboardGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ABCDashboard>(
+      {url: `/api/v1/financial/costing/costing/dashboard`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDashboardApiV1FinancialCostingCostingDashboardGetQueryKey = (params?: GetDashboardApiV1FinancialCostingCostingDashboardGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/dashboard`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDashboardApiV1FinancialCostingCostingDashboardGetQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError = HTTPValidationError>(params?: GetDashboardApiV1FinancialCostingCostingDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardApiV1FinancialCostingCostingDashboardGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>> = ({ signal }) => getDashboardApiV1FinancialCostingCostingDashboardGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDashboardApiV1FinancialCostingCostingDashboardGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>>
+export type GetDashboardApiV1FinancialCostingCostingDashboardGetQueryError = HTTPValidationError
+
+
+export function useGetDashboardApiV1FinancialCostingCostingDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetDashboardApiV1FinancialCostingCostingDashboardGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardApiV1FinancialCostingCostingDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError = HTTPValidationError>(
+ params?: GetDashboardApiV1FinancialCostingCostingDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardApiV1FinancialCostingCostingDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError = HTTPValidationError>(
+ params?: GetDashboardApiV1FinancialCostingCostingDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Dashboard
+ */
+
+export function useGetDashboardApiV1FinancialCostingCostingDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError = HTTPValidationError>(
+ params?: GetDashboardApiV1FinancialCostingCostingDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCostingCostingDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDashboardApiV1FinancialCostingCostingDashboardGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém estatísticas gerais de custeio.
  * @summary Get Stats
  */
-const getStatsApiV1FinancialCostingCostingStatsGet = <TData = AxiosResponse<CostingStats>>(
-    params?: GetStatsApiV1FinancialCostingCostingStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getStatsApiV1FinancialCostingCostingStatsGet = (
+    params?: GetStatsApiV1FinancialCostingCostingStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostingStats>(
+      {url: `/api/v1/financial/costing/costing/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetStatsApiV1FinancialCostingCostingStatsGetQueryKey = (params?: GetStatsApiV1FinancialCostingCostingStatsGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetStatsApiV1FinancialCostingCostingStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError = HTTPValidationError>(params?: GetStatsApiV1FinancialCostingCostingStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStatsApiV1FinancialCostingCostingStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>> = ({ signal }) => getStatsApiV1FinancialCostingCostingStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStatsApiV1FinancialCostingCostingStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>>
+export type GetStatsApiV1FinancialCostingCostingStatsGetQueryError = HTTPValidationError
+
+
+export function useGetStatsApiV1FinancialCostingCostingStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetStatsApiV1FinancialCostingCostingStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStatsApiV1FinancialCostingCostingStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError = HTTPValidationError>(
+ params?: GetStatsApiV1FinancialCostingCostingStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStatsApiV1FinancialCostingCostingStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError = HTTPValidationError>(
+ params?: GetStatsApiV1FinancialCostingCostingStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Stats
+ */
+
+export function useGetStatsApiV1FinancialCostingCostingStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError = HTTPValidationError>(
+ params?: GetStatsApiV1FinancialCostingCostingStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialCostingCostingStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStatsApiV1FinancialCostingCostingStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Obtém tendências de custos por mês.
  * @summary Get Cost Trends
  */
-const getCostTrendsApiV1FinancialCostingCostingTrendsGet = <TData = AxiosResponse<CostTrend[]>>(
-    params?: GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/costing/costing/trends`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {listDriversApiV1FinancialCostingCostingDriversGet,createDriverApiV1FinancialCostingCostingDriversPost,getDriverApiV1FinancialCostingCostingDriversDriverIdGet,updateDriverApiV1FinancialCostingCostingDriversDriverIdPatch,deleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete,getDriverStatsApiV1FinancialCostingCostingDriversStatsGet,listActivitiesApiV1FinancialCostingCostingActivitiesGet,createActivityApiV1FinancialCostingCostingActivitiesPost,getActivityApiV1FinancialCostingCostingActivitiesActivityIdGet,updateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch,deleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete,listPoolsApiV1FinancialCostingCostingPoolsGet,createPoolApiV1FinancialCostingCostingPoolsPost,getPoolApiV1FinancialCostingCostingPoolsPoolIdGet,updatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch,deletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete,addCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPost,getPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet,listObjectsApiV1FinancialCostingCostingObjectsGet,createObjectApiV1FinancialCostingCostingObjectsPost,getObjectApiV1FinancialCostingCostingObjectsObjectIdGet,updateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch,deleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete,addDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPost,getBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet,getProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet,getUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGet,listAllocationsApiV1FinancialCostingCostingAllocationsGet,createAllocationApiV1FinancialCostingCostingAllocationsPost,getAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGet,approveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePost,executeAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePost,reverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePost,batchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost,allocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPost,allocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPost,allocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPost,getAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGet,listAnalysesApiV1FinancialCostingCostingAnalysesGet,getAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGet,runAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost,runAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost,analyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet,analyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet,detectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet,getOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet,forecastCostsApiV1FinancialCostingCostingAnalysesForecastGet,getDashboardApiV1FinancialCostingCostingDashboardGet,getStatsApiV1FinancialCostingCostingStatsGet,getCostTrendsApiV1FinancialCostingCostingTrendsGet}};
-export type ListDriversApiV1FinancialCostingCostingDriversGetResult = AxiosResponse<CostDriverResponse[]>
-export type CreateDriverApiV1FinancialCostingCostingDriversPostResult = AxiosResponse<CostDriverResponse>
-export type GetDriverApiV1FinancialCostingCostingDriversDriverIdGetResult = AxiosResponse<CostDriverResponse>
-export type UpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatchResult = AxiosResponse<CostDriverResponse>
-export type DeleteDriverApiV1FinancialCostingCostingDriversDriverIdDeleteResult = AxiosResponse<void>
-export type GetDriverStatsApiV1FinancialCostingCostingDriversStatsGetResult = AxiosResponse<GetDriverStatsApiV1FinancialCostingCostingDriversStatsGet200>
-export type ListActivitiesApiV1FinancialCostingCostingActivitiesGetResult = AxiosResponse<CostActivityResponse[]>
-export type CreateActivityApiV1FinancialCostingCostingActivitiesPostResult = AxiosResponse<CostActivityResponse>
-export type GetActivityApiV1FinancialCostingCostingActivitiesActivityIdGetResult = AxiosResponse<CostActivityResponse>
-export type UpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatchResult = AxiosResponse<CostActivityResponse>
-export type DeleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDeleteResult = AxiosResponse<void>
-export type ListPoolsApiV1FinancialCostingCostingPoolsGetResult = AxiosResponse<CostPoolResponse[]>
-export type CreatePoolApiV1FinancialCostingCostingPoolsPostResult = AxiosResponse<CostPoolResponse>
-export type GetPoolApiV1FinancialCostingCostingPoolsPoolIdGetResult = AxiosResponse<CostPoolResponse>
-export type UpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatchResult = AxiosResponse<CostPoolResponse>
-export type DeletePoolApiV1FinancialCostingCostingPoolsPoolIdDeleteResult = AxiosResponse<void>
-export type AddCostToPoolApiV1FinancialCostingCostingPoolsPoolIdAddCostPostResult = AxiosResponse<CostPoolResponse>
-export type GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGetResult = AxiosResponse<GetPoolDistributionApiV1FinancialCostingCostingPoolsPoolIdDistributionGet200>
-export type ListObjectsApiV1FinancialCostingCostingObjectsGetResult = AxiosResponse<CostObjectResponse[]>
-export type CreateObjectApiV1FinancialCostingCostingObjectsPostResult = AxiosResponse<CostObjectResponse>
-export type GetObjectApiV1FinancialCostingCostingObjectsObjectIdGetResult = AxiosResponse<CostObjectResponse>
-export type UpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatchResult = AxiosResponse<CostObjectResponse>
-export type DeleteObjectApiV1FinancialCostingCostingObjectsObjectIdDeleteResult = AxiosResponse<void>
-export type AddDirectCostApiV1FinancialCostingCostingObjectsObjectIdAddDirectCostPostResult = AxiosResponse<CostObjectResponse>
-export type GetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGetResult = AxiosResponse<GetBreakEvenApiV1FinancialCostingCostingObjectsObjectIdBreakEvenGet200>
-export type GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGetResult = AxiosResponse<GetProfitabilityRankingApiV1FinancialCostingCostingObjectsRankingProfitabilityGet200Item[]>
-export type GetUnprofitableObjectsApiV1FinancialCostingCostingObjectsUnprofitableGetResult = AxiosResponse<CostObjectResponse[]>
-export type ListAllocationsApiV1FinancialCostingCostingAllocationsGetResult = AxiosResponse<CostAllocationResponse[]>
-export type CreateAllocationApiV1FinancialCostingCostingAllocationsPostResult = AxiosResponse<CostAllocationResponse>
-export type GetAllocationApiV1FinancialCostingCostingAllocationsAllocationIdGetResult = AxiosResponse<CostAllocationResponse>
-export type ApproveAllocationApiV1FinancialCostingCostingAllocationsAllocationIdApprovePostResult = AxiosResponse<CostAllocationResponse>
-export type ExecuteAllocationApiV1FinancialCostingCostingAllocationsAllocationIdExecutePostResult = AxiosResponse<CostAllocationResponse>
-export type ReverseAllocationApiV1FinancialCostingCostingAllocationsAllocationIdReversePostResult = AxiosResponse<CostAllocationResponse>
-export type BatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePostResult = AxiosResponse<BatchExecuteAllocationsApiV1FinancialCostingCostingAllocationsBatchExecutePost200>
-export type AllocatePoolToActivitiesApiV1FinancialCostingCostingAllocationsPoolToActivitiesPostResult = AxiosResponse<CostAllocationResponse[]>
-export type AllocateActivityToObjectsApiV1FinancialCostingCostingAllocationsActivityToObjectsPostResult = AxiosResponse<CostAllocationResponse[]>
-export type AllocateByDriverApiV1FinancialCostingCostingAllocationsByDriverPostResult = AxiosResponse<CostAllocationResponse[]>
-export type GetAllocationSummaryApiV1FinancialCostingCostingAllocationsSummaryGetResult = AxiosResponse<AllocationSummary>
-export type ListAnalysesApiV1FinancialCostingCostingAnalysesGetResult = AxiosResponse<CostAnalysisResponse[]>
-export type GetAnalysisApiV1FinancialCostingCostingAnalysesAnalysisIdGetResult = AxiosResponse<CostAnalysisResponse>
-export type RunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPostResult = AxiosResponse<RunAbcCostingApiV1FinancialCostingCostingAnalysesRunAbcPost200>
-export type RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPostResult = AxiosResponse<RunAiAnalysisApiV1FinancialCostingCostingAnalysesRunAiPost200>
-export type AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGetResult = AxiosResponse<AnalyzeProfitabilityApiV1FinancialCostingCostingAnalysesProfitabilityGet200>
-export type AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGetResult = AxiosResponse<AnalyzeIdleCapacityApiV1FinancialCostingCostingAnalysesIdleCapacityGet200>
-export type DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGetResult = AxiosResponse<DetectAnomaliesApiV1FinancialCostingCostingAnalysesAnomaliesGet200>
-export type GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGetResult = AxiosResponse<GetOptimizationSuggestionsApiV1FinancialCostingCostingAnalysesOptimizationSuggestionsGet200Item[]>
-export type ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGetResult = AxiosResponse<ForecastCostsApiV1FinancialCostingCostingAnalysesForecastGet200>
-export type GetDashboardApiV1FinancialCostingCostingDashboardGetResult = AxiosResponse<ABCDashboard>
-export type GetStatsApiV1FinancialCostingCostingStatsGetResult = AxiosResponse<CostingStats>
-export type GetCostTrendsApiV1FinancialCostingCostingTrendsGetResult = AxiosResponse<CostTrend[]>
+export const getCostTrendsApiV1FinancialCostingCostingTrendsGet = (
+    params?: GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CostTrend[]>(
+      {url: `/api/v1/financial/costing/costing/trends`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCostTrendsApiV1FinancialCostingCostingTrendsGetQueryKey = (params?: GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams,) => {
+    return [
+    `/api/v1/financial/costing/costing/trends`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetCostTrendsApiV1FinancialCostingCostingTrendsGetQueryOptions = <TData = Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError = HTTPValidationError>(params?: GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCostTrendsApiV1FinancialCostingCostingTrendsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>> = ({ signal }) => getCostTrendsApiV1FinancialCostingCostingTrendsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCostTrendsApiV1FinancialCostingCostingTrendsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>>
+export type GetCostTrendsApiV1FinancialCostingCostingTrendsGetQueryError = HTTPValidationError
+
+
+export function useGetCostTrendsApiV1FinancialCostingCostingTrendsGet<TData = Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError = HTTPValidationError>(
+ params: undefined |  GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCostTrendsApiV1FinancialCostingCostingTrendsGet<TData = Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError = HTTPValidationError>(
+ params?: GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCostTrendsApiV1FinancialCostingCostingTrendsGet<TData = Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError = HTTPValidationError>(
+ params?: GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Cost Trends
+ */
+
+export function useGetCostTrendsApiV1FinancialCostingCostingTrendsGet<TData = Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError = HTTPValidationError>(
+ params?: GetCostTrendsApiV1FinancialCostingCostingTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCostTrendsApiV1FinancialCostingCostingTrendsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCostTrendsApiV1FinancialCostingCostingTrendsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

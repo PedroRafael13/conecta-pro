@@ -7,76 +7,117 @@ import { getFinancialBankTransactions } from '@/types/generated/financial/financ
 import type {
   BankTransactionCreate,
   BankTransactionUpdate,
-  BankTransactionResponse,
-  ListTransactionsApiV1FinancialBankTransactionsTransactionsGetParams,
+  BankTransactionImport,
+  ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams,
+  GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams,
+  GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams,
+  GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams,
+  CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams,
+  ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams,
+  BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost,
+  ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams,
 } from '@/types/generated/financial/models';
 
 const transactions = getFinancialBankTransactions();
 
 export const bankTransactionService = {
-  async create(data: BankTransactionCreate): Promise<BankTransactionResponse> {
-    const response = await transactions.createTransactionApiV1FinancialBankTransactionsTransactionsPost(
+  async create(data: BankTransactionCreate) {
+    return await transactions.createTransactionApiV1FinancialBankTransactionsBankTransactionsPost(
       data
     );
-    return response.data;
   },
 
   async list(
-    params: ListTransactionsApiV1FinancialBankTransactionsTransactionsGetParams = {}
+    params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams
   ) {
-    const response = await transactions.listTransactionsApiV1FinancialBankTransactionsTransactionsGet(
+    return await transactions.listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet(
       params
     );
-    return response.data;
   },
 
-  async getById(transactionId: string): Promise<BankTransactionResponse> {
-    const response = await transactions.getTransactionApiV1FinancialBankTransactionsTransactionsTransactionIdGet(
+  async getById(transactionId: string) {
+    return await transactions.getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet(
       transactionId
     );
-    return response.data;
   },
 
-  async update(
-    transactionId: string,
-    data: BankTransactionUpdate
-  ): Promise<BankTransactionResponse> {
-    const response = await transactions.updateTransactionApiV1FinancialBankTransactionsTransactionsTransactionIdPut(
+  async update(transactionId: string, data: BankTransactionUpdate) {
+    return await transactions.updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut(
       transactionId,
       data
     );
-    return response.data;
   },
 
-  async delete(transactionId: string): Promise<void> {
-    await transactions.deleteTransactionApiV1FinancialBankTransactionsTransactionsTransactionIdDelete(
+  async delete(transactionId: string) {
+    return await transactions.deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete(
       transactionId
     );
   },
 
-  async importOFX(accountId: string, file: File) {
-    const formData = new FormData();
-    formData.append('file', file);
-    const response = await transactions.importOfxApiV1FinancialBankTransactionsImportOfxPost(
-      accountId,
-      formData as any
+  async confirm(transactionId: string) {
+    return await transactions.confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost(
+      transactionId
     );
-    return response.data;
   },
 
-  async categorize(transactionId: string, categoryId: string) {
-    const response = await transactions.categorizeTransactionApiV1FinancialBankTransactionsTransactionsTransactionIdCategorizePost(
+  async cancel(
+    transactionId: string,
+    params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams
+  ) {
+    return await transactions.cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost(
       transactionId,
-      { category_id: categoryId }
+      params
     );
-    return response.data;
   },
 
-  async reconcile(transactionId: string) {
-    const response = await transactions.reconcileTransactionApiV1FinancialBankTransactionsTransactionsTransactionIdReconcilePost(
-      transactionId
+  async reconcile(
+    transactionId: string,
+    params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams
+  ) {
+    return await transactions.reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost(
+      transactionId,
+      params
     );
-    return response.data;
+  },
+
+  async getPendingReconciliation(
+    params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams
+  ) {
+    return await transactions.getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet(
+      params
+    );
+  },
+
+  async getByPeriod(
+    params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams
+  ) {
+    return await transactions.getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet(
+      params
+    );
+  },
+
+  async getSummary(
+    params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams
+  ) {
+    return await transactions.getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet(
+      params
+    );
+  },
+
+  async importTransactions(data: BankTransactionImport) {
+    return await transactions.importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost(
+      data
+    );
+  },
+
+  async importOfxFile(
+    body: BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost,
+    params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams
+  ) {
+    return await transactions.importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost(
+      body,
+      params
+    );
   },
 };
 

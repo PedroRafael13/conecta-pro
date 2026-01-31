@@ -1,0 +1,4028 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Conecta PRO - Reports API",
+    "version": "2.0.0",
+    "description": "API completa do módulo de Relatórios incluindo Reports, Intelligent Reports, AI Reports e Operational Reports"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Servidor de desenvolvimento"
+    },
+    {
+      "url": "https://api.conectapro.com.br",
+      "description": "Servidor de produção"
+    }
+  ],
+  "paths": {
+    "/api/v1/operacional/reports/coverage": {
+      "get": {
+        "tags": [
+          "Operacional - Relatorios",
+          "Operations - Reports"
+        ],
+        "summary": "Coverage Report",
+        "description": "Relatorio de cobertura (postos x alocacoes).",
+        "operationId": "coverage_report_api_v1_operacional_reports_coverage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Start Date",
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "End Date",
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "post_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Post Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/operacional/reports/hours": {
+      "get": {
+        "tags": [
+          "Operacional - Relatorios",
+          "Operations - Reports"
+        ],
+        "summary": "Hours Report",
+        "description": "Relatorio de horas trabalhadas.",
+        "operationId": "hours_report_api_v1_operacional_reports_hours_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Start Date",
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "End Date",
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "employee_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Employee Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoursReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/operacional/reports/costs": {
+      "get": {
+        "tags": [
+          "Operacional - Relatorios",
+          "Operations - Reports"
+        ],
+        "summary": "Costs Report",
+        "description": "Relatorio de custos estimados por posto.",
+        "operationId": "costs_report_api_v1_operacional_reports_costs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Start Date",
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "End Date",
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "post_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Post Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CostsReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/templates": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Create Template",
+        "description": "Cria um template de relatório.",
+        "operationId": "create_template_api_v1_reports_templates_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportTemplateCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "List Templates",
+        "description": "Lista templates de relatório.",
+        "operationId": "list_templates_api_v1_reports_templates_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Search",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/templates/{template_id}": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Template",
+        "description": "Busca template por ID.",
+        "operationId": "get_template_api_v1_reports_templates__template_id__get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Update Template",
+        "description": "Atualiza um template.",
+        "operationId": "update_template_api_v1_reports_templates__template_id__put",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportTemplateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Delete Template",
+        "description": "Remove um template.",
+        "operationId": "delete_template_api_v1_reports_templates__template_id__delete",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/templates/{template_id}/activate": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Activate Template",
+        "description": "Ativa um template.",
+        "operationId": "activate_template_api_v1_reports_templates__template_id__activate_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/templates/{template_id}/deactivate": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Deactivate Template",
+        "description": "Desativa um template.",
+        "operationId": "deactivate_template_api_v1_reports_templates__template_id__deactivate_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/schedules": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Create Schedule",
+        "description": "Cria um agendamento de relatório.",
+        "operationId": "create_schedule_api_v1_reports_schedules_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportScheduleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportScheduleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "List Schedules",
+        "description": "Lista agendamentos.",
+        "operationId": "list_schedules_api_v1_reports_schedules_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Template Id",
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportScheduleList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/schedules/{schedule_id}": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Schedule",
+        "description": "Busca agendamento por ID.",
+        "operationId": "get_schedule_api_v1_reports_schedules__schedule_id__get",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportScheduleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Update Schedule",
+        "description": "Atualiza um agendamento.",
+        "operationId": "update_schedule_api_v1_reports_schedules__schedule_id__put",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportScheduleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportScheduleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/schedules/{schedule_id}/pause": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Pause Schedule",
+        "description": "Pausa um agendamento.",
+        "operationId": "pause_schedule_api_v1_reports_schedules__schedule_id__pause_post",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportScheduleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/schedules/{schedule_id}/resume": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Resume Schedule",
+        "description": "Retoma um agendamento.",
+        "operationId": "resume_schedule_api_v1_reports_schedules__schedule_id__resume_post",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportScheduleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/schedules/{schedule_id}/cancel": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Cancel Schedule",
+        "description": "Cancela um agendamento.",
+        "operationId": "cancel_schedule_api_v1_reports_schedules__schedule_id__cancel_post",
+        "parameters": [
+          {
+            "name": "schedule_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportScheduleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/exports": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Create Export",
+        "description": "Cria uma exportação de relatório.",
+        "operationId": "create_export_api_v1_reports_exports_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportExportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportExportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "List Exports",
+        "description": "Lista exportações.",
+        "operationId": "list_exports_api_v1_reports_exports_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Template Id",
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "schedule_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Schedule Id",
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportExportList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/exports/{export_id}": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Export",
+        "description": "Busca exportação por ID.",
+        "operationId": "get_export_api_v1_reports_exports__export_id__get",
+        "parameters": [
+          {
+            "name": "export_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Export Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportExportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/exports/download/{token}": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Download Info",
+        "description": "Retorna informações para download.",
+        "operationId": "get_download_info_api_v1_reports_exports_download__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportExportDownload"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/exports/download/{token}/record": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Record Download",
+        "description": "Registra um download.",
+        "operationId": "record_download_api_v1_reports_exports_download__token__record_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/kpis": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Create Kpi",
+        "description": "Cria um KPI executivo.",
+        "operationId": "create_kpi_api_v1_reports_kpis_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutiveKPICreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveKPIResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "List Kpis",
+        "description": "Lista KPIs.",
+        "operationId": "list_kpis_api_v1_reports_kpis_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "name": "alert_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Alert Level",
+              "type": "string"
+            }
+          },
+          {
+            "name": "visible_on_dashboard",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Visible On Dashboard",
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveKPIList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/kpis/dashboard": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Kpi Dashboard",
+        "description": "Retorna dashboard de KPIs.",
+        "operationId": "get_kpi_dashboard_api_v1_reports_kpis_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KPIDashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/kpis/{kpi_id}": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Kpi",
+        "description": "Busca KPI por ID.",
+        "operationId": "get_kpi_api_v1_reports_kpis__kpi_id__get",
+        "parameters": [
+          {
+            "name": "kpi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kpi Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveKPIResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Update Kpi",
+        "description": "Atualiza um KPI.",
+        "operationId": "update_kpi_api_v1_reports_kpis__kpi_id__put",
+        "parameters": [
+          {
+            "name": "kpi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kpi Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutiveKPIUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveKPIResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/kpis/{kpi_id}/value": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Update Kpi Value",
+        "description": "Atualiza valor do KPI.",
+        "operationId": "update_kpi_value_api_v1_reports_kpis__kpi_id__value_post",
+        "parameters": [
+          {
+            "name": "kpi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kpi Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExecutiveKPIValueUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveKPIResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/benchmarks": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Create Benchmark",
+        "description": "Cria um benchmark.",
+        "operationId": "create_benchmark_api_v1_reports_benchmarks_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "List Benchmarks",
+        "description": "Lista benchmarks.",
+        "operationId": "list_benchmarks_api_v1_reports_benchmarks_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Category",
+              "type": "string"
+            }
+          },
+          {
+            "name": "benchmark_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Benchmark Type",
+              "type": "string"
+            }
+          },
+          {
+            "name": "industry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Industry",
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "name": "visible_on_dashboard",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "title": "Visible On Dashboard",
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarkList"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/benchmarks/{benchmark_id}": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Benchmark",
+        "description": "Busca benchmark por ID.",
+        "operationId": "get_benchmark_api_v1_reports_benchmarks__benchmark_id__get",
+        "parameters": [
+          {
+            "name": "benchmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Benchmark Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Update Benchmark",
+        "description": "Atualiza um benchmark.",
+        "operationId": "update_benchmark_api_v1_reports_benchmarks__benchmark_id__put",
+        "parameters": [
+          {
+            "name": "benchmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Benchmark Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/benchmarks/{benchmark_id}/company-value": {
+      "post": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Update Company Value",
+        "description": "Atualiza valor da empresa no benchmark.",
+        "operationId": "update_company_value_api_v1_reports_benchmarks__benchmark_id__company_value_post",
+        "parameters": [
+          {
+            "name": "benchmark_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Benchmark Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BenchmarkCompanyValue"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BenchmarkResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/dashboard": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Reports Dashboard",
+        "description": "Retorna dashboard de relatórios.",
+        "operationId": "get_reports_dashboard_api_v1_reports_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsDashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reports/executive-dashboard": {
+      "get": {
+        "tags": [
+          "Reports - Relatorios",
+          "Reports"
+        ],
+        "summary": "Get Executive Dashboard",
+        "description": "Retorna dashboard executivo.",
+        "operationId": "get_executive_dashboard_api_v1_reports_executive_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExecutiveDashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BenchmarkCompanyValue": {
+        "properties": {
+          "company_value": {
+            "type": "number",
+            "title": "Company Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "company_value"
+        ],
+        "title": "BenchmarkCompanyValue",
+        "description": "Schema para atualizar valor da empresa."
+      },
+      "BenchmarkCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "benchmark_type": {
+            "type": "string",
+            "title": "Benchmark Type"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "industry": {
+            "title": "Industry",
+            "type": "string"
+          },
+          "sub_industry": {
+            "title": "Sub Industry",
+            "type": "string"
+          },
+          "market_segment": {
+            "title": "Market Segment",
+            "type": "string"
+          },
+          "geographic_region": {
+            "title": "Geographic Region",
+            "type": "string"
+          },
+          "company_size": {
+            "title": "Company Size",
+            "type": "string"
+          },
+          "reference_value": {
+            "type": "number",
+            "title": "Reference Value"
+          },
+          "min_value": {
+            "title": "Min Value",
+            "type": "number"
+          },
+          "max_value": {
+            "title": "Max Value",
+            "type": "number"
+          },
+          "median_value": {
+            "title": "Median Value",
+            "type": "number"
+          },
+          "average_value": {
+            "title": "Average Value",
+            "type": "number"
+          },
+          "percentile_25": {
+            "title": "Percentile 25",
+            "type": "number"
+          },
+          "percentile_75": {
+            "title": "Percentile 75",
+            "type": "number"
+          },
+          "percentile_90": {
+            "title": "Percentile 90",
+            "type": "number"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "is_percentage": {
+            "type": "boolean",
+            "title": "Is Percentage",
+            "default": false
+          },
+          "is_currency": {
+            "type": "boolean",
+            "title": "Is Currency",
+            "default": false
+          },
+          "currency_code": {
+            "title": "Currency Code",
+            "type": "string"
+          },
+          "reference_year": {
+            "title": "Reference Year",
+            "type": "integer"
+          },
+          "reference_quarter": {
+            "title": "Reference Quarter",
+            "type": "integer"
+          },
+          "valid_from": {
+            "title": "Valid From",
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_until": {
+            "title": "Valid Until",
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_name": {
+            "title": "Source Name",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "sample_size": {
+            "title": "Sample Size",
+            "type": "integer"
+          },
+          "related_kpi_ids": {
+            "title": "Related Kpi Ids",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array"
+          },
+          "visible_on_dashboard": {
+            "type": "boolean",
+            "title": "Visible On Dashboard",
+            "default": true
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "category",
+          "benchmark_type",
+          "source",
+          "reference_value"
+        ],
+        "title": "BenchmarkCreate",
+        "description": "Schema para criação de benchmark."
+      },
+      "BenchmarkList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BenchmarkResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "BenchmarkList",
+        "description": "Lista paginada de benchmarks."
+      },
+      "BenchmarkResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "benchmark_type": {
+            "type": "string",
+            "title": "Benchmark Type"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "industry": {
+            "title": "Industry",
+            "type": "string"
+          },
+          "reference_value": {
+            "type": "number",
+            "title": "Reference Value"
+          },
+          "median_value": {
+            "title": "Median Value",
+            "type": "number"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "is_percentage": {
+            "type": "boolean",
+            "title": "Is Percentage"
+          },
+          "is_currency": {
+            "type": "boolean",
+            "title": "Is Currency"
+          },
+          "reference_year": {
+            "title": "Reference Year",
+            "type": "integer"
+          },
+          "current_company_value": {
+            "title": "Current Company Value",
+            "type": "number"
+          },
+          "comparison_result": {
+            "title": "Comparison Result",
+            "type": "string"
+          },
+          "deviation": {
+            "title": "Deviation",
+            "type": "number"
+          },
+          "deviation_percentage": {
+            "title": "Deviation Percentage",
+            "type": "number"
+          },
+          "percentile_rank": {
+            "title": "Percentile Rank",
+            "type": "number"
+          },
+          "target_value": {
+            "title": "Target Value",
+            "type": "number"
+          },
+          "visible_on_dashboard": {
+            "type": "boolean",
+            "title": "Visible On Dashboard"
+          },
+          "last_updated_from_source": {
+            "title": "Last Updated From Source",
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "category",
+          "benchmark_type",
+          "source",
+          "id",
+          "tenant_id",
+          "status",
+          "reference_value",
+          "is_percentage",
+          "is_currency",
+          "visible_on_dashboard",
+          "created_at",
+          "ativo"
+        ],
+        "title": "BenchmarkResponse",
+        "description": "Schema de resposta de benchmark."
+      },
+      "BenchmarkUpdate": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "reference_value": {
+            "title": "Reference Value",
+            "type": "number"
+          },
+          "min_value": {
+            "title": "Min Value",
+            "type": "number"
+          },
+          "max_value": {
+            "title": "Max Value",
+            "type": "number"
+          },
+          "median_value": {
+            "title": "Median Value",
+            "type": "number"
+          },
+          "percentile_25": {
+            "title": "Percentile 25",
+            "type": "number"
+          },
+          "percentile_75": {
+            "title": "Percentile 75",
+            "type": "number"
+          },
+          "percentile_90": {
+            "title": "Percentile 90",
+            "type": "number"
+          },
+          "valid_until": {
+            "title": "Valid Until",
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_name": {
+            "title": "Source Name",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "visible_on_dashboard": {
+            "title": "Visible On Dashboard",
+            "type": "boolean"
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "title": "BenchmarkUpdate",
+        "description": "Schema para atualização de benchmark."
+      },
+      "CostsReportItem": {
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "title": "Post Id"
+          },
+          "post_name": {
+            "type": "string",
+            "title": "Post Name"
+          },
+          "total_shifts": {
+            "type": "integer",
+            "title": "Total Shifts"
+          },
+          "total_cost": {
+            "type": "number",
+            "title": "Total Cost"
+          }
+        },
+        "type": "object",
+        "required": [
+          "post_id",
+          "post_name",
+          "total_shifts",
+          "total_cost"
+        ],
+        "title": "CostsReportItem",
+        "description": "Item de custos por posto."
+      },
+      "CostsReportResponse": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "total_posts": {
+            "type": "integer",
+            "title": "Total Posts"
+          },
+          "total_cost": {
+            "type": "number",
+            "title": "Total Cost"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CostsReportItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "total_posts",
+          "total_cost",
+          "items"
+        ],
+        "title": "CostsReportResponse",
+        "description": "Resposta do relatorio de custos estimados."
+      },
+      "CoverageReportItem": {
+        "properties": {
+          "post_id": {
+            "type": "string",
+            "title": "Post Id"
+          },
+          "post_name": {
+            "type": "string",
+            "title": "Post Name"
+          },
+          "total_allocations": {
+            "type": "integer",
+            "title": "Total Allocations"
+          },
+          "active_allocations": {
+            "type": "integer",
+            "title": "Active Allocations"
+          },
+          "coverage_rate": {
+            "type": "number",
+            "title": "Coverage Rate",
+            "description": "Percentual de cobertura"
+          }
+        },
+        "type": "object",
+        "required": [
+          "post_id",
+          "post_name",
+          "total_allocations",
+          "active_allocations",
+          "coverage_rate"
+        ],
+        "title": "CoverageReportItem",
+        "description": "Item de cobertura por posto."
+      },
+      "CoverageReportResponse": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "total_posts": {
+            "type": "integer",
+            "title": "Total Posts"
+          },
+          "total_allocations": {
+            "type": "integer",
+            "title": "Total Allocations"
+          },
+          "active_allocations": {
+            "type": "integer",
+            "title": "Active Allocations"
+          },
+          "coverage_rate": {
+            "type": "number",
+            "title": "Coverage Rate"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageReportItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "total_posts",
+          "total_allocations",
+          "active_allocations",
+          "coverage_rate",
+          "items"
+        ],
+        "title": "CoverageReportResponse",
+        "description": "Resposta do relatorio de cobertura."
+      },
+      "ExecutiveDashboard": {
+        "properties": {
+          "kpis": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutiveKPIResponse"
+            },
+            "type": "array",
+            "title": "Kpis"
+          },
+          "benchmarks": {
+            "items": {
+              "$ref": "#/components/schemas/BenchmarkResponse"
+            },
+            "type": "array",
+            "title": "Benchmarks"
+          },
+          "alerts": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "summary": {
+            "type": "object",
+            "title": "Summary"
+          },
+          "trends": {
+            "type": "object",
+            "title": "Trends"
+          },
+          "comparisons": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Comparisons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kpis",
+          "benchmarks",
+          "alerts",
+          "summary",
+          "trends",
+          "comparisons"
+        ],
+        "title": "ExecutiveDashboard",
+        "description": "Dashboard executivo."
+      },
+      "ExecutiveKPICreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "kpi_type": {
+            "type": "string",
+            "title": "Kpi Type"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "default": "increase"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "prefix": {
+            "title": "Prefix",
+            "type": "string"
+          },
+          "suffix": {
+            "title": "Suffix",
+            "type": "string"
+          },
+          "decimal_places": {
+            "type": "integer",
+            "title": "Decimal Places",
+            "default": 2
+          },
+          "target_value": {
+            "title": "Target Value",
+            "type": "number"
+          },
+          "baseline_value": {
+            "title": "Baseline Value",
+            "type": "number"
+          },
+          "warning_threshold_low": {
+            "title": "Warning Threshold Low",
+            "type": "number"
+          },
+          "warning_threshold_high": {
+            "title": "Warning Threshold High",
+            "type": "number"
+          },
+          "critical_threshold_low": {
+            "title": "Critical Threshold Low",
+            "type": "number"
+          },
+          "critical_threshold_high": {
+            "title": "Critical Threshold High",
+            "type": "number"
+          },
+          "aggregation_period": {
+            "type": "string",
+            "title": "Aggregation Period",
+            "default": "monthly"
+          },
+          "calculation_formula": {
+            "title": "Calculation Formula",
+            "type": "string"
+          },
+          "data_source": {
+            "title": "Data Source",
+            "type": "string"
+          },
+          "data_query": {
+            "title": "Data Query",
+            "type": "string"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "department": {
+            "title": "Department",
+            "type": "string"
+          },
+          "chart_type": {
+            "type": "string",
+            "title": "Chart Type",
+            "default": "gauge"
+          },
+          "visible_on_dashboard": {
+            "type": "boolean",
+            "title": "Visible On Dashboard",
+            "default": true
+          },
+          "alerts_enabled": {
+            "type": "boolean",
+            "title": "Alerts Enabled",
+            "default": true
+          },
+          "alert_recipients": {
+            "title": "Alert Recipients",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "yearly_target": {
+            "title": "Yearly Target",
+            "type": "number"
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "category",
+          "kpi_type"
+        ],
+        "title": "ExecutiveKPICreate",
+        "description": "Schema para criação de KPI."
+      },
+      "ExecutiveKPIList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutiveKPIResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "ExecutiveKPIList",
+        "description": "Lista paginada de KPIs."
+      },
+      "ExecutiveKPIResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "kpi_type": {
+            "type": "string",
+            "title": "Kpi Type"
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "default": "increase"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "current_value": {
+            "title": "Current Value",
+            "type": "number"
+          },
+          "previous_value": {
+            "title": "Previous Value",
+            "type": "number"
+          },
+          "target_value": {
+            "title": "Target Value",
+            "type": "number"
+          },
+          "alert_level": {
+            "type": "string",
+            "title": "Alert Level"
+          },
+          "trend": {
+            "title": "Trend",
+            "type": "string"
+          },
+          "variance": {
+            "title": "Variance",
+            "type": "number"
+          },
+          "variance_percentage": {
+            "title": "Variance Percentage",
+            "type": "number"
+          },
+          "aggregation_period": {
+            "type": "string",
+            "title": "Aggregation Period"
+          },
+          "owner_name": {
+            "title": "Owner Name",
+            "type": "string"
+          },
+          "department": {
+            "title": "Department",
+            "type": "string"
+          },
+          "visible_on_dashboard": {
+            "type": "boolean",
+            "title": "Visible On Dashboard"
+          },
+          "last_calculated_at": {
+            "title": "Last Calculated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "category",
+          "kpi_type",
+          "id",
+          "tenant_id",
+          "status",
+          "alert_level",
+          "aggregation_period",
+          "visible_on_dashboard",
+          "created_at",
+          "ativo"
+        ],
+        "title": "ExecutiveKPIResponse",
+        "description": "Schema de resposta de KPI."
+      },
+      "ExecutiveKPIUpdate": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "target_value": {
+            "title": "Target Value",
+            "type": "number"
+          },
+          "warning_threshold_low": {
+            "title": "Warning Threshold Low",
+            "type": "number"
+          },
+          "warning_threshold_high": {
+            "title": "Warning Threshold High",
+            "type": "number"
+          },
+          "critical_threshold_low": {
+            "title": "Critical Threshold Low",
+            "type": "number"
+          },
+          "critical_threshold_high": {
+            "title": "Critical Threshold High",
+            "type": "number"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "department": {
+            "title": "Department",
+            "type": "string"
+          },
+          "visible_on_dashboard": {
+            "title": "Visible On Dashboard",
+            "type": "boolean"
+          },
+          "alerts_enabled": {
+            "title": "Alerts Enabled",
+            "type": "boolean"
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "title": "ExecutiveKPIUpdate",
+        "description": "Schema para atualização de KPI."
+      },
+      "ExecutiveKPIValueUpdate": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "period_start": {
+            "title": "Period Start",
+            "type": "string",
+            "format": "date-time"
+          },
+          "period_end": {
+            "title": "Period End",
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "ExecutiveKPIValueUpdate",
+        "description": "Schema para atualização de valor do KPI."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HoursReportItem": {
+        "properties": {
+          "employee_id": {
+            "type": "string",
+            "title": "Employee Id"
+          },
+          "total_shifts": {
+            "type": "integer",
+            "title": "Total Shifts"
+          },
+          "total_hours": {
+            "type": "number",
+            "title": "Total Hours"
+          },
+          "overtime_hours": {
+            "type": "number",
+            "title": "Overtime Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "employee_id",
+          "total_shifts",
+          "total_hours",
+          "overtime_hours"
+        ],
+        "title": "HoursReportItem",
+        "description": "Item de horas por funcionario."
+      },
+      "HoursReportResponse": {
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          },
+          "total_employees": {
+            "type": "integer",
+            "title": "Total Employees"
+          },
+          "total_hours": {
+            "type": "number",
+            "title": "Total Hours"
+          },
+          "total_overtime": {
+            "type": "number",
+            "title": "Total Overtime"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HoursReportItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "start_date",
+          "end_date",
+          "total_employees",
+          "total_hours",
+          "total_overtime",
+          "items"
+        ],
+        "title": "HoursReportResponse",
+        "description": "Resposta do relatorio de horas trabalhadas."
+      },
+      "KPIDashboard": {
+        "properties": {
+          "kpis": {
+            "items": {
+              "$ref": "#/components/schemas/ExecutiveKPIResponse"
+            },
+            "type": "array",
+            "title": "Kpis"
+          },
+          "summary": {
+            "type": "object",
+            "title": "Summary"
+          },
+          "alerts": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "trends": {
+            "type": "object",
+            "title": "Trends"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kpis",
+          "summary",
+          "alerts",
+          "trends"
+        ],
+        "title": "KPIDashboard",
+        "description": "Dashboard de KPIs."
+      },
+      "ReportExportCreate": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Id"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": "pdf"
+          },
+          "parameters": {
+            "title": "Parameters",
+            "type": "object"
+          },
+          "filters": {
+            "title": "Filters",
+            "type": "object"
+          },
+          "data_period_start": {
+            "title": "Data Period Start",
+            "type": "string",
+            "format": "date-time"
+          },
+          "data_period_end": {
+            "title": "Data Period End",
+            "type": "string",
+            "format": "date-time"
+          },
+          "report_title": {
+            "title": "Report Title",
+            "type": "string"
+          },
+          "report_subtitle": {
+            "title": "Report Subtitle",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id"
+        ],
+        "title": "ReportExportCreate",
+        "description": "Schema para criação de exportação."
+      },
+      "ReportExportDownload": {
+        "properties": {
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "download_url",
+          "filename",
+          "content_type",
+          "file_size",
+          "expires_at"
+        ],
+        "title": "ReportExportDownload",
+        "description": "Resposta para download."
+      },
+      "ReportExportList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportExportResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "ReportExportList",
+        "description": "Lista paginada de exportações."
+      },
+      "ReportExportResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Id"
+          },
+          "schedule_id": {
+            "title": "Schedule Id",
+            "type": "string",
+            "format": "uuid"
+          },
+          "export_number": {
+            "type": "string",
+            "title": "Export Number"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "trigger": {
+            "type": "string",
+            "title": "Trigger"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "file_size": {
+            "title": "File Size",
+            "type": "integer"
+          },
+          "file_url": {
+            "title": "File Url",
+            "type": "string"
+          },
+          "download_token": {
+            "title": "Download Token",
+            "type": "string"
+          },
+          "download_count": {
+            "type": "integer",
+            "title": "Download Count"
+          },
+          "download_expires_at": {
+            "title": "Download Expires At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "processing_time_ms": {
+            "title": "Processing Time Ms",
+            "type": "integer"
+          },
+          "records_processed": {
+            "title": "Records Processed",
+            "type": "integer"
+          },
+          "pages_generated": {
+            "title": "Pages Generated",
+            "type": "integer"
+          },
+          "error_message": {
+            "title": "Error Message",
+            "type": "string"
+          },
+          "delivered": {
+            "type": "boolean",
+            "title": "Delivered"
+          },
+          "delivered_at": {
+            "title": "Delivered At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "requested_by": {
+            "title": "Requested By",
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "tenant_id",
+          "template_id",
+          "export_number",
+          "status",
+          "trigger",
+          "format",
+          "download_count",
+          "delivered",
+          "created_at"
+        ],
+        "title": "ReportExportResponse",
+        "description": "Schema de resposta de exportação."
+      },
+      "ReportScheduleCreate": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string",
+            "title": "Frequency"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "default": "America/Sao_Paulo"
+          },
+          "cron_expression": {
+            "title": "Cron Expression",
+            "type": "string"
+          },
+          "data_period": {
+            "title": "Data Period",
+            "type": "string"
+          },
+          "data_start_offset": {
+            "title": "Data Start Offset",
+            "type": "integer"
+          },
+          "data_end_offset": {
+            "title": "Data End Offset",
+            "type": "integer"
+          },
+          "relative_period": {
+            "type": "boolean",
+            "title": "Relative Period",
+            "default": true
+          },
+          "start_date": {
+            "title": "Start Date",
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "title": "End Date",
+            "type": "string",
+            "format": "date-time"
+          },
+          "max_executions": {
+            "title": "Max Executions",
+            "type": "integer"
+          },
+          "report_parameters": {
+            "title": "Report Parameters",
+            "type": "object"
+          },
+          "report_format": {
+            "type": "string",
+            "title": "Report Format",
+            "default": "pdf"
+          },
+          "report_filename_pattern": {
+            "title": "Report Filename Pattern",
+            "type": "string"
+          },
+          "delivery_method": {
+            "type": "string",
+            "title": "Delivery Method",
+            "default": "email"
+          },
+          "delivery_config": {
+            "title": "Delivery Config",
+            "type": "object"
+          },
+          "recipients": {
+            "title": "Recipients",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "cc_recipients": {
+            "title": "Cc Recipients",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "email_subject": {
+            "title": "Email Subject",
+            "type": "string"
+          },
+          "email_body": {
+            "title": "Email Body",
+            "type": "string"
+          },
+          "notify_on_success": {
+            "type": "boolean",
+            "title": "Notify On Success",
+            "default": false
+          },
+          "notify_on_failure": {
+            "type": "boolean",
+            "title": "Notify On Failure",
+            "default": true
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "name",
+          "frequency"
+        ],
+        "title": "ReportScheduleCreate",
+        "description": "Schema para criação de agendamento."
+      },
+      "ReportScheduleList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportScheduleResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "ReportScheduleList",
+        "description": "Lista paginada de agendamentos."
+      },
+      "ReportScheduleResponse": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Template Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "frequency": {
+            "type": "string",
+            "title": "Frequency"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "default": "America/Sao_Paulo"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "next_execution_at": {
+            "title": "Next Execution At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_execution_at": {
+            "title": "Last Execution At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "execution_count": {
+            "type": "integer",
+            "title": "Execution Count"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "failure_count": {
+            "type": "integer",
+            "title": "Failure Count"
+          },
+          "delivery_method": {
+            "type": "string",
+            "title": "Delivery Method"
+          },
+          "recipients": {
+            "title": "Recipients",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "name",
+          "frequency",
+          "id",
+          "tenant_id",
+          "status",
+          "execution_count",
+          "success_count",
+          "failure_count",
+          "delivery_method",
+          "created_at",
+          "ativo"
+        ],
+        "title": "ReportScheduleResponse",
+        "description": "Schema de resposta de agendamento."
+      },
+      "ReportScheduleUpdate": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "frequency": {
+            "title": "Frequency",
+            "type": "string"
+          },
+          "cron_expression": {
+            "title": "Cron Expression",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "start_date": {
+            "title": "Start Date",
+            "type": "string",
+            "format": "date-time"
+          },
+          "end_date": {
+            "title": "End Date",
+            "type": "string",
+            "format": "date-time"
+          },
+          "report_parameters": {
+            "title": "Report Parameters",
+            "type": "object"
+          },
+          "report_format": {
+            "title": "Report Format",
+            "type": "string"
+          },
+          "delivery_method": {
+            "title": "Delivery Method",
+            "type": "string"
+          },
+          "recipients": {
+            "title": "Recipients",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "email_subject": {
+            "title": "Email Subject",
+            "type": "string"
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "title": "ReportScheduleUpdate",
+        "description": "Schema para atualização de agendamento."
+      },
+      "ReportTemplateCreate": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Categoria do relatório"
+          },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type",
+            "default": "summary"
+          },
+          "default_format": {
+            "type": "string",
+            "title": "Default Format",
+            "default": "pdf"
+          },
+          "supported_formats": {
+            "title": "Supported Formats",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "layout_config": {
+            "title": "Layout Config",
+            "type": "object"
+          },
+          "header_config": {
+            "title": "Header Config",
+            "type": "object"
+          },
+          "footer_config": {
+            "title": "Footer Config",
+            "type": "object"
+          },
+          "sections": {
+            "title": "Sections",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "data_sources": {
+            "title": "Data Sources",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "query_template": {
+            "title": "Query Template",
+            "type": "string"
+          },
+          "parameters": {
+            "title": "Parameters",
+            "type": "object"
+          },
+          "filters": {
+            "title": "Filters",
+            "type": "object"
+          },
+          "charts": {
+            "title": "Charts",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "tables": {
+            "title": "Tables",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "metrics": {
+            "title": "Metrics",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "theme": {
+            "title": "Theme",
+            "default": "default",
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string",
+            "title": "Visibility",
+            "default": "private"
+          },
+          "allowed_roles": {
+            "title": "Allowed Roles",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "allowed_users": {
+            "title": "Allowed Users",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "category"
+        ],
+        "title": "ReportTemplateCreate",
+        "description": "Schema para criação de template."
+      },
+      "ReportTemplateList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReportTemplateResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "ReportTemplateList",
+        "description": "Lista paginada de templates."
+      },
+      "ReportTemplateResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "Categoria do relatório"
+          },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type",
+            "default": "summary"
+          },
+          "default_format": {
+            "type": "string",
+            "title": "Default Format",
+            "default": "pdf"
+          },
+          "supported_formats": {
+            "title": "Supported Formats",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count"
+          },
+          "last_used_at": {
+            "title": "Last Used At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "avg_generation_time": {
+            "title": "Avg Generation Time",
+            "type": "integer"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string",
+            "format": "uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string",
+            "format": "date-time"
+          },
+          "ativo": {
+            "type": "boolean",
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "category",
+          "id",
+          "tenant_id",
+          "status",
+          "version",
+          "usage_count",
+          "created_at",
+          "ativo"
+        ],
+        "title": "ReportTemplateResponse",
+        "description": "Schema de resposta de template."
+      },
+      "ReportTemplateUpdate": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "report_type": {
+            "title": "Report Type",
+            "type": "string"
+          },
+          "default_format": {
+            "title": "Default Format",
+            "type": "string"
+          },
+          "supported_formats": {
+            "title": "Supported Formats",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "layout_config": {
+            "title": "Layout Config",
+            "type": "object"
+          },
+          "sections": {
+            "title": "Sections",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "data_sources": {
+            "title": "Data Sources",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "parameters": {
+            "title": "Parameters",
+            "type": "object"
+          },
+          "charts": {
+            "title": "Charts",
+            "items": {
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "theme": {
+            "title": "Theme",
+            "type": "string"
+          },
+          "visibility": {
+            "title": "Visibility",
+            "type": "string"
+          },
+          "tags": {
+            "title": "Tags",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "title": "ReportTemplateUpdate",
+        "description": "Schema para atualização de template."
+      },
+      "ReportsDashboard": {
+        "properties": {
+          "total_templates": {
+            "type": "integer",
+            "title": "Total Templates"
+          },
+          "active_schedules": {
+            "type": "integer",
+            "title": "Active Schedules"
+          },
+          "exports_today": {
+            "type": "integer",
+            "title": "Exports Today"
+          },
+          "exports_this_month": {
+            "type": "integer",
+            "title": "Exports This Month"
+          },
+          "pending_exports": {
+            "type": "integer",
+            "title": "Pending Exports"
+          },
+          "failed_exports": {
+            "type": "integer",
+            "title": "Failed Exports"
+          },
+          "top_templates": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Top Templates"
+          },
+          "recent_exports": {
+            "items": {
+              "$ref": "#/components/schemas/ReportExportResponse"
+            },
+            "type": "array",
+            "title": "Recent Exports"
+          },
+          "schedule_health": {
+            "type": "object",
+            "title": "Schedule Health"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_templates",
+          "active_schedules",
+          "exports_today",
+          "exports_this_month",
+          "pending_exports",
+          "failed_exports",
+          "top_templates",
+          "recent_exports",
+          "schedule_health"
+        ],
+        "title": "ReportsDashboard",
+        "description": "Dashboard geral de relatórios."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

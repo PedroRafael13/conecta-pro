@@ -63,6 +63,8 @@ export function OccurrenceFormModal({
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
   const [showRestoreAlert, setShowRestoreAlert] = useState(false);
 
   const { posts, isLoading: postsLoading } = usePosts({ autoLoad: isOpen });
@@ -111,6 +113,8 @@ export function OccurrenceFormModal({
       setFormData(initialFormData);
     }
     setError(null);
+    setErrors([]);
+    setFieldErrors(new Set());
   }, [editData, isOpen]);
 
   const handleChange = (
@@ -119,6 +123,13 @@ export function OccurrenceFormModal({
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError(null);
+    setErrors([]);
+    // Remove erro do campo quando usuario comecar a digitar
+    setFieldErrors((prev) => {
+      const newErrors = new Set(prev);
+      newErrors.delete(name);
+      return newErrors;
+    });
   };
 
   // Funcoes para restaurar e descartar rascunho
@@ -136,26 +147,45 @@ export function OccurrenceFormModal({
   };
 
   const validateForm = (): boolean => {
+    const validationErrors: string[] = [];
+    const invalidFields = new Set<string>();
+
+    // Validar todos os campos obrigatorios
     if (!formData.title.trim()) {
-      setError('Titulo e obrigatorio');
-      return false;
+      validationErrors.push('Titulo e obrigatorio');
+      invalidFields.add('title');
     }
+
     if (!formData.description.trim()) {
-      setError('Descricao e obrigatoria');
-      return false;
+      validationErrors.push('Descricao e obrigatoria');
+      invalidFields.add('description');
     }
+
     if (!formData.employee_id) {
-      setError('Funcionario e obrigatorio');
-      return false;
+      validationErrors.push('Funcionario e obrigatorio');
+      invalidFields.add('employee_id');
     }
+
     if (!formData.post_id) {
-      setError('Posto e obrigatorio');
-      return false;
+      validationErrors.push('Posto e obrigatorio');
+      invalidFields.add('post_id');
     }
+
     if (!formData.occurred_at) {
-      setError('Data da ocorrencia e obrigatoria');
+      validationErrors.push('Data da ocorrencia e obrigatoria');
+      invalidFields.add('occurred_at');
+    }
+
+    // Se houver erros, atualizar estados
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
+      setFieldErrors(invalidFields);
       return false;
     }
+
+    // Limpar erros se tudo estiver ok
+    setErrors([]);
+    setFieldErrors(new Set());
     return true;
   };
 
@@ -230,6 +260,28 @@ export function OccurrenceFormModal({
           </div>
         )}
 
+        {/* Lista de erros de validacao */}
+        {errors.length > 0 && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-500 font-medium text-sm mb-2">
+                  {errors.length} {errors.length === 1 ? 'campo obrigatorio faltando' : 'campos obrigatorios faltando'}
+                </p>
+                <ul className="space-y-1">
+                  {errors.map((err, idx) => (
+                    <li key={idx} className="text-red-500 text-sm flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                      {err}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Save Indicator */}
         {!isEditing && isOpen && (
           <div className="flex justify-end">
@@ -244,13 +296,14 @@ export function OccurrenceFormModal({
         {/* Titulo */}
         <div>
           <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
-            Titulo *
+            Titulo <span className="text-red-500">*</span>
           </label>
           <Input
             name="title"
             value={formData.title}
             onChange={handleChange}
             placeholder="Titulo resumido da ocorrencia"
+            className={fieldErrors.has('title') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
           />
         </div>
 
@@ -317,13 +370,17 @@ export function OccurrenceFormModal({
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1 flex items-center gap-1">
                 <User className="w-4 h-4" />
-                Funcionario Envolvido *
+                Funcionario Envolvido <span className="text-red-500">*</span>
               </label>
               <select
                 name="employee_id"
                 value={formData.employee_id}
                 onChange={handleChange}
-                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
+                className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm ${
+                  fieldErrors.has('employee_id')
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                    : 'border-[hsl(var(--border))]'
+                }`}
                 disabled={employeesLoading || isEditing}
               >
                 <option value="">Selecione o funcionario</option>
@@ -338,13 +395,17 @@ export function OccurrenceFormModal({
             <div>
               <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1 flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
-                Posto *
+                Posto <span className="text-red-500">*</span>
               </label>
               <select
                 name="post_id"
                 value={formData.post_id}
                 onChange={handleChange}
-                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm"
+                className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-[hsl(var(--foreground))] text-sm ${
+                  fieldErrors.has('post_id')
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                    : 'border-[hsl(var(--border))]'
+                }`}
                 disabled={postsLoading || isEditing}
               >
                 <option value="">Selecione o posto</option>
@@ -361,7 +422,7 @@ export function OccurrenceFormModal({
         {/* Descricao */}
         <div>
           <label className="block text-sm font-medium text-[hsl(var(--foreground))] mb-1">
-            Descricao Detalhada *
+            Descricao Detalhada <span className="text-red-500">*</span>
           </label>
           <textarea
             name="description"
@@ -369,7 +430,11 @@ export function OccurrenceFormModal({
             onChange={handleChange}
             placeholder="Descreva detalhadamente o ocorrido, incluindo circunstancias, local exato, e qualquer informacao relevante..."
             rows={4}
-            className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none text-sm"
+            className={`w-full px-3 py-2 rounded-lg border bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none text-sm ${
+              fieldErrors.has('description')
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                : 'border-[hsl(var(--border))]'
+            }`}
           />
         </div>
 
@@ -377,7 +442,7 @@ export function OccurrenceFormModal({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
-              Data/Hora da Ocorrencia *
+              Data/Hora da Ocorrencia <span className="text-red-500">*</span>
             </label>
             <Input
               type="datetime-local"
@@ -385,6 +450,7 @@ export function OccurrenceFormModal({
               value={formData.occurred_at}
               onChange={handleChange}
               max={new Date().toISOString().slice(0, 16)}
+              className={fieldErrors.has('occurred_at') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
             />
           </div>
 

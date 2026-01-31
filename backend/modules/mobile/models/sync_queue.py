@@ -9,7 +9,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, T
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from core.database.base import Base
+from core.models.base import Base
 
 
 class SyncOperationType(str, Enum):
@@ -32,6 +32,16 @@ class SyncStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
+class ConflictResolution(str, Enum):
+    """Estratégias de resolução de conflitos."""
+
+    LAST_WRITE_WINS = "last_write_wins"
+    SERVER_WINS = "server_wins"
+    CLIENT_WINS = "client_wins"
+    MERGE = "merge"
+    USER_DECIDES = "user_decides"
+
+
 class SyncQueueItem(Base):
     """
     Item na fila de sincronização offline.
@@ -40,7 +50,7 @@ class SyncQueueItem(Base):
     ser sincronizadas com o servidor.
     """
 
-    __tablename__ = "sync_queue"
+    __tablename__ = "mobile_sync_queue"
 
     id = Column(
         UUID(as_uuid=True),

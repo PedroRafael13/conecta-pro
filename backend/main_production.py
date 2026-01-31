@@ -5,6 +5,7 @@ Versao otimizada que carrega apenas modulos estaveis.
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+import time
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +17,33 @@ from slowapi.errors import RateLimitExceeded
 
 from core.config import settings
 from core.logging import configure_logging, logger
+
+# =============================================================================
+# SENTRY INITIALIZATION
+# =============================================================================
+if settings.sentry_dsn:
+    import sentry_sdk
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.environment,
+        release=f"conecta-pro@{settings.app_version}",
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+        profiles_sample_rate=settings.sentry_profiles_sample_rate,
+        integrations=[
+            FastApiIntegration(transaction_style="endpoint"),
+            SqlalchemyIntegration(),
+            RedisIntegration(),
+            CeleryIntegration(),
+        ],
+        send_default_pii=False,
+        attach_stacktrace=True,
+    )
+    logger.info("Sentry: inicializado")
 
 
 # =============================================================================
@@ -95,6 +123,77 @@ async def health_check():
         "app": settings.app_name,
         "version": settings.app_version,
         "environment": settings.environment,
+    }
+
+
+@app.get("/health/detailed", tags=["Health"])
+async def health_check_detailed():
+    """
+    Health check detalhado para UptimeRobot e monitoramento.
+    Verifica: Database, Redis, Celery.
+    Retorna: healthy, degraded ou unhealthy.
+    """
+    from core.cache import get_redis
+    from core.database.session import async_session_factory
+    from sqlalchemy import text
+
+    checks = {
+        "database": {"status": "unknown", "latency_ms": None, "error": None},
+        "redis": {"status": "unknown", "latency_ms": None, "error": None},
+        "celery": {"status": "unknown", "latency_ms": None, "error": None},
+    }
+
+    # Check Database
+    try:
+        start = time.time()
+        async with async_session_factory() as session:
+            await session.execute(text("SELECT 1"))
+        latency = (time.time() - start) * 1000
+        checks["database"] = {"status": "healthy", "latency_ms": round(latency, 2), "error": None}
+    except Exception as e:
+        checks["database"] = {"status": "unhealthy", "latency_ms": None, "error": str(e)[:200]}
+
+    # Check Redis
+    try:
+        start = time.time()
+        redis = await get_redis()
+        if redis:
+            await redis.ping()
+            latency = (time.time() - start) * 1000
+            checks["redis"] = {"status": "healthy", "latency_ms": round(latency, 2), "error": None}
+        else:
+            checks["redis"] = {"status": "degraded", "latency_ms": None, "error": "Redis not configured"}
+    except Exception as e:
+        checks["redis"] = {"status": "unhealthy", "latency_ms": None, "error": str(e)[:200]}
+
+    # Check Celery (via Redis broker)
+    try:
+        start = time.time()
+        import redis as redis_sync
+        celery_redis = redis_sync.from_url(settings.redis_url.replace("/1", "/0"))
+        celery_redis.ping()
+        latency = (time.time() - start) * 1000
+        checks["celery"] = {"status": "healthy", "latency_ms": round(latency, 2), "error": None}
+        celery_redis.close()
+    except Exception as e:
+        checks["celery"] = {"status": "degraded", "latency_ms": None, "error": str(e)[:200]}
+
+    # Determine overall status
+    statuses = [c["status"] for c in checks.values()]
+    if all(s == "healthy" for s in statuses):
+        overall = "healthy"
+    elif "unhealthy" in statuses:
+        overall = "unhealthy"
+    else:
+        overall = "degraded"
+
+    return {
+        "status": overall,
+        "app": settings.app_name,
+        "version": settings.app_version,
+        "environment": settings.environment,
+        "checks": checks,
+        "timestamp": time.time(),
     }
 
 
@@ -247,6 +346,30 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Financial: {e}")
 
+# Financial - BI Dashboard (60 endpoints - Sprint 30)
+try:
+    from modules.financial.bi_dashboard.controllers import router as bi_dashboard_router
+    api_router.include_router(bi_dashboard_router, prefix="/financial", tags=["Financial - BI Dashboard"])
+    logger.info("Modulo Financial BI Dashboard: OK")
+except Exception as e:
+    logger.warning(f"Modulo Financial BI Dashboard: {e}")
+
+# Analytics - Executive Dashboard (7 endpoints - FASE 3)
+try:
+    from modules.analytics.controllers import executive_dashboard_router
+    api_router.include_router(executive_dashboard_router, prefix="/analytics", tags=["Analytics - Executive Dashboard"])
+    logger.info("Modulo Analytics Executive Dashboard: OK")
+except Exception as e:
+    logger.warning(f"Modulo Analytics Executive Dashboard: {e}")
+
+# Analytics - Predictive Analytics (25 endpoints - Sprint 04)
+try:
+    from modules.analytics.controllers import analytics_router
+    api_router.include_router(analytics_router, tags=["Analytics - Predictive"])
+    logger.info("Modulo Analytics Predictive: OK")
+except Exception as e:
+    logger.warning(f"Modulo Analytics Predictive: {e}")
+
 # GED
 try:
     from modules.ged.controllers import (
@@ -256,6 +379,7 @@ try:
         share_router,
         tag_router,
         signature_router,
+        stats_router,
     )
     # Routers já têm seu próprio prefix
     api_router.include_router(folder_router, prefix="/ged", tags=["GED - Pastas"])
@@ -264,6 +388,7 @@ try:
     api_router.include_router(share_router, prefix="/ged", tags=["GED - Compartilhamentos"])
     api_router.include_router(tag_router, prefix="/ged", tags=["GED - Tags"])
     api_router.include_router(signature_router, prefix="/ged", tags=["GED - Assinaturas"])
+    api_router.include_router(stats_router, prefix="/ged", tags=["GED - Estatísticas"])
     logger.info("Modulo GED: OK")
 except Exception as e:
     logger.warning(f"Modulo GED: {e}")
@@ -345,10 +470,12 @@ except Exception as e:
 
 # Diarists
 try:
-    from modules.operacional.diaristas.controllers import router as diarist_router
-    # Router já tem prefix="/diarists"
-    api_router.include_router(diarist_router, prefix="/operacional", tags=["Operacional - Diaristas"])
+    from modules.operacional.diaristas.controllers import router as diarist_router, fiscal_router as diarist_fiscal_router
+    # Adicionado prefix /diaristas
+    api_router.include_router(diarist_router, prefix="/operacional/diaristas", tags=["Operacional - Diaristas"])
+    api_router.include_router(diarist_fiscal_router, prefix="/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"])
     logger.info("Modulo Diarists: OK")
+    logger.info("Modulo Diarists Fiscal: OK")
 except Exception as e:
     logger.warning(f"Modulo Diarists: {e}")
 
@@ -432,6 +559,14 @@ try:
 except Exception as e:
     logger.warning(f"Modulo Inspection Rounds: {e}")
 
+# COMMUNICATION - Comunicados, Notificacoes, Alertas
+try:
+    from modules.operacional.communication import communication_router
+    api_router.include_router(communication_router, prefix="/operacional", tags=["Operacional - Comunicacao"])
+    logger.info("Modulo Communication: OK")
+except Exception as e:
+    logger.warning(f"Modulo Communication: {e}")
+
 # SEARCH - Busca Global
 try:
     from modules.search import search_router
@@ -439,6 +574,61 @@ try:
     logger.info("Modulo Search: OK")
 except Exception as e:
     logger.warning(f"Modulo Search: {e}")
+
+# BARTOLO - Assistente Inteligente IA
+try:
+    from modules.ai.bartolo.controllers import bartolo_router
+    api_router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
+    logger.info("Modulo Bartolo: OK")
+except Exception as e:
+    logger.warning(f"Modulo Bartolo: {e}")
+
+# RECRUITMENT - Recrutamento e Selecao
+try:
+    from modules.recruitment import router as recruitment_router
+    api_router.include_router(recruitment_router, tags=["Recruitment - Recrutamento e Selecao"])
+    logger.info("Modulo Recruitment: OK")
+except Exception as e:
+    logger.warning(f"Modulo Recruitment: {e}")
+
+# NOTIFICATIONS - Notification Hub (Sprint 36, 37, 03)
+try:
+    from modules.notifications.controllers import router as notification_router
+    from modules.notifications.controllers import intelligent_router as intelligent_notification_router
+    from modules.notifications.push.controllers import router as push_notification_router
+
+    api_router.include_router(notification_router, prefix="/notifications", tags=["Notifications - Hub"])
+    api_router.include_router(intelligent_notification_router, prefix="/notifications/intelligent", tags=["Notifications - Intelligent"])
+    api_router.include_router(push_notification_router, prefix="/notifications/push", tags=["Notifications - Push"])
+    logger.info("Modulo Notifications: OK")
+except Exception as e:
+    logger.warning(f"Modulo Notifications: {e}")
+
+# MOBILE - APIs Mobile Nativas (Sincronizacao Offline, Push Notifications)
+try:
+    from modules.mobile import mobile_router
+    api_router.include_router(mobile_router, tags=["Mobile - API Nativa"])
+    logger.info("Modulo Mobile: OK")
+except Exception as e:
+    logger.warning(f"Modulo Mobile: {e}")
+
+# BIDDING - Licitacoes Publicas (Lei 14.133/2021, PNCP)
+try:
+    from modules.bidding import (
+        tender_router,
+        document_router as bidding_document_router,
+        proposal_router as bidding_proposal_router,
+        contract_router as bidding_contract_router,
+        certificate_router,
+    )
+    api_router.include_router(tender_router, prefix="/bidding", tags=["Bidding - Editais"])
+    api_router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
+    api_router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
+    api_router.include_router(bidding_contract_router, prefix="/bidding", tags=["Bidding - Contratos"])
+    api_router.include_router(certificate_router, prefix="/bidding", tags=["Bidding - Certidoes"])
+    logger.info("Modulo Bidding: OK")
+except Exception as e:
+    logger.warning(f"Modulo Bidding: {e}")
 
 
 # Incluir router principal

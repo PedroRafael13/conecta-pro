@@ -132,11 +132,20 @@ class AlertaAgent:
         "escala_nao_publicada": AlertaPrioridade.ALTO,
     }
 
-    def __init__(self, db=None, post_repo=None, employee_repo=None, shift_repo=None):
+    def __init__(self, db=None, post_repo=None, employee_repo=None, shift_repo=None, data_connector=None):
         self.db = db
         self.post_repo = post_repo
         self.employee_repo = employee_repo
         self.shift_repo = shift_repo
+        self.data_connector = data_connector
+        # Se tem db mas não tem data_connector, criar automaticamente
+        if db and not data_connector:
+            try:
+                from modules.ai.bartolo.services.data_connector import DataConnector
+                self.data_connector = DataConnector(db)
+            except Exception as e:
+                logger.warning(f"Não foi possível criar DataConnector: {e}")
+                self.data_connector = None
 
     async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
         """Processa mensagem relacionada a alertas"""
@@ -169,8 +178,23 @@ class AlertaAgent:
         return None
 
     async def _handle_ver_alertas(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Lista todos os alertas"""
-        # Simula alertas (em produção viria do banco)
+        """Lista todos os alertas usando dados reais do DataConnector"""
+        # Tentar buscar dados reais
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_pending_alerts()
+                if result.success and result.message:
+                    return {
+                        "response": result.message,
+                        "intent": AlertaIntent.VER_ALERTAS.value,
+                        "data": {"alertas": result.data, "total": result.total_count},
+                        "suggestions": ["Ver críticos", "Resolver pendências", "Ver detalhes"],
+                        "priority": "high" if result.total_count > 0 else "normal",
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar alertas via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**🚨 Central de Alertas**
 
@@ -194,7 +218,52 @@ class AlertaAgent:
         }
 
     async def _handle_criticos(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Lista apenas alertas críticos"""
+        """Lista apenas alertas críticos usando dados reais do DataConnector"""
+        # Tentar buscar dados reais de cobertura crítica
+        if self.data_connector:
+            try:
+                cobertura_result = await self.data_connector._get_cobertura_critica()
+                alerts_result = await self.data_connector._get_pending_alerts()
+
+                parts = ["**🔴 ALERTAS CRÍTICOS**\n"]
+                critical_count = 0
+
+                if cobertura_result.success and cobertura_result.data:
+                    postos = cobertura_result.data
+                    critical_count += len(postos)
+                    for i, p in enumerate(postos[:5], 1):
+                        parts.append(f"**{i}. Cobertura Crítica - {p['nome']}**")
+                        parts.append(f"- Código: {p['codigo']}")
+                        parts.append(f"- Cobertura: {p['cobertura']}% ({p['alocados']}/{p['requeridos']})")
+                        parts.append(f"- Déficit: {p['deficit']} funcionário(s)")
+                        parts.append(f"- Ação sugerida: Buscar substituto\n")
+
+                if alerts_result.success and alerts_result.data:
+                    for alert in alerts_result.data:
+                        if alert.get('severidade') == 'alta':
+                            critical_count += 1
+                            parts.append(f"**{critical_count}. {alert['mensagem']}**")
+                            parts.append(f"- Ação: {alert['acao']}\n")
+
+                if critical_count > 0:
+                    parts.append("⚠️ **Estes alertas requerem ação imediata!**")
+                else:
+                    parts = ["**🔴 ALERTAS CRÍTICOS**\n\n✅ Nenhum alerta crítico no momento."]
+
+                return {
+                    "response": "\n".join(parts),
+                    "intent": AlertaIntent.ALERTAS_CRITICOS.value,
+                    "data": {"critical_count": critical_count},
+                    "suggestions": ["Resolver pendências", "Ver cobertura", "Notificar supervisor"],
+                    "actions": [
+                        {"type": "navigate", "label": "Buscar Substituto", "target": "/modulos/operacional/substituicoes"},
+                    ],
+                    "priority": "critical" if critical_count > 0 else "normal",
+                }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar alertas críticos via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**🔴 ALERTAS CRÍTICOS**
 
@@ -222,7 +291,22 @@ class AlertaAgent:
         }
 
     async def _handle_cobertura(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Alertas de cobertura"""
+        """Alertas de cobertura usando dados reais do DataConnector"""
+        # Tentar buscar dados reais
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_cobertura_critica()
+                if result.success and result.message:
+                    return {
+                        "response": result.message,
+                        "intent": AlertaIntent.COBERTURA.value,
+                        "data": {"postos_criticos": result.data, "total": result.total_count},
+                        "suggestions": ["Buscar substitutos", "Ver todos os postos", "Redistribuir turnos"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar cobertura via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**📊 Alertas de Cobertura**
 
@@ -244,7 +328,33 @@ class AlertaAgent:
         }
 
     async def _handle_documentos(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Alertas de documentos vencendo"""
+        """Alertas de documentos vencendo usando dados reais do DataConnector"""
+        # Tentar buscar dados reais de alertas (inclui documentos)
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_pending_alerts()
+                if result.success and result.data:
+                    doc_alerts = [a for a in result.data if a.get('tipo') == 'documento']
+                    if doc_alerts:
+                        lines = [f"- {a['mensagem']}" for a in doc_alerts]
+                        response = f"""**📄 Documentos - Alertas**
+
+{chr(10).join(lines)}
+
+**Ações:**
+- Notificar funcionários
+- Agendar renovações
+- Bloquear alocação (se necessário)"""
+                        return {
+                            "response": response,
+                            "intent": AlertaIntent.DOCUMENTOS.value,
+                            "data": {"doc_alerts": doc_alerts},
+                            "suggestions": ["Notificar todos", "Ver lista completa", "Agendar renovações"],
+                        }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar alertas de documentos via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**📄 Documentos Vencendo**
 
@@ -265,7 +375,22 @@ class AlertaAgent:
         }
 
     async def _handle_atrasos(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Alertas de atrasos"""
+        """Alertas de atrasos usando dados reais do DataConnector"""
+        # Tentar buscar dados reais
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_atrasos_hoje()
+                if result.success and result.message:
+                    return {
+                        "response": result.message,
+                        "intent": AlertaIntent.ATRASOS.value,
+                        "data": {"atrasos": result.data, "total": result.total_count},
+                        "suggestions": ["Contatar atrasados", "Buscar substitutos", "Ver histórico de atrasos"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar atrasos via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**⏰ Atrasos de Hoje**
 
@@ -285,7 +410,51 @@ class AlertaAgent:
         }
 
     async def _handle_urgente(self, message: str, context: Dict) -> Dict[str, Any]:
-        """O que precisa de atenção urgente"""
+        """O que precisa de atenção urgente usando dados reais do DataConnector"""
+        # Tentar buscar dados reais
+        if self.data_connector:
+            try:
+                alerts_result = await self.data_connector._get_pending_alerts()
+                cobertura_result = await self.data_connector._get_cobertura_critica()
+
+                parts = ["**⚡ ATENÇÃO URGENTE NECESSÁRIA**\n"]
+                item_num = 0
+                has_critical = False
+
+                # Prioridade 1 - Cobertura crítica
+                if cobertura_result.success and cobertura_result.data:
+                    has_critical = True
+                    parts.append("**Prioridade 1 - Resolver AGORA:**")
+                    for p in cobertura_result.data[:3]:
+                        item_num += 1
+                        parts.append(f"{item_num}. 🔴 **{p['nome']}** - cobertura {p['cobertura']}% (déficit: {p['deficit']})")
+                    parts.append("")
+
+                # Prioridade 2 - Outros alertas
+                if alerts_result.success and alerts_result.data:
+                    parts.append("**Prioridade 2 - Resolver HOJE:**")
+                    for a in alerts_result.data:
+                        item_num += 1
+                        sev_icon = "🟠" if a.get('severidade') in ('alta', 'media') else "🟡"
+                        parts.append(f"{item_num}. {sev_icon} {a['mensagem']}")
+                    parts.append("")
+
+                if item_num > 0:
+                    parts.append("**Você quer que eu inicie a resolução do item #1?**")
+                else:
+                    parts = ["**⚡ ATENÇÃO URGENTE**\n\n✅ Nenhum item urgente pendente no momento."]
+
+                return {
+                    "response": "\n".join(parts),
+                    "intent": AlertaIntent.URGENTE.value,
+                    "data": {"total_urgentes": item_num},
+                    "suggestions": ["Sim, resolver #1", "Ver detalhes", "Ver todos os alertas"],
+                    "priority": "critical" if has_critical else "high",
+                }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar urgentes via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": """**⚡ ATENÇÃO URGENTE NECESSÁRIA**
 

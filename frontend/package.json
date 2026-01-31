@@ -37,7 +37,18 @@
     "orval:integrations": "orval --config orval.config.integrations.ts",
     "orval:financial": "orval --config orval.config.financial.ts",
     "orval:workflows": "orval --config orval.config.workflows.ts",
-    "orval:reports": "orval --config orval.config.reports.ts"
+    "orval:automation": "orval --config orval.config.automation.ts",
+    "orval:reports": "orval --config orval.config.reports.ts",
+    "orval:contracts": "orval --config orval.config.contracts.ts",
+    "orval:hr": "orval --config orval.config.hr.ts",
+    "orval:diarists": "orval --config orval.config.diarists.ts",
+    "orval:monitoring": "orval --config orval.config.monitoring.ts",
+    "orval:retention": "orval --config orval.config.retention.ts",
+    "orval:ged": "orval --config orval.config.ged.ts",
+    "orval:core": "orval --config orval.config.core.ts",
+    "orval:fase5": "orval --config orval.config.fase5.ts",
+    "orval:crm": "orval --config orval.config.crm.ts",
+    "orval:all": "node scripts/run-all-orval.js"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.4",

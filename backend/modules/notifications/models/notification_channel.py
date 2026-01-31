@@ -158,11 +158,11 @@ class NotificationChannel(Base):
     created_by = Column(UUID(as_uuid=True))
     updated_by = Column(UUID(as_uuid=True))
 
-    # Relacionamentos
+    # Relacionamentos (sem back_populates para evitar conflito com config.NotificationTemplate)
     templates = relationship(
         "NotificationTemplate",
-        back_populates="channel",
         foreign_keys="NotificationTemplate.channel_id",
+        viewonly=True,
     )
     queue_items = relationship(
         "NotificationQueue",

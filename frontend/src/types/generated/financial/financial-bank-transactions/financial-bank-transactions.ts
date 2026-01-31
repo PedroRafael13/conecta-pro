@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   BankTransactionCreate,
@@ -22,6 +35,7 @@ import type {
   GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams,
   GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet200,
   GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams,
+  HTTPValidationError,
   ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost200,
   ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams,
   ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost200,
@@ -29,188 +43,992 @@ import type {
   ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialBankTransactions = () => {
+
 /**
  * Cria nova transação bancária.
  * @summary Criar transação
  */
-const createTransactionApiV1FinancialBankTransactionsBankTransactionsPost = <TData = AxiosResponse<BankTransactionResponse>>(
-    bankTransactionCreate: BankTransactionCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-transactions/bank-transactions/`,
-      bankTransactionCreate,options
-    );
-  }
-/**
+export const createTransactionApiV1FinancialBankTransactionsBankTransactionsPost = (
+    bankTransactionCreate: BankTransactionCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: bankTransactionCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateTransactionApiV1FinancialBankTransactionsBankTransactionsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransactionApiV1FinancialBankTransactionsBankTransactionsPost>>, TError,{data: BankTransactionCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createTransactionApiV1FinancialBankTransactionsBankTransactionsPost>>, TError,{data: BankTransactionCreate}, TContext> => {
+
+const mutationKey = ['createTransactionApiV1FinancialBankTransactionsBankTransactionsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTransactionApiV1FinancialBankTransactionsBankTransactionsPost>>, {data: BankTransactionCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTransactionApiV1FinancialBankTransactionsBankTransactionsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTransactionApiV1FinancialBankTransactionsBankTransactionsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createTransactionApiV1FinancialBankTransactionsBankTransactionsPost>>>
+    export type CreateTransactionApiV1FinancialBankTransactionsBankTransactionsPostMutationBody = BankTransactionCreate
+    export type CreateTransactionApiV1FinancialBankTransactionsBankTransactionsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar transação
+ */
+export const useCreateTransactionApiV1FinancialBankTransactionsBankTransactionsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTransactionApiV1FinancialBankTransactionsBankTransactionsPost>>, TError,{data: BankTransactionCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createTransactionApiV1FinancialBankTransactionsBankTransactionsPost>>,
+        TError,
+        {data: BankTransactionCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateTransactionApiV1FinancialBankTransactionsBankTransactionsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista transações bancárias com filtros.
  * @summary Listar transações
  */
-const listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet = <TData = AxiosResponse<BankTransactionResponse[]>>(
-    params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-transactions/bank-transactions/`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet = (
+    params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse[]>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetQueryKey = (params?: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams,) => {
+    return [
+    `/api/v1/financial/bank-transactions/bank-transactions/`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError = HTTPValidationError>(params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>> = ({ signal }) => listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>>
+export type ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetQueryError = HTTPValidationError
+
+
+export function useListTransactionsApiV1FinancialBankTransactionsBankTransactionsGet<TData = Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError = HTTPValidationError>(
+ params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTransactionsApiV1FinancialBankTransactionsBankTransactionsGet<TData = Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError = HTTPValidationError>(
+ params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListTransactionsApiV1FinancialBankTransactionsBankTransactionsGet<TData = Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError = HTTPValidationError>(
+ params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar transações
+ */
+
+export function useListTransactionsApiV1FinancialBankTransactionsBankTransactionsGet<TData = Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError = HTTPValidationError>(
+ params: ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna transações pendentes de conciliação bancária.
  * @summary Transações pendentes de conciliação
  */
-const getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet = <TData = AxiosResponse<BankTransactionResponse[]>>(
-    params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-transactions/bank-transactions/pending-reconciliation`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet = (
+    params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse[]>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/pending-reconciliation`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetQueryKey = (params?: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams,) => {
+    return [
+    `/api/v1/financial/bank-transactions/bank-transactions/pending-reconciliation`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetQueryOptions = <TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError = HTTPValidationError>(params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>> = ({ signal }) => getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>>
+export type GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetQueryError = HTTPValidationError
+
+
+export function useGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Transações pendentes de conciliação
+ */
+
+export function useGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet<TData = Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError = HTTPValidationError>(
+ params: GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna transações em um período específico.
  * @summary Transações por período
  */
-const getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet = <TData = AxiosResponse<BankTransactionResponse[]>>(
-    params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-transactions/bank-transactions/by-period`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet = (
+    params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse[]>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/by-period`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetQueryKey = (params?: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams,) => {
+    return [
+    `/api/v1/financial/bank-transactions/bank-transactions/by-period`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetQueryOptions = <TData = Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError = HTTPValidationError>(params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>> = ({ signal }) => getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetQueryResult = NonNullable<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>>
+export type GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetQueryError = HTTPValidationError
+
+
+export function useGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet<TData = Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError = HTTPValidationError>(
+ params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>,
+          TError,
+          Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet<TData = Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError = HTTPValidationError>(
+ params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>,
+          TError,
+          Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet<TData = Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError = HTTPValidationError>(
+ params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Transações por período
+ */
+
+export function useGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet<TData = Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError = HTTPValidationError>(
+ params: GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna resumo de transações por período.
  * @summary Resumo de transações
  */
-const getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet = <TData = AxiosResponse<GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet200>>(
-    params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-transactions/bank-transactions/summary`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet = (
+    params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet200>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/summary`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetQueryKey = (params?: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams,) => {
+    return [
+    `/api/v1/financial/bank-transactions/bank-transactions/summary`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetQueryOptions = <TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError = HTTPValidationError>(params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>> = ({ signal }) => getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>>
+export type GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetQueryError = HTTPValidationError
+
+
+export function useGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Resumo de transações
+ */
+
+export function useGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna transação pelo ID.
  * @summary Obter transação
  */
-const getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet = <TData = AxiosResponse<BankTransactionResponse>>(
-    transactionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}`,options
-    );
-  }
+export const getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet = (
+    transactionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGetQueryKey = (transactionId?: string,) => {
+    return [
+    `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}`
+    ] as const;
+    }
+
+    
+export const getGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError = HTTPValidationError>(transactionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGetQueryKey(transactionId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>> = ({ signal }) => getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet(transactionId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(transactionId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>>
+export type GetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGetQueryError = HTTPValidationError
+
+
+export function useGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet<TData = Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError = HTTPValidationError>(
+ transactionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet<TData = Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError = HTTPValidationError>(
+ transactionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet<TData = Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError = HTTPValidationError>(
+ transactionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter transação
+ */
+
+export function useGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet<TData = Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError = HTTPValidationError>(
+ transactionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGetQueryOptions(transactionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza transação bancária.
  * @summary Atualizar transação
  */
-const updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut = <TData = AxiosResponse<BankTransactionResponse>>(
+export const updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut = (
     transactionId: string,
-    bankTransactionUpdate: BankTransactionUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}`,
-      bankTransactionUpdate,options
-    );
-  }
-/**
+    bankTransactionUpdate: BankTransactionUpdate,
+ ) => {
+      
+      
+      return customInstance<BankTransactionResponse>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: bankTransactionUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut>>, TError,{transactionId: string;data: BankTransactionUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut>>, TError,{transactionId: string;data: BankTransactionUpdate}, TContext> => {
+
+const mutationKey = ['updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut>>, {transactionId: string;data: BankTransactionUpdate}> = (props) => {
+          const {transactionId,data} = props ?? {};
+
+          return  updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut(transactionId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut>>>
+    export type UpdateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPutMutationBody = BankTransactionUpdate
+    export type UpdateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar transação
+ */
+export const useUpdateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut>>, TError,{transactionId: string;data: BankTransactionUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut>>,
+        TError,
+        {transactionId: string;data: BankTransactionUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui transação bancária.
  * @summary Excluir transação
  */
-const deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete = <TData = AxiosResponse<void>>(
-    transactionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}`,options
-    );
-  }
-/**
+export const deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete = (
+    transactionId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete>>, TError,{transactionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete>>, TError,{transactionId: string}, TContext> => {
+
+const mutationKey = ['deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete>>, {transactionId: string}> = (props) => {
+          const {transactionId} = props ?? {};
+
+          return  deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete(transactionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete>>>
+    
+    export type DeleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir transação
+ */
+export const useDeleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete>>, TError,{transactionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete>>,
+        TError,
+        {transactionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Confirma transação pendente.
  * @summary Confirmar transação
  */
-const confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost = <TData = AxiosResponse<BankTransactionResponse>>(
-    transactionId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}/confirm`,undefined,options
-    );
-  }
-/**
+export const confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost = (
+    transactionId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}/confirm`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getConfirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost>>, TError,{transactionId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost>>, TError,{transactionId: string}, TContext> => {
+
+const mutationKey = ['confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost>>, {transactionId: string}> = (props) => {
+          const {transactionId} = props ?? {};
+
+          return  confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost(transactionId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost>>>
+    
+    export type ConfirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Confirmar transação
+ */
+export const useConfirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost>>, TError,{transactionId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost>>,
+        TError,
+        {transactionId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getConfirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cancela transação.
  * @summary Cancelar transação
  */
-const cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost = <TData = AxiosResponse<BankTransactionResponse>>(
+export const cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost = (
     transactionId: string,
-    params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}/cancel`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}/cancel`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getCancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost>>, TError,{transactionId: string;params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost>>, TError,{transactionId: string;params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams}, TContext> => {
+
+const mutationKey = ['cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost>>, {transactionId: string;params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams}> = (props) => {
+          const {transactionId,params} = props ?? {};
+
+          return  cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost(transactionId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost>>>
+    
+    export type CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Cancelar transação
+ */
+export const useCancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost>>, TError,{transactionId: string;params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost>>,
+        TError,
+        {transactionId: string;params: CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Marca transação como conciliada com extrato bancário.
  * @summary Conciliar transação
  */
-const reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost = <TData = AxiosResponse<BankTransactionResponse>>(
+export const reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost = (
     transactionId: string,
-    params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}/reconcile`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-/**
+    params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankTransactionResponse>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/${transactionId}/reconcile`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost>>, TError,{transactionId: string;params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost>>, TError,{transactionId: string;params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams}, TContext> => {
+
+const mutationKey = ['reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost>>, {transactionId: string;params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams}> = (props) => {
+          const {transactionId,params} = props ?? {};
+
+          return  reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost(transactionId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostMutationResult = NonNullable<Awaited<ReturnType<typeof reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost>>>
+    
+    export type ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Conciliar transação
+ */
+export const useReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost>>, TError,{transactionId: string;params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost>>,
+        TError,
+        {transactionId: string;params?: ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Importa transações de extrato (OFX, CSV).
  * @summary Importar transações de arquivo
  */
-const importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost = <TData = AxiosResponse<ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost200>>(
-    bankTransactionImport: BankTransactionImport, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-transactions/bank-transactions/import`,
-      bankTransactionImport,options
-    );
-  }
-/**
+export const importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost = (
+    bankTransactionImport: BankTransactionImport,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost200>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/import`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: bankTransactionImport, signal
+    },
+      );
+    }
+  
+
+
+export const getImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost>>, TError,{data: BankTransactionImport}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost>>, TError,{data: BankTransactionImport}, TContext> => {
+
+const mutationKey = ['importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost>>, {data: BankTransactionImport}> = (props) => {
+          const {data} = props ?? {};
+
+          return  importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPostMutationResult = NonNullable<Awaited<ReturnType<typeof importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost>>>
+    export type ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPostMutationBody = BankTransactionImport
+    export type ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Importar transações de arquivo
+ */
+export const useImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost>>, TError,{data: BankTransactionImport}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost>>,
+        TError,
+        {data: BankTransactionImport},
+        TContext
+      > => {
+
+      const mutationOptions = getImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Importa transações de arquivo OFX.
  * @summary Importar arquivo OFX
  */
-const importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost = <TData = AxiosResponse<ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost200>>(
+export const importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost = (
     bodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost: BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost,
-    params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {const formData = new FormData();
+    params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams,
+ signal?: AbortSignal
+) => {
+      
+      const formData = new FormData();
 formData.append(`file`, bodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost.file)
 
-    return axios.post(
-      `/api/v1/financial/bank-transactions/bank-transactions/import/ofx`,
-      formData,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {createTransactionApiV1FinancialBankTransactionsBankTransactionsPost,listTransactionsApiV1FinancialBankTransactionsBankTransactionsGet,getPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGet,getByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGet,getSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet,getTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGet,updateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPut,deleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDelete,confirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPost,cancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPost,reconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePost,importTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost,importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost}};
-export type CreateTransactionApiV1FinancialBankTransactionsBankTransactionsPostResult = AxiosResponse<BankTransactionResponse>
-export type ListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetResult = AxiosResponse<BankTransactionResponse[]>
-export type GetPendingReconciliationApiV1FinancialBankTransactionsBankTransactionsPendingReconciliationGetResult = AxiosResponse<BankTransactionResponse[]>
-export type GetByPeriodApiV1FinancialBankTransactionsBankTransactionsByPeriodGetResult = AxiosResponse<BankTransactionResponse[]>
-export type GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGetResult = AxiosResponse<GetSummaryApiV1FinancialBankTransactionsBankTransactionsSummaryGet200>
-export type GetTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdGetResult = AxiosResponse<BankTransactionResponse>
-export type UpdateTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdPutResult = AxiosResponse<BankTransactionResponse>
-export type DeleteTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdDeleteResult = AxiosResponse<void>
-export type ConfirmTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdConfirmPostResult = AxiosResponse<BankTransactionResponse>
-export type CancelTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdCancelPostResult = AxiosResponse<BankTransactionResponse>
-export type ReconcileTransactionApiV1FinancialBankTransactionsBankTransactionsTransactionIdReconcilePostResult = AxiosResponse<BankTransactionResponse>
-export type ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPostResult = AxiosResponse<ImportTransactionsApiV1FinancialBankTransactionsBankTransactionsImportPost200>
-export type ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostResult = AxiosResponse<ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost200>
+      return customInstance<ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost200>(
+      {url: `/api/v1/financial/bank-transactions/bank-transactions/import/ofx`, method: 'POST',
+      headers: {'Content-Type': 'multipart/form-data', },
+       data: formData,
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost>>, TError,{data: BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost;params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost>>, TError,{data: BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost;params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams}, TContext> => {
+
+const mutationKey = ['importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost>>, {data: BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost;params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams}> = (props) => {
+          const {data,params} = props ?? {};
+
+          return  importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost(data,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostMutationResult = NonNullable<Awaited<ReturnType<typeof importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost>>>
+    export type ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostMutationBody = BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost
+    export type ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Importar arquivo OFX
+ */
+export const useImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost>>, TError,{data: BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost;params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof importOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost>>,
+        TError,
+        {data: BodyImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost;params: ImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

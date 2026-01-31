@@ -1,15 +1,33 @@
 /**
- * Service Worker - Push Notifications
+ * Service Worker - PWA + Push Notifications
  *
- * Sprint: Módulo Operacional - Sistema de Notificações Push
+ * Sprint 21: PWA Mode + Offline Support
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `conecta-pro-${CACHE_VERSION}`;
 
-// Instalação do Service Worker
+// Assets para cache offline
+const STATIC_ASSETS = [
+  '/',
+  '/dashboard',
+  '/offline',
+  '/manifest.json',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
+];
+
+// Instalacao do Service Worker
 self.addEventListener('install', (event) => {
   console.log('[Service Worker] Instalando...');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] Cacheando assets estaticos');
+      return cache.addAll(STATIC_ASSETS).catch((err) => {
+        console.warn('[Service Worker] Falha ao cachear alguns assets:', err);
+      });
+    })
+  );
   self.skipWaiting();
 });
 
@@ -121,8 +139,47 @@ self.addEventListener('notificationclose', (event) => {
   console.log('[Service Worker] Notificação fechada:', event);
 });
 
-// Fetch - Não implementamos cache de requisições por enquanto
+// Fetch - Network First com fallback para cache
 self.addEventListener('fetch', (event) => {
-  // Deixamos passar todas as requisições sem interceptar
-  return;
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Ignora requisicoes nao-GET e APIs
+  if (request.method !== 'GET') return;
+  if (url.pathname.startsWith('/api/')) return;
+  if (url.pathname.startsWith('/_next/')) return;
+
+  // Network First strategy
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        // Cacheia resposta bem sucedida
+        if (response.ok && response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(async () => {
+        // Fallback para cache
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // Se for navegacao, mostra pagina offline
+        if (request.mode === 'navigate') {
+          const offlinePage = await caches.match('/offline');
+          if (offlinePage) return offlinePage;
+        }
+
+        // Retorna erro generico
+        return new Response('Offline', {
+          status: 503,
+          statusText: 'Service Unavailable',
+        });
+      })
+  );
 });

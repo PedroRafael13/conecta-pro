@@ -9,7 +9,7 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, T
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
-from core.database.base import Base
+from core.models.base import Base
 
 
 class DevicePlatform(str, Enum):
@@ -129,7 +129,7 @@ class DeviceToken(Base):
     )
 
     # Relacionamentos
-    user = relationship("User", back_populates="device_tokens")
+    # user = relationship("User", back_populates="device_tokens")  # TODO: Adicionar device_tokens no modelo User
 
     def __repr__(self) -> str:
         return f"<DeviceToken {self.id} platform={self.platform}>"

@@ -20,28 +20,25 @@ export const churnPredictionService = {
    * Predizer churn de usuário
    */
   async predictChurn(userId: number): Promise<ChurnPredictionResponse> {
-    const response = await predictChurnApiV1AnalyticsChurnPredictPost({
+    return predictChurnApiV1AnalyticsChurnPredictPost({
       user_id: userId,
-    });
-    return response.data;
+    }) as Promise<ChurnPredictionResponse>;
   },
 
   /**
    * Listar usuários com alto risco de churn
    */
   async getHighRiskUsers(limit = 50, minRisk = 'high') {
-    const response = await getHighRiskUsersApiV1AnalyticsChurnHighRiskGet({
+    return getHighRiskUsersApiV1AnalyticsChurnHighRiskGet({
       limit,
       min_risk: minRisk,
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 
   /**
    * Analytics de churn
    */
   async getChurnAnalytics() {
-    const response = await getChurnAnalyticsApiV1AnalyticsChurnAnalyticsGet();
-    return response.data;
+    return getChurnAnalyticsApiV1AnalyticsChurnAnalyticsGet() as Promise<unknown>;
   },
 };

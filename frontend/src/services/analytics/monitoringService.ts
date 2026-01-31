@@ -20,34 +20,30 @@ export const monitoringService = {
    * Dashboard de monitoramento
    */
   async getDashboard() {
-    const response = await getMonitoringDashboardApiV1AnalyticsMonitoringDashboardGet();
-    return response.data;
+    return getMonitoringDashboardApiV1AnalyticsMonitoringDashboardGet() as Promise<unknown>;
   },
 
   /**
    * Saúde de um modelo específico
    */
   async getModelHealth(modelName: string): Promise<ModelHealthResponse> {
-    const response = await getModelHealthApiV1AnalyticsMonitoringModelsModelNameHealthGet(modelName);
-    return response.data;
+    return getModelHealthApiV1AnalyticsMonitoringModelsModelNameHealthGet(modelName) as Promise<ModelHealthResponse>;
   },
 
   /**
    * Listar alertas de monitoramento
    */
   async getAlerts(modelName?: string, acknowledged?: boolean) {
-    const response = await getMonitoringAlertsApiV1AnalyticsMonitoringAlertsGet({
+    return getMonitoringAlertsApiV1AnalyticsMonitoringAlertsGet({
       model_name: modelName,
       acknowledged,
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 
   /**
    * Reconhecer alerta
    */
   async acknowledgeAlert(alertId: string) {
-    const response = await acknowledgeMonitoringAlertApiV1AnalyticsMonitoringAlertsAlertIdAcknowledgePut(alertId);
-    return response.data;
+    return acknowledgeMonitoringAlertApiV1AnalyticsMonitoringAlertsAlertIdAcknowledgePut(alertId) as Promise<unknown>;
   },
 };

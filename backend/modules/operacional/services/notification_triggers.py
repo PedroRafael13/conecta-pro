@@ -4,17 +4,46 @@ Sprint: Módulo Operacional - Sistema de Notificações Push
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import Dict
+from datetime import date, datetime, timedelta, time
+from typing import Dict, List
 from uuid import UUID
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from core.database import get_db
+from modules.config.models.tenant import Tenant, TenantStatus
 from modules.notifications.models import QueuePriority
 from modules.notifications.services.push_service import PushNotificationService
+from modules.operacional.models.employee import Employee
+from modules.operacional.models.post import Post
+from modules.operacional.models.scale import Scale
+from modules.operacional.models.shift import Shift, ShiftStatus
+from modules.operacional.models.substitution import Substitution, SubstitutionStatus
 
 logger = logging.getLogger(__name__)
+
+# Tolerância de atraso em minutos
+LATE_TOLERANCE_MINUTES = 15
+# Tempo limite para aprovações pendentes (horas)
+PENDING_APPROVAL_HOURS = 24
+
+
+def _get_active_tenants(db: Session) -> List[UUID]:
+    """Busca todos os tenant_ids ativos.
+
+    Returns:
+        Lista de UUIDs dos tenants ativos.
+    """
+    rows = (
+        db.query(Tenant.id)
+        .filter(
+            Tenant.status == TenantStatus.ATIVO,
+            Tenant.ativo.is_(True),
+        )
+        .all()
+    )
+    return [row[0] for row in rows]
 
 
 class OperacionalNotificationTriggers:
@@ -34,49 +63,180 @@ class OperacionalNotificationTriggers:
     def check_late_employees(self) -> dict:
         """Verifica colaboradores atrasados e envia notificações.
 
+        Busca shifts agendados para hoje cujo horário planejado já passou
+        (com tolerância) e que ainda não tiveram check-in.
+
         Returns:
             Dicionário com resultado da verificação
         """
         try:
-            logger.info("Verificando colaboradores atrasados...")
+            logger.info(f"Verificando colaboradores atrasados para tenant {self.tenant_id}...")
 
-            # TODO: Implementar lógica de verificação quando models estiverem finalizados
-            # Por enquanto, apenas retorna sucesso
+            today = date.today()
+            now = datetime.now()
+            threshold_time = (now - timedelta(minutes=LATE_TOLERANCE_MINUTES)).time()
+
+            # Busca shifts atrasados: agendados para hoje, sem check-in,
+            # cujo horário planejado + tolerância já passou
+            late_shifts = (
+                self.db.query(Shift, Employee, Post)
+                .join(Scale, Shift.scale_id == Scale.id)
+                .join(Post, Shift.post_id == Post.id)
+                .join(Employee, Shift.employee_id == Employee.id)
+                .filter(
+                    Post.client_id == str(self.tenant_id),
+                    Shift.shift_date == today,
+                    Shift.status == ShiftStatus.SCHEDULED.value,
+                    Shift.actual_start_time.is_(None),
+                    Shift.planned_start_time <= threshold_time,
+                    Shift.is_active.is_(True),
+                )
+                .all()
+            )
+
+            notifications_sent = 0
+            details = []
+
+            for shift, employee, post in late_shifts:
+                # Notifica o gestor do colaborador, se existir
+                gestor_id = getattr(employee, "gestor_id", None)
+                if not gestor_id:
+                    logger.debug(
+                        f"Colaborador {employee.nome} sem gestor_id, pulando notificação"
+                    )
+                    continue
+
+                planned = shift.planned_start_time
+                minutes_late = int(
+                    (now - datetime.combine(today, planned)).total_seconds() / 60
+                )
+
+                result = self.push_service.send_push_notification(
+                    user_id=UUID(str(gestor_id)),
+                    title="Colaborador Atrasado",
+                    body=(
+                        f"{employee.nome} está {minutes_late}min atrasado(a) "
+                        f"para o posto {post.name}"
+                    ),
+                    data={
+                        "type": "late_employee",
+                        "employee_id": str(employee.id),
+                        "shift_id": str(shift.id),
+                        "post_id": str(post.id),
+                        "minutes_late": minutes_late,
+                    },
+                    priority=QueuePriority.HIGH,
+                    action_url=f"/modulos/operacional/escalas?shift={shift.id}",
+                )
+
+                if result.get("success"):
+                    notifications_sent += 1
+
+                details.append({
+                    "employee": employee.nome,
+                    "post": post.name,
+                    "minutes_late": minutes_late,
+                    "notified_gestor": str(gestor_id),
+                })
+
+            logger.info(
+                f"Tenant {self.tenant_id}: {len(late_shifts)} atrasados, "
+                f"{notifications_sent} notificações enviadas"
+            )
 
             return {
                 "success": True,
-                "late_employees": 0,
-                "notifications_sent": 0,
-                "details": [],
+                "late_employees": len(late_shifts),
+                "notifications_sent": notifications_sent,
+                "details": details,
             }
 
         except Exception as e:
-            logger.error(f"Erro ao verificar atrasos: {e}")
+            logger.error(f"Erro ao verificar atrasos (tenant {self.tenant_id}): {e}")
             return {
                 "success": False,
                 "error": str(e),
             }
 
     def check_pending_approvals(self) -> dict:
-        """Verifica aprovações pendentes e envia notificações.
+        """Verifica aprovações de substituição pendentes e envia notificações.
+
+        Busca substituições com status PENDING há mais de 24 horas
+        e notifica quem solicitou.
 
         Returns:
             Dicionário com resultado da verificação
         """
         try:
-            logger.info("Verificando aprovações pendentes...")
+            logger.info(f"Verificando aprovações pendentes para tenant {self.tenant_id}...")
 
-            # TODO: Implementar lógica de verificação quando models estiverem finalizados
+            cutoff = datetime.now() - timedelta(hours=PENDING_APPROVAL_HOURS)
+
+            # Busca substituições pendentes há mais de 24h
+            pending_subs = (
+                self.db.query(Substitution, Post)
+                .join(Post, Substitution.post_id == Post.id)
+                .filter(
+                    Post.client_id == str(self.tenant_id),
+                    Substitution.status == SubstitutionStatus.PENDING.value,
+                    Substitution.requested_at <= cutoff,
+                    Substitution.is_active.is_(True),
+                )
+                .all()
+            )
+
+            notifications_sent = 0
+            details = []
+
+            for sub, post in pending_subs:
+                if not sub.requested_by:
+                    continue
+
+                hours_pending = int(
+                    (datetime.now() - sub.requested_at).total_seconds() / 3600
+                )
+
+                result = self.push_service.send_push_notification(
+                    user_id=UUID(str(sub.requested_by)),
+                    title="Substituição Pendente",
+                    body=(
+                        f"Sua solicitação de substituição no posto {post.name} "
+                        f"está pendente há {hours_pending}h"
+                    ),
+                    data={
+                        "type": "pending_substitution",
+                        "substitution_id": str(sub.id),
+                        "post_id": str(post.id),
+                        "hours_pending": hours_pending,
+                    },
+                    priority=QueuePriority.NORMAL,
+                    action_url=f"/modulos/operacional/substituicoes?id={sub.id}",
+                )
+
+                if result.get("success"):
+                    notifications_sent += 1
+
+                details.append({
+                    "substitution_id": str(sub.id),
+                    "post": post.name,
+                    "hours_pending": hours_pending,
+                    "requested_by": str(sub.requested_by),
+                })
+
+            logger.info(
+                f"Tenant {self.tenant_id}: {len(pending_subs)} pendentes, "
+                f"{notifications_sent} notificações enviadas"
+            )
 
             return {
                 "success": True,
-                "pending_approvals": 0,
-                "notifications_sent": 0,
-                "details": [],
+                "pending_approvals": len(pending_subs),
+                "notifications_sent": notifications_sent,
+                "details": details,
             }
 
         except Exception as e:
-            logger.error(f"Erro ao verificar aprovações: {e}")
+            logger.error(f"Erro ao verificar aprovações (tenant {self.tenant_id}): {e}")
             return {
                 "success": False,
                 "error": str(e),
@@ -181,30 +341,44 @@ class OperacionalNotificationTriggers:
 
 
 def run_late_employees_check():
-    """Executa verificação de colaboradores atrasados (cronjob)."""
+    """Executa verificação de colaboradores atrasados para todos os tenants (cronjob)."""
     db = next(get_db())
     try:
-        # TODO: Obter tenant_id de configuração ou processar todos os tenants
-        tenant_id = UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+        tenant_ids = _get_active_tenants(db)
+        logger.info(f"Cronjob atrasos: processando {len(tenant_ids)} tenants")
 
-        triggers = OperacionalNotificationTriggers(db, tenant_id)
-        result = triggers.check_late_employees()
+        results = []
+        for tenant_id in tenant_ids:
+            try:
+                triggers = OperacionalNotificationTriggers(db, tenant_id)
+                result = triggers.check_late_employees()
+                results.append({"tenant_id": str(tenant_id), **result})
+            except Exception as e:
+                logger.error(f"Cronjob atrasos falhou para tenant {tenant_id}: {e}")
+                results.append({"tenant_id": str(tenant_id), "success": False, "error": str(e)})
 
-        logger.info(f"Cronjob atrasos executado: {result}")
+        logger.info(f"Cronjob atrasos concluído: {len(results)} tenants processados")
     finally:
         db.close()
 
 
 def run_pending_approvals_check():
-    """Executa verificação de aprovações pendentes (cronjob)."""
+    """Executa verificação de aprovações pendentes para todos os tenants (cronjob)."""
     db = next(get_db())
     try:
-        # TODO: Obter tenant_id de configuração ou processar todos os tenants
-        tenant_id = UUID("a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+        tenant_ids = _get_active_tenants(db)
+        logger.info(f"Cronjob aprovações: processando {len(tenant_ids)} tenants")
 
-        triggers = OperacionalNotificationTriggers(db, tenant_id)
-        result = triggers.check_pending_approvals()
+        results = []
+        for tenant_id in tenant_ids:
+            try:
+                triggers = OperacionalNotificationTriggers(db, tenant_id)
+                result = triggers.check_pending_approvals()
+                results.append({"tenant_id": str(tenant_id), **result})
+            except Exception as e:
+                logger.error(f"Cronjob aprovações falhou para tenant {tenant_id}: {e}")
+                results.append({"tenant_id": str(tenant_id), "success": False, "error": str(e)})
 
-        logger.info(f"Cronjob aprovações executado: {result}")
+        logger.info(f"Cronjob aprovações concluído: {len(results)} tenants processados")
     finally:
         db.close()

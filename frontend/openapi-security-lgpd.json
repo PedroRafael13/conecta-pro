@@ -1,0 +1,1066 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - LGPD Security API",
+    "version": "1.0.0",
+    "description": "API de Segurança e Compliance LGPD - Lei 13.709/2018\n\nMódulo completo de proteção de dados conforme LGPD:\n- Gestão de Consentimentos (Art. 7, 8 e 9)\n- Criptografia e Mascaramento de Dados Sensíveis\n- Direito ao Esquecimento (Art. 18)\n- Avaliação de Impacto de Privacidade (PIA/DPIA - Art. 38)\n- Trilha de Auditoria com Hash Chain (Art. 46)\n- Controle DPO e Incidentes de Segurança"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Servidor de Desenvolvimento"
+    },
+    {
+      "url": "https://api.conectapro.com.br",
+      "description": "Servidor de Produção"
+    }
+  ],
+  "paths": {
+    "/lgpd/consent/register": {
+      "post": {
+        "tags": ["LGPD - Consentimento"],
+        "summary": "Registra consentimento LGPD",
+        "description": "Registra consentimento do titular conforme Art. 7 LGPD.",
+        "operationId": "registerConsent",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Consentimento registrado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/consent/{titular_id}": {
+      "get": {
+        "tags": ["LGPD - Consentimento"],
+        "summary": "Consulta consentimentos de titular",
+        "description": "Retorna todos os consentimentos de um titular.",
+        "operationId": "getConsents",
+        "parameters": [
+          {
+            "name": "titular_id",
+            "in": "path",
+            "required": true,
+            "description": "UUID do titular",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de consentimentos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/consent/{consent_id}/revoke": {
+      "delete": {
+        "tags": ["LGPD - Consentimento"],
+        "summary": "Revoga consentimento",
+        "description": "Revoga um consentimento específico.",
+        "operationId": "revokeConsent",
+        "parameters": [
+          {
+            "name": "consent_id",
+            "in": "path",
+            "required": true,
+            "description": "ID do consentimento",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": true,
+            "description": "Motivo da revogação",
+            "schema": {
+              "type": "string",
+              "minLength": 5
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consentimento revogado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Consentimento não encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/consent/purposes/list": {
+      "get": {
+        "tags": ["LGPD - Consentimento"],
+        "summary": "Lista finalidades de consentimento",
+        "description": "Retorna finalidades de consentimento disponíveis.",
+        "operationId": "listPurposes",
+        "responses": {
+          "200": {
+            "description": "Lista de finalidades",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/consent/legal-bases/list": {
+      "get": {
+        "tags": ["LGPD - Consentimento"],
+        "summary": "Lista bases legais LGPD",
+        "description": "Retorna bases legais LGPD disponíveis.",
+        "operationId": "listLegalBases",
+        "responses": {
+          "200": {
+            "description": "Lista de bases legais",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/encryption/encrypt": {
+      "post": {
+        "tags": ["LGPD - Criptografia"],
+        "summary": "Criptografa dados sensíveis",
+        "description": "Criptografa dados usando AES-256-GCM ou outros algoritmos suportados.",
+        "operationId": "encryptData",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EncryptDataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dados criptografados com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Algoritmo inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao criptografar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/encryption/decrypt": {
+      "post": {
+        "tags": ["LGPD - Criptografia"],
+        "summary": "Descriptografa dados",
+        "description": "Descriptografa dados previamente criptografados.",
+        "operationId": "decryptData",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecryptDataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Descriptografia concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao descriptografar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/encryption/algorithms": {
+      "get": {
+        "tags": ["LGPD - Criptografia"],
+        "summary": "Lista algoritmos de criptografia",
+        "description": "Retorna algoritmos de criptografia disponíveis.",
+        "operationId": "listAlgorithms",
+        "responses": {
+          "200": {
+            "description": "Lista de algoritmos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/audit/log": {
+      "post": {
+        "tags": ["LGPD - Auditoria"],
+        "summary": "Registra evento de auditoria",
+        "description": "Registra evento na trilha de auditoria com hash chain.",
+        "operationId": "createAuditLog",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuditLogRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evento registrado na trilha de auditoria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Dados inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao registrar evento",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/audit/logs": {
+      "get": {
+        "tags": ["LGPD - Auditoria"],
+        "summary": "Lista eventos de auditoria",
+        "description": "Retorna eventos de auditoria com filtros.",
+        "operationId": "listAuditLogs",
+        "parameters": [
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "description": "Tipo de recurso",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "description": "ID do usuário",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "description": "Data inicial",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "description": "Data final",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Limite de resultados",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "minimum": 1,
+              "maximum": 1000
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Offset para paginação",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao listar eventos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/audit/actions/list": {
+      "get": {
+        "tags": ["LGPD - Auditoria"],
+        "summary": "Lista ações de auditoria",
+        "description": "Retorna ações de auditoria disponíveis.",
+        "operationId": "listActions",
+        "responses": {
+          "200": {
+            "description": "Lista de ações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/audit/resource-types/list": {
+      "get": {
+        "tags": ["LGPD - Auditoria"],
+        "summary": "Lista tipos de recurso",
+        "description": "Retorna tipos de recurso auditados.",
+        "operationId": "listResourceTypes",
+        "responses": {
+          "200": {
+            "description": "Lista de tipos de recurso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/erasure/request": {
+      "post": {
+        "tags": ["LGPD - Direito ao Esquecimento"],
+        "summary": "Solicita exclusão de dados (Art. 18 LGPD)",
+        "description": "Inicia processo de exclusão de dados do titular.",
+        "operationId": "requestErasure",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErasureRequestSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Solicitação de exclusão registrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao processar solicitação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/erasure/{request_id}/status": {
+      "get": {
+        "tags": ["LGPD - Direito ao Esquecimento"],
+        "summary": "Consulta status de exclusão",
+        "description": "Verifica status de uma solicitação de exclusão.",
+        "operationId": "getErasureStatus",
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "description": "ID da solicitação",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status da solicitação recuperado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Solicitação não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao consultar status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/pia/create": {
+      "post": {
+        "tags": ["LGPD - Avaliação de Impacto (PIA/DPIA)"],
+        "summary": "Cria avaliação de impacto (PIA/DPIA)",
+        "description": "Inicia avaliação de impacto de privacidade para projeto.",
+        "operationId": "createPIA",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PIARequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Avaliação de impacto criada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao criar avaliação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/pia/{assessment_id}": {
+      "get": {
+        "tags": ["LGPD - Avaliação de Impacto (PIA/DPIA)"],
+        "summary": "Consulta avaliação PIA/DPIA",
+        "description": "Retorna detalhes de uma avaliação de impacto.",
+        "operationId": "getPIA",
+        "parameters": [
+          {
+            "name": "assessment_id",
+            "in": "path",
+            "required": true,
+            "description": "ID da avaliação",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Avaliação recuperada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Avaliação não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao consultar avaliação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/pia/risk-categories/list": {
+      "get": {
+        "tags": ["LGPD - Avaliação de Impacto (PIA/DPIA)"],
+        "summary": "Lista categorias de risco",
+        "description": "Retorna categorias de risco disponíveis.",
+        "operationId": "listRiskCategories",
+        "responses": {
+          "200": {
+            "description": "Categorias de risco disponíveis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/masking/mask": {
+      "post": {
+        "tags": ["LGPD - Mascaramento"],
+        "summary": "Mascara dados sensíveis",
+        "description": "Aplica mascaramento em dados PII (CPF, email, telefone, etc).",
+        "operationId": "maskData",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaskDataRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Dado mascarado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erro interno ao mascarar dados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/masking/formats": {
+      "get": {
+        "tags": ["LGPD - Mascaramento"],
+        "summary": "Lista formatos de mascaramento",
+        "description": "Retorna categorias e níveis de mascaramento disponíveis.",
+        "operationId": "listMaskingFormats",
+        "responses": {
+          "200": {
+            "description": "Formatos de mascaramento disponíveis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/status": {
+      "get": {
+        "tags": ["LGPD - Status"],
+        "summary": "Status do módulo LGPD",
+        "description": "Retorna status de todos os componentes de segurança.",
+        "operationId": "getLGPDStatus",
+        "responses": {
+          "200": {
+            "description": "Status do módulo LGPD",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lgpd/health": {
+      "get": {
+        "tags": ["LGPD - Status"],
+        "summary": "Health check",
+        "description": "Verifica saúde do módulo.",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Módulo operacional",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "module": {
+                      "type": "string",
+                      "example": "security_lgpd"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "StandardResponse": {
+        "type": "object",
+        "required": ["success", "message"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Indica se a operação foi bem-sucedida"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensagem descritiva do resultado"
+          },
+          "data": {
+            "type": "object",
+            "description": "Dados retornados pela operação",
+            "additionalProperties": true
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["detail"],
+        "properties": {
+          "detail": {
+            "type": "string",
+            "description": "Mensagem de erro detalhada"
+          }
+        }
+      },
+      "ConsentRequest": {
+        "type": "object",
+        "required": ["titular_id", "titular_email", "purpose", "legal_basis"],
+        "properties": {
+          "titular_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID do titular dos dados"
+          },
+          "titular_email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email do titular"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Finalidade do consentimento"
+          },
+          "legal_basis": {
+            "type": "string",
+            "description": "Base legal LGPD"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição detalhada do consentimento"
+          },
+          "expiration_days": {
+            "type": "integer",
+            "description": "Dias até expiração",
+            "default": 365
+          }
+        }
+      },
+      "EncryptDataRequest": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "Dados a serem criptografados"
+          },
+          "algorithm": {
+            "type": "string",
+            "description": "Algoritmo de criptografia",
+            "enum": ["AES-256-GCM", "AES-256-CBC", "Fernet", "ChaCha20-Poly1305", "RSA-OAEP"],
+            "default": "AES-256-GCM"
+          },
+          "key_id": {
+            "type": "string",
+            "description": "ID da chave (opcional)"
+          }
+        }
+      },
+      "DecryptDataRequest": {
+        "type": "object",
+        "required": ["encrypted_data"],
+        "properties": {
+          "encrypted_data": {
+            "type": "string",
+            "description": "Dados criptografados em base64"
+          },
+          "key_id": {
+            "type": "string",
+            "description": "ID da chave"
+          }
+        }
+      },
+      "AuditLogRequest": {
+        "type": "object",
+        "required": ["action", "resource_type", "resource_id", "user_id"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "description": "Ação realizada"
+          },
+          "resource_type": {
+            "type": "string",
+            "description": "Tipo de recurso"
+          },
+          "resource_id": {
+            "type": "string",
+            "description": "ID do recurso"
+          },
+          "user_id": {
+            "type": "string",
+            "description": "ID do usuário"
+          },
+          "details": {
+            "type": "object",
+            "description": "Detalhes adicionais",
+            "additionalProperties": true
+          },
+          "severity": {
+            "type": "string",
+            "description": "Nível de severidade",
+            "enum": ["low", "medium", "high", "critical"],
+            "default": "medium"
+          }
+        }
+      },
+      "ErasureRequestSchema": {
+        "type": "object",
+        "required": ["titular_id", "titular_email", "reason"],
+        "properties": {
+          "titular_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID do titular"
+          },
+          "titular_email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email do titular"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo da exclusão"
+          },
+          "scope": {
+            "type": "string",
+            "description": "Escopo da exclusão",
+            "enum": ["all", "personal", "transactional"],
+            "default": "all"
+          }
+        }
+      },
+      "PIARequest": {
+        "type": "object",
+        "required": ["project_name", "description", "data_categories"],
+        "properties": {
+          "project_name": {
+            "type": "string",
+            "description": "Nome do projeto"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descrição do projeto"
+          },
+          "data_categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Categorias de dados tratados"
+          },
+          "processing_purposes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Finalidades de tratamento"
+          },
+          "data_subjects": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tipos de titulares"
+          },
+          "risk_factors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Fatores de risco identificados"
+          }
+        }
+      },
+      "MaskDataRequest": {
+        "type": "object",
+        "required": ["data", "category"],
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "Dado a ser mascarado"
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoria do dado",
+            "enum": ["cpf", "email", "phone", "name", "address", "credit_card"]
+          },
+          "level": {
+            "type": "string",
+            "description": "Nível de mascaramento",
+            "enum": ["partial", "full", "custom"],
+            "default": "partial"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ]
+}

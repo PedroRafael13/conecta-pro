@@ -1,0 +1,181 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    AUDITORIA ORVAL - CONECTA PLUS                            ║
+║                           Status: 48.4%                                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ RESUMO EXECUTIVO                                                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Total Módulos Backend:              31                                       │
+│ Configs Orval Criados:              31 (100%)                                │
+│ Módulos COMPLETOS:                  15 (48.4%) ✅                            │
+│ Módulos INCOMPLETOS:                16 (51.6%) ⚠️                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ BREAKDOWN DE PROBLEMAS                                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Problema 1: OpenAPI ✅ + Types ❌    →  1 módulo  (reports)                 │
+│ Problema 2: OpenAPI ❌ + Types ✅    → 10 módulos (backend issue)            │
+│ Problema 3: OpenAPI ❌ + Types ❌    →  5 módulos (não configurado)          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 15 MÓDULOS COMPLETOS ✅                                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  1. ai                    (IA completa com 11 submódulos)                    │
+│  2. audit                 (Auditoria)                                        │
+│  3. bidding               (Licitações)                                       │
+│  4. clients               (Clientes)                                         │
+│  5. config                (Configuração)                                     │
+│  6. crm                   (CRM - 6 submódulos)                               │
+│  7. documents             (Documentos)                                       │
+│  8. government            (Integrações Governamentais)                       │
+│  9. health-occupational   (Saúde Ocupacional)                                │
+│ 10. mobile                (Mobile)                                           │
+│ 11. notifications         (Notificações)                                     │
+│ 12. operacional           (Operacional - 7 submódulos)                       │
+│ 13. recruitment           (Recrutamento)                                     │
+│ 14. scheduler             (Agendamento - 145 tipos)                          │
+│ 15. security-lgpd         (Segurança LGPD)                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 16 MÓDULOS INCOMPLETOS ⚠️                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ PROBLEMA 1 (tem OpenAPI, falta types):                                       │
+│  → reports               [ERRO CONHECIDO - backend com problema]             │
+│                                                                               │
+│ PROBLEMA 2 (tem types, falta OpenAPI):                                       │
+│  → automation            [1 controller, 0 routers]                           │
+│  → core                  [SEM CONTROLLERS - módulo vazio?]                   │
+│  → document-kits         [2 controllers, 0 routers]                          │
+│  → equipment             [4 controllers, 0 routers]                          │
+│  → fase5                 [1 controller, 0 routers]                           │
+│  → financial             [16 controllers!, 0 routers]                        │
+│  → ged                   [7 controllers, 0 routers]                          │
+│  → integrations          [3 controllers, 0 routers]                          │
+│  → reimbursement         [1 controller, 0 routers]                           │
+│  → services              [1 controller, 0 routers]                           │
+│                                                                               │
+│ PROBLEMA 3 (falta tudo):                                                     │
+│  → analytics             [2 controllers, 0 routers]                          │
+│  → campo                 [13 controllers!, 0 routers]                        │
+│  → hr                    [25 controllers!!, 0 routers]                       │
+│  → monitoring            [2 controllers, 0 routers]                          │
+│  → retention             [4 controllers, 0 routers]                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ DESCOBERTA CRÍTICA                                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ TODOS os 15 módulos incompletos TÊM CONTROLLERS mas NÃO TÊM ROUTERS!        │
+│                                                                               │
+│ Isso significa que:                                                          │
+│ 1. O backend TEM a lógica implementada                                       │
+│ 2. Mas NÃO está EXPONDO via API (faltam routers)                             │
+│ 3. Os types foram gerados manualmente ou de specs antigos                    │
+│                                                                               │
+│ AÇÃO NECESSÁRIA:                                                             │
+│ → Criar routers para TODOS esses módulos no backend                          │
+│ → Registrar routers no main.py do backend                                    │
+│ → Só então gerar OpenAPI e types                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ CONFIGS ÓRFÃOS (4)                                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  → contracts             [Possivelmente submódulo de CRM]                    │
+│  → diarists              [Possivelmente submódulo de Operacional]            │
+│  → search                [Funcionalidade de busca global]                    │
+│  → workflows             [Possivelmente submódulo de Automation]             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ESTATÍSTICAS INTERESSANTES                                                   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Total de controllers identificados: 98                                       │
+│ Módulos com mais controllers:                                                │
+│   → hr: 25 controllers                                                       │
+│   → financial: 16 controllers                                                │
+│   → campo: 13 controllers                                                    │
+│   → ged: 7 controllers                                                       │
+│                                                                               │
+│ Esses módulos grandes representam grande potencial de cobertura!             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ PLANO DE AÇÃO RECOMENDADO                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│ FASE 1 - CORREÇÃO BACKEND (PRIORITÁRIO)                                      │
+│ ────────────────────────────────────────────────────────────────────────     │
+│ Para cada um dos 15 módulos incompletos:                                     │
+│   1. Criar router.py no módulo backend                                       │
+│   2. Importar controllers existentes                                         │
+│   3. Registrar endpoints FastAPI                                             │
+│   4. Adicionar router ao main.py                                             │
+│   5. Testar endpoints manualmente                                            │
+│                                                                               │
+│ Módulos PRIORITÁRIOS (mais controllers):                                     │
+│   → hr (25 controllers)                                                      │
+│   → financial (16 controllers)                                               │
+│   → campo (13 controllers)                                                   │
+│                                                                               │
+│ FASE 2 - REGENERAÇÃO ORVAL                                                   │
+│ ────────────────────────────────────────────────────────────────────────     │
+│   1. Baixar OpenAPI specs dos backends corrigidos                            │
+│   2. Executar orval:generate para cada módulo                                │
+│   3. Validar types gerados                                                   │
+│   4. Testar integração frontend                                              │
+│                                                                               │
+│ FASE 3 - CORREÇÃO REPORTS                                                    │
+│ ────────────────────────────────────────────────────────────────────────     │
+│   1. Investigar erro no backend do módulo reports                            │
+│   2. Corrigir spec OpenAPI inválido                                          │
+│   3. Regenerar types                                                         │
+│                                                                               │
+│ FASE 4 - LIMPEZA                                                             │
+│ ────────────────────────────────────────────────────────────────────────     │
+│   1. Avaliar configs órfãos                                                  │
+│   2. Consolidar ou remover duplicados                                        │
+│   3. Atualizar documentação                                                  │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ESTIMATIVAS                                                                  │
+├──────────────────────────────────────────────────────────────────────────────┤
+│ Tempo para criar routers backend:      ~3-4h (15 módulos)                   │
+│ Tempo para regenerar Orval:            ~30min                               │
+│ Tempo para corrigir reports:           ~30min                               │
+│ Tempo para limpeza:                    ~1h                                  │
+│                                                                               │
+│ TOTAL ESTIMADO: ~5-6 horas para 100% de cobertura                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ CONCLUSÃO                                                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│ ✅ CONQUISTAS:                                                               │
+│   → 100% dos módulos TÊM configs Orval                                       │
+│   → 48.4% dos módulos estão completamente funcionais                         │
+│   → Infraestrutura Orval está corretamente configurada                       │
+│                                                                               │
+│ ⚠️ BLOQUEIO PRINCIPAL:                                                       │
+│   → Backend não está expondo APIs (faltam routers)                           │
+│   → Não é problema do Orval, é problema de arquitetura backend               │
+│                                                                               │
+│ 🎯 PRÓXIMO PASSO CRÍTICO:                                                    │
+│   → Criar routers no backend para os 15 módulos pendentes                    │
+│   → Priorizar: hr, financial, campo (mais controllers)                       │
+│                                                                               │
+│ 📊 META ALCANÇÁVEL:                                                          │
+│   → 100% de cobertura em ~5-6 horas de trabalho backend                      │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+Relatórios gerados:
+  → /opt/conecta-pro/frontend/ORVAL_AUDIT_REPORT.md (detalhado)
+  → /opt/conecta-pro/frontend/ORVAL_AUDIT_SUMMARY.txt (este arquivo)

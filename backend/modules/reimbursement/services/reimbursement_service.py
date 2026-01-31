@@ -80,17 +80,17 @@ class ReimbursementService:
 
     async def list_requests(
         self,
-        condominio_id: UUID,
+        condominio_id: Optional[UUID],
         filters: Optional[ReimbursementRequestFilter] = None,
         skip: int = 0,
         limit: int = 100,
     ) -> Tuple[List[ReimbursementRequest], int]:
-        """Lista solicitações com filtros."""
+        """Lista solicitações com filtros. Se condominio_id for None, lista todos."""
         return await self.repo.list_requests(condominio_id, filters, skip, limit)
 
     async def list_my_requests(
         self,
-        condominio_id: UUID,
+        condominio_id: Optional[UUID],
         requester_id: UUID,
         filters: Optional[ReimbursementRequestFilter] = None,
         skip: int = 0,
@@ -185,10 +185,10 @@ class ReimbursementService:
 
     async def get_stats(
         self,
-        condominio_id: UUID,
+        condominio_id: Optional[UUID],
         requester_id: Optional[UUID] = None,
     ) -> ReimbursementRequestStats:
-        """Retorna estatísticas."""
+        """Retorna estatísticas. Se condominio_id for None, retorna stats de todos."""
         return await self.repo.get_stats(condominio_id, requester_id)
 
     # ==================== ITEMS ====================
@@ -363,9 +363,9 @@ class ReimbursementService:
 
     async def list_categories(
         self,
-        condominio_id: UUID,
+        condominio_id: Optional[UUID],
     ) -> List[ReimbursementCategory]:
-        """Lista categorias de reembolso."""
+        """Lista categorias de reembolso. Se condominio_id for None, lista todas."""
         return await self.repo.list_categories(condominio_id)
 
     async def get_category(

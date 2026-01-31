@@ -1,0 +1,186 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - API SEARCH",
+    "version": "2.0.0",
+    "description": "OpenAPI spec do módulo SEARCH - Busca Global (1 endpoint)"
+  },
+  "paths": {
+    "/api/v1/search/": {
+      "get": {
+        "tags": [
+          "Search - Busca Global",
+          "Search - Busca Global"
+        ],
+        "summary": "Global Search",
+        "description": "Busca global no sistema.\n\nBusca em:\n- Colaboradores (nome, CPF, matrícula)\n- Postos (nome, código)\n- Escalas (período, código)\n- Ocorrências (descrição, responsável)\n- Rondas (código, inspetor)\n\nRetorna no máximo 20 resultados ordenados por relevância.",
+        "operationId": "global_search_api_v1_search__get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Query de busca",
+              "title": "Q"
+            },
+            "description": "Query de busca"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Limite de resultados",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Limite de resultados"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "SearchResult": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "colaborador",
+              "posto",
+              "escala",
+              "ocorrencia",
+              "ronda"
+            ],
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "title",
+          "description",
+          "url"
+        ],
+        "title": "SearchResult",
+        "description": "Schema de resultado individual de busca."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "SearchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "took_ms": {
+            "type": "integer",
+            "title": "Took Ms",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "SearchResponse",
+        "description": "Schema de resposta da busca global."
+      }
+    }
+  }
+}

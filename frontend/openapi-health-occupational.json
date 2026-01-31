@@ -1,0 +1,3279 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - Health Occupational API",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/v1/health-occupational/pcmso/exames/agendar": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Agenda exame medico ocupacional",
+        "description": "Agenda exame medico (admissional, periodico, demissional, etc).",
+        "operationId": "schedule_medical_exam_api_v1_health_occupational_pcmso_exames_agendar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MedicalExamRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/exames/{exame_id}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Busca exame por ID",
+        "description": "Busca exame medico por ID.",
+        "operationId": "get_exam_api_v1_health_occupational_pcmso_exames__exame_id__get",
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do exame",
+              "title": "Exame Id"
+            },
+            "description": "ID do exame"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Atualiza exame medico",
+        "description": "Atualiza dados de exame medico.",
+        "operationId": "update_exam_api_v1_health_occupational_pcmso_exames__exame_id__patch",
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Exame Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MedicalExamUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/exames/funcionario/{funcionario_id}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Lista exames do funcionario",
+        "description": "Retorna historico de exames de um funcionario.",
+        "operationId": "list_employee_exams_api_v1_health_occupational_pcmso_exames_funcionario__funcionario_id__get",
+        "parameters": [
+          {
+            "name": "funcionario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID do funcionario",
+              "title": "Funcionario Id"
+            },
+            "description": "UUID do funcionario"
+          },
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por status",
+              "title": "Status Filter"
+            },
+            "description": "Filtrar por status"
+          },
+          {
+            "name": "tipo_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por tipo",
+              "title": "Tipo Filter"
+            },
+            "description": "Filtrar por tipo"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/exames/{exame_id}/confirmar": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Confirma agendamento de exame",
+        "description": "Confirma agendamento de exame.",
+        "operationId": "confirm_exam_api_v1_health_occupational_pcmso_exames__exame_id__confirmar_post",
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Exame Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/exames/{exame_id}/realizar": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Marca exame como realizado",
+        "description": "Marca exame como realizado.",
+        "operationId": "complete_exam_api_v1_health_occupational_pcmso_exames__exame_id__realizar_post",
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Exame Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/aso/emitir": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Emite ASO (Atestado de Saude Ocupacional)",
+        "description": "Emite ASO apos realizacao do exame medico.",
+        "operationId": "emit_aso_api_v1_health_occupational_pcmso_aso_emitir_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ASORequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/aso/{aso_id}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Busca ASO por ID",
+        "description": "Busca ASO por ID.",
+        "operationId": "get_aso_api_v1_health_occupational_pcmso_aso__aso_id__get",
+        "parameters": [
+          {
+            "name": "aso_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Aso Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/vencimentos": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Lista ASOs a vencer",
+        "description": "Retorna ASOs com vencimento proximo.",
+        "operationId": "list_expiring_asos_api_v1_health_occupational_pcmso_vencimentos_get",
+        "parameters": [
+          {
+            "name": "dias",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 180,
+              "minimum": 1,
+              "description": "Dias para vencimento",
+              "default": 30,
+              "title": "Dias"
+            },
+            "description": "Dias para vencimento"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/aso/{aso_id}/assinar": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Registra assinatura do funcionario no ASO",
+        "description": "Registra assinatura do funcionario no ASO.",
+        "operationId": "sign_aso_api_v1_health_occupational_pcmso_aso__aso_id__assinar_post",
+        "parameters": [
+          {
+            "name": "aso_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Aso Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/pcmso/estatisticas": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PCMSO - Exames Medicos (NR-7)"
+        ],
+        "summary": "Estatisticas do PCMSO",
+        "description": "Retorna estatisticas do PCMSO.",
+        "operationId": "get_statistics_api_v1_health_occupational_pcmso_estatisticas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/mapeamento": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Cria mapeamento de riscos",
+        "description": "Registra mapeamento de riscos ocupacionais de um setor.",
+        "operationId": "create_risk_mapping_api_v1_health_occupational_ppra_mapeamento_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskMappingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/mapeamento/{mapping_id}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Busca mapeamento por ID",
+        "description": "Busca mapeamento por ID.",
+        "operationId": "get_mapping_api_v1_health_occupational_ppra_mapeamento__mapping_id__get",
+        "parameters": [
+          {
+            "name": "mapping_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Mapping Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Atualiza mapeamento de riscos",
+        "description": "Atualiza mapeamento de riscos.",
+        "operationId": "update_mapping_api_v1_health_occupational_ppra_mapeamento__mapping_id__patch",
+        "parameters": [
+          {
+            "name": "mapping_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Mapping Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RiskMappingUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/mapeamentos": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Lista mapeamentos de risco",
+        "description": "Lista mapeamentos de risco.",
+        "operationId": "list_mappings_api_v1_health_occupational_ppra_mapeamentos_get",
+        "parameters": [
+          {
+            "name": "setor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por setor",
+              "title": "Setor"
+            },
+            "description": "Filtrar por setor"
+          },
+          {
+            "name": "ativo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por status",
+              "default": true,
+              "title": "Ativo"
+            },
+            "description": "Filtrar por status"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/riscos/{setor}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Consulta riscos por setor",
+        "description": "Retorna riscos mapeados de um setor.",
+        "operationId": "get_sector_risks_api_v1_health_occupational_ppra_riscos__setor__get",
+        "parameters": [
+          {
+            "name": "setor",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Nome do setor",
+              "title": "Setor"
+            },
+            "description": "Nome do setor"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/riscos/funcao/{funcao}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Consulta riscos por funcao",
+        "description": "Retorna riscos associados a uma funcao.",
+        "operationId": "get_function_risks_api_v1_health_occupational_ppra_riscos_funcao__funcao__get",
+        "parameters": [
+          {
+            "name": "funcao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "description": "Nome da funcao",
+              "title": "Funcao"
+            },
+            "description": "Nome da funcao"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/medidas-controle": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Adiciona medida de controle",
+        "description": "Adiciona medida de controle.",
+        "operationId": "add_control_measure_api_v1_health_occupational_ppra_medidas_controle_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlMeasureRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/medidas-controle/{measure_id}": {
+      "patch": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Atualiza medida de controle",
+        "description": "Atualiza medida de controle.",
+        "operationId": "update_control_measure_api_v1_health_occupational_ppra_medidas_controle__measure_id__patch",
+        "parameters": [
+          {
+            "name": "measure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Measure Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ControlMeasureUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/mapeamento/{mapping_id}/medidas-controle": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Lista medidas de controle de um mapeamento",
+        "description": "Lista medidas de controle de um mapeamento.",
+        "operationId": "list_control_measures_api_v1_health_occupational_ppra_mapeamento__mapping_id__medidas_controle_get",
+        "parameters": [
+          {
+            "name": "mapping_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Mapping Id"
+            }
+          },
+          {
+            "name": "status_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por status",
+              "title": "Status Filter"
+            },
+            "description": "Filtrar por status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/categorias": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Lista categorias de risco",
+        "description": "Retorna categorias de risco conforme NR-9.",
+        "operationId": "list_risk_categories_api_v1_health_occupational_ppra_categorias_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/ppra/estatisticas": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "PPRA/PGR - Riscos Ocupacionais (NR-9)"
+        ],
+        "summary": "Estatisticas do PPRA",
+        "description": "Retorna estatisticas do PPRA.",
+        "operationId": "get_statistics_api_v1_health_occupational_ppra_estatisticas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/cadastrar": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Cadastra novo EPI",
+        "description": "Cadastra novo modelo de EPI no sistema.",
+        "operationId": "create_epi_api_v1_health_occupational_epi_cadastrar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EPICreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/{epi_id}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Busca EPI por ID",
+        "description": "Busca EPI por ID.",
+        "operationId": "get_epi_api_v1_health_occupational_epi__epi_id__get",
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Epi Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Atualiza EPI",
+        "description": "Atualiza dados de EPI.",
+        "operationId": "update_epi_api_v1_health_occupational_epi__epi_id__patch",
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Epi Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EPIUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Desativa EPI",
+        "description": "Desativa EPI (soft delete).",
+        "operationId": "deactivate_epi_api_v1_health_occupational_epi__epi_id__delete",
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Epi Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Lista EPIs cadastrados",
+        "description": "Lista EPIs cadastrados.",
+        "operationId": "list_epis_api_v1_health_occupational_epi__get",
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por categoria",
+              "title": "Categoria"
+            },
+            "description": "Filtrar por categoria"
+          },
+          {
+            "name": "ativo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por status",
+              "default": true,
+              "title": "Ativo"
+            },
+            "description": "Filtrar por status"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/entregar": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Registra entrega de EPI",
+        "description": "Registra entrega de EPI para funcionario (Ficha de EPI).",
+        "operationId": "deliver_epi_api_v1_health_occupational_epi_entregar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EPIDeliveryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/entrega/{delivery_id}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Busca entrega por ID",
+        "description": "Busca entrega por ID.",
+        "operationId": "get_delivery_api_v1_health_occupational_epi_entrega__delivery_id__get",
+        "parameters": [
+          {
+            "name": "delivery_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Delivery Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/entrega/{delivery_id}/devolver": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Registra devolucao de EPI",
+        "description": "Registra devolucao de EPI.",
+        "operationId": "return_epi_api_v1_health_occupational_epi_entrega__delivery_id__devolver_post",
+        "parameters": [
+          {
+            "name": "delivery_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Delivery Id"
+            }
+          },
+          {
+            "name": "motivo",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Motivo da devolucao",
+              "title": "Motivo"
+            },
+            "description": "Motivo da devolucao"
+          },
+          {
+            "name": "condicao",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Condicao do EPI (bom, danificado, etc)",
+              "title": "Condicao"
+            },
+            "description": "Condicao do EPI (bom, danificado, etc)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/entrega/{delivery_id}/assinar": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Registra assinatura do funcionario",
+        "description": "Registra assinatura do funcionario na entrega.",
+        "operationId": "sign_delivery_api_v1_health_occupational_epi_entrega__delivery_id__assinar_post",
+        "parameters": [
+          {
+            "name": "delivery_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Delivery Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/ficha/{funcionario_id}": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Consulta ficha de EPI do funcionario",
+        "description": "Retorna historico de EPIs entregues ao funcionario.",
+        "operationId": "get_epi_record_api_v1_health_occupational_epi_ficha__funcionario_id__get",
+        "parameters": [
+          {
+            "name": "funcionario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID do funcionario",
+              "title": "Funcionario Id"
+            },
+            "description": "UUID do funcionario"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/estoque": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Consulta estoque de EPIs",
+        "description": "Retorna estoque atual de todos os EPIs.",
+        "operationId": "get_epi_inventory_api_v1_health_occupational_epi_estoque_get",
+        "parameters": [
+          {
+            "name": "categoria",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por categoria",
+              "title": "Categoria"
+            },
+            "description": "Filtrar por categoria"
+          },
+          {
+            "name": "baixo_estoque",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Apenas com estoque baixo",
+              "default": false,
+              "title": "Baixo Estoque"
+            },
+            "description": "Apenas com estoque baixo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/estoque/{epi_id}": {
+      "patch": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Atualiza estoque de EPI",
+        "description": "Atualiza estoque de EPI.",
+        "operationId": "update_inventory_api_v1_health_occupational_epi_estoque__epi_id__patch",
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Epi Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EPIInventoryUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/estoque/{epi_id}/entrada": {
+      "post": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Registra entrada de estoque",
+        "description": "Registra entrada de itens no estoque.",
+        "operationId": "add_to_inventory_api_v1_health_occupational_epi_estoque__epi_id__entrada_post",
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Epi Id"
+            }
+          },
+          {
+            "name": "quantidade",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Quantidade a adicionar",
+              "title": "Quantidade"
+            },
+            "description": "Quantidade a adicionar"
+          },
+          {
+            "name": "lote",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Numero do lote",
+              "title": "Lote"
+            },
+            "description": "Numero do lote"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/categorias": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Lista categorias de EPI",
+        "description": "Retorna categorias de EPI conforme NR-6.",
+        "operationId": "list_epi_categories_api_v1_health_occupational_epi_categorias_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/epi/estatisticas": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "EPI - Equipamentos de Protecao (NR-6)"
+        ],
+        "summary": "Estatisticas de EPI",
+        "description": "Retorna estatisticas de EPI.",
+        "operationId": "get_statistics_api_v1_health_occupational_epi_estatisticas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/status": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "Health - Status do Modulo"
+        ],
+        "summary": "Status do modulo Saude Ocupacional",
+        "description": "Retorna status de todos os componentes.",
+        "operationId": "get_health_status_api_v1_health_occupational_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/health": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "Health - Status do Modulo"
+        ],
+        "summary": "Health check",
+        "description": "Verifica saude do modulo.",
+        "operationId": "health_check_api_v1_health_occupational_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Health Check Api V1 Health Occupational Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health-occupational/info": {
+      "get": {
+        "tags": [
+          "Health - Saude Ocupacional",
+          "Health - Status do Modulo"
+        ],
+        "summary": "Informacoes do modulo",
+        "description": "Retorna informacoes detalhadas do modulo.\n\nReturns:\n    Dict com informacoes do modulo.",
+        "operationId": "get_module_info_api_v1_health_occupational_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Module Info Api V1 Health Occupational Info Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ASORequest": {
+        "properties": {
+          "exame_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Exame Id",
+            "description": "ID do exame realizado"
+          },
+          "resultado": {
+            "type": "string",
+            "pattern": "^(apto|inapto|apto_com_restricoes)$",
+            "title": "Resultado",
+            "description": "Resultado do exame"
+          },
+          "restricoes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Restricoes",
+            "description": "Restricoes (se apto com restricoes)"
+          },
+          "validade_dias": {
+            "type": "integer",
+            "maximum": 730.0,
+            "minimum": 30.0,
+            "title": "Validade Dias",
+            "description": "Validade do ASO em dias",
+            "default": 365
+          },
+          "medico_responsavel": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Medico Responsavel",
+            "description": "Nome do medico responsavel"
+          },
+          "crm": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 4,
+            "title": "Crm",
+            "description": "CRM do medico"
+          },
+          "uf_crm": {
+            "type": "string",
+            "maxLength": 2,
+            "minLength": 2,
+            "title": "Uf Crm",
+            "description": "UF do CRM",
+            "default": "AM"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exame_id",
+          "resultado",
+          "medico_responsavel",
+          "crm"
+        ],
+        "title": "ASORequest",
+        "description": "Request para emissao de ASO."
+      },
+      "ControlMeasureRequest": {
+        "properties": {
+          "mapeamento_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Mapeamento Id",
+            "description": "ID do mapeamento"
+          },
+          "tipo": {
+            "type": "string",
+            "pattern": "^(eliminacao|substituicao|controle_engenharia|sinalizacao|controle_administrativo|epi|epc)$",
+            "title": "Tipo",
+            "description": "Tipo da medida"
+          },
+          "descricao": {
+            "type": "string",
+            "minLength": 10,
+            "title": "Descricao",
+            "description": "Descricao da medida"
+          },
+          "riscos_controlados": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Riscos Controlados",
+            "description": "IDs dos riscos controlados"
+          },
+          "responsavel": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsavel"
+          },
+          "data_prevista": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Prevista"
+          },
+          "custo_estimado": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custo Estimado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mapeamento_id",
+          "tipo",
+          "descricao"
+        ],
+        "title": "ControlMeasureRequest",
+        "description": "Request para medida de controle."
+      },
+      "ControlMeasureUpdateRequest": {
+        "properties": {
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(pendente|em_andamento|implementada|cancelada)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "responsavel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsavel"
+          },
+          "data_prevista": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Prevista"
+          },
+          "data_implementacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Implementacao"
+          },
+          "eficaz": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eficaz"
+          },
+          "data_verificacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Verificacao"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "custo_estimado": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custo Estimado"
+          }
+        },
+        "type": "object",
+        "title": "ControlMeasureUpdateRequest",
+        "description": "Request para atualizacao de medida de controle."
+      },
+      "EPICreateRequest": {
+        "properties": {
+          "nome": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Nome",
+            "description": "Nome do EPI"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "codigo_interno": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codigo Interno"
+          },
+          "categoria": {
+            "type": "string",
+            "pattern": "^(cabeca|olhos|face|auditivo|respiratorio|tronco|membros_superiores|membros_inferiores|corpo_inteiro|quedas)$",
+            "title": "Categoria",
+            "description": "Categoria do EPI"
+          },
+          "ca_number": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 4,
+            "title": "Ca Number",
+            "description": "Numero do CA"
+          },
+          "ca_validade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ca Validade",
+            "description": "Validade do CA"
+          },
+          "fabricante": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Fabricante",
+            "description": "Fabricante"
+          },
+          "modelo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modelo"
+          },
+          "validade_dias": {
+            "type": "integer",
+            "maximum": 1825.0,
+            "minimum": 30.0,
+            "title": "Validade Dias",
+            "description": "Validade em dias apos entrega",
+            "default": 365
+          },
+          "especificacoes": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Especificacoes"
+          },
+          "riscos_protegidos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Riscos Protegidos"
+          },
+          "instrucoes_uso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes Uso"
+          },
+          "instrucoes_higienizacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes Higienizacao"
+          },
+          "instrucoes_armazenamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes Armazenamento"
+          },
+          "imagem_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagem Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nome",
+          "categoria",
+          "ca_number",
+          "fabricante"
+        ],
+        "title": "EPICreateRequest",
+        "description": "Request para cadastro de EPI."
+      },
+      "EPIDeliveryRequest": {
+        "properties": {
+          "funcionario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Funcionario Id",
+            "description": "UUID do funcionario"
+          },
+          "epi_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Epi Id",
+            "description": "ID do EPI"
+          },
+          "quantidade": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Quantidade",
+            "description": "Quantidade",
+            "default": 1
+          },
+          "motivo": {
+            "type": "string",
+            "pattern": "^(admissao|substituicao|desgaste|perda|troca_funcao|vencimento)$",
+            "title": "Motivo",
+            "description": "Motivo da entrega"
+          },
+          "ca_number": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 4,
+            "title": "Ca Number",
+            "description": "Numero do CA"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          },
+          "treinamento_realizado": {
+            "type": "boolean",
+            "title": "Treinamento Realizado",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "funcionario_id",
+          "epi_id",
+          "motivo",
+          "ca_number"
+        ],
+        "title": "EPIDeliveryRequest",
+        "description": "Request para entrega de EPI."
+      },
+      "EPIInventoryUpdateRequest": {
+        "properties": {
+          "quantidade_atual": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantidade Atual"
+          },
+          "quantidade_minima": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantidade Minima"
+          },
+          "quantidade_maxima": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantidade Maxima"
+          },
+          "local_armazenamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Armazenamento"
+          },
+          "lote_atual": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lote Atual"
+          },
+          "data_validade_lote": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Validade Lote"
+          },
+          "custo_unitario": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custo Unitario"
+          },
+          "fornecedor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fornecedor"
+          }
+        },
+        "type": "object",
+        "title": "EPIInventoryUpdateRequest",
+        "description": "Request para atualizacao de estoque."
+      },
+      "EPIUpdateRequest": {
+        "properties": {
+          "nome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nome"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao"
+          },
+          "ca_validade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ca Validade"
+          },
+          "validade_dias": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1825.0,
+                "minimum": 30.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validade Dias"
+          },
+          "especificacoes": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Especificacoes"
+          },
+          "riscos_protegidos": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Riscos Protegidos"
+          },
+          "instrucoes_uso": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes Uso"
+          },
+          "instrucoes_higienizacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes Higienizacao"
+          },
+          "instrucoes_armazenamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrucoes Armazenamento"
+          },
+          "imagem_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imagem Url"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "EPIUpdateRequest",
+        "description": "Request para atualizacao de EPI."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MedicalExamRequest": {
+        "properties": {
+          "funcionario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Funcionario Id",
+            "description": "UUID do funcionario"
+          },
+          "tipo_exame": {
+            "type": "string",
+            "pattern": "^(admissional|periodico|retorno_trabalho|mudanca_funcao|demissional)$",
+            "title": "Tipo Exame",
+            "description": "Tipo do exame"
+          },
+          "data_agendamento": {
+            "type": "string",
+            "format": "date",
+            "title": "Data Agendamento",
+            "description": "Data do agendamento"
+          },
+          "hora_agendamento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{2}:\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hora Agendamento",
+            "description": "Hora do agendamento (HH:MM)"
+          },
+          "funcao": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Funcao",
+            "description": "Funcao do funcionario"
+          },
+          "setor": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Setor",
+            "description": "Setor de trabalho"
+          },
+          "riscos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Riscos",
+            "description": "Riscos ocupacionais da funcao"
+          },
+          "exames_complementares": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Exames Complementares",
+            "description": "Exames complementares (hemograma, audiometria, etc)"
+          },
+          "local_realizacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Realizacao",
+            "description": "Local de realizacao do exame"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes",
+            "description": "Observacoes adicionais"
+          }
+        },
+        "type": "object",
+        "required": [
+          "funcionario_id",
+          "tipo_exame",
+          "data_agendamento",
+          "funcao",
+          "setor"
+        ],
+        "title": "MedicalExamRequest",
+        "description": "Request para agendamento de exame medico."
+      },
+      "MedicalExamUpdateRequest": {
+        "properties": {
+          "data_agendamento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Agendamento"
+          },
+          "hora_agendamento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{2}:\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hora Agendamento"
+          },
+          "local_realizacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Realizacao"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(agendado|confirmado|realizado|cancelado|nao_compareceu)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "data_realizacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Realizacao"
+          },
+          "observacoes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observacoes"
+          }
+        },
+        "type": "object",
+        "title": "MedicalExamUpdateRequest",
+        "description": "Request para atualizacao de exame medico."
+      },
+      "OccupationalRiskRequest": {
+        "properties": {
+          "categoria": {
+            "type": "string",
+            "pattern": "^(fisico|quimico|biologico|ergonomico|acidente)$",
+            "title": "Categoria",
+            "description": "Categoria do risco"
+          },
+          "agente": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Agente",
+            "description": "Agente de risco"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao",
+            "description": "Descricao do risco"
+          },
+          "fonte_geradora": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Fonte Geradora"
+          },
+          "meio_propagacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meio Propagacao"
+          },
+          "funcoes_expostas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Funcoes Expostas"
+          },
+          "numero_expostos": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Expostos"
+          },
+          "tempo_exposicao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tempo Exposicao"
+          },
+          "probabilidade": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Probabilidade"
+          },
+          "severidade": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severidade"
+          },
+          "valor_medido": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor Medido"
+          },
+          "unidade_medida": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unidade Medida"
+          },
+          "limite_tolerancia": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limite Tolerancia"
+          },
+          "medidas_existentes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Medidas Existentes"
+          },
+          "epis_recomendados": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Epis Recomendados"
+          },
+          "exames_requeridos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Exames Requeridos"
+          },
+          "prioridade": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Prioridade",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "required": [
+          "categoria",
+          "agente",
+          "fonte_geradora"
+        ],
+        "title": "OccupationalRiskRequest",
+        "description": "Request para risco ocupacional."
+      },
+      "RiskMappingRequest": {
+        "properties": {
+          "setor": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Setor",
+            "description": "Setor a mapear"
+          },
+          "descricao_setor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao Setor",
+            "description": "Descricao do setor"
+          },
+          "localizacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localizacao"
+          },
+          "funcoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Funcoes",
+            "description": "Funcoes do setor"
+          },
+          "numero_trabalhadores": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Trabalhadores"
+          },
+          "avaliador": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Avaliador",
+            "description": "Nome do avaliador"
+          },
+          "cargo_avaliador": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cargo Avaliador"
+          },
+          "riscos": {
+            "items": {
+              "$ref": "#/components/schemas/OccupationalRiskRequest"
+            },
+            "type": "array",
+            "title": "Riscos",
+            "description": "Riscos identificados"
+          },
+          "medidas_controle": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Medidas Controle",
+            "description": "Medidas de controle existentes"
+          },
+          "data_proxima_revisao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Proxima Revisao"
+          }
+        },
+        "type": "object",
+        "required": [
+          "setor",
+          "funcoes",
+          "avaliador"
+        ],
+        "title": "RiskMappingRequest",
+        "description": "Request para mapeamento de riscos."
+      },
+      "RiskMappingUpdateRequest": {
+        "properties": {
+          "descricao_setor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descricao Setor"
+          },
+          "localizacao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Localizacao"
+          },
+          "funcoes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funcoes"
+          },
+          "numero_trabalhadores": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Trabalhadores"
+          },
+          "nivel_risco_geral": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nivel Risco Geral"
+          },
+          "data_proxima_revisao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Proxima Revisao"
+          },
+          "ativo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ativo"
+          }
+        },
+        "type": "object",
+        "title": "RiskMappingUpdateRequest",
+        "description": "Request para atualizacao de mapeamento."
+      },
+      "StandardResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "Sucesso da operacao"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Mensagem descritiva"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data",
+            "description": "Dados retornados"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Timestamp da resposta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "StandardResponse",
+        "description": "Response padrao da API."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

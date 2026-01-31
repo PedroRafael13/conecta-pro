@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams,
@@ -19,170 +32,897 @@ import type {
   BankAccountUpdate,
   GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams,
   GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams,
+  HTTPValidationError,
   ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams,
   TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost200,
   TransferRequest
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialBankAccounts = () => {
+
 /**
  * Cria nova conta bancária.
  * @summary Criar conta bancária
  */
-const createBankAccountApiV1FinancialBankAccountsBankAccountsPost = <TData = AxiosResponse<BankAccountResponse>>(
-    bankAccountCreate: BankAccountCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-accounts/bank-accounts/`,
-      bankAccountCreate,options
-    );
-  }
-/**
+export const createBankAccountApiV1FinancialBankAccountsBankAccountsPost = (
+    bankAccountCreate: BankAccountCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: bankAccountCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateBankAccountApiV1FinancialBankAccountsBankAccountsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBankAccountApiV1FinancialBankAccountsBankAccountsPost>>, TError,{data: BankAccountCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createBankAccountApiV1FinancialBankAccountsBankAccountsPost>>, TError,{data: BankAccountCreate}, TContext> => {
+
+const mutationKey = ['createBankAccountApiV1FinancialBankAccountsBankAccountsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBankAccountApiV1FinancialBankAccountsBankAccountsPost>>, {data: BankAccountCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createBankAccountApiV1FinancialBankAccountsBankAccountsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBankAccountApiV1FinancialBankAccountsBankAccountsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createBankAccountApiV1FinancialBankAccountsBankAccountsPost>>>
+    export type CreateBankAccountApiV1FinancialBankAccountsBankAccountsPostMutationBody = BankAccountCreate
+    export type CreateBankAccountApiV1FinancialBankAccountsBankAccountsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar conta bancária
+ */
+export const useCreateBankAccountApiV1FinancialBankAccountsBankAccountsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBankAccountApiV1FinancialBankAccountsBankAccountsPost>>, TError,{data: BankAccountCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createBankAccountApiV1FinancialBankAccountsBankAccountsPost>>,
+        TError,
+        {data: BankAccountCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateBankAccountApiV1FinancialBankAccountsBankAccountsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista contas bancárias com filtros.
  * @summary Listar contas bancárias
  */
-const listBankAccountsApiV1FinancialBankAccountsBankAccountsGet = <TData = AxiosResponse<BankAccountResponse[]>>(
-    params: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-accounts/bank-accounts/`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listBankAccountsApiV1FinancialBankAccountsBankAccountsGet = (
+    params: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse[]>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListBankAccountsApiV1FinancialBankAccountsBankAccountsGetQueryKey = (params?: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams,) => {
+    return [
+    `/api/v1/financial/bank-accounts/bank-accounts/`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListBankAccountsApiV1FinancialBankAccountsBankAccountsGetQueryOptions = <TData = Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError = HTTPValidationError>(params: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListBankAccountsApiV1FinancialBankAccountsBankAccountsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>> = ({ signal }) => listBankAccountsApiV1FinancialBankAccountsBankAccountsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>>
+export type ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetQueryError = HTTPValidationError
+
+
+export function useListBankAccountsApiV1FinancialBankAccountsBankAccountsGet<TData = Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError = HTTPValidationError>(
+ params: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListBankAccountsApiV1FinancialBankAccountsBankAccountsGet<TData = Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError = HTTPValidationError>(
+ params: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListBankAccountsApiV1FinancialBankAccountsBankAccountsGet<TData = Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError = HTTPValidationError>(
+ params: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar contas bancárias
+ */
+
+export function useListBankAccountsApiV1FinancialBankAccountsBankAccountsGet<TData = Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError = HTTPValidationError>(
+ params: ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listBankAccountsApiV1FinancialBankAccountsBankAccountsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListBankAccountsApiV1FinancialBankAccountsBankAccountsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna conta bancária principal do condomínio.
  * @summary Obter conta principal
  */
-const getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet = <TData = AxiosResponse<BankAccountResponse>>(
-    params: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-accounts/bank-accounts/main`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet = (
+    params: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/main`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetQueryKey = (params?: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams,) => {
+    return [
+    `/api/v1/financial/bank-accounts/bank-accounts/main`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetQueryOptions = <TData = Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError = HTTPValidationError>(params: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>> = ({ signal }) => getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetQueryResult = NonNullable<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>>
+export type GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetQueryError = HTTPValidationError
+
+
+export function useGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGet<TData = Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError = HTTPValidationError>(
+ params: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGet<TData = Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError = HTTPValidationError>(
+ params: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>,
+          TError,
+          Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGet<TData = Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError = HTTPValidationError>(
+ params: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter conta principal
+ */
+
+export function useGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGet<TData = Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError = HTTPValidationError>(
+ params: GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna estatísticas das contas bancárias.
  * @summary Estatísticas das contas
  */
-const getStatsApiV1FinancialBankAccountsBankAccountsStatsGet = <TData = AxiosResponse<BankAccountStats>>(
-    params: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-accounts/bank-accounts/stats`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getStatsApiV1FinancialBankAccountsBankAccountsStatsGet = (
+    params: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountStats>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/stats`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetStatsApiV1FinancialBankAccountsBankAccountsStatsGetQueryKey = (params?: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams,) => {
+    return [
+    `/api/v1/financial/bank-accounts/bank-accounts/stats`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetStatsApiV1FinancialBankAccountsBankAccountsStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError = HTTPValidationError>(params: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStatsApiV1FinancialBankAccountsBankAccountsStatsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>> = ({ signal }) => getStatsApiV1FinancialBankAccountsBankAccountsStatsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>>
+export type GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetQueryError = HTTPValidationError
+
+
+export function useGetStatsApiV1FinancialBankAccountsBankAccountsStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStatsApiV1FinancialBankAccountsBankAccountsStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStatsApiV1FinancialBankAccountsBankAccountsStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Estatísticas das contas
+ */
+
+export function useGetStatsApiV1FinancialBankAccountsBankAccountsStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError = HTTPValidationError>(
+ params: GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1FinancialBankAccountsBankAccountsStatsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStatsApiV1FinancialBankAccountsBankAccountsStatsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna conta bancária pelo ID.
  * @summary Obter conta bancária
  */
-const getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet = <TData = AxiosResponse<BankAccountResponse>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/bank-accounts/bank-accounts/${accountId}`,options
-    );
-  }
+export const getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet = (
+    accountId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/${accountId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGetQueryKey = (accountId?: string,) => {
+    return [
+    `/api/v1/financial/bank-accounts/bank-accounts/${accountId}`
+    ] as const;
+    }
+
+    
+export const getGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError = HTTPValidationError>(accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGetQueryKey(accountId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>> = ({ signal }) => getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet(accountId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(accountId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>>
+export type GetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGetQueryError = HTTPValidationError
+
+
+export function useGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter conta bancária
+ */
+
+export function useGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet<TData = Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError = HTTPValidationError>(
+ accountId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGetQueryOptions(accountId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza conta bancária.
  * @summary Atualizar conta bancária
  */
-const updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut = <TData = AxiosResponse<BankAccountResponse>>(
+export const updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut = (
     accountId: string,
-    bankAccountUpdate: BankAccountUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/bank-accounts/bank-accounts/${accountId}`,
-      bankAccountUpdate,options
-    );
-  }
-/**
+    bankAccountUpdate: BankAccountUpdate,
+ ) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/${accountId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: bankAccountUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut>>, TError,{accountId: string;data: BankAccountUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut>>, TError,{accountId: string;data: BankAccountUpdate}, TContext> => {
+
+const mutationKey = ['updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut>>, {accountId: string;data: BankAccountUpdate}> = (props) => {
+          const {accountId,data} = props ?? {};
+
+          return  updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut(accountId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut>>>
+    export type UpdateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPutMutationBody = BankAccountUpdate
+    export type UpdateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar conta bancária
+ */
+export const useUpdateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut>>, TError,{accountId: string;data: BankAccountUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut>>,
+        TError,
+        {accountId: string;data: BankAccountUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui conta bancária (soft delete).
  * @summary Excluir conta bancária
  */
-const deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete = <TData = AxiosResponse<void>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/bank-accounts/bank-accounts/${accountId}`,options
-    );
-  }
-/**
+export const deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete = (
+    accountId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/${accountId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete>>, TError,{accountId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete>>, TError,{accountId: string}, TContext> => {
+
+const mutationKey = ['deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete>>, {accountId: string}> = (props) => {
+          const {accountId} = props ?? {};
+
+          return  deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete(accountId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete>>>
+    
+    export type DeleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir conta bancária
+ */
+export const useDeleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete>>, TError,{accountId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete>>,
+        TError,
+        {accountId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Ativa conta bancária.
  * @summary Ativar conta bancária
  */
-const activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost = <TData = AxiosResponse<BankAccountResponse>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/activate`,undefined,options
-    );
-  }
-/**
+export const activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost = (
+    accountId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/activate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getActivateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost>>, TError,{accountId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost>>, TError,{accountId: string}, TContext> => {
+
+const mutationKey = ['activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost>>, {accountId: string}> = (props) => {
+          const {accountId} = props ?? {};
+
+          return  activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost(accountId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ActivateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost>>>
+    
+    export type ActivateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Ativar conta bancária
+ */
+export const useActivateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost>>, TError,{accountId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost>>,
+        TError,
+        {accountId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getActivateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Suspende conta bancária.
  * @summary Suspender conta bancária
  */
-const suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost = <TData = AxiosResponse<BankAccountResponse>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/suspend`,undefined,options
-    );
-  }
-/**
+export const suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost = (
+    accountId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/suspend`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getSuspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost>>, TError,{accountId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost>>, TError,{accountId: string}, TContext> => {
+
+const mutationKey = ['suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost>>, {accountId: string}> = (props) => {
+          const {accountId} = props ?? {};
+
+          return  suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost(accountId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPostMutationResult = NonNullable<Awaited<ReturnType<typeof suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost>>>
+    
+    export type SuspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Suspender conta bancária
+ */
+export const useSuspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost>>, TError,{accountId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost>>,
+        TError,
+        {accountId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getSuspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Define conta como principal do condomínio.
  * @summary Definir como conta principal
  */
-const setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost = <TData = AxiosResponse<BankAccountResponse>>(
-    accountId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/set-main`,undefined,options
-    );
-  }
-/**
+export const setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost = (
+    accountId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/set-main`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getSetAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost>>, TError,{accountId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost>>, TError,{accountId: string}, TContext> => {
+
+const mutationKey = ['setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost>>, {accountId: string}> = (props) => {
+          const {accountId} = props ?? {};
+
+          return  setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost(accountId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPostMutationResult = NonNullable<Awaited<ReturnType<typeof setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost>>>
+    
+    export type SetAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Definir como conta principal
+ */
+export const useSetAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost>>, TError,{accountId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost>>,
+        TError,
+        {accountId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getSetAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Realiza transferência entre contas bancárias.
  * @summary Transferir entre contas
  */
-const transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost = <TData = AxiosResponse<TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost200>>(
-    transferRequest: TransferRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-accounts/bank-accounts/transfer`,
-      transferRequest,options
-    );
-  }
-/**
+export const transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost = (
+    transferRequest: TransferRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost200>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/transfer`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: transferRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getTransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost>>, TError,{data: TransferRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost>>, TError,{data: TransferRequest}, TContext> => {
+
+const mutationKey = ['transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost>>, {data: TransferRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPostMutationResult = NonNullable<Awaited<ReturnType<typeof transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost>>>
+    export type TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPostMutationBody = TransferRequest
+    export type TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Transferir entre contas
+ */
+export const useTransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost>>, TError,{data: TransferRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost>>,
+        TError,
+        {data: TransferRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getTransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Ajusta saldo da conta bancária (uso administrativo).
  * @summary Ajustar saldo
  */
-const adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost = <TData = AxiosResponse<BankAccountResponse>>(
+export const adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost = (
     accountId: string,
-    params: AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/adjust-balance`,undefined,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {createBankAccountApiV1FinancialBankAccountsBankAccountsPost,listBankAccountsApiV1FinancialBankAccountsBankAccountsGet,getMainAccountApiV1FinancialBankAccountsBankAccountsMainGet,getStatsApiV1FinancialBankAccountsBankAccountsStatsGet,getBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet,updateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPut,deleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDelete,activateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePost,suspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPost,setAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPost,transferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost,adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost}};
-export type CreateBankAccountApiV1FinancialBankAccountsBankAccountsPostResult = AxiosResponse<BankAccountResponse>
-export type ListBankAccountsApiV1FinancialBankAccountsBankAccountsGetResult = AxiosResponse<BankAccountResponse[]>
-export type GetMainAccountApiV1FinancialBankAccountsBankAccountsMainGetResult = AxiosResponse<BankAccountResponse>
-export type GetStatsApiV1FinancialBankAccountsBankAccountsStatsGetResult = AxiosResponse<BankAccountStats>
-export type GetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGetResult = AxiosResponse<BankAccountResponse>
-export type UpdateBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdPutResult = AxiosResponse<BankAccountResponse>
-export type DeleteBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdDeleteResult = AxiosResponse<void>
-export type ActivateAccountApiV1FinancialBankAccountsBankAccountsAccountIdActivatePostResult = AxiosResponse<BankAccountResponse>
-export type SuspendAccountApiV1FinancialBankAccountsBankAccountsAccountIdSuspendPostResult = AxiosResponse<BankAccountResponse>
-export type SetAsMainAccountApiV1FinancialBankAccountsBankAccountsAccountIdSetMainPostResult = AxiosResponse<BankAccountResponse>
-export type TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPostResult = AxiosResponse<TransferBetweenAccountsApiV1FinancialBankAccountsBankAccountsTransferPost200>
-export type AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostResult = AxiosResponse<BankAccountResponse>
+    params: AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<BankAccountResponse>(
+      {url: `/api/v1/financial/bank-accounts/bank-accounts/${accountId}/adjust-balance`, method: 'POST',
+        params, signal
+    },
+      );
+    }
+  
+
+
+export const getAdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost>>, TError,{accountId: string;params: AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost>>, TError,{accountId: string;params: AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams}, TContext> => {
+
+const mutationKey = ['adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost>>, {accountId: string;params: AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams}> = (props) => {
+          const {accountId,params} = props ?? {};
+
+          return  adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost(accountId,params,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostMutationResult = NonNullable<Awaited<ReturnType<typeof adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost>>>
+    
+    export type AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Ajustar saldo
+ */
+export const useAdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost>>, TError,{accountId: string;params: AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof adjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePost>>,
+        TError,
+        {accountId: string;params: AdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostParams},
+        TContext
+      > => {
+
+      const mutationOptions = getAdjustBalanceApiV1FinancialBankAccountsBankAccountsAccountIdAdjustBalancePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

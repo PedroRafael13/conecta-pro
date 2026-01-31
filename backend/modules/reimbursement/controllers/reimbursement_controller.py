@@ -46,7 +46,21 @@ def get_condominio_id(user: CurrentActiveUser) -> UUID:
     )
 
 
+def get_condominio_id_optional(user: CurrentActiveUser) -> Optional[UUID]:
+    """Extrai condominio_id do usuário. Retorna None para admins."""
+    # Admins podem ver todos os reembolsos
+    if hasattr(user, "role") and user.role == "admin":
+        return None
+    if hasattr(user, "condominio_id") and user.condominio_id:
+        return user.condominio_id
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Usuário não possui condomínio associado",
+    )
+
+
 CondominioId = Annotated[UUID, Depends(get_condominio_id)]
+CondominioIdOptional = Annotated[Optional[UUID], Depends(get_condominio_id_optional)]
 
 
 # ==================== SOLICITAÇÕES ====================
@@ -56,15 +70,34 @@ CondominioId = Annotated[UUID, Depends(get_condominio_id)]
 async def create_reimbursement(
     data: ReimbursementRequestCreate,
     user: CurrentActiveUser,
-    condominio_id: CondominioId,
+    condominio_id: CondominioIdOptional,
     db: AsyncSession = Depends(get_db),
 ):
     """
     Cria uma nova solicitação de reembolso.
 
     A solicitação é criada em status RASCUNHO.
+    Admins precisam ter um condomínio associado ou o sistema usará um padrão.
     """
     service = ReimbursementService(db)
+
+    # Se admin sem condomínio, usa o primeiro condomínio disponível
+    if condominio_id is None:
+        from sqlalchemy import text
+        # Tenta tabela condominios primeiro, depois tenants
+        result = await db.execute(text("SELECT id FROM condominios WHERE ativo = true LIMIT 1"))
+        row = result.fetchone()
+        if not row:
+            result = await db.execute(text("SELECT id FROM tenants LIMIT 1"))
+            row = result.fetchone()
+        if row:
+            condominio_id = row[0]
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Nenhum condomínio disponível para criar reembolso",
+            )
+
     request = await service.create_request(condominio_id, user.id, data)
     return request
 
@@ -72,7 +105,7 @@ async def create_reimbursement(
 @router.get("/", response_model=PaginatedReimbursementResponse)
 async def list_reimbursements(
     user: CurrentActiveUser,
-    condominio_id: CondominioId,
+    condominio_id: CondominioIdOptional,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -84,7 +117,7 @@ async def list_reimbursements(
     cost_center: Optional[str] = Query(None),
     project: Optional[str] = Query(None),
 ):
-    """Lista todas as solicitações de reembolso (para gestores)."""
+    """Lista todas as solicitações de reembolso (para gestores). Admins veem todos."""
     from datetime import date
 
     filters = ReimbursementRequestFilter(
@@ -115,7 +148,7 @@ async def list_reimbursements(
 @router.get("/my", response_model=PaginatedReimbursementResponse)
 async def list_my_reimbursements(
     user: CurrentActiveUser,
-    condominio_id: CondominioId,
+    condominio_id: CondominioIdOptional,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -144,11 +177,11 @@ async def list_my_reimbursements(
 @router.get("/stats", response_model=ReimbursementRequestStats)
 async def get_stats(
     user: CurrentActiveUser,
-    condominio_id: CondominioId,
+    condominio_id: CondominioIdOptional,
     db: AsyncSession = Depends(get_db),
     my_only: bool = Query(False),
 ):
-    """Retorna estatísticas de reembolsos."""
+    """Retorna estatísticas de reembolsos. Admins veem todos."""
     service = ReimbursementService(db)
     requester_id = user.id if my_only else None
     return await service.get_stats(condominio_id, requester_id)
@@ -157,10 +190,10 @@ async def get_stats(
 @router.get("/categories")
 async def list_categories(
     user: CurrentActiveUser,
-    condominio_id: CondominioId,
+    condominio_id: CondominioIdOptional,
     db: AsyncSession = Depends(get_db),
 ):
-    """Lista categorias de reembolso disponíveis."""
+    """Lista categorias de reembolso disponíveis. Admins veem todas."""
     service = ReimbursementService(db)
     categories = await service.list_categories(condominio_id)
 

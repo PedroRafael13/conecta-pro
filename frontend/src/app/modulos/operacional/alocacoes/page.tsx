@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Ban,
   Plus,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,6 +61,16 @@ export default function AlocacoesPage() {
   const [terminateData, setTerminateData] = useState<AllocationTerminate>({
     end_date: '',
     termination_reason: '',
+    notes: '',
+  });
+
+  // Estado para transferência de posto
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferError, setTransferError] = useState<string | null>(null);
+  const [transferData, setTransferData] = useState({
+    new_post_id: '',
+    transfer_date: '',
     notes: '',
   });
 
@@ -166,6 +177,73 @@ export default function AlocacoesPage() {
       setIsTerminating(false);
     }
   };
+
+  const openTransfer = (allocation: Allocation) => {
+    setSelectedAllocation(allocation);
+    setTransferData({
+      new_post_id: '',
+      transfer_date: new Date().toISOString().split('T')[0],
+      notes: '',
+    });
+    setTransferError(null);
+    setShowTransferModal(true);
+  };
+
+  const handleTransfer = async () => {
+    if (!selectedAllocation) return;
+
+    if (!transferData.new_post_id) {
+      setTransferError('Selecione o novo posto de trabalho.');
+      return;
+    }
+
+    if (!transferData.transfer_date) {
+      setTransferError('Informe a data da transferência.');
+      return;
+    }
+
+    if (transferData.new_post_id === selectedAllocation.post_id) {
+      setTransferError('Selecione um posto diferente do atual.');
+      return;
+    }
+
+    setIsTransferring(true);
+    setTransferError(null);
+
+    try {
+      // 1. Encerra a alocação atual
+      await allocationsService.terminate(selectedAllocation.id, {
+        end_date: transferData.transfer_date,
+        termination_reason: 'Transferência de posto',
+        notes: transferData.notes || `Transferido para outro posto em ${new Date(transferData.transfer_date).toLocaleDateString('pt-BR')}`,
+      });
+
+      // 2. Cria nova alocação no novo posto
+      await allocationsService.create({
+        employee_id: selectedAllocation.employee_id,
+        post_id: transferData.new_post_id,
+        start_date: transferData.transfer_date,
+        is_primary: selectedAllocation.is_primary,
+        is_temporary: selectedAllocation.is_temporary,
+        role: selectedAllocation.role || undefined,
+        notes: `Transferido do posto anterior em ${new Date(transferData.transfer_date).toLocaleDateString('pt-BR')}`,
+      });
+
+      setShowTransferModal(false);
+      setSelectedAllocation(null);
+      refresh();
+    } catch (err) {
+      setTransferError(getErrorMessage(err));
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
+  // Filtra postos disponíveis para transferência (exclui o posto atual)
+  const availablePostsForTransfer = useMemo(() => {
+    if (!selectedAllocation) return posts;
+    return posts.filter((post) => post.id !== selectedAllocation.post_id);
+  }, [posts, selectedAllocation]);
 
   // Preparar dados para exportação
   const exportData = allocations.map((alloc) => ({
@@ -483,15 +561,26 @@ export default function AlocacoesPage() {
                               <Eye className="w-4 h-4" />
                             </Button>
                             {allocation.status === 'active' && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openTerminate(allocation)}
-                                title="Encerrar"
-                                className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                              >
-                                <Ban className="w-4 h-4" />
-                              </Button>
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openTransfer(allocation)}
+                                  title="Transferir de Posto"
+                                  className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                                >
+                                  <ArrowRightLeft className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openTerminate(allocation)}
+                                  title="Encerrar"
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                >
+                                  <Ban className="w-4 h-4" />
+                                </Button>
+                              </>
                             )}
                           </div>
                         </td>
@@ -607,6 +696,89 @@ export default function AlocacoesPage() {
           </Button>
           <Button variant="primary" onClick={handleTerminate} disabled={isTerminating}>
             {isTerminating ? 'Encerrando...' : 'Encerrar'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Modal de Transferência de Posto */}
+      <Modal
+        isOpen={showTransferModal}
+        onClose={() => setShowTransferModal(false)}
+        title="Transferir Funcionário"
+        description={selectedAllocation ? `Transferir ${selectedAllocation.employee_name || 'funcionário'} para outro posto de trabalho` : 'Selecione o novo posto'}
+        size="md"
+      >
+        <div className="space-y-4">
+          {transferError && (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-red-500 text-sm">
+              {transferError}
+            </div>
+          )}
+
+          {/* Informação do posto atual */}
+          {selectedAllocation && (
+            <div className="bg-[hsl(var(--muted))]/50 rounded-lg p-3">
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">Posto atual:</p>
+              <p className="font-medium text-[hsl(var(--foreground))]">
+                {selectedAllocation.post_name || getPostLabel(selectedAllocation)}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+              Novo Posto de Trabalho *
+            </label>
+            <select
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm"
+              value={transferData.new_post_id}
+              onChange={(e) => setTransferData({ ...transferData, new_post_id: e.target.value })}
+            >
+              <option value="">Selecione o novo posto...</option>
+              {availablePostsForTransfer.map((post) => (
+                <option key={post.id} value={post.id}>
+                  {post.name} ({post.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+              Data da Transferência *
+            </label>
+            <Input
+              type="date"
+              value={transferData.transfer_date}
+              onChange={(e) => setTransferData({ ...transferData, transfer_date: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+              Observações
+            </label>
+            <textarea
+              value={transferData.notes}
+              onChange={(e) => setTransferData({ ...transferData, notes: e.target.value })}
+              rows={3}
+              placeholder="Motivo da transferência ou observações adicionais..."
+              className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-sm resize-none"
+            />
+          </div>
+
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
+            <p className="text-sm text-yellow-600">
+              <strong>Atenção:</strong> Esta ação irá encerrar a alocação atual e criar uma nova no posto selecionado.
+            </p>
+          </div>
+        </div>
+        <ModalFooter>
+          <Button variant="outline" onClick={() => setShowTransferModal(false)} disabled={isTransferring}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={handleTransfer} disabled={isTransferring}>
+            {isTransferring ? 'Transferindo...' : 'Confirmar Transferência'}
           </Button>
         </ModalFooter>
       </Modal>

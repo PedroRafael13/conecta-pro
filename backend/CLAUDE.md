@@ -1,284 +1,271 @@
 # Conecta PRO - Backend
 
-## Projeto
-Sistema ERP completo para gestão empresarial com foco em vigilância e segurança patrimonial.
+> **Stack:** Python 3.12 + FastAPI 0.115.6 + SQLAlchemy 2.0.36 + PostgreSQL 16 + Redis 7
+> **Entry point prod:** `main_production.py` | **Entry point dev:** `main.py`
+> **Última atualização:** 27/01/2026
 
-**Empresa:** JORDAN SANTOS DE JESUS LTDA
-**CNPJ:** 35.710.481/0001-03
-**Regime:** Simples Nacional
-**Setor:** Vigilância e Segurança
+---
 
-## Stack Técnico
-- **Backend:** Python 3.12 + FastAPI + SQLAlchemy
-- **Database:** PostgreSQL 16 + Redis 7
-- **Containers:** Docker + Docker Compose
-
-## Sprint 34 - NFS-e Emissão Real (EM ANDAMENTO)
-
-### Implementado (16/01/2026)
-
-| Item | Arquivo | Status |
-|------|---------|--------|
-| Service NFS-e Manaus | `services/nfse_manaus_service.py` | ✅ OK |
-| Schemas NFS-e | `schemas/nfse_manaus.py` | ✅ OK |
-| Controller REST NFS-e | `controllers/nfse_manaus_controller.py` | ✅ OK |
-| Testes NFS-e | `tests/test_nfse_manaus.py` | ✅ 21 passed |
-| NFS-e Padrão Nacional | `core/nfse_nacional.py` | ✅ Preparação |
-
-### Endpoints NFS-e Disponíveis
+## Arquitetura
 
 ```
-POST /api/v1/government/nfse-manaus/emitir      - Emite NFS-e via RPS
-GET  /api/v1/government/nfse-manaus/consultar/rps/{numero}  - Consulta por RPS
-GET  /api/v1/government/nfse-manaus/consultar/numero/{numero}  - Consulta por número
-POST /api/v1/government/nfse-manaus/cancelar   - Cancela NFS-e
-POST /api/v1/government/nfse-manaus/substituir - Substitui NFS-e
-GET  /api/v1/government/nfse-manaus/lote/{numero}  - Consulta lote
-GET  /api/v1/government/nfse-manaus/status     - Valida conexão WebService
-GET  /api/v1/government/nfse-manaus/codigos-servico  - Lista códigos LC 116
+backend/
+├── main_production.py          # Entry point produção (uvicorn)
+├── main.py                     # Entry point dev
+├── core/
+│   ├── config/
+│   │   ├── settings.py         # Pydantic Settings (env vars centralizadas)
+│   │   └── credentials.py      # Credenciais gov (certificado, eSocial, SEFAZ)
+│   ├── auth/                   # JWT authentication
+│   ├── cache/                  # Redis operations
+│   ├── database/
+│   │   └── session.py          # AsyncSession (FastAPI) + SyncSession (Celery)
+│   ├── logging/                # Loguru structured logging
+│   ├── models/
+│   │   ├── base.py             # Base, BaseModel, TimestampMixin, SoftDeleteMixin
+│   │   └── user.py             # User model
+│   ├── schemas/                # Auth/User Pydantic schemas
+│   ├── security/               # Hashing, JWT utils
+│   └── monitoring/             # Prometheus metrics
+├── modules/                    # 32 módulos de negócio
+├── infrastructure/             # Message bus + Persistence
+├── alembic/                    # Migrations
+│   ├── env.py                  # Importa todos os models para autogenerate
+│   └── versions/               # 16+ migrations
+├── tests/                      # pytest (unit, integration, e2e)
+├── requirements.txt            # ~80 dependências
+├── pyproject.toml              # Black, isort, pylint config
+└── Dockerfile                  # Multi-stage (builder + runtime)
 ```
 
-### Exemplo de Emissão NFS-e
+---
+
+## Padrão de Camadas por Módulo
+
+```
+modules/{modulo}/
+├── models/          # SQLAlchemy ORM (herdam BaseModel)
+├── schemas/         # Pydantic v2 DTOs (from_attributes = True)
+├── controllers/     # FastAPI routers (endpoints)
+├── repositories/    # Data access layer (queries async)
+├── services/        # Business logic
+└── [submodulos]/    # Funcionalidades específicas
+```
+
+---
+
+## Base Model
 
 ```python
-from modules.government_integrations.services import get_nfse_manaus_service
+# core/models/base.py
+class BaseModel(Base):
+    __abstract__ = True
+    id: Mapped[uuid.UUID]        # UUID v4, primary key
+    created_at: Mapped[datetime]  # server_default=func.now()
+    updated_at: Mapped[datetime]  # onupdate=func.now()
+    is_active: Mapped[bool]       # default=True
 
-service = get_nfse_manaus_service()
-
-resultado = service.emitir_nfse(
-    tomador_data={
-        "cpf_cnpj": "12345678901234",
-        "razao_social": "Empresa Cliente LTDA",
-        "endereco": "Av. Eduardo Ribeiro",
-        "numero": "1000",
-        "bairro": "Centro",
-        "cidade": "Manaus",
-        "uf": "AM",
-        "cep": "69010001",
-        "email": "contato@empresa.com.br"
-    },
-    servico_data={
-        "codigo_servico": "11.02",  # Vigilância
-        "discriminacao": "Serviços de vigilância patrimonial - Janeiro/2026",
-        "valor_servicos": "15000.00",
-        "aliquota_iss": "0.05",
-        "iss_retido": False
-    },
-    competencia="2026-01",
-    optante_simples=True
-)
+class TimestampMixin:  # created_at + updated_at
+class SoftDeleteMixin: # is_active + deleted_at
 ```
 
-### Códigos de Serviço (Vigilância)
+---
 
-| Código | Descrição | Alíquota ISS |
-|--------|-----------|--------------|
-| 11.02 | Vigilância, segurança ou monitoramento | 5% |
-| 11.03 | Escolta, inclusive de veículos e cargas | 5% |
-| 11.04 | Armazenamento, depósito, guarda de bens | 5% |
-| 11.05 | Transporte de valores | 5% |
+## Database Session
 
-### Credenciais Configuradas
+```python
+# core/database/session.py
 
-Arquivo: `/opt/conecta-pro/credentials/.env.credentials`
+# Async (FastAPI endpoints)
+engine = create_async_engine(settings.database_url)  # asyncpg
+async_session_factory = async_sessionmaker(engine, class_=AsyncSession)
+async def get_db() -> AsyncGenerator[AsyncSession, None]: ...
 
-```env
-NFSE_MANAUS_CNPJ=35710481000103
-NFSE_MANAUS_USUARIO=35710481000103
-NFSE_MANAUS_SENHA=jordan0612
-NFSE_MANAUS_ENVIRONMENT=producao
-CERTIFICATE_PATH=/opt/conecta-pro/credentials/certificates/certificado.pfx
-CERTIFICATE_PASSWORD=Conecta123
+# Sync (Celery tasks)
+sync_engine = create_engine(url.replace("+asyncpg", ""))  # psycopg2
+SyncSessionLocal = sessionmaker(bind=sync_engine)
+def get_sync_db(): ...  # context manager
 ```
 
-## Sprint 33 - Integrações Governamentais (CONCLUÍDO)
+---
 
-### Módulos Implementados (11/11 - 100%)
+## Settings (Pydantic)
 
-| Módulo | Arquivo | Status |
-|--------|---------|--------|
-| NFS-e Manaus | `core/nfse_manaus.py` | OK |
-| EFD-Reinf | `core/efd_reinf.py` | OK |
-| DCTFWeb | `core/dctfweb.py` | OK |
-| FGTS Digital | `core/fgts_digital.py` | OK |
-| Simples Nacional | `core/simples_nacional.py` | OK |
-| SPED Fiscal | `core/sped_fiscal.py` | OK |
-| SPED Contábil | `core/sped_contabil.py` | OK |
-| CT-e | `core/cte.py` | OK |
-| MDF-e | `core/mdfe.py` | OK |
-| Gov.br | `core/govbr.py` | OK |
-| e-CAC | `core/ecac.py` | OK |
-
-### WebService NFS-e Manaus
-
-```
-URL Produção: https://nfse-prd.manaus.am.gov.br/nfse/servlet
-URL Homologação: https://nfse-hml.manaus.am.gov.br/nfse/servlet
-Provider: Abaco/GIF
-Namespace: http://www.e-nfs.com.br
-Versão ABRASF: 2.04
+```python
+# core/config/settings.py
+class Settings(BaseSettings):
+    # App
+    app_name, app_version, debug, environment
+    # Server
+    host="0.0.0.0", port=8080
+    # Database
+    database_url (PostgreSQL+asyncpg), pool_size=10, max_overflow=20
+    # Redis
+    redis_url, redis_ttl=3600
+    # JWT
+    secret_key, algorithm="HS256", access_token_expire_minutes=30, refresh_token_expire_days=7
+    # CORS, Logging (json), Sentry
 ```
 
-## Migração NFS-e Padrão Nacional (Previsão: 2026)
+---
 
-O Padrão Nacional substituirá gradualmente o ABRASF em todos os municípios.
+## Módulos (32 total)
 
-### Diferenças Principais
+| Módulo | Prefixo API | Descrição |
+|--------|-------------|-----------|
+| **operacional** | `/api/v1/operacional` | Postos, escalas, turnos, colaboradores, rondas, diaristas, ocorrências |
+| **clients** | `/api/v1/clients` | Clientes + Condomínios |
+| **crm** | `/api/v1/crm` | Leads, oportunidades, propostas, contratos, comissões |
+| **financial** | `/api/v1/financial` | Contabilidade, contas, bancos, cashflow, compras, estoque |
+| **hr** | `/api/v1/hr` | RH, ponto, folha, portal, REP, analytics |
+| **ged** | `/api/v1/ged` | Gestão eletrônica de documentos |
+| **document_kits** | `/api/v1/document-kits` | Kits documentais + scheduler mensal |
+| **government_integrations** | `/api/v1/government` | eSocial, SEFAZ, NFS-e, FGTS, SPED |
+| **notifications** | `/api/v1/notifications` | Push notifications + triggers |
+| **ai/bartolo** | `/api/v1/ai` | Assistente IA (GPT-4) |
+| **bidding** | `/api/v1/bidding` | Licitações |
+| **recruitment** | `/api/v1/recruitment` | Recrutamento |
+| **analytics** | - | Analytics e dashboards |
+| **audit** | - | Auditoria |
+| **security_lgpd** | - | LGPD compliance |
+| **reports** | - | Geração de relatórios |
+| **scheduler** | - | Agendamento de tarefas |
+| automation, campo, config, documents, equipment_management, health_occupational, integrations, mobile, monitoring, reimbursement, retention, search, services, fase5 | - | Outros módulos |
 
-| Característica | ABRASF (Atual) | Padrão Nacional |
-|----------------|----------------|-----------------|
-| Protocolo | SOAP/XML | REST/JSON |
-| Documento | RPS | DPS |
-| Numeração | Municipal | Nacional |
-| Autenticação | Certificado A1 | Certificado + Gov.br |
+---
 
-### Preparação
+## Routers Registrados (main_production.py)
 
-Módulo `core/nfse_nacional.py` criado com:
-- `NFSeNacionalManager` - Manager preparatório
-- `DPSNacional` - Estrutura do novo documento
-- `MAPEAMENTO_SERVICOS_VIGILANCIA` - Mapeamento ABRASF → NBS
+Usa `safe_import()` para carregamento dinâmico com fallback:
 
-## Estrutura do Módulo Government Integrations
+```python
+def safe_import(module_path: str, router_name: str = "router"):
+    """Importa módulo com fallback - não quebra o app se módulo falhar."""
+```
+
+**Routers do operacional (11):** post, scale, scale_template, shift, allocation, employee, substitution, time_bank, reports, kpi_trends, occurrence
+
+**Routers do financial (13):** accounting, supplier, payable, customer, receivable_category, receivable, billing_rule, bank_account, bank_transaction, bank_reconciliation, cashflow, purchase, inventory
+
+**Routers do CRM (6):** lead, opportunity, proposal, contract, commission, dashboard
+
+---
+
+## Integrações Governamentais
 
 ```
 modules/government_integrations/
-├── core/
-│   ├── __init__.py
-│   ├── certificate_manager.py    # Certificados A1
-│   ├── xml_signer.py             # Assinatura XMLDSig
-│   ├── nfse_manaus.py            # NFS-e ABRASF 2.04
-│   ├── nfse_nacional.py          # Padrão Nacional (prep)
+├── core/                          # Managers e engines
+│   ├── certificate_manager.py     # Certificados A1
+│   ├── xml_signer.py              # XMLDSig
+│   ├── nfse_manaus.py             # ABRASF 2.04 (SOAP)
+│   ├── nfse_nacional.py           # Padrão Nacional (REST, prep 2026)
 │   ├── esocial_transmitter.py
 │   ├── sefaz_manager.py
-│   ├── fgts_inss_manager.py
-│   ├── efd_reinf.py
-│   ├── dctfweb.py
 │   ├── fgts_digital.py
-│   ├── simples_nacional.py
-│   ├── sped_fiscal.py
-│   ├── sped_contabil.py
-│   ├── cte.py
-│   ├── mdfe.py
-│   ├── govbr.py
-│   └── ecac.py
-├── controllers/
-│   ├── __init__.py
-│   ├── nfse_manaus_controller.py  # NOVO
-│   ├── esocial_controller.py
-│   ├── sefaz_controller.py
-│   ├── fgts_inss_controller.py
-│   ├── certificate_controller.py
-│   └── status_controller.py
-├── services/
-│   ├── __init__.py
-│   ├── nfse_manaus_service.py     # NOVO
-│   ├── esocial_service.py
-│   ├── sefaz_service.py
-│   └── fgts_inss_service.py
-└── schemas/
-    ├── __init__.py
-    ├── nfse_manaus.py             # NOVO
-    ├── common.py
-    ├── esocial.py
-    ├── sefaz.py
-    └── fgts_inss.py
+│   ├── efd_reinf.py, dctfweb.py
+│   ├── sped_fiscal.py, sped_contabil.py
+│   ├── cte.py, mdfe.py
+│   ├── govbr.py, ecac.py
+│   └── simples_nacional.py
+├── controllers/                   # REST endpoints
+├── services/                      # Business logic
+└── schemas/                       # Validação
 ```
 
-## Comandos Úteis
-
-```bash
-# Executar testes NFS-e
-cd /opt/conecta-pro/backend
-source venv/bin/activate
-python3 -m pytest tests/test_nfse_manaus.py -v
-
-# Verificar imports
-python3 -c "from modules.government_integrations.services import get_nfse_manaus_service; print('OK')"
-
-# Testar conexão WebService
-python3 -c "
-from modules.government_integrations.services import get_nfse_manaus_service
-service = get_nfse_manaus_service()
-print(service.validar_conexao())
-"
-
-# Git status
-git log --oneline -5
-```
-
-## Sprint 35 - Sincronização Real de Dados Governamentais (EM ANDAMENTO)
-
-### Sistema de Sincronização Implementado
-
-#### SyncManager (Gerenciador Central)
-Coordena sincronizações de 12 serviços governamentais:
-
-| Nível | Serviços | Status |
-|-------|----------|--------|
-| Federal | eSocial, Receita Federal, FGTS Digital, EFD-Reinf, DCTFWeb, SPED Contábil | ✅ |
-| Estadual | NF-e (SVRS), CT-e, MDF-e, SPED Fiscal | ✅ |
-| Municipal | NFS-e Manaus, NFS-e Nacional | ✅ |
-
-#### Endpoints REST de Sincronização
-```
-POST /sync/{servico}              - Executar sync
-POST /sync/todos                  - Sincronizar todos
-POST /sync/{servico}/background   - Sync em background
-GET  /sync/status/{cnpj}          - Status
-GET  /sync/historico/{cnpj}       - Histórico
-GET  /sync/jobs                   - Jobs ativos
-POST /sync/agendamento            - Configurar agendamento
-POST /sync/configuracao           - Configurar integração
-GET  /sync/dados/documentos/{cnpj}      - Documentos fiscais
-GET  /sync/dados/eventos-esocial/{cnpj} - Eventos eSocial
-GET  /sync/dados/certidoes/{cnpj}       - Certidões
-GET  /sync/dados/guias/{cnpj}           - Guias DARF/GPS/FGTS
-```
-
-### Teste de Conexão Real (16/01/2026 18:33)
-
-**Taxa de sucesso: 75% (12/16)**
-
-| Serviço | Status | Observação |
-|---------|--------|------------|
-| Certificado A1 | ✅ OK | Válido até 13/01/2027 (361 dias) |
-| Receita Federal | ✅ OK | CNPJ 35.710.481/0001-03 - ATIVA |
-| e-CAC | ✅ OK | Portal acessível |
-| eSocial | ✅ OK | Portal acessível |
-| SVRS NF-e | ✅ OK | WebService respondendo (403 = precisa certificado) |
-| CT-e | ✅ OK | WebService respondendo |
-| MDF-e | ✅ OK | WebService respondendo |
-| FGTS Digital | ✅ OK | Portal acessível |
-| Portal Receita | ✅ OK | Acessível |
-| Portal eSocial | ✅ OK | Acessível |
-| NFS-e Nacional | ✅ OK | Portal acessível |
-| NFS-e Manaus | ✅ OK | Portal e WebService OK |
-| SEFAZ AM Prod | ❌ ERRO | Requer certificado cliente SSL |
-| SEFAZ AM Hom | ❌ ERRO | Requer certificado cliente SSL |
-| Conectividade Social | ❌ ERRO | DNS não resolve |
-| Portal SPED | ⏱️ TIMEOUT | Servidor lento |
-
-### Script de Teste
-```bash
-cd /opt/conecta-pro/backend
-source venv/bin/activate
-python3 scripts/test_gov_connections.py
-```
-
-### Testes Automatizados
-```
-tests/test_nfse_manaus.py: 21 passed, 2 skipped
-tests/test_sync_system.py: 43 passed
-tests/test_govbr.py: testes Gov.br
-```
-
-### Próximos Passos
-1. [ ] Integrar certificado A1 no cliente SOAP para SEFAZ AM
-2. [ ] Criar migration para tabelas de sincronização
-3. [ ] Registrar routers de sync no main.py
-4. [ ] Implementar sincronização real com eSocial
-5. [ ] Dashboard de monitoramento de sincronizações
+**NFS-e Manaus:** ABRASF 2.04, SOAP/XML, código 11.02 (vigilância, ISS 5%)
+**Sync:** 12 serviços gov, sync em background, agendamento configurável
 
 ---
-*Última atualização: 16/01/2026 18:35*
+
+## Celery Workers
+
+| Worker | Fila | Responsabilidade |
+|--------|------|-----------------|
+| celery-priority | priority | eSocial, FGTS |
+| celery-sefaz | sefaz | NF-e, CT-e, MDF-e |
+| celery-nfse | nfse | NFS-e local |
+| celery-operacional | operacional | Tasks operacionais |
+| celery-batch | batch | Processamento em lote |
+| celery-integrations | integrations | Integrações externas |
+| celery-beat | - | Scheduler |
+
+---
+
+## Dependências Principais
+
+| Categoria | Pacotes |
+|-----------|---------|
+| Framework | fastapi 0.115.6, uvicorn 0.34.0, pydantic 2.10.4 |
+| ORM | sqlalchemy 2.0.36, alembic 1.14.0, asyncpg 0.30.0, psycopg2-binary 2.9.10 |
+| Cache/Queue | redis 5.2.1, celery 5.4.0, apscheduler 3.10.4 |
+| Auth | python-jose 3.3.0, passlib 1.7.4, bcrypt 4.2.1, pyotp 2.9.0 |
+| Monitoring | sentry-sdk 1.40.0, loguru 0.7.3, slowapi 0.1.9 |
+| Data | pandas 2.2.3, scikit-learn 1.6.0, numpy 1.26.4 |
+| HTTP/AI | httpx 0.28.1, aiohttp 3.11.11, openai 1.0+ |
+| Security | cryptography 42.0+, pyOpenSSL 24.0+, defusedxml 0.7.1 |
+| XML | lxml 5.0+ |
+| Testing | pytest 8.3.4, pytest-asyncio 0.25.0, pytest-cov 6.0.0 |
+| Code | black 24.10.0, isort 5.13.2, pylint 3.3.2, mypy 1.14.0 |
+
+---
+
+## Code Quality
+
+```toml
+# pyproject.toml
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["core", "modules"]
+
+[tool.pylint]
+max-line-length = 100
+```
+
+---
+
+## Problemas Conhecidos
+
+1. **Dessincronização Banco/Models** — Campos no model que não existem no banco:
+   - `document_kits.extra_metadata` (nao existe)
+   - `condominiums.phone`, `condominiums.phone_portaria` (nao existem)
+   - `condominiums.is_active` no model vs `ativo` no banco
+   - `condominiums.type` removido do model, existe como `condominium_type` no banco
+   - Workaround: raw SQL via `sqlalchemy.text()` em alguns services
+
+2. **Alembic env.py** — Importa models manualmente (não autodescoberta). Ao criar novo model, adicionar import no `alembic/env.py`.
+
+---
+
+## Comandos
+
+```bash
+# Rebuild + restart
+docker compose build backend --no-cache && docker compose up -d backend
+
+# Logs
+docker logs -f conecta-pro-backend
+
+# Shell no container
+docker exec -it conecta-pro-backend bash
+
+# PostgreSQL
+docker exec -it conecta-pro-postgres psql -U postgres -d conecta_pro
+
+# Testes
+python3 -m pytest tests/ -v
+python3 -m pytest tests/test_nfse_manaus.py -v
+
+# Migrations
+alembic revision --autogenerate -m "Descrição"
+alembic upgrade head
+alembic downgrade -1
+
+# Health
+curl http://localhost:8080/health
+```

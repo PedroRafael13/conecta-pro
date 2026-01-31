@@ -37,6 +37,12 @@ export function useNotifications(): UseNotificationsReturn {
   const [error, setError] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
+    // Skip se push notifications desabilitado
+    if (process.env.NEXT_PUBLIC_ENABLE_PUSH_NOTIFICATIONS === 'false') {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -49,6 +55,11 @@ export function useNotifications(): UseNotificationsReturn {
       });
 
       if (!response.ok) {
+        // Se endpoint não existe (404), apenas skip silenciosamente
+        if (response.status === 404) {
+          setLoading(false);
+          return;
+        }
         throw new Error('Erro ao buscar notificações');
       }
 
@@ -56,8 +67,10 @@ export function useNotifications(): UseNotificationsReturn {
       setNotifications(data.notifications || []);
       setUnreadCount(data.unread_count || 0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido');
-      console.error('Erro ao buscar notificações:', err);
+      // Não logar erro se for 404 ou feature desabilitada
+      if (err instanceof Error && !err.message.includes('404')) {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -145,6 +158,11 @@ export function useNotifications(): UseNotificationsReturn {
   }, []);
 
   useEffect(() => {
+    // Skip se push notifications desabilitado
+    if (process.env.NEXT_PUBLIC_ENABLE_PUSH_NOTIFICATIONS === 'false') {
+      return;
+    }
+
     fetchNotifications();
 
     // Atualiza notificações a cada 30 segundos

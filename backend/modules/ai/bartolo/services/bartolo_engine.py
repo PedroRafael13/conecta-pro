@@ -178,7 +178,7 @@ class BartoloEngine:
         """Detecta se mensagem indica necessidade de wizard."""
         return self.wizard_manager.detect_wizard_type(message)
 
-    async def _check_skill_command(self, message: str, user_id: int) -> Optional[Dict[str, Any]]:
+    async def _check_skill_command(self, message: str, user_id: int, data_connector=None) -> Optional[Dict[str, Any]]:
         """
         Verifica se a mensagem é um comando de skill.
 
@@ -188,6 +188,7 @@ class BartoloEngine:
         Args:
             message: Mensagem do usuário
             user_id: ID do usuário
+            data_connector: DataConnector para dados reais (opcional)
 
         Returns:
             Resultado do skill ou None se não for comando de skill
@@ -200,7 +201,7 @@ class BartoloEngine:
             return None
 
         skill_name = parts[0].lower()
-        skill = get_skill(skill_name)
+        skill = get_skill(skill_name, data_connector=data_connector)
 
         if skill:
             command = parts[1] if len(parts) > 1 else ""
@@ -225,23 +226,35 @@ class BartoloEngine:
             "suggestions": [f"/{s}" for s in available[:5]] if available else [],
         }
 
-    def _init_specialized_agents(self, db=None) -> None:
+    def _init_specialized_agents(self, db=None, data_connector=None) -> None:
         """
         Inicializa agentes especializados.
 
         Args:
             db: Sessão do banco de dados (opcional)
+            data_connector: DataConnector com sessão do banco (opcional)
         """
         if not AGENTS_AVAILABLE:
             return
 
         # Inicializa agentes (funcionam com ou sem db)
         if self.escala_agent is None and EscalaAgent:
-            self.escala_agent = EscalaAgent(db=db)
+            self.escala_agent = EscalaAgent(db=db, data_connector=data_connector)
+        elif self.escala_agent and data_connector:
+            self.escala_agent.data_connector = data_connector
+            self.escala_agent.db = db
+
         if self.substituicao_agent is None and SubstituicaoAgent:
-            self.substituicao_agent = SubstituicaoAgent(db=db)
+            self.substituicao_agent = SubstituicaoAgent(db=db, data_connector=data_connector)
+        elif self.substituicao_agent and data_connector:
+            self.substituicao_agent.data_connector = data_connector
+            self.substituicao_agent.db = db
+
         if self.alerta_agent is None and AlertaAgent:
-            self.alerta_agent = AlertaAgent(db=db)
+            self.alerta_agent = AlertaAgent(db=db, data_connector=data_connector)
+        elif self.alerta_agent and data_connector:
+            self.alerta_agent.data_connector = data_connector
+            self.alerta_agent.db = db
 
     def _get_specialized_agent(self, agent_name: str):
         """
@@ -259,6 +272,102 @@ class BartoloEngine:
             "alerta": self.alerta_agent,
         }
         return agents.get(agent_name)
+
+    def _detect_agent_name(
+        self,
+        message: str,
+        intent: str,
+        fallback_result: Optional[FallbackResult] = None,
+    ) -> Optional[str]:
+        """Detecta o nome do agente para metadata de contexto."""
+        if fallback_result and fallback_result.agent_type:
+            return fallback_result.agent_type
+
+        message_lower = message.lower()
+        for keyword, name in self.specialized_agents_map.items():
+            if keyword in message_lower or keyword in intent.lower():
+                return name
+        return None
+
+    async def _check_agent_followup(
+        self,
+        user_id: int,
+        session_id: str,
+        message: str,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Verifica se a mensagem é follow-up de uma interação anterior com agente.
+
+        Consulta o context_manager para ver se a última resposta veio de um
+        agente especializado e, se sim, roteia de volta para o mesmo agente.
+
+        Args:
+            user_id: ID do usuário
+            session_id: ID da sessão
+            message: Mensagem atual do usuário
+
+        Returns:
+            Resultado do follow-up ou None
+        """
+        if not AGENTS_AVAILABLE:
+            return None
+
+        try:
+            # Busca contexto COMPLETO (com metadata) - não usa get_messages_for_llm
+            # porque esse método retorna só {role, content} sem metadata
+            context = await self.context_manager.get_context(user_id, session_id)
+
+            if not context or not context.messages:
+                return None
+
+            # Procura a última mensagem do assistant com metadata de agente
+            last_agent_type = None
+            last_agent_intent = None
+            last_agent_data = None
+
+            for msg in reversed(context.messages):
+                if msg.get("role") == "assistant":
+                    metadata = msg.get("metadata", {})
+                    if metadata.get("model") == "specialized_agent" or metadata.get("agent_type"):
+                        last_agent_type = metadata.get("agent_type")
+                        last_agent_intent = metadata.get("agent_intent")
+                        last_agent_data = metadata.get("agent_data")
+                        break
+                    # Se a última mensagem do assistant não veio de agente, não é follow-up
+                    break
+
+            if not last_agent_type:
+                return None
+
+            logger.info(
+                f"[FOLLOWUP] Detectado contexto anterior: agent={last_agent_type} "
+                f"intent={last_agent_intent}"
+            )
+
+            # Roteia para o agente com contexto de follow-up
+            agent = self._get_specialized_agent(last_agent_type)
+            if agent and hasattr(agent, 'process_followup'):
+                result = await agent.process_followup(
+                    message=message,
+                    context={"user_id": user_id},
+                    previous_intent=last_agent_intent or "",
+                    previous_data=last_agent_data,
+                )
+                if result:
+                    logger.info(f"[FOLLOWUP] Agente {last_agent_type} processou follow-up")
+                    return result
+
+            # Se o agente não tem process_followup ou retornou None,
+            # tenta processar normalmente pelo agente
+            if agent:
+                result = await agent.process(message, {"user_id": user_id})
+                if result:
+                    return result
+
+        except Exception as e:
+            logger.error(f"[FOLLOWUP] Erro ao verificar follow-up: {e}")
+
+        return None
 
     async def _route_to_specialized_agent(
         self,
@@ -376,7 +485,7 @@ class BartoloEngine:
 
     async def process_message(
         self,
-        user_id: int,
+        user_id: str | int,
         session_id: str,
         message: str,
         module: Optional[str] = None,
@@ -387,7 +496,7 @@ class BartoloEngine:
         Processa uma mensagem do usuario.
 
         Args:
-            user_id: ID do usuario
+            user_id: ID do usuario (UUID string ou int legacy)
             session_id: ID da sessao
             message: Mensagem do usuario
             module: Modulo atual (opcional)
@@ -406,10 +515,13 @@ class BartoloEngine:
 
         try:
             # 0. Inicializa agentes especializados (funciona com ou sem db)
-            self._init_specialized_agents(db)
+            self._init_specialized_agents(db, data_connector=data_connector)
+
+            # 0.1. Atualiza sessao do banco no ProfileService para buscar usuarios reais
+            self.profile_service.set_db(db)
 
             # 1. Verifica se é comando de skill (antes de qualquer processamento)
-            skill_result = await self._check_skill_command(message, user_id)
+            skill_result = await self._check_skill_command(message, user_id, data_connector=data_connector)
             if skill_result:
                 processing_time = int((time.time() - start_time) * 1000)
                 return BartoloResponse(
@@ -428,8 +540,12 @@ class BartoloEngine:
             # 2. Carrega contexto do usuario
             user_context = await self.profile_service.get_user_context(user_id)
 
-            # 3. Verifica se tem wizard ativo
-            if self.wizard_manager.has_active_wizard(user_id, session_id):
+            # 3. Detecta tipo de mensagem (consulta/ação vs resposta wizard)
+            # CORRECAO: Permite consultas mesmo com wizard ativo
+            is_query_or_action = self._is_query_intent(message)
+
+            # 3.5. Verifica se tem wizard ativo E mensagem é resposta (não consulta)
+            if self.wizard_manager.has_active_wizard(user_id, session_id) and not is_query_or_action:
                 wizard_response = self.wizard_manager.process_input(
                     user_id, session_id, message
                 )
@@ -502,11 +618,58 @@ class BartoloEngine:
                     logger.error(f"[FALLBACK] Erro no LLM fallback: {e}")
                     fallback_result = None
 
+            # 5.5 Detecção de follow-up: verifica se última interação foi com agente
+            followup_result = await self._check_agent_followup(
+                user_id, session_id, message
+            )
+            if followup_result:
+                # Salva contexto do follow-up
+                await self.context_manager.add_message(
+                    user_id, session_id, "user", message,
+                    metadata={"intent": followup_result.get("intent", "followup"), "source": "followup"}
+                )
+                await self.context_manager.add_message(
+                    user_id, session_id, "assistant", followup_result.get("response", ""),
+                    metadata={
+                        "model": "specialized_agent_followup",
+                        "agent_intent": followup_result.get("intent", ""),
+                    }
+                )
+
+                processing_time = int((time.time() - start_time) * 1000)
+                return BartoloResponse(
+                    message_id=message_id,
+                    session_id=session_id,
+                    response=followup_result.get("response", ""),
+                    intent=followup_result.get("intent", detected_intent),
+                    suggestions=followup_result.get("suggestions", []),
+                    actions=followup_result.get("actions", []),
+                    data_results=followup_result.get("data"),
+                    processing_time_ms=processing_time,
+                    model_used="specialized_agent_followup",
+                    bartolo_mood="professional",
+                )
+
             # 6. Tenta rotear para agente especializado
             agent_result = await self._route_to_specialized_agent(
                 message, detected_intent, user_id, fallback_result
             )
             if agent_result:
+                # Salva contexto: mensagem do usuário + resposta do agente
+                agent_intent = agent_result.get("intent", detected_intent)
+                await self.context_manager.add_message(
+                    user_id, session_id, "user", message,
+                    metadata={"intent": agent_intent, "source": "agent_routing"}
+                )
+                await self.context_manager.add_message(
+                    user_id, session_id, "assistant", agent_result.get("response", ""),
+                    metadata={
+                        "model": "specialized_agent",
+                        "agent_intent": agent_intent,
+                        "agent_type": self._detect_agent_name(message, detected_intent, fallback_result),
+                    }
+                )
+
                 processing_time = int((time.time() - start_time) * 1000)
                 return BartoloResponse(
                     message_id=message_id,
@@ -625,14 +788,68 @@ NÃO dê instruções de como buscar - os dados JÁ ESTÃO AQUI!
                 bartolo_mood="professional",
             )
 
-        except Exception as e:
-            logger.exception(f"Erro ao processar mensagem: {e}")
+        except TimeoutError as e:
+            logger.error(
+                f"[TIMEOUT] user_id={user_id} session_id={session_id} "
+                f"message='{message[:80]}' error={e}"
+            )
             processing_time = int((time.time() - start_time) * 1000)
+            return BartoloResponse(
+                message_id=message_id,
+                session_id=session_id,
+                response="O servidor demorou para responder. Isso pode acontecer em momentos de alta demanda. Pode tentar novamente?",
+                processing_time_ms=processing_time,
+                bartolo_mood="supportive",
+            )
+
+        except ConnectionError as e:
+            logger.error(
+                f"[CONNECTION] user_id={user_id} session_id={session_id} "
+                f"message='{message[:80]}' error={e}"
+            )
+            processing_time = int((time.time() - start_time) * 1000)
+            return BartoloResponse(
+                message_id=message_id,
+                session_id=session_id,
+                response="Não consegui me conectar ao serviço de IA. Verifique a conexão e tente novamente.",
+                processing_time_ms=processing_time,
+                bartolo_mood="supportive",
+            )
+
+        except PermissionError as e:
+            logger.error(
+                f"[PERMISSION] user_id={user_id} session_id={session_id} "
+                f"message='{message[:80]}' error={e}"
+            )
+            processing_time = int((time.time() - start_time) * 1000)
+            return BartoloResponse(
+                message_id=message_id,
+                session_id=session_id,
+                response="Você não tem permissão para acessar este recurso. Entre em contato com o administrador.",
+                processing_time_ms=processing_time,
+                bartolo_mood="professional",
+            )
+
+        except Exception as e:
+            error_type = type(e).__name__
+            logger.exception(
+                f"[UNEXPECTED] user_id={user_id} session_id={session_id} "
+                f"message='{message[:80]}' error_type={error_type} error={e}"
+            )
+            processing_time = int((time.time() - start_time) * 1000)
+
+            # Mensagem contextualizada
+            if "rate" in str(e).lower() or "limit" in str(e).lower():
+                error_msg = "O serviço de IA está temporariamente sobrecarregado. Aguarde alguns segundos e tente novamente."
+            elif "token" in str(e).lower() or "auth" in str(e).lower():
+                error_msg = "Houve um problema de autenticação com o serviço de IA. O administrador foi notificado."
+            else:
+                error_msg = "Desculpe, ocorreu um erro inesperado ao processar sua mensagem. Pode tentar novamente?"
 
             return BartoloResponse(
                 message_id=message_id,
                 session_id=session_id,
-                response="Desculpe, ocorreu um erro ao processar sua mensagem. Pode tentar novamente?",
+                response=error_msg,
                 processing_time_ms=processing_time,
                 bartolo_mood="supportive",
             )
@@ -878,3 +1095,69 @@ NÃO dê instruções de como buscar - os dados JÁ ESTÃO AQUI!
             "modules_available": len(get_all_modules()),
             "wizards_available": len(self.wizard_manager.get_available_wizards()),
         }
+
+    def _is_query_intent(self, message: str) -> bool:
+        """
+        Detecta se a mensagem é uma consulta/pergunta ao invés de resposta ao wizard.
+
+        Verifica verbos de consulta, interrogação, comandos de skill, etc.
+        Usado para permitir consultas mesmo durante wizard ativo.
+
+        Args:
+            message: Mensagem do usuário
+
+        Returns:
+            True se é consulta/ação, False se é provável resposta ao wizard
+        """
+        message_lower = message.lower().strip()
+
+        # 1. Comandos de skill sempre são consultas
+        if message_lower.startswith('/'):
+            return True
+
+        # 2. Verbos de consulta (início da frase)
+        query_verbs = [
+            'mostrar', 'listar', 'ver', 'verificar', 'consultar', 'buscar',
+            'checar', 'conferir', 'exibir', 'procurar', 'encontrar',
+            'qual', 'quais', 'quantos', 'quanto', 'quem', 'onde', 'quando', 'como',
+            'existe', 'tem', 'há', 'temos', 'tenho'
+        ]
+        if any(message_lower.startswith(verb) for verb in query_verbs):
+            return True
+
+        # 3. Perguntas (presença de interrogação ou palavras interrogativas)
+        if '?' in message:
+            return True
+
+        interrogatives = ['qual', 'quais', 'quantos', 'quanto', 'quem', 'onde', 'quando', 'como', 'por que', 'porque']
+        if any(word in message_lower.split()[:5] for word in interrogatives):  # Primeiras 5 palavras
+            return True
+
+        # 4. Comandos de ação
+        action_verbs = [
+            'criar', 'registrar', 'adicionar', 'excluir', 'deletar', 'atualizar',
+            'modificar', 'alterar', 'editar', 'salvar', 'enviar', 'cancelar'
+        ]
+        # Ações geralmente têm contexto (ex: "criar comunicado", não só "programada")
+        first_word = message_lower.split()[0] if message_lower.split() else ''
+        if first_word in action_verbs:
+            return True
+
+        # 5. Mensagens muito curtas (1-3 palavras) SEM contexto provavelmente são respostas ao wizard
+        words = message_lower.split()
+        if len(words) <= 3:
+            # Se é uma palavra simples comum em respostas de wizard
+            simple_responses = [
+                'sim', 'não', 'ok', 'continuar', 'prosseguir', 'avançar',
+                'rotina', 'programada', 'emergencial', 'noturna', 'especial',
+                'normal', 'alta', 'baixa', 'urgente'
+            ]
+            if message_lower in simple_responses or any(w in simple_responses for w in words):
+                return False  # Provavelmente resposta ao wizard
+
+        # 6. Default: Mensagens com 4+ palavras sem verbos de ação são provavelmente consultas
+        if len(words) >= 4:
+            return True
+
+        # 7. Se não detectou nada, considera resposta ao wizard
+        return False

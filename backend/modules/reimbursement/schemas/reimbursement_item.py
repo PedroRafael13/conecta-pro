@@ -15,7 +15,7 @@ class ReimbursementItemBase(BaseModel):
     description: str = Field(..., min_length=3, max_length=500)
     merchant: Optional[str] = Field(None, max_length=200)
     expense_date: date
-    amount: Decimal = Field(..., gt=0, decimal_places=2)
+    amount: Decimal = Field(..., gt=0)
     document_type: Optional[str] = Field(None, max_length=30)
     document_number: Optional[str] = Field(None, max_length=50)
     notes: Optional[str] = None
@@ -43,7 +43,7 @@ class ReimbursementItemUpdate(BaseModel):
     description: Optional[str] = Field(None, min_length=3, max_length=500)
     merchant: Optional[str] = Field(None, max_length=200)
     expense_date: Optional[date] = None
-    amount: Optional[Decimal] = Field(None, gt=0, decimal_places=2)
+    amount: Optional[Decimal] = Field(None, gt=0)
     document_type: Optional[str] = Field(None, max_length=30)
     document_number: Optional[str] = Field(None, max_length=50)
     notes: Optional[str] = None
@@ -52,7 +52,7 @@ class ReimbursementItemUpdate(BaseModel):
 class ReimbursementItemApprove(BaseModel):
     """Schema para aprovação individual de item."""
 
-    approved_amount: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    approved_amount: Optional[Decimal] = Field(None, ge=0)
 
 
 class ReimbursementItemReject(BaseModel):

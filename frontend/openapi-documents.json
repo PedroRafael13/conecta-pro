@@ -1,0 +1,1314 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Document Intelligence API",
+    "description": "API de processamento inteligente de documentos com OCR e IA",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/documents/upload": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Upload de documento",
+        "description": "Realiza upload e processamento inicial de documento.\n\n- **file**: Arquivo do documento (PDF, PNG, JPG, TIFF)\n- **tenant_id**: Identificador do tenant\n- **source**: Origem do documento (upload, api, email, scan)\n- **auto_process**: Se deve processar automaticamente",
+        "operationId": "upload_document_api_v1_documents_upload_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do tenant",
+              "title": "Tenant Id"
+            },
+            "description": "ID do tenant"
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Origem do documento",
+              "default": "upload",
+              "title": "Source"
+            },
+            "description": "Origem do documento"
+          },
+          {
+            "name": "auto_process",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Processar automaticamente",
+              "default": true,
+              "title": "Auto Process"
+            },
+            "description": "Processar automaticamente"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_api_v1_documents_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/upload/batch": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Upload de multiplos documentos",
+        "description": "Upload de multiplos documentos em lote.",
+        "operationId": "upload_batch_api_v1_documents_upload_batch_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_batch_api_v1_documents_upload_batch_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DocumentUploadResponse"
+                  },
+                  "title": "Response Upload Batch Api V1 Documents Upload Batch Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{document_id}/ocr": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Executar OCR em documento",
+        "description": "Executa OCR em um documento.\n\n- **document_id**: ID do documento\n- **provider**: Provider de OCR (tesseract, easyocr, google_vision)\n- **languages**: Lista de idiomas para OCR",
+        "operationId": "run_ocr_api_v1_documents__document_id__ocr_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Provider de OCR",
+              "default": "tesseract",
+              "title": "Provider"
+            },
+            "description": "Provider de OCR"
+          },
+          {
+            "name": "languages",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Idiomas (separados por virgula)",
+              "default": "por,eng",
+              "title": "Languages"
+            },
+            "description": "Idiomas (separados por virgula)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OCRResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{document_id}/classify": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Classificar tipo de documento",
+        "description": "Classifica o tipo de um documento.\n\nUtiliza keywords, padroes e templates para identificar\nautomaticamente o tipo do documento.",
+        "operationId": "classify_document_api_v1_documents__document_id__classify_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassificationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{document_id}/extract": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Extrair dados do documento",
+        "description": "Extrai dados estruturados de um documento.\n\n- **document_id**: ID do documento\n- **template_id**: Template especifico (opcional)",
+        "operationId": "extract_data_api_v1_documents__document_id__extract_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "template_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ID do template",
+              "title": "Template Id"
+            },
+            "description": "ID do template"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{document_id}/validate": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Validar dados extraidos",
+        "description": "Valida dados extraidos de um documento.\n\nAplica validadores de formato, regras de negocio\ne consistencia nos campos extraidos.",
+        "operationId": "validate_data_api_v1_documents__document_id__validate_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/{document_id}/process": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Processar documento completo",
+        "description": "Processa documento com pipeline completo.\n\n1. OCR (se necessario)\n2. Classificacao (opcional)\n3. Extracao de dados (opcional)\n4. Validacao (opcional)",
+        "operationId": "process_document_api_v1_documents__document_id__process_post",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessingRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/templates": {
+      "get": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Listar templates",
+        "description": "Lista templates de extracao disponiveis.",
+        "operationId": "list_templates_api_v1_documents_templates_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por categoria",
+              "title": "Category"
+            },
+            "description": "Filtrar por categoria"
+          },
+          {
+            "name": "document_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por tipo",
+              "title": "Document Type"
+            },
+            "description": "Filtrar por tipo"
+          },
+          {
+            "name": "include_builtin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Incluir templates builtin",
+              "default": true,
+              "title": "Include Builtin"
+            },
+            "description": "Incluir templates builtin"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TemplateResponse"
+                  },
+                  "title": "Response List Templates Api V1 Documents Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Criar template",
+        "description": "Cria novo template de extracao.",
+        "operationId": "create_template_api_v1_documents_templates_post",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/templates/{template_id}": {
+      "get": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Obter template",
+        "description": "Obtem detalhes de um template.",
+        "operationId": "get_template_api_v1_documents_templates__template_id__get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Template Api V1 Documents Templates  Template Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Remover template",
+        "description": "Remove um template customizado.",
+        "operationId": "delete_template_api_v1_documents_templates__template_id__delete",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/types": {
+      "get": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Listar tipos de documentos",
+        "description": "Lista todos os tipos de documentos suportados.",
+        "operationId": "list_document_types_api_v1_documents_types_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Document Types Api V1 Documents Types Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/providers": {
+      "get": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Listar providers OCR",
+        "description": "Lista providers de OCR disponiveis.",
+        "operationId": "list_ocr_providers_api_v1_documents_providers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response List Ocr Providers Api V1 Documents Providers Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/stats": {
+      "get": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Estatisticas de armazenamento",
+        "description": "Obtem estatisticas de armazenamento do tenant.",
+        "operationId": "get_storage_stats_api_v1_documents_stats_get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Storage Stats Api V1 Documents Stats Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/validate/cpf": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Validar CPF",
+        "description": "Valida um CPF.",
+        "operationId": "validate_cpf_api_v1_documents_validate_cpf_post",
+        "parameters": [
+          {
+            "name": "cpf",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "CPF a validar",
+              "title": "Cpf"
+            },
+            "description": "CPF a validar"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Validate Cpf Api V1 Documents Validate Cpf Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documents/validate/cnpj": {
+      "post": {
+        "tags": [
+          "Document Intelligence"
+        ],
+        "summary": "Validar CNPJ",
+        "description": "Valida um CNPJ.",
+        "operationId": "validate_cnpj_api_v1_documents_validate_cnpj_post",
+        "parameters": [
+          {
+            "name": "cnpj",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "CNPJ a validar",
+              "title": "Cnpj"
+            },
+            "description": "CNPJ a validar"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Validate Cnpj Api V1 Documents Validate Cnpj Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_upload_batch_api_v1_documents_upload_batch_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_batch_api_v1_documents_upload_batch_post"
+      },
+      "Body_upload_document_api_v1_documents_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_api_v1_documents_upload_post"
+      },
+      "ClassificationResponse": {
+        "properties": {
+          "document_type": {
+            "type": "string",
+            "title": "Document Type"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "matched_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Keywords"
+          },
+          "matched_patterns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Patterns"
+          },
+          "alternatives": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Alternatives"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_type",
+          "confidence",
+          "matched_keywords",
+          "matched_patterns",
+          "alternatives"
+        ],
+        "title": "ClassificationResponse",
+        "description": "Resposta de classificacao."
+      },
+      "DocumentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "document_type": {
+            "type": "string",
+            "title": "Document Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "confidence_score": {
+            "type": "number",
+            "title": "Confidence Score"
+          },
+          "needs_review": {
+            "type": "boolean",
+            "title": "Needs Review"
+          },
+          "extracted_data": {
+            "type": "object",
+            "title": "Extracted Data",
+            "default": {}
+          },
+          "processing_summary": {
+            "type": "object",
+            "title": "Processing Summary",
+            "default": {}
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "document_type",
+          "status",
+          "confidence_score",
+          "needs_review",
+          "created_at"
+        ],
+        "title": "DocumentResponse",
+        "description": "Resposta com dados do documento."
+      },
+      "DocumentUploadResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "status",
+          "message"
+        ],
+        "title": "DocumentUploadResponse",
+        "description": "Resposta de upload de documento."
+      },
+      "ExtractionResponse": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "fields_extracted": {
+            "type": "integer",
+            "title": "Fields Extracted"
+          },
+          "fields": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "fields_extracted",
+          "fields",
+          "confidence"
+        ],
+        "title": "ExtractionResponse",
+        "description": "Resposta de extracao."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "OCRResponse": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages"
+          },
+          "words": {
+            "type": "integer",
+            "title": "Words"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "processing_time_ms": {
+            "type": "integer",
+            "title": "Processing Time Ms"
+          },
+          "text_preview": {
+            "type": "string",
+            "title": "Text Preview"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "provider",
+          "pages",
+          "words",
+          "confidence",
+          "processing_time_ms",
+          "text_preview"
+        ],
+        "title": "OCRResponse",
+        "description": "Resposta de OCR."
+      },
+      "ProcessingRequest": {
+        "properties": {
+          "classify": {
+            "type": "boolean",
+            "title": "Classify",
+            "default": true
+          },
+          "extract": {
+            "type": "boolean",
+            "title": "Extract",
+            "default": true
+          },
+          "validate": {
+            "type": "boolean",
+            "title": "Validate",
+            "default": true
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          }
+        },
+        "type": "object",
+        "title": "ProcessingRequest",
+        "description": "Request para processamento completo."
+      },
+      "TemplateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "document_type": {
+            "type": "string",
+            "title": "Document Type"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": "other"
+          },
+          "detection_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Detection Keywords",
+            "default": []
+          },
+          "fields": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Fields",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "document_type"
+        ],
+        "title": "TemplateRequest",
+        "description": "Request para criacao de template."
+      },
+      "TemplateResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "document_type": {
+            "type": "string",
+            "title": "Document Type"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "fields_count": {
+            "type": "integer",
+            "title": "Fields Count"
+          },
+          "usage_count": {
+            "type": "integer",
+            "title": "Usage Count"
+          },
+          "success_rate": {
+            "type": "number",
+            "title": "Success Rate"
+          },
+          "is_official": {
+            "type": "boolean",
+            "title": "Is Official"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "document_type",
+          "category",
+          "status",
+          "fields_count",
+          "usage_count",
+          "success_rate",
+          "is_official"
+        ],
+        "title": "TemplateResponse",
+        "description": "Resposta com dados do template."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "ValidationResponse": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "title": "Document Id"
+          },
+          "is_valid": {
+            "type": "boolean",
+            "title": "Is Valid"
+          },
+          "overall_score": {
+            "type": "number",
+            "title": "Overall Score"
+          },
+          "total_fields": {
+            "type": "integer",
+            "title": "Total Fields"
+          },
+          "fields_passed": {
+            "type": "integer",
+            "title": "Fields Passed"
+          },
+          "fields_failed": {
+            "type": "integer",
+            "title": "Fields Failed"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_id",
+          "is_valid",
+          "overall_score",
+          "total_fields",
+          "fields_passed",
+          "fields_failed",
+          "errors",
+          "warnings"
+        ],
+        "title": "ValidationResponse",
+        "description": "Resposta de validacao."
+      }
+    }
+  }
+}

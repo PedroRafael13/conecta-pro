@@ -5,11 +5,24 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   AIForecastRequest,
@@ -49,6 +62,7 @@ import type {
   GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet200,
   GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams,
   GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams,
+  HTTPValidationError,
   ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams,
   ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams,
   OptimizationSuggestion,
@@ -56,405 +70,2425 @@ import type {
   PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialCashflow = () => {
+
 /**
  * Gera projeção de fluxo de caixa.
  * @summary Projeção de fluxo de caixa
  */
-const getProjectionApiV1FinancialCashflowCashflowProjectionGet = <TData = AxiosResponse<CashFlowProjection[]>>(
-    params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/projection`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getProjectionApiV1FinancialCashflowCashflowProjectionGet = (
+    params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowProjection[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/projection`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetProjectionApiV1FinancialCashflowCashflowProjectionGetQueryKey = (params?: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/projection`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetProjectionApiV1FinancialCashflowCashflowProjectionGetQueryOptions = <TData = Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError = HTTPValidationError>(params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetProjectionApiV1FinancialCashflowCashflowProjectionGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>> = ({ signal }) => getProjectionApiV1FinancialCashflowCashflowProjectionGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetProjectionApiV1FinancialCashflowCashflowProjectionGetQueryResult = NonNullable<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>>
+export type GetProjectionApiV1FinancialCashflowCashflowProjectionGetQueryError = HTTPValidationError
+
+
+export function useGetProjectionApiV1FinancialCashflowCashflowProjectionGet<TData = Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError = HTTPValidationError>(
+ params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProjectionApiV1FinancialCashflowCashflowProjectionGet<TData = Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError = HTTPValidationError>(
+ params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>,
+          TError,
+          Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetProjectionApiV1FinancialCashflowCashflowProjectionGet<TData = Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError = HTTPValidationError>(
+ params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Projeção de fluxo de caixa
+ */
+
+export function useGetProjectionApiV1FinancialCashflowCashflowProjectionGet<TData = Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError = HTTPValidationError>(
+ params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getProjectionApiV1FinancialCashflowCashflowProjectionGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetProjectionApiV1FinancialCashflowCashflowProjectionGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna resumo do fluxo de caixa.
  * @summary Resumo de fluxo de caixa
  */
-const getSummaryApiV1FinancialCashflowCashflowSummaryGet = <TData = AxiosResponse<CashFlowSummary>>(
-    params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/summary`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getSummaryApiV1FinancialCashflowCashflowSummaryGet = (
+    params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowSummary>(
+      {url: `/api/v1/financial/cashflow/cashflow/summary`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetSummaryApiV1FinancialCashflowCashflowSummaryGetQueryKey = (params?: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/summary`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetSummaryApiV1FinancialCashflowCashflowSummaryGetQueryOptions = <TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError = HTTPValidationError>(params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSummaryApiV1FinancialCashflowCashflowSummaryGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>> = ({ signal }) => getSummaryApiV1FinancialCashflowCashflowSummaryGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSummaryApiV1FinancialCashflowCashflowSummaryGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>>
+export type GetSummaryApiV1FinancialCashflowCashflowSummaryGetQueryError = HTTPValidationError
+
+
+export function useGetSummaryApiV1FinancialCashflowCashflowSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSummaryApiV1FinancialCashflowCashflowSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSummaryApiV1FinancialCashflowCashflowSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Resumo de fluxo de caixa
+ */
+
+export function useGetSummaryApiV1FinancialCashflowCashflowSummaryGet<TData = Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError = HTTPValidationError>(
+ params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSummaryApiV1FinancialCashflowCashflowSummaryGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSummaryApiV1FinancialCashflowCashflowSummaryGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna tendências mensais de fluxo de caixa.
  * @summary Tendências de fluxo de caixa
  */
-const getTrendsApiV1FinancialCashflowCashflowTrendsGet = <TData = AxiosResponse<CashFlowTrend[]>>(
-    params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/trends`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getTrendsApiV1FinancialCashflowCashflowTrendsGet = (
+    params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowTrend[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/trends`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetTrendsApiV1FinancialCashflowCashflowTrendsGetQueryKey = (params?: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/trends`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetTrendsApiV1FinancialCashflowCashflowTrendsGetQueryOptions = <TData = Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError = HTTPValidationError>(params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTrendsApiV1FinancialCashflowCashflowTrendsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>> = ({ signal }) => getTrendsApiV1FinancialCashflowCashflowTrendsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetTrendsApiV1FinancialCashflowCashflowTrendsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>>
+export type GetTrendsApiV1FinancialCashflowCashflowTrendsGetQueryError = HTTPValidationError
+
+
+export function useGetTrendsApiV1FinancialCashflowCashflowTrendsGet<TData = Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError = HTTPValidationError>(
+ params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTrendsApiV1FinancialCashflowCashflowTrendsGet<TData = Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError = HTTPValidationError>(
+ params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTrendsApiV1FinancialCashflowCashflowTrendsGet<TData = Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError = HTTPValidationError>(
+ params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Tendências de fluxo de caixa
+ */
+
+export function useGetTrendsApiV1FinancialCashflowCashflowTrendsGet<TData = Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError = HTTPValidationError>(
+ params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTrendsApiV1FinancialCashflowCashflowTrendsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetTrendsApiV1FinancialCashflowCashflowTrendsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna breakdown de despesas por categoria.
  * @summary Breakdown por categoria
  */
-const getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet = <TData = AxiosResponse<GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet200>>(
-    params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/category-breakdown`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet = (
+    params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet200>(
+      {url: `/api/v1/financial/cashflow/cashflow/category-breakdown`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetQueryKey = (params?: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/category-breakdown`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetQueryOptions = <TData = Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError = HTTPValidationError>(params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>> = ({ signal }) => getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>>
+export type GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetQueryError = HTTPValidationError
+
+
+export function useGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet<TData = Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet<TData = Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet<TData = Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Breakdown por categoria
+ */
+
+export function useGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet<TData = Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna breakdown de despesas por fornecedor.
  * @summary Breakdown por fornecedor
  */
-const getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet = <TData = AxiosResponse<GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet200>>(
-    params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/supplier-breakdown`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet = (
+    params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet200>(
+      {url: `/api/v1/financial/cashflow/cashflow/supplier-breakdown`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetQueryKey = (params?: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/supplier-breakdown`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetQueryOptions = <TData = Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError = HTTPValidationError>(params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>> = ({ signal }) => getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>>
+export type GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetQueryError = HTTPValidationError
+
+
+export function useGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet<TData = Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet<TData = Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet<TData = Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Breakdown por fornecedor
+ */
+
+export function useGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet<TData = Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError = HTTPValidationError>(
+ params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna dados completos para dashboard financeiro.
  * @summary Dashboard financeiro completo
  */
-const getDashboardApiV1FinancialCashflowCashflowDashboardGet = <TData = AxiosResponse<CashFlowDashboard>>(
-    params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/dashboard`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getDashboardApiV1FinancialCashflowCashflowDashboardGet = (
+    params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowDashboard>(
+      {url: `/api/v1/financial/cashflow/cashflow/dashboard`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetDashboardApiV1FinancialCashflowCashflowDashboardGetQueryKey = (params?: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/dashboard`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetDashboardApiV1FinancialCashflowCashflowDashboardGetQueryOptions = <TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError = HTTPValidationError>(params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDashboardApiV1FinancialCashflowCashflowDashboardGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>> = ({ signal }) => getDashboardApiV1FinancialCashflowCashflowDashboardGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetDashboardApiV1FinancialCashflowCashflowDashboardGetQueryResult = NonNullable<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>>
+export type GetDashboardApiV1FinancialCashflowCashflowDashboardGetQueryError = HTTPValidationError
+
+
+export function useGetDashboardApiV1FinancialCashflowCashflowDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError = HTTPValidationError>(
+ params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardApiV1FinancialCashflowCashflowDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError = HTTPValidationError>(
+ params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>,
+          TError,
+          Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetDashboardApiV1FinancialCashflowCashflowDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError = HTTPValidationError>(
+ params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Dashboard financeiro completo
+ */
+
+export function useGetDashboardApiV1FinancialCashflowCashflowDashboardGet<TData = Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError = HTTPValidationError>(
+ params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getDashboardApiV1FinancialCashflowCashflowDashboardGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetDashboardApiV1FinancialCashflowCashflowDashboardGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Cria nova entrada de fluxo de caixa.
  * @summary Criar entrada de fluxo de caixa
  */
-const createEntryApiV1FinancialCashflowCashflowEntriesPost = <TData = AxiosResponse<CashFlowEntryResponse>>(
-    cashFlowEntryCreate: CashFlowEntryCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/cashflow/cashflow/entries`,
-      cashFlowEntryCreate,options
-    );
-  }
-/**
+export const createEntryApiV1FinancialCashflowCashflowEntriesPost = (
+    cashFlowEntryCreate: CashFlowEntryCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowEntryResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cashFlowEntryCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateEntryApiV1FinancialCashflowCashflowEntriesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEntryApiV1FinancialCashflowCashflowEntriesPost>>, TError,{data: CashFlowEntryCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createEntryApiV1FinancialCashflowCashflowEntriesPost>>, TError,{data: CashFlowEntryCreate}, TContext> => {
+
+const mutationKey = ['createEntryApiV1FinancialCashflowCashflowEntriesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createEntryApiV1FinancialCashflowCashflowEntriesPost>>, {data: CashFlowEntryCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createEntryApiV1FinancialCashflowCashflowEntriesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateEntryApiV1FinancialCashflowCashflowEntriesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createEntryApiV1FinancialCashflowCashflowEntriesPost>>>
+    export type CreateEntryApiV1FinancialCashflowCashflowEntriesPostMutationBody = CashFlowEntryCreate
+    export type CreateEntryApiV1FinancialCashflowCashflowEntriesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar entrada de fluxo de caixa
+ */
+export const useCreateEntryApiV1FinancialCashflowCashflowEntriesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createEntryApiV1FinancialCashflowCashflowEntriesPost>>, TError,{data: CashFlowEntryCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createEntryApiV1FinancialCashflowCashflowEntriesPost>>,
+        TError,
+        {data: CashFlowEntryCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateEntryApiV1FinancialCashflowCashflowEntriesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista entradas de fluxo de caixa com filtros.
  * @summary Listar entradas
  */
-const listEntriesApiV1FinancialCashflowCashflowEntriesGet = <TData = AxiosResponse<CashFlowEntryResponse[]>>(
-    params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/entries`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listEntriesApiV1FinancialCashflowCashflowEntriesGet = (
+    params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowEntryResponse[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListEntriesApiV1FinancialCashflowCashflowEntriesGetQueryKey = (params?: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/entries`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListEntriesApiV1FinancialCashflowCashflowEntriesGetQueryOptions = <TData = Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError = HTTPValidationError>(params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListEntriesApiV1FinancialCashflowCashflowEntriesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>> = ({ signal }) => listEntriesApiV1FinancialCashflowCashflowEntriesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListEntriesApiV1FinancialCashflowCashflowEntriesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>>
+export type ListEntriesApiV1FinancialCashflowCashflowEntriesGetQueryError = HTTPValidationError
+
+
+export function useListEntriesApiV1FinancialCashflowCashflowEntriesGet<TData = Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError = HTTPValidationError>(
+ params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListEntriesApiV1FinancialCashflowCashflowEntriesGet<TData = Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError = HTTPValidationError>(
+ params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListEntriesApiV1FinancialCashflowCashflowEntriesGet<TData = Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError = HTTPValidationError>(
+ params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar entradas
+ */
+
+export function useListEntriesApiV1FinancialCashflowCashflowEntriesGet<TData = Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError = HTTPValidationError>(
+ params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listEntriesApiV1FinancialCashflowCashflowEntriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListEntriesApiV1FinancialCashflowCashflowEntriesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna entradas pendentes nos próximos dias.
  * @summary Entradas pendentes
  */
-const getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet = <TData = AxiosResponse<CashFlowEntryResponse[]>>(
-    params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/entries/pending`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet = (
+    params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowEntryResponse[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries/pending`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetQueryKey = (params?: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/entries/pending`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetQueryOptions = <TData = Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError = HTTPValidationError>(params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>> = ({ signal }) => getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetQueryResult = NonNullable<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>>
+export type GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetQueryError = HTTPValidationError
+
+
+export function useGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet<TData = Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet<TData = Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>,
+          TError,
+          Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet<TData = Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Entradas pendentes
+ */
+
+export function useGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet<TData = Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError = HTTPValidationError>(
+ params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna totais de entradas por tipo.
  * @summary Totais por tipo
  */
-const getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet = <TData = AxiosResponse<GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet200>>(
-    params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/entries/totals`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet = (
+    params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet200>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries/totals`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetQueryKey = (params?: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/entries/totals`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetQueryOptions = <TData = Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError = HTTPValidationError>(params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>> = ({ signal }) => getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>>
+export type GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetQueryError = HTTPValidationError
+
+
+export function useGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet<TData = Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError = HTTPValidationError>(
+ params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet<TData = Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError = HTTPValidationError>(
+ params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet<TData = Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError = HTTPValidationError>(
+ params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Totais por tipo
+ */
+
+export function useGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet<TData = Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError = HTTPValidationError>(
+ params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna entrada pelo ID.
  * @summary Obter entrada
  */
-const getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet = <TData = AxiosResponse<CashFlowEntryResponse>>(
-    entryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/entries/${entryId}`,options
-    );
-  }
+export const getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet = (
+    entryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowEntryResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries/${entryId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGetQueryKey = (entryId?: string,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/entries/${entryId}`
+    ] as const;
+    }
+
+    
+export const getGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError = HTTPValidationError>(entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGetQueryKey(entryId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>> = ({ signal }) => getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet(entryId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(entryId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>>
+export type GetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGetQueryError = HTTPValidationError
+
+
+export function useGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter entrada
+ */
+
+export function useGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet<TData = Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError = HTTPValidationError>(
+ entryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGetQueryOptions(entryId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza entrada de fluxo de caixa.
  * @summary Atualizar entrada
  */
-const updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut = <TData = AxiosResponse<CashFlowEntryResponse>>(
+export const updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut = (
     entryId: string,
-    cashFlowEntryUpdate: CashFlowEntryUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/cashflow/cashflow/entries/${entryId}`,
-      cashFlowEntryUpdate,options
-    );
-  }
-/**
+    cashFlowEntryUpdate: CashFlowEntryUpdate,
+ ) => {
+      
+      
+      return customInstance<CashFlowEntryResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries/${entryId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: cashFlowEntryUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut>>, TError,{entryId: string;data: CashFlowEntryUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut>>, TError,{entryId: string;data: CashFlowEntryUpdate}, TContext> => {
+
+const mutationKey = ['updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut>>, {entryId: string;data: CashFlowEntryUpdate}> = (props) => {
+          const {entryId,data} = props ?? {};
+
+          return  updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut(entryId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut>>>
+    export type UpdateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPutMutationBody = CashFlowEntryUpdate
+    export type UpdateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar entrada
+ */
+export const useUpdateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut>>, TError,{entryId: string;data: CashFlowEntryUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut>>,
+        TError,
+        {entryId: string;data: CashFlowEntryUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui entrada de fluxo de caixa.
  * @summary Excluir entrada
  */
-const deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete = <TData = AxiosResponse<void>>(
-    entryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/cashflow/cashflow/entries/${entryId}`,options
-    );
-  }
-/**
+export const deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete = (
+    entryId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries/${entryId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete>>, TError,{entryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete>>, TError,{entryId: string}, TContext> => {
+
+const mutationKey = ['deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete>>, {entryId: string}> = (props) => {
+          const {entryId} = props ?? {};
+
+          return  deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete(entryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete>>>
+    
+    export type DeleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir entrada
+ */
+export const useDeleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete>>, TError,{entryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete>>,
+        TError,
+        {entryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Realiza entrada de fluxo de caixa (marca como efetivada).
  * @summary Realizar entrada
  */
-const realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost = <TData = AxiosResponse<CashFlowEntryResponse>>(
+export const realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost = (
     entryId: string,
-    cashFlowEntryRealize: CashFlowEntryRealize, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/cashflow/cashflow/entries/${entryId}/realize`,
-      cashFlowEntryRealize,options
-    );
-  }
-/**
+    cashFlowEntryRealize: CashFlowEntryRealize,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowEntryResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/entries/${entryId}/realize`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cashFlowEntryRealize, signal
+    },
+      );
+    }
+  
+
+
+export const getRealizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost>>, TError,{entryId: string;data: CashFlowEntryRealize}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost>>, TError,{entryId: string;data: CashFlowEntryRealize}, TContext> => {
+
+const mutationKey = ['realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost>>, {entryId: string;data: CashFlowEntryRealize}> = (props) => {
+          const {entryId,data} = props ?? {};
+
+          return  realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost(entryId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RealizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePostMutationResult = NonNullable<Awaited<ReturnType<typeof realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost>>>
+    export type RealizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePostMutationBody = CashFlowEntryRealize
+    export type RealizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Realizar entrada
+ */
+export const useRealizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost>>, TError,{entryId: string;data: CashFlowEntryRealize}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost>>,
+        TError,
+        {entryId: string;data: CashFlowEntryRealize},
+        TContext
+      > => {
+
+      const mutationOptions = getRealizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Cria nova previsão de fluxo de caixa.
  * @summary Criar previsão
  */
-const createForecastApiV1FinancialCashflowCashflowForecastsPost = <TData = AxiosResponse<CashFlowForecastResponse>>(
-    cashFlowForecastCreate: CashFlowForecastCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/cashflow/cashflow/forecasts`,
-      cashFlowForecastCreate,options
-    );
-  }
-/**
+export const createForecastApiV1FinancialCashflowCashflowForecastsPost = (
+    cashFlowForecastCreate: CashFlowForecastCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowForecastResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/forecasts`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: cashFlowForecastCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateForecastApiV1FinancialCashflowCashflowForecastsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createForecastApiV1FinancialCashflowCashflowForecastsPost>>, TError,{data: CashFlowForecastCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createForecastApiV1FinancialCashflowCashflowForecastsPost>>, TError,{data: CashFlowForecastCreate}, TContext> => {
+
+const mutationKey = ['createForecastApiV1FinancialCashflowCashflowForecastsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createForecastApiV1FinancialCashflowCashflowForecastsPost>>, {data: CashFlowForecastCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createForecastApiV1FinancialCashflowCashflowForecastsPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateForecastApiV1FinancialCashflowCashflowForecastsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createForecastApiV1FinancialCashflowCashflowForecastsPost>>>
+    export type CreateForecastApiV1FinancialCashflowCashflowForecastsPostMutationBody = CashFlowForecastCreate
+    export type CreateForecastApiV1FinancialCashflowCashflowForecastsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar previsão
+ */
+export const useCreateForecastApiV1FinancialCashflowCashflowForecastsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createForecastApiV1FinancialCashflowCashflowForecastsPost>>, TError,{data: CashFlowForecastCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createForecastApiV1FinancialCashflowCashflowForecastsPost>>,
+        TError,
+        {data: CashFlowForecastCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateForecastApiV1FinancialCashflowCashflowForecastsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista previsões com filtros.
  * @summary Listar previsões
  */
-const listForecastsApiV1FinancialCashflowCashflowForecastsGet = <TData = AxiosResponse<CashFlowForecastResponse[]>>(
-    params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/forecasts`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listForecastsApiV1FinancialCashflowCashflowForecastsGet = (
+    params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowForecastResponse[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/forecasts`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListForecastsApiV1FinancialCashflowCashflowForecastsGetQueryKey = (params?: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/forecasts`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListForecastsApiV1FinancialCashflowCashflowForecastsGetQueryOptions = <TData = Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError = HTTPValidationError>(params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListForecastsApiV1FinancialCashflowCashflowForecastsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>> = ({ signal }) => listForecastsApiV1FinancialCashflowCashflowForecastsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListForecastsApiV1FinancialCashflowCashflowForecastsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>>
+export type ListForecastsApiV1FinancialCashflowCashflowForecastsGetQueryError = HTTPValidationError
+
+
+export function useListForecastsApiV1FinancialCashflowCashflowForecastsGet<TData = Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError = HTTPValidationError>(
+ params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListForecastsApiV1FinancialCashflowCashflowForecastsGet<TData = Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError = HTTPValidationError>(
+ params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListForecastsApiV1FinancialCashflowCashflowForecastsGet<TData = Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError = HTTPValidationError>(
+ params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar previsões
+ */
+
+export function useListForecastsApiV1FinancialCashflowCashflowForecastsGet<TData = Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError = HTTPValidationError>(
+ params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listForecastsApiV1FinancialCashflowCashflowForecastsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListForecastsApiV1FinancialCashflowCashflowForecastsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna previsões ativas do condomínio.
  * @summary Previsões ativas
  */
-const getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet = <TData = AxiosResponse<CashFlowForecastResponse[]>>(
-    params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/forecasts/active`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet = (
+    params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowForecastResponse[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/forecasts/active`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetQueryKey = (params?: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/forecasts/active`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetQueryOptions = <TData = Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError = HTTPValidationError>(params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>> = ({ signal }) => getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetQueryResult = NonNullable<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>>
+export type GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetQueryError = HTTPValidationError
+
+
+export function useGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet<TData = Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError = HTTPValidationError>(
+ params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>,
+          TError,
+          Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet<TData = Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError = HTTPValidationError>(
+ params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>,
+          TError,
+          Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet<TData = Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError = HTTPValidationError>(
+ params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Previsões ativas
+ */
+
+export function useGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet<TData = Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError = HTTPValidationError>(
+ params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna previsão pelo ID.
  * @summary Obter previsão
  */
-const getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet = <TData = AxiosResponse<CashFlowForecastResponse>>(
-    forecastId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}`,options
-    );
-  }
+export const getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet = (
+    forecastId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowForecastResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGetQueryKey = (forecastId?: string,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}`
+    ] as const;
+    }
+
+    
+export const getGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError = HTTPValidationError>(forecastId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGetQueryKey(forecastId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>> = ({ signal }) => getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet(forecastId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(forecastId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>>
+export type GetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGetQueryError = HTTPValidationError
+
+
+export function useGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet<TData = Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError = HTTPValidationError>(
+ forecastId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet<TData = Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError = HTTPValidationError>(
+ forecastId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet<TData = Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError = HTTPValidationError>(
+ forecastId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Obter previsão
+ */
+
+export function useGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet<TData = Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError = HTTPValidationError>(
+ forecastId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGetQueryOptions(forecastId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza previsão.
  * @summary Atualizar previsão
  */
-const updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut = <TData = AxiosResponse<CashFlowForecastResponse>>(
+export const updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut = (
     forecastId: string,
-    cashFlowForecastUpdate: CashFlowForecastUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}`,
-      cashFlowForecastUpdate,options
-    );
-  }
-/**
+    cashFlowForecastUpdate: CashFlowForecastUpdate,
+ ) => {
+      
+      
+      return customInstance<CashFlowForecastResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: cashFlowForecastUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut>>, TError,{forecastId: string;data: CashFlowForecastUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut>>, TError,{forecastId: string;data: CashFlowForecastUpdate}, TContext> => {
+
+const mutationKey = ['updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut>>, {forecastId: string;data: CashFlowForecastUpdate}> = (props) => {
+          const {forecastId,data} = props ?? {};
+
+          return  updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut(forecastId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut>>>
+    export type UpdateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPutMutationBody = CashFlowForecastUpdate
+    export type UpdateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar previsão
+ */
+export const useUpdateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut>>, TError,{forecastId: string;data: CashFlowForecastUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut>>,
+        TError,
+        {forecastId: string;data: CashFlowForecastUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui previsão.
  * @summary Excluir previsão
  */
-const deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete = <TData = AxiosResponse<void>>(
-    forecastId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}`,options
-    );
-  }
-/**
+export const deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete = (
+    forecastId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete>>, TError,{forecastId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete>>, TError,{forecastId: string}, TContext> => {
+
+const mutationKey = ['deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete>>, {forecastId: string}> = (props) => {
+          const {forecastId} = props ?? {};
+
+          return  deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete(forecastId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete>>>
+    
+    export type DeleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir previsão
+ */
+export const useDeleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete>>, TError,{forecastId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete>>,
+        TError,
+        {forecastId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Atualiza valores realizados da previsão.
  * @summary Atualizar valores realizados
  */
-const updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost = <TData = AxiosResponse<CashFlowForecastResponse>>(
+export const updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost = (
     forecastId: string,
-    forecastActualsUpdate: ForecastActualsUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}/update-actuals`,
-      forecastActualsUpdate,options
-    );
-  }
-/**
+    forecastActualsUpdate: ForecastActualsUpdate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<CashFlowForecastResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/forecasts/${forecastId}/update-actuals`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: forecastActualsUpdate, signal
+    },
+      );
+    }
+  
+
+
+export const getUpdateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost>>, TError,{forecastId: string;data: ForecastActualsUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost>>, TError,{forecastId: string;data: ForecastActualsUpdate}, TContext> => {
+
+const mutationKey = ['updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost>>, {forecastId: string;data: ForecastActualsUpdate}> = (props) => {
+          const {forecastId,data} = props ?? {};
+
+          return  updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost(forecastId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPostMutationResult = NonNullable<Awaited<ReturnType<typeof updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost>>>
+    export type UpdateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPostMutationBody = ForecastActualsUpdate
+    export type UpdateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar valores realizados
+ */
+export const useUpdateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost>>, TError,{forecastId: string;data: ForecastActualsUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost>>,
+        TError,
+        {forecastId: string;data: ForecastActualsUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Gera previsão de fluxo de caixa usando IA.
  * @summary Gerar previsão com IA
  */
-const generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost = <TData = AxiosResponse<AIForecastResponse>>(
-    aIForecastRequest: AIForecastRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/cashflow/cashflow/ai/forecast`,
-      aIForecastRequest,options
-    );
-  }
-/**
+export const generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost = (
+    aIForecastRequest: AIForecastRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AIForecastResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/ai/forecast`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: aIForecastRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getGenerateAiForecastApiV1FinancialCashflowCashflowAiForecastPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost>>, TError,{data: AIForecastRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost>>, TError,{data: AIForecastRequest}, TContext> => {
+
+const mutationKey = ['generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost>>, {data: AIForecastRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type GenerateAiForecastApiV1FinancialCashflowCashflowAiForecastPostMutationResult = NonNullable<Awaited<ReturnType<typeof generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost>>>
+    export type GenerateAiForecastApiV1FinancialCashflowCashflowAiForecastPostMutationBody = AIForecastRequest
+    export type GenerateAiForecastApiV1FinancialCashflowCashflowAiForecastPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Gerar previsão com IA
+ */
+export const useGenerateAiForecastApiV1FinancialCashflowCashflowAiForecastPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost>>, TError,{data: AIForecastRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost>>,
+        TError,
+        {data: AIForecastRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getGenerateAiForecastApiV1FinancialCashflowCashflowAiForecastPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Detecta anomalias em fluxo de caixa usando IA.
  * @summary Detectar anomalias
  */
-const detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost = <TData = AxiosResponse<AnomalyDetectionResponse>>(
-    anomalyDetectionRequest: AnomalyDetectionRequest, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/cashflow/cashflow/ai/anomalies`,
-      anomalyDetectionRequest,options
-    );
-  }
-/**
+export const detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost = (
+    anomalyDetectionRequest: AnomalyDetectionRequest,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<AnomalyDetectionResponse>(
+      {url: `/api/v1/financial/cashflow/cashflow/ai/anomalies`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: anomalyDetectionRequest, signal
+    },
+      );
+    }
+  
+
+
+export const getDetectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost>>, TError,{data: AnomalyDetectionRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost>>, TError,{data: AnomalyDetectionRequest}, TContext> => {
+
+const mutationKey = ['detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost>>, {data: AnomalyDetectionRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DetectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPostMutationResult = NonNullable<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost>>>
+    export type DetectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPostMutationBody = AnomalyDetectionRequest
+    export type DetectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Detectar anomalias
+ */
+export const useDetectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost>>, TError,{data: AnomalyDetectionRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost>>,
+        TError,
+        {data: AnomalyDetectionRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getDetectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna sugestões de otimização baseadas em IA.
  * @summary Sugestões de otimização
  */
-const getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet = <TData = AxiosResponse<OptimizationSuggestion[]>>(
-    params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/ai/suggestions`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet = (
+    params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<OptimizationSuggestion[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/ai/suggestions`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetQueryKey = (params?: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/ai/suggestions`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetQueryOptions = <TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError = HTTPValidationError>(params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>> = ({ signal }) => getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>>
+export type GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetQueryError = HTTPValidationError
+
+
+export function useGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Sugestões de otimização
+ */
+
+export function useGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet<TData = Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna riscos identificados pela IA.
  * @summary Riscos identificados
  */
-const getRisksApiV1FinancialCashflowCashflowAiRisksGet = <TData = AxiosResponse<ForecastRisk[]>>(
-    params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/ai/risks`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getRisksApiV1FinancialCashflowCashflowAiRisksGet = (
+    params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ForecastRisk[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/ai/risks`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetRisksApiV1FinancialCashflowCashflowAiRisksGetQueryKey = (params?: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/ai/risks`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetRisksApiV1FinancialCashflowCashflowAiRisksGetQueryOptions = <TData = Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError = HTTPValidationError>(params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRisksApiV1FinancialCashflowCashflowAiRisksGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>> = ({ signal }) => getRisksApiV1FinancialCashflowCashflowAiRisksGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetRisksApiV1FinancialCashflowCashflowAiRisksGetQueryResult = NonNullable<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>>
+export type GetRisksApiV1FinancialCashflowCashflowAiRisksGetQueryError = HTTPValidationError
+
+
+export function useGetRisksApiV1FinancialCashflowCashflowAiRisksGet<TData = Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError = HTTPValidationError>(
+ params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRisksApiV1FinancialCashflowCashflowAiRisksGet<TData = Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError = HTTPValidationError>(
+ params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>,
+          TError,
+          Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetRisksApiV1FinancialCashflowCashflowAiRisksGet<TData = Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError = HTTPValidationError>(
+ params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Riscos identificados
+ */
+
+export function useGetRisksApiV1FinancialCashflowCashflowAiRisksGet<TData = Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError = HTTPValidationError>(
+ params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getRisksApiV1FinancialCashflowCashflowAiRisksGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetRisksApiV1FinancialCashflowCashflowAiRisksGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna oportunidades identificadas pela IA.
  * @summary Oportunidades identificadas
  */
-const getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet = <TData = AxiosResponse<ForecastOpportunity[]>>(
-    params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/ai/opportunities`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet = (
+    params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ForecastOpportunity[]>(
+      {url: `/api/v1/financial/cashflow/cashflow/ai/opportunities`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetQueryKey = (params?: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/ai/opportunities`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetQueryOptions = <TData = Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError = HTTPValidationError>(params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>> = ({ signal }) => getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetQueryResult = NonNullable<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>>
+export type GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetQueryError = HTTPValidationError
+
+
+export function useGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet<TData = Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError = HTTPValidationError>(
+ params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet<TData = Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError = HTTPValidationError>(
+ params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>,
+          TError,
+          Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet<TData = Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError = HTTPValidationError>(
+ params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Oportunidades identificadas
+ */
+
+export function useGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet<TData = Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError = HTTPValidationError>(
+ params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * [Deprecated] Detecta anomalias em contas a pagar.
  * @deprecated
  * @summary [Legacy] Detectar anomalias
  */
-const detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet = <TData = AxiosResponse<DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet200>>(
-    params: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/legacy/anomalies`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet = (
+    params: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet200>(
+      {url: `/api/v1/financial/cashflow/cashflow/legacy/anomalies`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetQueryKey = (params?: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/legacy/anomalies`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetQueryOptions = <TData = Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError = HTTPValidationError>(params: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>> = ({ signal }) => detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetQueryResult = NonNullable<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>>
+export type DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetQueryError = HTTPValidationError
+
+
+export function useDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError = HTTPValidationError>(
+ params: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>,
+          TError,
+          Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError = HTTPValidationError>(
+ params: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>,
+          TError,
+          Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError = HTTPValidationError>(
+ params: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @deprecated
+ * @summary [Legacy] Detectar anomalias
+ */
+
+export function useDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet<TData = Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError = HTTPValidationError>(
+ params: DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getDetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * [Deprecated] Prevê fluxo de caixa futuro baseado em histórico.
  * @deprecated
  * @summary [Legacy] Previsão de fluxo de caixa
  */
-const predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet = <TData = AxiosResponse<PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet200>>(
-    params: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/legacy/predict`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet = (
+    params: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet200>(
+      {url: `/api/v1/financial/cashflow/cashflow/legacy/predict`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getPredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetQueryKey = (params?: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/legacy/predict`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getPredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetQueryOptions = <TData = Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError = HTTPValidationError>(params: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getPredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>> = ({ signal }) => predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetQueryResult = NonNullable<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>>
+export type PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetQueryError = HTTPValidationError
+
+
+export function usePredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet<TData = Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError = HTTPValidationError>(
+ params: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>,
+          TError,
+          Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet<TData = Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError = HTTPValidationError>(
+ params: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>,
+          TError,
+          Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function usePredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet<TData = Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError = HTTPValidationError>(
+ params: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @deprecated
+ * @summary [Legacy] Previsão de fluxo de caixa
+ */
+
+export function usePredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet<TData = Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError = HTTPValidationError>(
+ params: PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getPredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * [Deprecated] Retorna sugestões de otimização baseadas em análise de dados.
  * @deprecated
  * @summary [Legacy] Sugestões de otimização
  */
-const getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet = <TData = AxiosResponse<GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet200>>(
-    params: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/cashflow/cashflow/legacy/suggestions`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
-return {getProjectionApiV1FinancialCashflowCashflowProjectionGet,getSummaryApiV1FinancialCashflowCashflowSummaryGet,getTrendsApiV1FinancialCashflowCashflowTrendsGet,getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet,getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet,getDashboardApiV1FinancialCashflowCashflowDashboardGet,createEntryApiV1FinancialCashflowCashflowEntriesPost,listEntriesApiV1FinancialCashflowCashflowEntriesGet,getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet,getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet,getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet,updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut,deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete,realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost,createForecastApiV1FinancialCashflowCashflowForecastsPost,listForecastsApiV1FinancialCashflowCashflowForecastsGet,getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet,getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet,updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut,deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete,updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost,generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost,detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost,getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet,getRisksApiV1FinancialCashflowCashflowAiRisksGet,getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet,detectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet,predictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet,getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet}};
-export type GetProjectionApiV1FinancialCashflowCashflowProjectionGetResult = AxiosResponse<CashFlowProjection[]>
-export type GetSummaryApiV1FinancialCashflowCashflowSummaryGetResult = AxiosResponse<CashFlowSummary>
-export type GetTrendsApiV1FinancialCashflowCashflowTrendsGetResult = AxiosResponse<CashFlowTrend[]>
-export type GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetResult = AxiosResponse<GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet200>
-export type GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetResult = AxiosResponse<GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet200>
-export type GetDashboardApiV1FinancialCashflowCashflowDashboardGetResult = AxiosResponse<CashFlowDashboard>
-export type CreateEntryApiV1FinancialCashflowCashflowEntriesPostResult = AxiosResponse<CashFlowEntryResponse>
-export type ListEntriesApiV1FinancialCashflowCashflowEntriesGetResult = AxiosResponse<CashFlowEntryResponse[]>
-export type GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetResult = AxiosResponse<CashFlowEntryResponse[]>
-export type GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetResult = AxiosResponse<GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet200>
-export type GetEntryApiV1FinancialCashflowCashflowEntriesEntryIdGetResult = AxiosResponse<CashFlowEntryResponse>
-export type UpdateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPutResult = AxiosResponse<CashFlowEntryResponse>
-export type DeleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDeleteResult = AxiosResponse<void>
-export type RealizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePostResult = AxiosResponse<CashFlowEntryResponse>
-export type CreateForecastApiV1FinancialCashflowCashflowForecastsPostResult = AxiosResponse<CashFlowForecastResponse>
-export type ListForecastsApiV1FinancialCashflowCashflowForecastsGetResult = AxiosResponse<CashFlowForecastResponse[]>
-export type GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetResult = AxiosResponse<CashFlowForecastResponse[]>
-export type GetForecastApiV1FinancialCashflowCashflowForecastsForecastIdGetResult = AxiosResponse<CashFlowForecastResponse>
-export type UpdateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPutResult = AxiosResponse<CashFlowForecastResponse>
-export type DeleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDeleteResult = AxiosResponse<void>
-export type UpdateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPostResult = AxiosResponse<CashFlowForecastResponse>
-export type GenerateAiForecastApiV1FinancialCashflowCashflowAiForecastPostResult = AxiosResponse<AIForecastResponse>
-export type DetectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPostResult = AxiosResponse<AnomalyDetectionResponse>
-export type GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetResult = AxiosResponse<OptimizationSuggestion[]>
-export type GetRisksApiV1FinancialCashflowCashflowAiRisksGetResult = AxiosResponse<ForecastRisk[]>
-export type GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetResult = AxiosResponse<ForecastOpportunity[]>
-export type DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGetResult = AxiosResponse<DetectAnomaliesLegacyApiV1FinancialCashflowCashflowLegacyAnomaliesGet200>
-export type PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGetResult = AxiosResponse<PredictCashflowLegacyApiV1FinancialCashflowCashflowLegacyPredictGet200>
-export type GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetResult = AxiosResponse<GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet200>
+export const getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet = (
+    params: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet200>(
+      {url: `/api/v1/financial/cashflow/cashflow/legacy/suggestions`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetQueryKey = (params?: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams,) => {
+    return [
+    `/api/v1/financial/cashflow/cashflow/legacy/suggestions`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetQueryOptions = <TData = Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError = HTTPValidationError>(params: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>> = ({ signal }) => getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>>
+export type GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetQueryError = HTTPValidationError
+
+
+export function useGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet<TData = Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet<TData = Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet<TData = Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @deprecated
+ * @summary [Legacy] Sugestões de otimização
+ */
+
+export function useGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet<TData = Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError = HTTPValidationError>(
+ params: GetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSuggestionsLegacyApiV1FinancialCashflowCashflowLegacySuggestionsGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+

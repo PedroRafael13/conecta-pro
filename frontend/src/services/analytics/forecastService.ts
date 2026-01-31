@@ -24,31 +24,28 @@ export const forecastService = {
     granularity: 'daily' | 'weekly' | 'monthly' = 'daily',
     entityType = 'revenue'
   ): Promise<ForecastResponse> {
-    const response = await forecastSalesApiV1AnalyticsForecastSalesPost({
+    return forecastSalesApiV1AnalyticsForecastSalesPost({
       periods,
       granularity,
       entity_type: entityType,
-    });
-    return response.data;
+    }) as Promise<ForecastResponse>;
   },
 
   /**
    * Cenários de previsão (pessimista, base, otimista)
    */
   async getForecastScenarios(periods = 30) {
-    const response = await getForecastScenariosApiV1AnalyticsForecastScenariosGet({
+    return getForecastScenariosApiV1AnalyticsForecastScenariosGet({
       periods,
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 
   /**
    * Relatório de acurácia do forecast
    */
   async getForecastAccuracy(lookbackDays = 90) {
-    const response = await getForecastAccuracyApiV1AnalyticsForecastAccuracyGet({
+    return getForecastAccuracyApiV1AnalyticsForecastAccuracyGet({
       lookback_days: lookbackDays,
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 };

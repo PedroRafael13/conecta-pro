@@ -438,7 +438,7 @@ class OccurrenceService:
 
         logger.info(f"Ocorrencia escalada: {occurrence.code} -> {data.escalated_to_id}")
 
-        # TODO: Notificar usuario de escalacao
+        self._notify_escalation(occurrence, data)
 
         return occurrence
 
@@ -730,15 +730,155 @@ class OccurrenceService:
     # ============================================================
 
     def _notify_critical_occurrence(self, occurrence: Occurrence) -> None:
-        """Notifica sobre ocorrencia critica.
+        """Notifica gestores sobre ocorrencia critica via push e WebSocket.
+
+        Identifica o tenant via Post.client_id e notifica o inspector
+        e gestores do Employee envolvido.
 
         Args:
-            occurrence: Ocorrencia critica.
+            occurrence: Ocorrencia critica (severity GRAVE ou GRAVISSIMA).
         """
-        # TODO: Implementar notificacao
-        logger.warning(
-            f"OCORRENCIA CRITICA: {occurrence.code} - {occurrence.title}"
-        )
+        try:
+            from modules.notifications.services.push_service import PushNotificationService
+            from modules.notifications.models import QueuePriority
+            from modules.operacional.models.post import Post
+            from modules.operacional.models.employee import Employee as OpEmployee
+
+            # Identificar tenant_id via Post
+            post = self.db.query(Post).filter(Post.id == occurrence.post_id).first()
+            if not post or not post.client_id:
+                logger.warning(
+                    f"Post {occurrence.post_id} sem client_id, skip notificação"
+                )
+                return
+
+            tenant_id = UUID(str(post.client_id))
+            push_service = PushNotificationService(self.db, tenant_id)
+
+            # Coletar user_ids para notificar (set evita duplicatas)
+            notify_user_ids: set = set()
+
+            # 1. Inspector (quem registrou) sempre é notificado
+            if occurrence.inspector_id:
+                notify_user_ids.add(str(occurrence.inspector_id))
+
+            # 2. Gestor do employee envolvido
+            if occurrence.employee_id:
+                emp = (
+                    self.db.query(OpEmployee)
+                    .filter(OpEmployee.id == str(occurrence.employee_id))
+                    .first()
+                )
+                if emp and getattr(emp, "gestor_id", None):
+                    notify_user_ids.add(str(emp.gestor_id))
+
+            # Remover employee envolvido da lista (ele não precisa de push)
+            notify_user_ids.discard(str(occurrence.employee_id))
+
+            sent_count = 0
+            for user_id_str in notify_user_ids:
+                try:
+                    push_service.send_push_notification(
+                        user_id=UUID(user_id_str),
+                        title=f"OCORRENCIA CRITICA: {occurrence.code}",
+                        body=f"{occurrence.title} - Severidade: {occurrence.severity}",
+                        data={
+                            "type": "critical_occurrence",
+                            "occurrence_id": str(occurrence.id),
+                            "code": occurrence.code,
+                        },
+                        priority=QueuePriority.URGENT,
+                        action_url=f"/modulos/operacional/ocorrencias?id={occurrence.id}",
+                    )
+                    sent_count += 1
+                except Exception as push_err:
+                    logger.error(f"Erro push para user {user_id_str}: {push_err}")
+
+            # WebSocket broadcast
+            try:
+                from modules.operacional.communication.controllers.websocket_controller import (
+                    get_connection_manager,
+                )
+                import asyncio
+
+                manager = get_connection_manager()
+                ws_message = {
+                    "type": "critical_occurrence",
+                    "data": {
+                        "occurrence_id": str(occurrence.id),
+                        "code": occurrence.code,
+                        "title": occurrence.title,
+                        "severity": occurrence.severity,
+                    },
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+
+                try:
+                    loop = asyncio.get_running_loop()
+                    asyncio.ensure_future(
+                        manager.broadcast_to_tenant(str(tenant_id), ws_message)
+                    )
+                except RuntimeError:
+                    pass
+            except Exception as ws_err:
+                logger.debug(f"WebSocket broadcast indisponível: {ws_err}")
+
+            logger.warning(
+                f"OCORRENCIA CRITICA notificada: {occurrence.code} -> "
+                f"{sent_count}/{len(notify_user_ids)} destinatários"
+            )
+        except Exception as e:
+            logger.error(
+                f"Erro ao notificar ocorrência crítica {occurrence.code}: {e}"
+            )
+
+    def _notify_escalation(self, occurrence: Occurrence, data: EscalateRequest) -> None:
+        """Notifica o usuario alvo sobre a escalacao via push.
+
+        Args:
+            occurrence: Ocorrencia escalada.
+            data: Dados da escalacao com escalated_to_id e reason.
+        """
+        try:
+            from modules.notifications.services.push_service import PushNotificationService
+            from modules.notifications.models import QueuePriority
+            from modules.operacional.models.post import Post
+
+            # Identificar tenant via Post
+            post = self.db.query(Post).filter(Post.id == occurrence.post_id).first()
+            if not post or not post.client_id:
+                logger.warning(
+                    f"Post {occurrence.post_id} sem client_id, skip notificação de escalação"
+                )
+                return
+
+            tenant_id = UUID(str(post.client_id))
+            push_service = PushNotificationService(self.db, tenant_id)
+
+            push_service.send_push_notification(
+                user_id=data.escalated_to_id,
+                title=f"Ocorrência Escalada: {occurrence.code}",
+                body=(
+                    f"{occurrence.title} foi escalada para você. "
+                    f"Motivo: {data.reason or 'Não informado'}"
+                ),
+                data={
+                    "type": "occurrence_escalated",
+                    "occurrence_id": str(occurrence.id),
+                    "code": occurrence.code,
+                    "severity": occurrence.severity,
+                },
+                priority=QueuePriority.HIGH,
+                action_url=f"/modulos/operacional/ocorrencias?id={occurrence.id}",
+            )
+
+            logger.info(
+                f"Notificação de escalação enviada: {occurrence.code} -> {data.escalated_to_id}"
+            )
+        except Exception as e:
+            logger.error(
+                f"Erro ao notificar escalação {occurrence.code}: {e}"
+            )
 
     def _should_suggest_disciplinary_action(
         self,

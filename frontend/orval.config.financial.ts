@@ -21,27 +21,35 @@
  *   npm run orval:financial
  */
 
-module.exports = {
+import { defineConfig } from 'orval';
+
+export default defineConfig({
   financial: {
     input: {
-      // OpenAPI spec completo do módulo financial (483 endpoints)
       target: './openapi/openapi-financial.json',
     },
     output: {
-      // Gerar arquivos separados por tag
       mode: 'tags-split',
-
-      // Destino dos arquivos gerados
       target: './src/types/generated/financial',
-
-      // Usar axios como client
-      client: 'axios',
-
-      // Não gerar mocks
-      mock: false,
-
-      // Schemas compartilhados
       schemas: './src/types/generated/financial/models',
+      client: 'react-query',
+      mock: false,
+      clean: true,
+      prettier: true,
+      override: {
+        mutator: {
+          path: './src/lib/api-client.ts',
+          name: 'customInstance',
+        },
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+    hooks: {
+      afterAllFilesWrite: 'prettier --write',
     },
   },
-};
+});

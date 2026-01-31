@@ -26,6 +26,7 @@ from modules.operacional.schemas.scale import (
     ScaleUpdate,
 )
 from modules.operacional.services.scale_generator import scale_generator
+from modules.operacional.services.auto_scale_service import AutoScaleService
 
 router = APIRouter(prefix="/scales", tags=["Operations - Scales"])
 
@@ -357,3 +358,31 @@ async def delete_scale(
         )
 
     logger.info(f"Scale deletada por {current_user.email}: {scale_id}")
+
+
+@router.post(
+    "/auto-generate",
+    status_code=status.HTTP_200_OK,
+    dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
+)
+async def auto_generate_scales(
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+    month: Optional[int] = Query(None, ge=1, le=12, description="Mês (se não especificado, usa mês atual)"),
+    year: Optional[int] = Query(None, ge=2020, le=2100, description="Ano (se não especificado, usa ano atual)"),
+) -> dict:
+    """
+    Gera escalas automaticamente para todos os postos com alocações ativas.
+
+    Se mês/ano não especificados, gera para o mês atual.
+    Útil para inicializar o sistema ou gerar escalas mensalmente.
+    """
+    service = AutoScaleService(db)
+
+    if month and year:
+        result = await service.generate_scales_for_month(month, year, created_by=current_user.id)
+    else:
+        result = await service.generate_scales_for_current_month(created_by=current_user.id)
+
+    logger.info(f"Geração automática executada por {current_user.email}: {result}")
+    return result

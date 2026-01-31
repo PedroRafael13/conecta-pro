@@ -152,42 +152,61 @@ class WizardManager:
         return False
 
     def detect_wizard_type(self, intent: str) -> Optional[str]:
-        """Detecta qual wizard usar baseado na intencao."""
+        """
+        Detecta qual wizard usar baseado na intencao.
+
+        CORRECAO: Agora distingue entre consulta (verificar, listar, mostrar)
+        e criação (criar, registrar, nova). Só retorna wizard para criação.
+        """
         intent_lower = intent.lower().strip()
 
         # Match direto
         if intent_lower in WIZARD_REGISTRY:
             return intent_lower
 
-        # Keywords
-        if any(k in intent_lower for k in ["proposta", "orcamento", "orcar", "precificar", "custo"]):
+        # CORRECAO: Detecta verbos de consulta - NAO deve iniciar wizard
+        query_verbs = [
+            'verificar', 'ver', 'listar', 'mostrar', 'consultar', 'buscar',
+            'checar', 'conferir', 'exibir', 'qual', 'quais', 'quantos', 'tem', 'existe'
+        ]
+        first_word = intent_lower.split()[0] if intent_lower.split() else ''
+        if first_word in query_verbs or any(verb in intent_lower.split()[:3] for verb in query_verbs):
+            # É consulta, não wizard - retorna None
+            return None
+
+        # Keywords com verbos de CRIAÇÃO explícitos
+        if any(k in intent_lower for k in ["criar proposta", "nova proposta", "orcar", "precificar"]):
             return "proposta_comercial"
 
-        if any(k in intent_lower for k in ["admissao", "admitir", "contratar", "contratacao", "novo funcionario"]):
+        if any(k in intent_lower for k in ["admitir", "contratar", "contratacao", "novo funcionario", "admissao"]):
             return "admissao_funcionario"
 
-        if any(k in intent_lower for k in ["ocorrencia", "registrar ocorrencia", "abrir ocorrencia"]):
+        if any(k in intent_lower for k in ["registrar ocorrencia", "abrir ocorrencia", "nova ocorrencia"]):
             return "ocorrencia"
 
-        if any(k in intent_lower for k in ["disciplinar", "advertencia", "medida disciplinar", "suspensao"]):
+        if any(k in intent_lower for k in ["advertencia", "medida disciplinar", "suspensao", "aplicar disciplinar"]):
             return "disciplinar"
 
-        if any(k in intent_lower for k in ["ronda", "inspecao", "ronda inspecao"]):
+        # Ronda: só wizard se for CRIAR/REGISTRAR ronda, não VERIFICAR ronda
+        if any(k in intent_lower for k in ["criar ronda", "nova ronda", "registrar ronda", "agendar ronda", "programar ronda"]):
             return "ronda"
 
-        if any(k in intent_lower for k in ["banco de horas", "banco horas", "compensacao", "hora extra", "horas extras"]):
+        if any(k in intent_lower for k in ["registrar horas", "lancar horas", "compensar horas"]):
             return "banco_horas"
 
-        if any(k in intent_lower for k in ["escala", "criar escala", "nova escala", "montar escala"]):
+        # Escala: só wizard para CRIAR/GERAR escala
+        if any(k in intent_lower for k in ["criar escala", "nova escala", "montar escala", "gerar escala"]):
             return "escala"
 
-        if any(k in intent_lower for k in ["posto", "criar posto", "novo posto", "cadastrar posto"]):
+        # Posto: só wizard para CRIAR posto
+        if any(k in intent_lower for k in ["criar posto", "novo posto", "cadastrar posto"]):
             return "posto"
 
-        if any(k in intent_lower for k in ["diarista", "agendar diarista", "escalar diarista"]):
+        if any(k in intent_lower for k in ["agendar diarista", "escalar diarista", "nova diarista"]):
             return "diarista"
 
-        if any(k in intent_lower for k in ["comunicado", "criar comunicado", "novo comunicado", "redigir comunicado"]):
+        # Comunicado: só wizard para CRIAR comunicado
+        if any(k in intent_lower for k in ["criar comunicado", "novo comunicado", "redigir comunicado", "enviar comunicado"]):
             return "comunicado"
 
         return None

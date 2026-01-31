@@ -41,6 +41,7 @@ class BartoloConfig:
     use_knowledge_base: bool = True
     use_data_connector: bool = True
     use_wizards: bool = True
+    enable_actions: bool = True  # NOVO: Sistema de ações executivas
 
     # Aprendizado
     save_interactions: bool = True
@@ -52,6 +53,7 @@ BARTOLO_IDENTITY = """Voce e o Bartolo, o assistente inteligente oficial do Cone
 
 QUEM VOCE E:
 - Seu nome e Bartolo, o assistente virtual do Conecta PRO
+- Voce e um cachorro salsicha (dachshund) simpatico e prestativo que adora ajudar pessoas
 - Voce foi criado para ajudar todos os usuarios do sistema
 - Voce conhece profundamente cada modulo, cada funcionalidade, cada processo
 - Voce e especialista em gestao de facilities, seguranca patrimonial e administracao predial
@@ -90,6 +92,8 @@ BARTOLO_PERSONALITY = {
         "proativo",
         "organizado",
         "confiavel",
+        "simpatico",
+        "leal",
     ],
 
     "communication_style": {

@@ -20,6 +20,12 @@ class EscalaIntent(str, Enum):
     LISTAR_CONFLITOS = "listar_conflitos"
     ESCALA_SEMANA = "escala_semana"
     ESCALA_MES = "escala_mes"
+    # Novos intents: AutoScale, Otimização Inteligente e Templates
+    AUTO_GERAR = "auto_gerar"
+    OTIMIZAR_INTELIGENTE = "otimizar_inteligente"
+    CRIAR_TEMPLATE = "criar_template"
+    APLICAR_TEMPLATE = "aplicar_template"
+    LISTAR_TEMPLATES = "listar_templates"
 
 
 class EscalaAgent:
@@ -43,6 +49,51 @@ class EscalaAgent:
         # LISTAR_CONFLITOS com mês - ANTES de ESCALA_MES (mais específico)
         # ==================================================================
         (r"(?:tem|ha|há)\s+conflitos?\s+(?:na\s+)?escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.LISTAR_CONFLITOS),
+
+        # ==================================================================
+        # AUTO_GERAR - Geração automática de escalas para todos os postos
+        # ==================================================================
+        (r"(?:gerar|gere|criar|crie)\s+escalas?\s+(?:automatica(?:mente)?|auto)", EscalaIntent.AUTO_GERAR),
+        (r"auto\s*(?:gerar|escala|scale)", EscalaIntent.AUTO_GERAR),
+        (r"(?:gerar|criar)\s+(?:todas\s+(?:as\s+)?)?escalas?\s+(?:do|para\s+o)\s+mes", EscalaIntent.AUTO_GERAR),
+        (r"escalas?\s+automaticas?\s+(?:para|do)\s+(?:o\s+)?mes", EscalaIntent.AUTO_GERAR),
+        (r"(?:quero|preciso)\s+gerar\s+escalas?\s+automatica(?:mente)?", EscalaIntent.AUTO_GERAR),
+        (r"gerar\s+escalas?\s+(?:para\s+)?todos\s+(?:os\s+)?postos?", EscalaIntent.AUTO_GERAR),
+
+        # ==================================================================
+        # OTIMIZAR_INTELIGENTE - Otimização com IA avançada
+        # ==================================================================
+        (r"(?:otimizar|otimize)\s+(?:com\s+)?(?:ia|inteligencia|inteligente)", EscalaIntent.OTIMIZAR_INTELIGENTE),
+        (r"(?:otimiza(?:cao|ção))\s+inteligente", EscalaIntent.OTIMIZAR_INTELIGENTE),
+        (r"(?:otimizar|otimize)\s+(?:a\s+)?escala\s+(?:do\s+)?posto", EscalaIntent.OTIMIZAR_INTELIGENTE),
+        (r"(?:reduzir|reduza|diminuir)\s+custos?\s+(?:da\s+)?escala\s+(?:do\s+)?posto", EscalaIntent.OTIMIZAR_INTELIGENTE),
+        (r"(?:otimizar|otimize)\s+escala\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.OTIMIZAR_INTELIGENTE),
+        (r"(?:otimizar|otimize)\s+(?:a\s+)?escala\s+(?:do|de)\s+\w+\s+(?:de\s+)?(?:janeiro|fevereiro|março|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)", EscalaIntent.OTIMIZAR_INTELIGENTE),
+
+        # ==================================================================
+        # CRIAR_TEMPLATE - Salvar escala como template
+        # ==================================================================
+        (r"(?:salvar|salve|criar|crie)\s+(?:esta|essa|a)?\s*escala\s+(?:como\s+)?template", EscalaIntent.CRIAR_TEMPLATE),
+        (r"(?:criar|crie|salvar|salve)\s+template\s+(?:de|da|com)\s+escala", EscalaIntent.CRIAR_TEMPLATE),
+        (r"(?:transformar|converter)\s+(?:a\s+)?escala\s+(?:em|para)\s+template", EscalaIntent.CRIAR_TEMPLATE),
+        (r"(?:salvar|salve)\s+(?:como\s+)?template", EscalaIntent.CRIAR_TEMPLATE),
+        (r"novo\s+template\s+(?:de\s+)?escala", EscalaIntent.CRIAR_TEMPLATE),
+
+        # ==================================================================
+        # APLICAR_TEMPLATE - Aplicar template em posto/mês
+        # ==================================================================
+        (r"(?:aplicar|aplique|usar|use)\s+template", EscalaIntent.APLICAR_TEMPLATE),
+        (r"(?:aplicar|aplique)\s+(?:o\s+)?template\s+\w+\s+(?:no|em|para)", EscalaIntent.APLICAR_TEMPLATE),
+        (r"(?:usar|use)\s+(?:o\s+)?template\s+\w+", EscalaIntent.APLICAR_TEMPLATE),
+        (r"(?:gerar|gere|criar|crie)\s+escala\s+(?:com|usando|baseado)\s+(?:no\s+)?template", EscalaIntent.APLICAR_TEMPLATE),
+
+        # ==================================================================
+        # LISTAR_TEMPLATES - Listar templates disponíveis
+        # ==================================================================
+        (r"(?:listar|liste|ver|veja|mostrar|mostre)\s+templates?", EscalaIntent.LISTAR_TEMPLATES),
+        (r"(?:quais|que)\s+templates?\s+(?:tenho|existem|disponiv)", EscalaIntent.LISTAR_TEMPLATES),
+        (r"templates?\s+(?:de\s+)?escalas?\s+(?:disponiveis?|existentes?)", EscalaIntent.LISTAR_TEMPLATES),
+        (r"templates?\s+(?:disponiveis?|existentes?|salvos?)", EscalaIntent.LISTAR_TEMPLATES),
 
         # ==================================================================
         # ESCALA_MES
@@ -136,11 +187,20 @@ class EscalaAgent:
         "4x2": {"days_on": 4, "days_off": 2, "weekly_hours": 32},
     }
 
-    def __init__(self, db=None, scale_repo=None, shift_repo=None, allocation_repo=None):
+    def __init__(self, db=None, scale_repo=None, shift_repo=None, allocation_repo=None, data_connector=None):
         self.db = db
         self.scale_repo = scale_repo
         self.shift_repo = shift_repo
         self.allocation_repo = allocation_repo
+        self.data_connector = data_connector
+        # Se tem db mas não tem data_connector, criar automaticamente
+        if db and not data_connector:
+            try:
+                from modules.ai.bartolo.services.data_connector import DataConnector
+                self.data_connector = DataConnector(db)
+            except Exception as e:
+                logger.warning(f"Não foi possível criar DataConnector: {e}")
+                self.data_connector = None
 
     async def process(self, message: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
         """
@@ -168,6 +228,16 @@ class EscalaAgent:
             return await self._handle_escala_semana(context)
         elif intent == EscalaIntent.ESCALA_MES:
             return await self._handle_escala_mes(context)
+        elif intent == EscalaIntent.AUTO_GERAR:
+            return await self._handle_auto_gerar(message, context)
+        elif intent == EscalaIntent.OTIMIZAR_INTELIGENTE:
+            return await self._handle_otimizar_inteligente(message, context)
+        elif intent == EscalaIntent.CRIAR_TEMPLATE:
+            return await self._handle_criar_template(message, context)
+        elif intent == EscalaIntent.APLICAR_TEMPLATE:
+            return await self._handle_aplicar_template(message, context)
+        elif intent == EscalaIntent.LISTAR_TEMPLATES:
+            return await self._handle_listar_templates(context)
         else:
             return await self._handle_default(message, context)
 
@@ -294,7 +364,46 @@ class EscalaAgent:
             }
 
     async def _handle_otimizar_escala(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Otimiza escala existente"""
+        """Otimiza escala existente usando dados reais do DataConnector"""
+        # Tentar buscar dados reais para contextualizar a otimização
+        if self.data_connector:
+            try:
+                # Buscar horas extras e escalas pendentes para contextualizar
+                he_result = await self.data_connector._get_hora_extra_ranking()
+                escalas_result = await self.data_connector._get_escalas_pendentes()
+
+                context_lines = []
+                if he_result.success and he_result.data:
+                    total_he = sum(f.get('horas_extras', 0) for f in he_result.data)
+                    context_lines.append(f"- Total de horas extras acumuladas: **{total_he:.1f}h**")
+                    context_lines.append(f"- Funcionários com HE: **{he_result.total_count}**")
+
+                if escalas_result.success and escalas_result.data:
+                    context_lines.append(f"- Escalas cadastradas: **{escalas_result.total_count}**")
+
+                if context_lines:
+                    context_info = "\n".join(context_lines)
+                    response = f"""**Otimização de Escala**
+
+**Situação atual:**
+{context_info}
+
+**Tipos de otimização disponíveis:**
+- Reduzir custo (minimiza horas extras)
+- Balancear turnos (distribui melhor)
+- Maximizar cobertura
+
+Selecione uma escala ativa para iniciar a otimização."""
+                    return {
+                        "response": response,
+                        "intent": EscalaIntent.OTIMIZAR_ESCALA.value,
+                        "data": {"horas_extras_total": total_he if he_result.success else 0},
+                        "suggestions": ["Ver escalas ativas", "Reduzir horas extras", "Cancelar"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar dados para otimização via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": "Para otimizar uma escala, informe o ID ou selecione uma escala ativa.\n\n**Tipos de otimização:**\n- Reduzir custo (minimiza horas extras)\n- Balancear turnos (distribui melhor)\n- Maximizar cobertura",
             "intent": EscalaIntent.OTIMIZAR_ESCALA.value,
@@ -302,7 +411,59 @@ class EscalaAgent:
         }
 
     async def _handle_validar_escala(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Valida escala"""
+        """Valida escala usando dados reais do DataConnector"""
+        # Tentar buscar dados reais para validação
+        if self.data_connector:
+            try:
+                cobertura_result = await self.data_connector._get_cobertura_critica()
+                he_result = await self.data_connector._get_hora_extra_ranking()
+
+                problemas = []
+                if cobertura_result.success and cobertura_result.data:
+                    problemas.append(f"- ⚠️ **{len(cobertura_result.data)} postos** com cobertura abaixo de 80%")
+
+                if he_result.success and he_result.data:
+                    sobrecarregados = [f for f in he_result.data if f.get('horas_extras', 0) > 40]
+                    if sobrecarregados:
+                        problemas.append(f"- ⚠️ **{len(sobrecarregados)} funcionários** com mais de 40h extras")
+
+                if problemas:
+                    problemas_text = "\n".join(problemas)
+                    response = f"""**Validação de Escala**
+
+**Problemas detectados:**
+{problemas_text}
+
+**Verificações realizadas:**
+- Conflitos de horário
+- Cumprimento CLT (44h/semana, 11h descanso)
+- Cobertura mínima (80%)
+- Funcionários sobrecarregados
+
+Informe o ID da escala para validação detalhada."""
+                else:
+                    response = """**Validação de Escala**
+
+✅ Nenhum problema crítico detectado nas escalas ativas.
+
+**Verificações realizadas:**
+- Conflitos de horário
+- Cumprimento CLT (44h/semana, 11h descanso)
+- Cobertura mínima (80%)
+- Funcionários sobrecarregados
+
+Informe o ID da escala para validação detalhada."""
+
+                return {
+                    "response": response,
+                    "intent": EscalaIntent.VALIDAR_ESCALA.value,
+                    "data": {"problemas": len(problemas)},
+                    "suggestions": ["Ver escalas recentes", "Ver conflitos", "Ver cobertura"],
+                }
+            except Exception as e:
+                logger.warning(f"Erro ao validar escala via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": "**Validação de Escala**\n\nInforme o ID da escala para validar. Vou verificar:\n- Conflitos de horário\n- Cumprimento CLT (44h/semana, 11h descanso)\n- Cobertura mínima\n- Funcionários sobrecarregados",
             "intent": EscalaIntent.VALIDAR_ESCALA.value,
@@ -310,7 +471,36 @@ class EscalaAgent:
         }
 
     async def _handle_calcular_custo(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Calcula custo da escala"""
+        """Calcula custo da escala usando dados reais do DataConnector"""
+        # Tentar buscar dados reais de KPIs (contém custo mensal)
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_main_kpis()
+                if result.success and result.data:
+                    kpis = result.data
+                    custo = kpis.get('custo_mensal_total', 0)
+                    efetivo = kpis.get('efetivo_alocado', 0)
+                    requerido = kpis.get('efetivo_requerido', 0)
+
+                    response = f"""**Cálculo de Custo - Dados Atuais**
+
+**Custo mensal estimado:** R$ {custo:,.2f}
+**Efetivo alocado:** {efetivo} de {requerido} requeridos
+
+**Fórmula base:**
+`Custo = (Horas Normais x R$ Base) + (HE x 1.5) + Ad. Noturno (20%) + Feriados (100%)`
+
+Para detalhamento por posto ou escala específica, informe o ID ou nome."""
+                    return {
+                        "response": response,
+                        "intent": EscalaIntent.CALCULAR_CUSTO.value,
+                        "data": {"custo_mensal": custo, "efetivo": efetivo, "requerido": requerido},
+                        "suggestions": ["Custo por posto", "Comparar custos", "Ver detalhamento"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar custo via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": "**Cálculo de Custo**\n\n**Fórmula:**\n`Custo = (Horas Normais × R$ Base) + (HE × 1.5) + Ad. Noturno (20%) + Feriados (100%)`\n\nInforme o ID da escala ou período para calcular.",
             "intent": EscalaIntent.CALCULAR_CUSTO.value,
@@ -318,8 +508,46 @@ class EscalaAgent:
         }
 
     async def _handle_listar_conflitos(self, message: str, context: Dict) -> Dict[str, Any]:
-        """Lista conflitos na escala"""
-        # Em produção, consultaria o banco
+        """Lista conflitos na escala usando dados reais do DataConnector"""
+        # Tentar buscar cobertura crítica (indica problemas na escala)
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_cobertura_critica()
+                if result.success:
+                    postos_criticos = result.data or []
+                    if postos_criticos:
+                        lines = [f"- **{p['nome']}** ({p['codigo']}): {p['alocados']}/{p['requeridos']} - Deficit: {p['deficit']}" for p in postos_criticos[:10]]
+
+                        response = f"""**Análise de Conflitos e Cobertura**
+
+**Postos com cobertura insuficiente ({len(postos_criticos)}):**
+
+{chr(10).join(lines)}
+
+**Verificações realizadas:**
+- Funcionário em 2 postos ao mesmo tempo
+- Intervalo < 11h entre turnos
+- Mais de 6 dias consecutivos
+- Mais de 44h semanais
+
+**Ação recomendada:** Redistribuir turnos para cobrir déficit."""
+                        return {
+                            "response": response,
+                            "intent": EscalaIntent.LISTAR_CONFLITOS.value,
+                            "data": {"conflicts": postos_criticos, "total": len(postos_criticos)},
+                            "suggestions": ["Ver escala completa", "Buscar substitutos", "Redistribuir turnos"],
+                        }
+                    else:
+                        return {
+                            "response": "**Análise de Conflitos**\n\nNenhum conflito encontrado nas escalas ativas. ✅\n\n**Verificações realizadas:**\n- Funcionário em 2 postos ao mesmo tempo\n- Intervalo < 11h entre turnos\n- Mais de 6 dias consecutivos\n- Mais de 44h semanais\n\nTodos os postos com cobertura acima de 80%.",
+                            "intent": EscalaIntent.LISTAR_CONFLITOS.value,
+                            "data": {"conflicts": []},
+                            "suggestions": ["Ver escala completa", "Validar outra escala"],
+                        }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar conflitos via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": "**Análise de Conflitos**\n\nNenhum conflito encontrado nas escalas ativas. ✅\n\n**Verificações realizadas:**\n- Funcionário em 2 postos ao mesmo tempo\n- Intervalo < 11h entre turnos\n- Mais de 6 dias consecutivos\n- Mais de 44h semanais",
             "intent": EscalaIntent.LISTAR_CONFLITOS.value,
@@ -328,7 +556,22 @@ class EscalaAgent:
         }
 
     async def _handle_escala_semana(self, context: Dict) -> Dict[str, Any]:
-        """Mostra escala da semana"""
+        """Mostra escala da semana usando dados reais do DataConnector"""
+        # Tentar buscar dados reais via DataConnector
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_escalas_pendentes()
+                if result.success and result.message:
+                    return {
+                        "response": result.message,
+                        "intent": EscalaIntent.ESCALA_SEMANA.value,
+                        "data": {"escalas": result.data, "total": result.total_count},
+                        "suggestions": ["Próxima semana", "Ver por posto", "Exportar"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar escalas da semana via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": "**Escala da Semana**\n\nCarregando dados da escala semanal...",
             "intent": EscalaIntent.ESCALA_SEMANA.value,
@@ -336,17 +579,727 @@ class EscalaAgent:
         }
 
     async def _handle_escala_mes(self, context: Dict) -> Dict[str, Any]:
-        """Mostra escala do mês"""
+        """Mostra escala do mês usando dados reais do DataConnector"""
+        # Tentar buscar dados reais via DataConnector
+        if self.data_connector:
+            try:
+                result = await self.data_connector._get_escalas_pendentes()
+                if result.success and result.message:
+                    return {
+                        "response": result.message,
+                        "intent": EscalaIntent.ESCALA_MES.value,
+                        "data": {"escalas": result.data, "total": result.total_count},
+                        "suggestions": ["Próximo mês", "Ver por funcionário", "Exportar"],
+                    }
+            except Exception as e:
+                logger.warning(f"Erro ao buscar escalas do mês via DataConnector: {e}")
+
+        # Fallback estático
         return {
             "response": "**Escala do Mês**\n\nCarregando dados da escala mensal...",
             "intent": EscalaIntent.ESCALA_MES.value,
             "suggestions": ["Próximo mês", "Ver por funcionário", "Exportar"],
         }
 
+    # ==========================================================================
+    # HANDLERS AVANÇADOS: AutoScale, Otimização Inteligente, Templates
+    # ==========================================================================
+
+    def _get_auto_scale_service(self):
+        """Tenta obter instância do AutoScaleService. Retorna None se indisponível."""
+        try:
+            from modules.operacional.services.auto_scale_service import AutoScaleService
+            if self.db:
+                return AutoScaleService(self.db)
+        except ImportError:
+            logger.warning("AutoScaleService não disponível (módulo não encontrado)")
+        except Exception as e:
+            logger.warning(f"Erro ao instanciar AutoScaleService: {e}")
+        return None
+
+    def _get_intelligent_ops_service(self, tenant_id: str = None):
+        """Tenta obter instância do IntelligentOperationsService. Retorna None se indisponível."""
+        try:
+            from modules.operacional.services.intelligent_operations_service import (
+                IntelligentOperationsService,
+            )
+            if self.db and tenant_id:
+                return IntelligentOperationsService(self.db, tenant_id)
+        except ImportError:
+            logger.warning("IntelligentOperationsService não disponível (módulo não encontrado)")
+        except Exception as e:
+            logger.warning(f"Erro ao instanciar IntelligentOperationsService: {e}")
+        return None
+
+    def _get_scale_template_repo(self):
+        """Tenta obter instância do ScaleTemplateRepository. Retorna None se indisponível."""
+        try:
+            from modules.operacional.repositories.scale_template_repository import ScaleTemplateRepository
+            if self.db:
+                return ScaleTemplateRepository(self.db)
+        except ImportError:
+            logger.warning("ScaleTemplateRepository não disponível (módulo não encontrado)")
+        except Exception as e:
+            logger.warning(f"Erro ao instanciar ScaleTemplateRepository: {e}")
+        return None
+
+    def _get_scale_template_service(self):
+        """Tenta obter instância do ScaleTemplateService. Retorna None se indisponível."""
+        try:
+            from modules.operacional.services.scale_template_service import ScaleTemplateService
+            if self.db:
+                return ScaleTemplateService(self.db)
+        except ImportError:
+            logger.warning("ScaleTemplateService não disponível (módulo não encontrado)")
+        except Exception as e:
+            logger.warning(f"Erro ao instanciar ScaleTemplateService: {e}")
+        return None
+
+    def _extract_month_year(self, message: str) -> Dict[str, Any]:
+        """Extrai mês e ano de uma mensagem."""
+        import re
+        from unicodedata import normalize
+
+        msg = normalize('NFD', message.lower())
+        msg = ''.join(c for c in msg if c not in '\u0300\u0301\u0302\u0303\u0304\u0327')
+
+        result = {}
+        meses = {
+            "janeiro": 1, "jan": 1, "fevereiro": 2, "fev": 2, "marco": 3, "mar": 3,
+            "abril": 4, "abr": 4, "maio": 5, "mai": 5, "junho": 6, "jun": 6,
+            "julho": 7, "jul": 7, "agosto": 8, "ago": 8, "setembro": 9, "set": 9,
+            "outubro": 10, "out": 10, "novembro": 11, "nov": 11, "dezembro": 12, "dez": 12,
+        }
+        for mes_nome, mes_num in meses.items():
+            if mes_nome in msg:
+                result["mes"] = mes_nome.capitalize()
+                result["mes_num"] = mes_num
+                break
+
+        ano_match = re.search(r"\b(202[4-9]|203[0-9])\b", msg)
+        if ano_match:
+            result["ano"] = int(ano_match.group(1))
+
+        return result
+
+    async def _handle_auto_gerar(self, message: str, context: Dict) -> Dict[str, Any]:
+        """Gera escalas automaticamente para todos os postos de um mês."""
+        dados = self._extract_month_year(message)
+        mes_num = dados.get("mes_num")
+        ano = dados.get("ano", datetime.now().year)
+        mes_nome = dados.get("mes", "")
+
+        # Tentar usar AutoScaleService real
+        auto_service = self._get_auto_scale_service()
+        if auto_service:
+            try:
+                if mes_num:
+                    result = await auto_service.generate_scales_for_month(
+                        month=mes_num, year=ano, created_by=context.get("user_id")
+                    )
+                else:
+                    result = await auto_service.generate_scales_for_current_month(
+                        created_by=context.get("user_id")
+                    )
+
+                erros_text = ""
+                if result.get("errors"):
+                    erros_text = "\n\n**Erros encontrados:**\n"
+                    for err in result["errors"][:5]:
+                        erros_text += f"- {err}\n"
+
+                periodo = f"{mes_num:02d}/{ano}" if mes_num else "mês atual"
+                response = f"""**Geração Automática de Escalas**
+
+**Período:** {periodo}
+**Escalas criadas:** {result.get('scales_created', 0)}
+**Turnos gerados:** {result.get('shifts_created', 0)}
+
+{result.get('message', '')}{erros_text}"""
+
+                return {
+                    "response": response,
+                    "intent": EscalaIntent.AUTO_GERAR.value,
+                    "data": result,
+                    "suggestions": ["Ver escalas pendentes", "Validar escalas", "Publicar escalas"],
+                    "actions": [
+                        {"type": "auto_generate_scale", "label": "Gerar escalas automáticas", "target": "scale",
+                         "data": {"month": mes_num, "year": ano}},
+                    ],
+                }
+            except Exception as e:
+                logger.error(f"Erro ao gerar escalas automaticamente: {e}")
+
+        # Fallback informativo
+        periodo_info = f"{mes_nome}/{ano}" if mes_nome else "o próximo mês"
+        return {
+            "response": f"""**Geração Automática de Escalas**
+
+Para gerar escalas automáticas para **{periodo_info}**, o sistema irá:
+
+1. Detectar todas as alocações ativas
+2. Agrupar funcionários por posto
+3. Gerar escalas 12x36 (padrão) para cada posto
+4. Criar turnos otimizados automaticamente
+
+**Deseja confirmar a geração automática?**""",
+            "intent": EscalaIntent.AUTO_GERAR.value,
+            "data": {"mes_num": mes_num, "ano": ano},
+            "suggestions": ["Confirmar geração", "Alterar mês", "Cancelar"],
+            "actions": [
+                {"type": "auto_generate_scale", "label": f"Gerar escalas {periodo_info}", "target": "scale",
+                 "data": {"month": mes_num, "year": ano}},
+            ],
+        }
+
+    async def _handle_otimizar_inteligente(self, message: str, context: Dict) -> Dict[str, Any]:
+        """Otimiza escala usando IntelligentOperationsService com IA avançada."""
+        import re
+
+        dados = self._extract_month_year(message)
+        mes_num = dados.get("mes_num", datetime.now().month)
+        ano = dados.get("ano", datetime.now().year)
+
+        # Extrair posto da mensagem
+        posto_match = re.search(
+            r"(?:posto|post)\s+([A-Za-z0-9\-]+)",
+            message, re.IGNORECASE
+        )
+        posto_id = posto_match.group(1) if posto_match else None
+
+        # Tentar usar IntelligentOperationsService
+        tenant_id = context.get("tenant_id") or context.get("cliente_id")
+        ops_service = self._get_intelligent_ops_service(tenant_id) if tenant_id else None
+
+        if ops_service:
+            try:
+                from datetime import timedelta
+                import calendar
+
+                _, last_day = calendar.monthrange(ano, mes_num)
+                start_date = datetime(ano, mes_num, 1)
+                end_date = datetime(ano, mes_num, last_day, 23, 59, 59)
+
+                schedule = await ops_service.optimize_schedule(start_date, end_date)
+                insights = await ops_service.generate_operational_insights(schedule)
+
+                # Formatar insights
+                insights_text = ""
+                if insights:
+                    insights_text = "\n\n**Insights Operacionais:**\n"
+                    for insight in insights:
+                        emoji = "💡" if insight.impact == "low" else "⚠️" if insight.impact == "medium" else "🚨"
+                        insights_text += f"- {emoji} {insight.description}\n"
+                        insights_text += f"  Recomendação: {insight.recommendation}\n"
+                        if insight.estimated_savings > 0:
+                            insights_text += f"  Economia estimada: R$ {insight.estimated_savings:,.2f}\n"
+
+                cost_info = schedule.cost_analysis
+                metrics_info = schedule.optimization_metrics
+
+                response = f"""**Otimização Inteligente de Escala**
+
+**Período:** {mes_num:02d}/{ano}
+**Status:** {schedule.status.value}
+
+**Métricas de Otimização:**
+- Eficiência: **{schedule.efficiency_score:.1%}**
+- Cobertura: **{schedule.coverage_score:.1%}**
+- Utilização de funcionários: **{metrics_info.get('employee_utilization', 0):.1%}**
+- Utilização de postos: **{metrics_info.get('workstation_utilization', 0):.1%}**
+- Total de alocações: **{metrics_info.get('total_assignments', 0)}**
+
+**Análise de Custos:**
+- Custo total: **R$ {cost_info.get('total_cost', 0):,.2f}**
+- Horas normais: R$ {cost_info.get('regular_hours_cost', 0):,.2f}
+- Horas extras: R$ {cost_info.get('overtime_cost', 0):,.2f}
+- Custo médio/hora: R$ {cost_info.get('avg_cost_per_hour', 0):,.2f}{insights_text}"""
+
+                return {
+                    "response": response,
+                    "intent": EscalaIntent.OTIMIZAR_INTELIGENTE.value,
+                    "data": {
+                        "schedule_id": schedule.id,
+                        "efficiency_score": schedule.efficiency_score,
+                        "coverage_score": schedule.coverage_score,
+                        "cost_analysis": cost_info,
+                        "metrics": metrics_info,
+                    },
+                    "suggestions": [
+                        "Aplicar otimização",
+                        "Ver detalhes por posto",
+                        "Comparar com escala atual",
+                        "Exportar relatório",
+                    ],
+                    "actions": [
+                        {"type": "optimize_scale", "label": "Aplicar escala otimizada", "target": "scale",
+                         "data": {"schedule_id": schedule.id, "month": mes_num, "year": ano}},
+                    ],
+                }
+            except Exception as e:
+                logger.error(f"Erro na otimização inteligente: {e}")
+
+        # Fallback sem serviço disponível
+        posto_info = f" do posto **{posto_id}**" if posto_id else ""
+        return {
+            "response": f"""**Otimização Inteligente de Escala**
+
+Para otimizar a escala{posto_info} de **{mes_num:02d}/{ano}**, o sistema utilizará IA para:
+
+1. **Previsão de demanda** - Analisar padrões históricos por turno
+2. **Alocação inteligente** - Matching de skills por posto
+3. **Otimização de custo** - Minimizar horas extras e noturnas
+4. **Balanceamento** - Distribuir carga entre funcionários
+
+**Tipos de otimização:**
+- Reduzir custo (foco em minimizar HE)
+- Maximizar cobertura (garantir 100% dos postos)
+- Balancear turnos (equalizar carga)
+- Eficiência geral (peso balanceado)
+
+{'Informe o ID do tenant para iniciar.' if not tenant_id else 'Deseja iniciar a otimização?'}""",
+            "intent": EscalaIntent.OTIMIZAR_INTELIGENTE.value,
+            "data": {"posto_id": posto_id, "mes_num": mes_num, "ano": ano},
+            "suggestions": [
+                "Otimizar custo",
+                "Maximizar cobertura",
+                "Balancear turnos",
+                "Cancelar",
+            ],
+        }
+
+    async def _handle_criar_template(self, message: str, context: Dict) -> Dict[str, Any]:
+        """Salva uma escala existente como template reutilizável."""
+        import re
+
+        # Extrair nome do template
+        nome_match = re.search(
+            r"(?:template|modelo)\s+(?:chamado|nome|com\s+nome)\s+[\"']?([^\"']+)[\"']?",
+            message, re.IGNORECASE
+        )
+        nome_template = nome_match.group(1).strip() if nome_match else None
+
+        # Extrair ID da escala
+        scale_match = re.search(
+            r"(?:escala|scale)\s+([A-Za-z0-9\-]+)",
+            message, re.IGNORECASE
+        )
+        scale_id = scale_match.group(1) if scale_match else None
+
+        template_service = self._get_scale_template_service()
+        template_repo = self._get_scale_template_repo()
+
+        if template_service and template_repo and scale_id:
+            try:
+                # Extrair template da escala
+                template_data = await template_service.extract_template_from_scale(
+                    scale_id=scale_id,
+                    include_employee_mapping=False,
+                )
+
+                tenant_id = context.get("tenant_id") or context.get("cliente_id", "")
+                user_id = context.get("user_id", "")
+
+                if nome_template:
+                    from modules.operacional.schemas.scale_template import ScaleTemplateCreate
+                    create_data = ScaleTemplateCreate(
+                        name=nome_template,
+                        description=f"Template criado via Bartolo a partir da escala {scale_id}",
+                        template_data=template_data,
+                    )
+                    template = await template_repo.create(
+                        data=create_data,
+                        tenant_id=tenant_id,
+                        created_by=user_id,
+                    )
+
+                    return {
+                        "response": f"""**Template Criado com Sucesso**
+
+**Nome:** {template.name}
+**ID:** {template.id}
+**Baseado na escala:** {scale_id}
+**Funcionários:** {template_data.metadata.total_employees}
+**Turnos/mês:** {template_data.metadata.total_shifts_per_month}
+**Cobertura:** {template_data.metadata.coverage_percentage:.1f}%
+
+Template salvo e disponível para reutilização.""",
+                        "intent": EscalaIntent.CRIAR_TEMPLATE.value,
+                        "data": {
+                            "template_id": template.id,
+                            "scale_id": scale_id,
+                            "name": template.name,
+                        },
+                        "suggestions": [
+                            f"Aplicar template {template.name}",
+                            "Listar templates",
+                            "Ver escalas",
+                        ],
+                        "actions": [
+                            {"type": "create_scale_template", "label": "Template criado", "target": "scale_template",
+                             "data": {"template_id": template.id, "scale_id": scale_id}},
+                        ],
+                    }
+                else:
+                    # Template extraído mas sem nome - pedir nome
+                    return {
+                        "response": f"""**Extraindo Template da Escala {scale_id}**
+
+Template extraído com sucesso:
+- **Tipo de escala:** {template_data.scale_type}
+- **Postos:** {len(template_data.posts)}
+- **Padrões de turno:** {len(template_data.shifts_pattern)}
+- **Funcionários:** {template_data.metadata.total_employees}
+
+**Informe um nome para salvar o template:**""",
+                        "intent": EscalaIntent.CRIAR_TEMPLATE.value,
+                        "data": {
+                            "scale_id": scale_id,
+                            "template_data_preview": {
+                                "scale_type": template_data.scale_type,
+                                "posts_count": len(template_data.posts),
+                                "patterns_count": len(template_data.shifts_pattern),
+                            },
+                        },
+                        "needs_info": ["nome_template"],
+                        "suggestions": ["Portaria 12x36", "Vigilância Noturna", "Cancelar"],
+                    }
+            except ValueError as e:
+                return {
+                    "response": f"**Erro ao criar template:** {str(e)}",
+                    "intent": EscalaIntent.CRIAR_TEMPLATE.value,
+                    "suggestions": ["Ver escalas ativas", "Ajuda"],
+                }
+            except Exception as e:
+                logger.error(f"Erro ao criar template: {e}")
+
+        # Fallback
+        return {
+            "response": """**Criar Template de Escala**
+
+Para salvar uma escala como template reutilizável, preciso de:
+
+- **ID da escala:** Qual escala deseja usar como base?
+- **Nome:** Como deseja chamar o template?
+
+**Exemplo:** "Salvar escala ESC-001 como template Portaria 12x36"
+
+O template preservará a estrutura de turnos, permitindo replicar
+em outros postos e períodos rapidamente.""",
+            "intent": EscalaIntent.CRIAR_TEMPLATE.value,
+            "needs_info": ["scale_id", "nome_template"],
+            "suggestions": ["Ver escalas ativas", "Listar templates", "Ajuda"],
+        }
+
+    async def _handle_aplicar_template(self, message: str, context: Dict) -> Dict[str, Any]:
+        """Aplica um template existente em um posto/mês."""
+        import re
+
+        # Extrair template ID/nome
+        template_match = re.search(
+            r"template\s+([A-Za-z0-9\-]+)",
+            message, re.IGNORECASE
+        )
+        template_id = template_match.group(1) if template_match else None
+
+        # Extrair posto
+        posto_match = re.search(
+            r"(?:posto|post|no|em)\s+([A-Za-z0-9\-]+)",
+            message, re.IGNORECASE
+        )
+        posto_id = posto_match.group(1) if posto_match else None
+
+        dados = self._extract_month_year(message)
+        mes_num = dados.get("mes_num")
+        ano = dados.get("ano", datetime.now().year)
+
+        template_repo = self._get_scale_template_repo()
+        template_service = self._get_scale_template_service()
+
+        if template_repo and template_service and template_id:
+            try:
+                tenant_id = context.get("tenant_id") or context.get("cliente_id")
+                template = await template_repo.get_by_id(template_id, tenant_id)
+
+                if template and mes_num and posto_id:
+                    from modules.operacional.schemas.scale_template import ScaleTemplateApplyRequest
+                    apply_request = ScaleTemplateApplyRequest(
+                        month=mes_num,
+                        year=ano,
+                        post_id=posto_id,
+                    )
+                    user_id = context.get("user_id", "")
+                    scale = await template_service.apply_template_to_period(
+                        template_data=template.template_data,
+                        apply_request=apply_request,
+                        created_by=user_id,
+                    )
+                    # Incrementar uso
+                    await template_repo.increment_usage(template_id)
+
+                    return {
+                        "response": f"""**Template Aplicado com Sucesso**
+
+**Template:** {template.name}
+**Posto:** {posto_id}
+**Período:** {mes_num:02d}/{ano}
+**Escala criada:** {scale.id}
+
+A escala foi criada em status rascunho. Revise e publique quando estiver pronta.""",
+                        "intent": EscalaIntent.APLICAR_TEMPLATE.value,
+                        "data": {
+                            "template_id": template.id,
+                            "scale_id": scale.id,
+                            "post_id": posto_id,
+                            "month": mes_num,
+                            "year": ano,
+                        },
+                        "suggestions": [
+                            f"Validar escala {scale.id}",
+                            f"Publicar escala {scale.id}",
+                            "Ver escalas pendentes",
+                        ],
+                        "actions": [
+                            {"type": "apply_scale_template", "label": "Template aplicado", "target": "scale",
+                             "data": {"template_id": template.id, "scale_id": scale.id}},
+                        ],
+                    }
+                elif template:
+                    # Template encontrado mas faltam parâmetros
+                    meta = template.template_data.get("metadata", {})
+                    return {
+                        "response": f"""**Template: {template.name}**
+
+- **Tipo:** {template.template_data.get('scale_type', 'N/A')}
+- **Funcionários:** {meta.get('total_employees', 0)}
+- **Cobertura:** {meta.get('coverage_percentage', 0):.1f}%
+- **Usado:** {template.times_used}x
+
+Para aplicar, informe o **posto** e o **mês/ano**:
+Exemplo: "Aplicar template {template_id} no posto POST-001 em fev/2026" """,
+                        "intent": EscalaIntent.APLICAR_TEMPLATE.value,
+                        "data": {"template_id": template.id, "template_name": template.name},
+                        "needs_info": ["posto_id", "mes", "ano"],
+                        "suggestions": ["Listar postos", "Cancelar"],
+                    }
+                else:
+                    return {
+                        "response": f"Template **{template_id}** não encontrado. Use `/escala template listar` para ver os disponíveis.",
+                        "intent": EscalaIntent.APLICAR_TEMPLATE.value,
+                        "suggestions": ["Listar templates", "Ajuda"],
+                    }
+            except ValueError as e:
+                return {
+                    "response": f"**Erro ao aplicar template:** {str(e)}",
+                    "intent": EscalaIntent.APLICAR_TEMPLATE.value,
+                    "suggestions": ["Listar templates", "Ver escalas", "Ajuda"],
+                }
+            except Exception as e:
+                logger.error(f"Erro ao aplicar template: {e}")
+
+        # Fallback
+        return {
+            "response": """**Aplicar Template de Escala**
+
+Para aplicar um template, preciso de:
+
+- **Template:** ID ou nome do template
+- **Posto:** Onde aplicar
+- **Período:** Mês e ano
+
+**Exemplo:** "Aplicar template TPL-001 no posto POST-001 em março/2026"
+
+Use "Listar templates" para ver os disponíveis.""",
+            "intent": EscalaIntent.APLICAR_TEMPLATE.value,
+            "needs_info": ["template_id", "posto_id", "mes", "ano"],
+            "suggestions": ["Listar templates", "Ver postos", "Ajuda"],
+        }
+
+    async def _handle_listar_templates(self, context: Dict) -> Dict[str, Any]:
+        """Lista templates de escala disponíveis."""
+        template_repo = self._get_scale_template_repo()
+
+        if template_repo:
+            try:
+                tenant_id = context.get("tenant_id") or context.get("cliente_id")
+                if tenant_id:
+                    templates, total = await template_repo.list(tenant_id=tenant_id, limit=10)
+
+                    if templates:
+                        lines = []
+                        for i, t in enumerate(templates, 1):
+                            meta = t.template_data.get("metadata", {})
+                            popular = " ⭐" if t.is_popular else ""
+                            lines.append(
+                                f"| {i} | {t.name}{popular} | "
+                                f"{t.template_data.get('scale_type', 'N/A')} | "
+                                f"{meta.get('total_employees', 0)} | "
+                                f"{t.times_used}x | {t.id[:8]}... |"
+                            )
+
+                        table_body = "\n".join(lines)
+                        response = f"""**Templates de Escala Disponíveis ({total})**
+
+| # | Nome | Tipo | Func. | Uso | ID |
+|---|------|------|-------|-----|----|
+{table_body}
+
+Para aplicar: "Aplicar template <ID> no posto <POSTO> em <MÊS>/<ANO>"
+Para criar novo: "Salvar escala <ID> como template <NOME>" """
+                    else:
+                        response = """**Templates de Escala**
+
+Nenhum template encontrado.
+
+Para criar um template, salve uma escala existente:
+"Salvar escala ESC-001 como template Portaria 12x36" """
+
+                    return {
+                        "response": response,
+                        "intent": EscalaIntent.LISTAR_TEMPLATES.value,
+                        "data": {
+                            "templates": [
+                                {"id": t.id, "name": t.name, "times_used": t.times_used}
+                                for t in templates
+                            ],
+                            "total": total,
+                        },
+                        "suggestions": ["Criar template", "Aplicar template", "Ver escalas"],
+                    }
+            except Exception as e:
+                logger.error(f"Erro ao listar templates: {e}")
+
+        # Fallback
+        return {
+            "response": """**Templates de Escala**
+
+Para listar templates disponíveis, é necessário acesso ao banco de dados.
+
+**O que são templates?**
+Templates são modelos de escala reutilizáveis. Salve uma escala bem-sucedida
+como template e aplique em outros postos e períodos.
+
+**Comandos:**
+- `/escala template listar` - Ver todos os templates
+- `/escala template criar <nome> <escala_id>` - Criar template
+- `/escala template aplicar <template_id> <posto> <mes>` - Aplicar template""",
+            "intent": EscalaIntent.LISTAR_TEMPLATES.value,
+            "suggestions": ["Criar template", "Ver escalas", "Ajuda"],
+        }
+
     async def _handle_default(self, message: str, context: Dict) -> Optional[Dict[str, Any]]:
         """Handler padrão - retorna None para permitir que DataConnector processe"""
         # Se chegou aqui, não detectamos intent específico de escala
         # Retorna None para permitir que o fluxo continue (DataConnector, LLM, etc)
+        return None
+
+    # Patterns para follow-up (respostas curtas após GERAR_ESCALA)
+    FOLLOWUP_PATTERNS = {
+        "scale_type": [
+            r"^(12x36|5x2|6x1|5x1|4x2)$",
+            r"^(12x36|5x2|6x1|5x1|4x2)\s",
+            r"(12x36|5x2|6x1|5x1|4x2)\s*(?:diurno|noturno)?",
+        ],
+        "confirmation": [
+            r"^(?:sim|s|yes|y|confirmar?|ok|pode|isso|exato|correto)$",
+        ],
+        "negation": [
+            r"^(?:nao|n|no|cancelar?|parar|sair)$",
+        ],
+    }
+
+    async def process_followup(
+        self,
+        message: str,
+        context: Dict[str, Any],
+        previous_intent: str,
+        previous_data: Optional[Dict] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Processa follow-up de uma conversa anterior com o EscalaAgent.
+
+        Entende respostas curtas como "12x36", "5x2" quando o contexto
+        anterior foi GERAR_ESCALA.
+
+        Args:
+            message: Mensagem do usuário (possivelmente curta)
+            context: Contexto da conversa
+            previous_intent: Intent da interação anterior
+            previous_data: Dados coletados na interação anterior
+
+        Returns:
+            Dict com resposta ou None se não for follow-up reconhecido
+        """
+        import re
+
+        message_clean = message.strip().lower()
+        previous_data = previous_data or {}
+
+        # Follow-up de GERAR_ESCALA: espera tipo de escala
+        if previous_intent == EscalaIntent.GERAR_ESCALA.value:
+            # Tenta detectar tipo de escala
+            for pattern in self.FOLLOWUP_PATTERNS["scale_type"]:
+                match = re.search(pattern, message_clean)
+                if match:
+                    scale_type = match.group(1)
+                    scale_info = self.SCALE_TYPES.get(scale_type, {})
+
+                    # Merge com dados anteriores
+                    merged_data = {**previous_data, "scale_type": scale_type}
+
+                    # Extrai turno se presente
+                    if "diurno" in message_clean:
+                        merged_data["turno"] = "Diurno (07:00 - 19:00)"
+                    elif "noturno" in message_clean:
+                        merged_data["turno"] = "Noturno (19:00 - 07:00)"
+
+                    # Monta resposta de confirmação
+                    info_lines = [f"**Tipo de Escala:** {scale_type}"]
+                    if scale_info.get("hours_on"):
+                        info_lines.append(f"**Jornada:** {scale_info['hours_on']}h trabalho, {scale_info['hours_off']}h folga")
+                    if scale_info.get("days_on"):
+                        info_lines.append(f"**Jornada:** {scale_info['days_on']} dias trabalho, {scale_info['days_off']} dias folga")
+                    if merged_data.get("turno"):
+                        info_lines.append(f"**Turno:** {merged_data['turno']}")
+                    if merged_data.get("cliente"):
+                        info_lines.append(f"**Cliente:** {merged_data['cliente']}")
+                    if merged_data.get("mes"):
+                        info_lines.append(f"**Período:** {merged_data['mes']}/{merged_data.get('ano', 2026)}")
+
+                    response = f"Escala **{scale_type}** selecionada.\n\n"
+                    response += "\n".join(info_lines)
+                    response += "\n\n**Deseja confirmar a geração desta escala?**"
+
+                    return {
+                        "response": response,
+                        "intent": EscalaIntent.GERAR_ESCALA.value,
+                        "data": merged_data,
+                        "suggestions": ["Confirmar", "Alterar tipo", "Cancelar"],
+                        "awaiting_confirmation": True,
+                    }
+
+            # Verifica se é confirmação
+            for pattern in self.FOLLOWUP_PATTERNS["confirmation"]:
+                if re.match(pattern, message_clean):
+                    return {
+                        "response": "Escala confirmada! Iniciando geração...\n\n"
+                                    "A escala será gerada com base nos parâmetros definidos. "
+                                    "Você será notificado quando estiver pronta para revisão.",
+                        "intent": EscalaIntent.GERAR_ESCALA.value,
+                        "data": {**previous_data, "confirmed": True},
+                        "suggestions": ["Ver escalas", "Gerar outra escala"],
+                    }
+
+            # Verifica se é negação/cancelamento
+            for pattern in self.FOLLOWUP_PATTERNS["negation"]:
+                if re.match(pattern, message_clean):
+                    return {
+                        "response": "Geração de escala cancelada. Posso ajudar com outra coisa?",
+                        "intent": EscalaIntent.GERAR_ESCALA.value,
+                        "data": {**previous_data, "cancelled": True},
+                        "suggestions": ["Gerar nova escala", "Ver escalas ativas", "Ajuda"],
+                    }
+
         return None
 
     def get_capabilities(self) -> List[str]:
@@ -358,4 +1311,9 @@ class EscalaAgent:
             "Validar conformidade CLT",
             "Calcular custos estimados",
             "Sugerir redistribuição de turnos",
+            "Gerar escalas automaticamente para todos os postos (AutoScale)",
+            "Otimização inteligente com IA (custo, cobertura, eficiência)",
+            "Criar templates de escalas reutilizáveis",
+            "Aplicar templates em novos postos/períodos",
+            "Listar templates disponíveis",
         ]

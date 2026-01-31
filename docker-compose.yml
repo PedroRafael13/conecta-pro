@@ -78,6 +78,14 @@ services:
       FRONTEND_URL: ${FRONTEND_URL:-https://erp.conectamais.pro}
       MAPS_DEFAULT_CENTER_LAT: ${MAPS_DEFAULT_CENTER_LAT:-}
       MAPS_DEFAULT_CENTER_LNG: ${MAPS_DEFAULT_CENTER_LNG:-}
+      # Bartolo AI - LLM Configuration
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4-turbo-preview}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2000}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.7}
+      LLM_FALLBACK_ENABLED: ${LLM_FALLBACK_ENABLED:-true}
       DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
       DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-20}
       # Redis
@@ -129,6 +137,8 @@ services:
       - conecta-pro-network
     volumes:
       - ./logs:/app/logs
+      # Uploads GED
+      - ./uploads:/app/uploads
       # Credenciais (certificados digitais)
       - ./credentials:/opt/conecta-pro/credentials:ro
       # Módulos Fase 3 (externos ao backend)

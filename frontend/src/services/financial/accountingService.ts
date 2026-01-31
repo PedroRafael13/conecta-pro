@@ -10,7 +10,14 @@ import type {
   JournalEntryCreate,
   CostCenterCreate,
   AccountingPeriodCreate,
-  ListAccountsApiV1FinancialAccountingAccountsGetParams,
+  ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams,
+  ListChartsApiV1FinancialAccountingAccountingChartsGetParams,
+  ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams,
+  ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams,
+  ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams,
+  ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams,
+  PeriodCloseRequest,
+  PeriodReopenRequest,
 } from '@/types/generated/financial/models';
 
 const accounting = getFinancialAccounting();
@@ -18,151 +25,114 @@ const accounting = getFinancialAccounting();
 export const accountingService = {
   // Chart of Accounts
   async createChart(data: ChartOfAccountsCreate) {
-    const response = await accounting.createChartApiV1FinancialAccountingChartsPost(
+    return await accounting.createChartApiV1FinancialAccountingAccountingChartsPost(
       data
     );
-    return response.data;
   },
 
-  async listCharts(params: any = {}) {
-    const response = await accounting.listChartsApiV1FinancialAccountingChartsGet(
+  async listCharts(params: ListChartsApiV1FinancialAccountingAccountingChartsGetParams = {}) {
+    return await accounting.listChartsApiV1FinancialAccountingAccountingChartsGet(
       params
     );
-    return response.data;
   },
 
   // Accounts
   async createAccount(data: AccountingAccountCreate) {
-    const response = await accounting.createAccountApiV1FinancialAccountingAccountsPost(
+    return await accounting.createAccountApiV1FinancialAccountingAccountingAccountsPost(
       data
     );
-    return response.data;
   },
 
   async listAccounts(
-    params: ListAccountsApiV1FinancialAccountingAccountsGetParams = {}
+    params: ListAccountsApiV1FinancialAccountingAccountingAccountsGetParams
   ) {
-    const response = await accounting.listAccountsApiV1FinancialAccountingAccountsGet(
+    return await accounting.listAccountsApiV1FinancialAccountingAccountingAccountsGet(
       params
     );
-    return response.data;
   },
 
   async getAccount(accountId: string) {
-    const response = await accounting.getAccountApiV1FinancialAccountingAccountsAccountIdGet(
+    return await accounting.getAccountApiV1FinancialAccountingAccountingAccountsAccountIdGet(
       accountId
     );
-    return response.data;
   },
 
   // Cost Centers
   async createCostCenter(data: CostCenterCreate) {
-    const response = await accounting.createCostCenterApiV1FinancialAccountingCostCentersPost(
+    return await accounting.createCostCenterApiV1FinancialAccountingAccountingCostCentersPost(
       data
     );
-    return response.data;
   },
 
-  async listCostCenters(params: any = {}) {
-    const response = await accounting.listCostCentersApiV1FinancialAccountingCostCentersGet(
+  async listCostCenters(params: ListCostCentersApiV1FinancialAccountingAccountingCostCentersGetParams = {}) {
+    return await accounting.listCostCentersApiV1FinancialAccountingAccountingCostCentersGet(
       params
     );
-    return response.data;
   },
 
   // Journal Entries
   async createJournalEntry(data: JournalEntryCreate) {
-    const response = await accounting.createJournalEntryApiV1FinancialAccountingJournalEntriesPost(
+    return await accounting.createJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost(
       data
     );
-    return response.data;
   },
 
-  async listJournalEntries(params: any = {}) {
-    const response = await accounting.listJournalEntriesApiV1FinancialAccountingJournalEntriesGet(
+  async listJournalEntries(params: ListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGetParams = {}) {
+    return await accounting.listJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet(
       params
     );
-    return response.data;
   },
 
   async getJournalEntry(entryId: string) {
-    const response = await accounting.getJournalEntryApiV1FinancialAccountingJournalEntriesEntryIdGet(
+    return await accounting.getJournalEntryApiV1FinancialAccountingAccountingJournalEntriesEntryIdGet(
       entryId
     );
-    return response.data;
   },
 
   // Periods
   async createPeriod(data: AccountingPeriodCreate) {
-    const response = await accounting.createPeriodApiV1FinancialAccountingPeriodsPost(
+    return await accounting.createPeriodApiV1FinancialAccountingAccountingPeriodsPost(
       data
     );
-    return response.data;
   },
 
-  async listPeriods(params: any = {}) {
-    const response = await accounting.listPeriodsApiV1FinancialAccountingPeriodsGet(
+  async listPeriods(params: ListPeriodsApiV1FinancialAccountingAccountingPeriodsGetParams = {}) {
+    return await accounting.listPeriodsApiV1FinancialAccountingAccountingPeriodsGet(
       params
     );
-    return response.data;
   },
 
-  async closePeriod(periodId: string) {
-    const response = await accounting.closePeriodApiV1FinancialAccountingPeriodsPeriodIdClosePost(
-      periodId
+  async closePeriod(periodId: string, data: PeriodCloseRequest) {
+    return await accounting.closePeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdClosePost(
+      periodId,
+      data
     );
-    return response.data;
   },
 
-  async reopenPeriod(periodId: string) {
-    const response = await accounting.reopenPeriodApiV1FinancialAccountingPeriodsPeriodIdReopenPost(
-      periodId
+  async reopenPeriod(periodId: string, data: PeriodReopenRequest) {
+    return await accounting.reopenPeriodApiV1FinancialAccountingAccountingPeriodsPeriodIdReopenPost(
+      periodId,
+      data
     );
-    return response.data;
   },
 
   // Reports
-  async getTrialBalance(condominioId: string, periodId: string) {
-    const response = await accounting.getTrialBalanceApiV1FinancialAccountingReportsTrialBalanceGet(
-      { condominio_id: condominioId, period_id: periodId }
-    );
-    return response.data;
-  },
-
-  async getBalanceSheet(condominioId: string, date: string) {
-    const response = await accounting.getBalanceSheetApiV1FinancialAccountingReportsBalanceSheetGet(
-      { condominio_id: condominioId, date }
-    );
-    return response.data;
-  },
-
-  async getIncomeStatement(
-    condominioId: string,
-    startDate: string,
-    endDate: string
-  ) {
-    const response = await accounting.getIncomeStatementApiV1FinancialAccountingReportsIncomeStatementGet(
-      { condominio_id: condominioId, start_date: startDate, end_date: endDate }
-    );
-    return response.data;
-  },
-
-  async getCashFlowStatement(
-    condominioId: string,
-    startDate: string,
-    endDate: string
-  ) {
-    const response = await accounting.getCashFlowStatementApiV1FinancialAccountingReportsCashFlowStatementGet(
-      { condominio_id: condominioId, start_date: startDate, end_date: endDate }
-    );
-    return response.data;
-  },
-
-  async exportToExcel(params: any) {
-    const response = await accounting.exportAccountingToExcelApiV1FinancialAccountingExportExcelGet(
+  async getTrialBalance(params: ListTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGetParams = {}) {
+    return await accounting.listTrialBalancesApiV1FinancialAccountingAccountingTrialBalancesGet(
       params
     );
-    return response.data;
+  },
+
+  async getLatestBalance() {
+    return await accounting.getLatestBalanceApiV1FinancialAccountingAccountingTrialBalancesLatestGet();
+  },
+
+  async getActiveChart() {
+    return await accounting.getActiveChartApiV1FinancialAccountingAccountingChartsActiveGet();
+  },
+
+  async getCurrentPeriod() {
+    return await accounting.getCurrentPeriodApiV1FinancialAccountingAccountingPeriodsCurrentGet();
   },
 };
 

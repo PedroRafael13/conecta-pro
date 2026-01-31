@@ -10,9 +10,20 @@ import type {
   ReceivableAccountCreate,
   ReceivableAccountUpdate,
   ReceivableAccountResponse,
-  ReceivableInstallmentCreate,
-  ReceivablePaymentRequest,
-  ListReceivablesApiV1FinancialReceivablesReceivablesGetParams,
+  ReceivableInstallmentUpdate,
+  ReceivableBulkPaymentRequest,
+  ReceivablePaymentCreate,
+  ReceivablePaymentReconcileRequest,
+  ReceivableInstallmentResponse,
+  ReceivablePaymentResponse,
+  ListAccountsApiV1FinancialReceivablesReceivablesGetParams,
+  GetStatsApiV1FinancialReceivablesReceivablesStatsGetParams,
+  GetOverdueApiV1FinancialReceivablesReceivablesOverdueGetParams,
+  GetDueSoonApiV1FinancialReceivablesReceivablesDueSoonGetParams,
+  GetPendingInstallmentsApiV1FinancialReceivablesReceivablesInstallmentsPendingGetParams,
+  GetCollectionPrioritiesApiV1FinancialReceivablesReceivablesAiCollectionPrioritiesGetParams,
+  GetDelinquencyAnalysisApiV1FinancialReceivablesReceivablesAiDelinquencyAnalysisGetParams,
+  GetCashFlowForecastApiV1FinancialReceivablesReceivablesAiCashFlowForecastGetParams,
 } from '@/types/generated/financial/models';
 
 const receivables = getFinancialReceivables();
@@ -20,25 +31,17 @@ const receivables = getFinancialReceivables();
 export const receivableService = {
   // Receivable Accounts
   async create(data: ReceivableAccountCreate): Promise<ReceivableAccountResponse> {
-    const response = await receivables.createReceivableApiV1FinancialReceivablesReceivablesPost(
-      data
-    );
+    const response = await receivables.createAccountApiV1FinancialReceivablesReceivablesPost(data);
     return response.data;
   },
 
-  async list(
-    params: ListReceivablesApiV1FinancialReceivablesReceivablesGetParams = {}
-  ) {
-    const response = await receivables.listReceivablesApiV1FinancialReceivablesReceivablesGet(
-      params
-    );
+  async list(params: ListAccountsApiV1FinancialReceivablesReceivablesGetParams) {
+    const response = await receivables.listAccountsApiV1FinancialReceivablesReceivablesGet(params);
     return response.data;
   },
 
   async getById(receivableId: string): Promise<ReceivableAccountResponse> {
-    const response = await receivables.getReceivableApiV1FinancialReceivablesReceivablesReceivableIdGet(
-      receivableId
-    );
+    const response = await receivables.getAccountApiV1FinancialReceivablesReceivablesAccountIdGet(receivableId);
     return response.data;
   },
 
@@ -46,7 +49,7 @@ export const receivableService = {
     receivableId: string,
     data: ReceivableAccountUpdate
   ): Promise<ReceivableAccountResponse> {
-    const response = await receivables.updateReceivableApiV1FinancialReceivablesReceivablesReceivableIdPut(
+    const response = await receivables.updateAccountApiV1FinancialReceivablesReceivablesAccountIdPut(
       receivableId,
       data
     );
@@ -54,89 +57,116 @@ export const receivableService = {
   },
 
   async delete(receivableId: string): Promise<void> {
-    await receivables.deleteReceivableApiV1FinancialReceivablesReceivablesReceivableIdDelete(
-      receivableId
-    );
+    await receivables.deleteAccountApiV1FinancialReceivablesReceivablesAccountIdDelete(receivableId);
   },
 
-  async getDashboard(condominioId: string) {
-    const response = await receivables.getReceivablesDashboardApiV1FinancialReceivablesReceivablesDashboardGet(
-      { condominio_id: condominioId }
-    );
+  async getStats(params?: GetStatsApiV1FinancialReceivablesReceivablesStatsGetParams) {
+    const response = await receivables.getStatsApiV1FinancialReceivablesReceivablesStatsGet(params);
+    return response.data;
+  },
+
+  async getOverdue(params?: GetOverdueApiV1FinancialReceivablesReceivablesOverdueGetParams) {
+    const response = await receivables.getOverdueApiV1FinancialReceivablesReceivablesOverdueGet(params);
+    return response.data;
+  },
+
+  async getDueSoon(params?: GetDueSoonApiV1FinancialReceivablesReceivablesDueSoonGetParams) {
+    const response = await receivables.getDueSoonApiV1FinancialReceivablesReceivablesDueSoonGet(params);
     return response.data;
   },
 
   // Installments
-  async createInstallment(data: ReceivableInstallmentCreate) {
-    const response = await receivables.createInstallmentApiV1FinancialReceivablesInstallmentsPost(
+  async listInstallments(accountId: string): Promise<ReceivableInstallmentResponse[]> {
+    const response = await receivables.listInstallmentsApiV1FinancialReceivablesReceivablesAccountIdInstallmentsGet(accountId);
+    return response.data;
+  },
+
+  async getInstallment(installmentId: string): Promise<ReceivableInstallmentResponse> {
+    const response = await receivables.getInstallmentApiV1FinancialReceivablesReceivablesInstallmentsInstallmentIdGet(installmentId);
+    return response.data;
+  },
+
+  async updateInstallment(
+    installmentId: string,
+    data: ReceivableInstallmentUpdate
+  ): Promise<ReceivableInstallmentResponse> {
+    const response = await receivables.updateInstallmentApiV1FinancialReceivablesReceivablesInstallmentsInstallmentIdPut(
+      installmentId,
       data
     );
     return response.data;
   },
 
-  async getInstallment(installmentId: string) {
-    const response = await receivables.getInstallmentApiV1FinancialReceivablesInstallmentsInstallmentIdGet(
-      installmentId
-    );
+  async getPendingInstallments(
+    params: GetPendingInstallmentsApiV1FinancialReceivablesReceivablesInstallmentsPendingGetParams
+  ): Promise<ReceivableInstallmentResponse[]> {
+    const response = await receivables.getPendingInstallmentsApiV1FinancialReceivablesReceivablesInstallmentsPendingGet(params);
     return response.data;
   },
 
   // Payments
-  async processPayment(data: ReceivablePaymentRequest) {
-    const response = await receivables.processPaymentApiV1FinancialReceivablesPaymentsPost(
+  async registerPayment(
+    installmentId: string,
+    data: ReceivablePaymentCreate
+  ): Promise<ReceivablePaymentResponse> {
+    const response = await receivables.registerPaymentApiV1FinancialReceivablesReceivablesInstallmentsInstallmentIdPayPost(
+      installmentId,
       data
     );
     return response.data;
   },
 
-  async cancelPayment(paymentId: string) {
-    const response = await receivables.cancelPaymentApiV1FinancialReceivablesPaymentsPaymentIdCancelPost(
-      paymentId
+  async bulkPayment(data: ReceivableBulkPaymentRequest) {
+    const response = await receivables.bulkPaymentApiV1FinancialReceivablesReceivablesBulkPaymentPost(data);
+    return response.data;
+  },
+
+  async reconcilePayment(
+    paymentId: string,
+    data: ReceivablePaymentReconcileRequest
+  ): Promise<ReceivablePaymentResponse> {
+    const response = await receivables.reconcilePaymentApiV1FinancialReceivablesReceivablesPaymentsPaymentIdReconcilePost(
+      paymentId,
+      data
     );
     return response.data;
   },
 
-  // Billing
-  async generateBilling(condominioId: string, referenceMonth: string) {
-    const response = await receivables.generateBillingApiV1FinancialReceivablesBillingGeneratePost(
-      { condominio_id: condominioId, reference_month: referenceMonth }
-    );
+  // AI Features
+  async getCollectionPriorities(
+    params: GetCollectionPrioritiesApiV1FinancialReceivablesReceivablesAiCollectionPrioritiesGetParams
+  ) {
+    const response = await receivables.getCollectionPrioritiesApiV1FinancialReceivablesReceivablesAiCollectionPrioritiesGet(params);
     return response.data;
   },
 
-  async sendBoleto(receivableId: string) {
-    const response = await receivables.sendBoletoApiV1FinancialReceivablesReceivablesReceivableIdBoletoSendPost(
-      receivableId
-    );
+  async getCashFlowForecast(
+    params: GetCashFlowForecastApiV1FinancialReceivablesReceivablesAiCashFlowForecastGetParams
+  ) {
+    const response = await receivables.getCashFlowForecastApiV1FinancialReceivablesReceivablesAiCashFlowForecastGet(params);
     return response.data;
   },
 
-  async printBoleto(receivableId: string) {
-    const response = await receivables.printBoletoApiV1FinancialReceivablesReceivablesReceivableIdBoletoPrintGet(
-      receivableId
-    );
+  async getDelinquencyAnalysis(
+    params: GetDelinquencyAnalysisApiV1FinancialReceivablesReceivablesAiDelinquencyAnalysisGetParams
+  ) {
+    const response = await receivables.getDelinquencyAnalysisApiV1FinancialReceivablesReceivablesAiDelinquencyAnalysisGet(params);
     return response.data;
   },
 
-  // Reports
-  async getAgingReport(condominioId: string) {
-    const response = await receivables.getAgingReportApiV1FinancialReceivablesReportsAgingGet(
-      { condominio_id: condominioId }
-    );
+  async getCustomerRisk(customerId: string) {
+    const response = await receivables.getCustomerRiskApiV1FinancialReceivablesReceivablesAiCustomerRiskCustomerIdGet(customerId);
     return response.data;
   },
 
-  async getDefaultersReport(condominioId: string) {
-    const response = await receivables.getDefaultersReportApiV1FinancialReceivablesReportsDefaultersGet(
-      { condominio_id: condominioId }
-    );
+  // Debt
+  async getCustomerDebt(customerId: string) {
+    const response = await receivables.getCustomerDebtApiV1FinancialReceivablesReceivablesDebtCustomerCustomerIdGet(customerId);
     return response.data;
   },
 
-  async exportToExcel(params: any) {
-    const response = await receivables.exportReceivablesToExcelApiV1FinancialReceivablesExportExcelGet(
-      params
-    );
+  async getUnitDebt(unidadeId: string) {
+    const response = await receivables.getUnitDebtApiV1FinancialReceivablesReceivablesDebtUnitUnidadeIdGet(unidadeId);
     return response.data;
   },
 };

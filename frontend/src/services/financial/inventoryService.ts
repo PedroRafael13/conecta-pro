@@ -6,10 +6,21 @@
 import { getFinancialInventory } from '@/types/generated/financial/financial-inventory/financial-inventory';
 import type {
   WarehouseCreate,
-  StockItemCreate,
+  WarehouseUpdate,
   StockMovementCreate,
   StockInventoryCreate,
-  ListWarehousesApiV1FinancialInventoryWarehousesGetParams,
+  StockReservationCreate,
+  StockReservationRelease,
+  ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams,
+  BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams,
+  ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams,
+  ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams,
+  BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams,
+  ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams,
+  GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams,
+  ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams,
+  ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams,
+  CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams,
 } from '@/types/generated/financial/models';
 
 const inventory = getFinancialInventory();
@@ -17,115 +28,215 @@ const inventory = getFinancialInventory();
 export const inventoryService = {
   // Warehouses
   async createWarehouse(data: WarehouseCreate) {
-    const response = await inventory.createWarehouseApiV1FinancialInventoryWarehousesPost(
+    return await inventory.createWarehouseApiV1FinancialInventoryInventoryWarehousesPost(
       data
     );
-    return response.data;
   },
 
-  async listWarehouses(
-    params: ListWarehousesApiV1FinancialInventoryWarehousesGetParams = {}
-  ) {
-    const response = await inventory.listWarehousesApiV1FinancialInventoryWarehousesGet(
+  async listWarehouses(params?: ListWarehousesApiV1FinancialInventoryInventoryWarehousesGetParams) {
+    return await inventory.listWarehousesApiV1FinancialInventoryInventoryWarehousesGet(
       params
     );
-    return response.data;
   },
 
   async getWarehouse(warehouseId: string) {
-    const response = await inventory.getWarehouseApiV1FinancialInventoryWarehousesWarehouseIdGet(
+    return await inventory.getWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdGet(
       warehouseId
     );
-    return response.data;
+  },
+
+  async updateWarehouse(warehouseId: string, data: WarehouseUpdate) {
+    return await inventory.updateWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdPatch(
+      warehouseId,
+      data
+    );
+  },
+
+  async blockWarehouse(
+    warehouseId: string,
+    params: BlockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPostParams
+  ) {
+    return await inventory.blockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdBlockPost(
+      warehouseId,
+      params
+    );
+  },
+
+  async unblockWarehouse(warehouseId: string) {
+    return await inventory.unblockWarehouseApiV1FinancialInventoryInventoryWarehousesWarehouseIdUnblockPost(
+      warehouseId
+    );
+  },
+
+  async getWarehouseStats() {
+    return await inventory.getWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet();
   },
 
   // Stock Items
-  async createItem(data: StockItemCreate) {
-    const response = await inventory.createStockItemApiV1FinancialInventoryItemsPost(
-      data
-    );
-    return response.data;
-  },
-
-  async listItems(params: any = {}) {
-    const response = await inventory.listStockItemsApiV1FinancialInventoryItemsGet(
+  async listStockItems(params?: ListStockItemsApiV1FinancialInventoryInventoryStockItemsGetParams) {
+    return await inventory.listStockItemsApiV1FinancialInventoryInventoryStockItemsGet(
       params
     );
-    return response.data;
   },
 
-  async getItem(itemId: string) {
-    const response = await inventory.getStockItemApiV1FinancialInventoryItemsItemIdGet(
+  async getStockItem(itemId: string) {
+    return await inventory.getStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet(
       itemId
     );
-    return response.data;
   },
 
-  async getItemBalance(itemId: string, warehouseId?: string) {
-    const response = await inventory.getStockBalanceApiV1FinancialInventoryItemsItemIdBalanceGet(
+  async getStockStats() {
+    return await inventory.getStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet();
+  },
+
+  async listLowStockItems() {
+    return await inventory.listLowStockItemsApiV1FinancialInventoryInventoryStockItemsLowStockGet();
+  },
+
+  async listExpiringItems(
+    params?: ListExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGetParams
+  ) {
+    return await inventory.listExpiringItemsApiV1FinancialInventoryInventoryStockItemsExpiringGet(
+      params
+    );
+  },
+
+  async blockStockItem(
+    itemId: string,
+    params: BlockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPostParams
+  ) {
+    return await inventory.blockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdBlockPost(
       itemId,
-      { warehouse_id: warehouseId }
+      params
     );
-    return response.data;
   },
 
-  // Stock Movements
+  async unblockStockItem(itemId: string) {
+    return await inventory.unblockStockItemApiV1FinancialInventoryInventoryStockItemsItemIdUnblockPost(
+      itemId
+    );
+  },
+
+  // Movements
   async createMovement(data: StockMovementCreate) {
-    const response = await inventory.createMovementApiV1FinancialInventoryMovementsPost(
+    return await inventory.createMovementApiV1FinancialInventoryInventoryMovementsPost(
       data
     );
-    return response.data;
   },
 
-  async listMovements(params: any = {}) {
-    const response = await inventory.listMovementsApiV1FinancialInventoryMovementsGet(
+  async listMovements(params?: ListMovementsApiV1FinancialInventoryInventoryMovementsGetParams) {
+    return await inventory.listMovementsApiV1FinancialInventoryInventoryMovementsGet(
       params
     );
-    return response.data;
   },
 
-  // Inventory Count
+  async getMovement(movementId: string) {
+    return await inventory.getMovementApiV1FinancialInventoryInventoryMovementsMovementIdGet(
+      movementId
+    );
+  },
+
+  async confirmMovement(movementId: string) {
+    return await inventory.confirmMovementApiV1FinancialInventoryInventoryMovementsMovementIdConfirmPost(
+      movementId
+    );
+  },
+
+  async cancelMovement(movementId: string) {
+    return await inventory.cancelMovementApiV1FinancialInventoryInventoryMovementsMovementIdCancelPost(
+      movementId
+    );
+  },
+
+  async listPendingMovements() {
+    return await inventory.listPendingMovementsApiV1FinancialInventoryInventoryMovementsPendingGet();
+  },
+
+  async getMovementStats(
+    params?: GetMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGetParams
+  ) {
+    return await inventory.getMovementStatsApiV1FinancialInventoryInventoryMovementsStatsGet(
+      params
+    );
+  },
+
+  // Inventories
   async createInventory(data: StockInventoryCreate) {
-    const response = await inventory.createInventoryApiV1FinancialInventoryInventoriesPost(
+    return await inventory.createInventoryApiV1FinancialInventoryInventoryInventoriesPost(
       data
     );
-    return response.data;
   },
 
-  async listInventories(params: any = {}) {
-    const response = await inventory.listInventoriesApiV1FinancialInventoryInventoriesGet(
+  async listInventories(
+    params?: ListInventoriesApiV1FinancialInventoryInventoryInventoriesGetParams
+  ) {
+    return await inventory.listInventoriesApiV1FinancialInventoryInventoryInventoriesGet(
       params
     );
-    return response.data;
   },
 
-  async closeInventory(inventoryId: string) {
-    const response = await inventory.closeInventoryApiV1FinancialInventoryInventoriesInventoryIdClosePost(
+  async getInventory(inventoryId: string) {
+    return await inventory.getInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdGet(
       inventoryId
     );
-    return response.data;
   },
 
-  // Reports
-  async getDashboard(condominioId: string) {
-    const response = await inventory.getInventoryDashboardApiV1FinancialInventoryDashboardGet(
-      { condominio_id: condominioId }
+  async startInventory(inventoryId: string) {
+    return await inventory.startInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdStartPost(
+      inventoryId
     );
-    return response.data;
   },
 
-  async getValuationReport(condominioId: string) {
-    const response = await inventory.getValuationReportApiV1FinancialInventoryReportsValuationGet(
-      { condominio_id: condominioId }
+  async finalizeInventory(inventoryId: string) {
+    return await inventory.finalizeInventoryApiV1FinancialInventoryInventoryInventoriesInventoryIdFinalizePost(
+      inventoryId
     );
-    return response.data;
   },
 
-  async getABCAnalysis(warehouseId: string) {
-    const response = await inventory.getAbcAnalysisApiV1FinancialInventoryReportsAbcAnalysisGet(
-      { warehouse_id: warehouseId }
+  async getInventoryStats() {
+    return await inventory.getInventoryStatsApiV1FinancialInventoryInventoryInventoriesStatsGet();
+  },
+
+  // Reservations
+  async createReservation(data: StockReservationCreate) {
+    return await inventory.createReservationApiV1FinancialInventoryInventoryReservationsPost(
+      data
     );
-    return response.data;
+  },
+
+  async listReservations(
+    params?: ListReservationsApiV1FinancialInventoryInventoryReservationsGetParams
+  ) {
+    return await inventory.listReservationsApiV1FinancialInventoryInventoryReservationsGet(
+      params
+    );
+  },
+
+  async getReservation(reservationId: string) {
+    return await inventory.getReservationApiV1FinancialInventoryInventoryReservationsReservationIdGet(
+      reservationId
+    );
+  },
+
+  async releaseReservation(reservationId: string, data: StockReservationRelease) {
+    return await inventory.releaseReservationApiV1FinancialInventoryInventoryReservationsReservationIdReleasePost(
+      reservationId,
+      data
+    );
+  },
+
+  async cancelReservation(
+    reservationId: string,
+    params: CancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPostParams
+  ) {
+    return await inventory.cancelReservationApiV1FinancialInventoryInventoryReservationsReservationIdCancelPost(
+      reservationId,
+      params
+    );
+  },
+
+  async getReservationStats() {
+    return await inventory.getReservationStatsApiV1FinancialInventoryInventoryReservationsStatsGet();
   },
 };
 

@@ -20,26 +20,23 @@ export const leadScoringService = {
    * Calcular score de lead
    */
   async scoreLead(lead: LeadScoreRequest): Promise<LeadScoreResponse> {
-    const response = await scoreLeadApiV1AnalyticsLeadsScorePost(lead);
-    return response.data;
+    return scoreLeadApiV1AnalyticsLeadsScorePost(lead) as Promise<LeadScoreResponse>;
   },
 
   /**
    * Top leads por score
    */
   async getTopLeads(limit = 50, minQuality = 'warm') {
-    const response = await getTopLeadsApiV1AnalyticsLeadsTopGet({
+    return getTopLeadsApiV1AnalyticsLeadsTopGet({
       limit,
       min_quality: minQuality,
-    });
-    return response.data;
+    }) as Promise<unknown>;
   },
 
   /**
    * Analytics de lead scoring
    */
   async getScoringAnalytics() {
-    const response = await getScoringAnalyticsApiV1AnalyticsLeadsAnalyticsGet();
-    return response.data;
+    return getScoringAnalyticsApiV1AnalyticsLeadsAnalyticsGet() as Promise<unknown>;
   },
 };

@@ -1,7 +1,7 @@
 /**
  * Service: Customer Management
  *
- * Gestão de Clientes (Contas a Receber).
+ * Gestao de Clientes (Contas a Receber).
  * Cobertura: 12 endpoints
  */
 
@@ -9,102 +9,91 @@ import { getFinancialCustomers } from '@/types/generated/financial/financial-cus
 import type {
   CustomerCreate,
   CustomerUpdate,
-  CustomerResponse,
   ListCustomersApiV1FinancialCustomersCustomersGetParams,
+  ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams,
+  BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams,
 } from '@/types/generated/financial/models';
 
 const customers = getFinancialCustomers();
 
 export const customerService = {
-  async create(data: CustomerCreate): Promise<CustomerResponse> {
-    const response = await customers.createCustomerApiV1FinancialCustomersCustomersPost(
+  async create(data: CustomerCreate) {
+    return await customers.createCustomerApiV1FinancialCustomersCustomersPost(
       data
     );
-    return response.data;
   },
 
-  async list(
-    params: ListCustomersApiV1FinancialCustomersCustomersGetParams = {}
+  async list(params: ListCustomersApiV1FinancialCustomersCustomersGetParams) {
+    return await customers.listCustomersApiV1FinancialCustomersCustomersGet(
+      params
+    );
+  },
+
+  async getById(customerId: string) {
+    return await customers.getCustomerApiV1FinancialCustomersCustomersCustomerIdGet(
+      customerId
+    );
+  },
+
+  async update(customerId: string, data: CustomerUpdate) {
+    return await customers.updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut(
+      customerId,
+      data
+    );
+  },
+
+  async delete(customerId: string) {
+    return await customers.deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete(
+      customerId
+    );
+  },
+
+  async listDebtors(
+    params: ListDebtorsApiV1FinancialCustomersCustomersDebtorsGetParams
   ) {
-    const response = await customers.listCustomersApiV1FinancialCustomersCustomersGet(
+    return await customers.listDebtorsApiV1FinancialCustomersCustomersDebtorsGet(
       params
     );
-    return response.data;
   },
 
-  async getById(customerId: string): Promise<CustomerResponse> {
-    const response = await customers.getCustomerApiV1FinancialCustomersCustomersCustomerIdGet(
-      customerId
+  async getByDocument(document: string) {
+    return await customers.getCustomerByDocumentApiV1FinancialCustomersCustomersDocumentDocumentGet(
+      document
     );
-    return response.data;
   },
 
-  async update(
+  async getByMorador(moradorId: string) {
+    return await customers.getCustomerByMoradorApiV1FinancialCustomersCustomersMoradorMoradorIdGet(
+      moradorId
+    );
+  },
+
+  async getByUnidade(unidadeId: string) {
+    return await customers.getCustomersByUnidadeApiV1FinancialCustomersCustomersUnidadeUnidadeIdGet(
+      unidadeId
+    );
+  },
+
+  async block(
     customerId: string,
-    data: CustomerUpdate
-  ): Promise<CustomerResponse> {
-    const response = await customers.updateCustomerApiV1FinancialCustomersCustomersCustomerIdPut(
+    params: BlockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPostParams
+  ) {
+    return await customers.blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost(
       customerId,
-      data
-    );
-    return response.data;
-  },
-
-  async delete(customerId: string): Promise<void> {
-    await customers.deleteCustomerApiV1FinancialCustomersCustomersCustomerIdDelete(
-      customerId
-    );
-  },
-
-  async search(params: { q: string; limit?: number }) {
-    const response = await customers.searchCustomersApiV1FinancialCustomersCustomersSearchGet(
       params
     );
-    return response.data;
-  },
-
-  async getStats(condominioId: string) {
-    const response = await customers.getStatsApiV1FinancialCustomersCustomersStatsGet(
-      { condominio_id: condominioId }
-    );
-    return response.data;
-  },
-
-  async getHistory(customerId: string) {
-    const response = await customers.getCustomerHistoryApiV1FinancialCustomersCustomersCustomerIdHistoryGet(
-      customerId
-    );
-    return response.data;
-  },
-
-  async block(customerId: string, reason: string) {
-    const response = await customers.blockCustomerApiV1FinancialCustomersCustomersCustomerIdBlockPost(
-      customerId,
-      { reason }
-    );
-    return response.data;
   },
 
   async unblock(customerId: string) {
-    const response = await customers.unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost(
+    return await customers.unblockCustomerApiV1FinancialCustomersCustomersCustomerIdUnblockPost(
       customerId
     );
-    return response.data;
   },
 
-  async getCreditAnalysis(customerId: string) {
-    const response = await customers.getCreditAnalysisApiV1FinancialCustomersCustomersCustomerIdCreditAnalysisGet(
+  async getDebtSummary(customerId: string) {
+    return await customers.getCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet(
       customerId
     );
-    return response.data;
-  },
-
-  async updateCreditLimit(customerId: string, creditLimit: number) {
-    const response = await customers.updateCreditLimitApiV1FinancialCustomersCustomersCustomerIdCreditLimitPut(
-      customerId,
-      { credit_limit: creditLimit }
-    );
-    return response.data;
   },
 };
 

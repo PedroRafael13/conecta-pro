@@ -6,7 +6,9 @@ from modules.bidding.services.proposal_service import ProposalService
 from modules.bidding.services.contract_service import ContractService
 from modules.bidding.services.certificate_service import CertificateService
 from modules.bidding.services.pncp_service import PNCPService
-from modules.bidding.services.bidding_ai_service import BiddingAIService
+
+# BiddingAIService removido temporariamente (dependencias: spacy, selenium, nltk)
+# from modules.bidding.services.bidding_ai_service import BiddingAIService
 
 __all__ = [
     "TenderService",
@@ -15,5 +17,5 @@ __all__ = [
     "ContractService",
     "CertificateService",
     "PNCPService",
-    "BiddingAIService",
+    # "BiddingAIService",
 ]

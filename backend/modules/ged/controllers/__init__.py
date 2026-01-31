@@ -10,6 +10,7 @@ from modules.ged.controllers.document_tag_controller import router as tag_router
 from modules.ged.controllers.document_signature_controller import (
     router as signature_router,
 )
+from modules.ged.controllers.ged_stats_controller import router as stats_router
 
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "share_router",
     "tag_router",
     "signature_router",
+    "stats_router",
 ]

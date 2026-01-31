@@ -11,11 +11,16 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.database import get_db
+from core.auth.dependencies import get_current_user
+from core.models import User
 from modules.ai.bartolo.services.bartolo_engine import BartoloEngine, BartoloResponse
 from modules.ai.bartolo.services.learning_service import LearningService, FeedbackType
 from modules.ai.bartolo.wizards.wizard_manager import WizardManager
 from modules.ai.bartolo.config.modules import get_all_modules, MODULE_PROMPTS
+from modules.ai.bartolo.actions import ActionExecutor, ActionConfirmation
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +72,7 @@ class SendMessageResponse(BaseModel):
     actions: list = []
     wizard_response: Optional[dict] = None
     data_results: Optional[dict] = None
+    action_preview: Optional[dict] = None  # NOVO: Preview de ação executiva
     processing_time_ms: int = 0
     model_used: str = ""
 
@@ -99,31 +105,36 @@ class WizardInputRequest(BaseModel):
 @bartolo_router.post("/send", response_model=SendMessageResponse)
 async def send_message(
     request: SendMessageRequest,
-    user_id: int = Query(..., description="ID do usuario"),
+    current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
     learning: LearningService = Depends(get_learning_service),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Envia mensagem para o Bartolo e recebe resposta.
 
     O Bartolo processa a mensagem considerando:
-    - Perfil e permissoes do usuario
+    - Perfil e permissoes do usuario (via JWT)
     - Modulo atual do sistema
     - Historico da conversa
     - Dados do sistema quando relevante
     """
     try:
+        # Usa o UUID do usuario autenticado via JWT
+        user_id_str = str(current_user.id)
+
         response = await engine.process_message(
-            user_id=user_id,
+            user_id=user_id_str,
             session_id=request.session_id,
             message=request.message,
             module=request.module,
             metadata=request.metadata,
+            db=db,
         )
 
         # Registra interacao para aprendizado
         await learning.record_interaction(
-            user_id=user_id,
+            user_id=user_id_str,
             session_id=request.session_id,
             message=request.message,
             response=response.response,
@@ -143,6 +154,7 @@ async def send_message(
             actions=response.actions,
             wizard_response=response.wizard_response,
             data_results=response.data_results,
+            action_preview=response.action_preview.dict() if response.action_preview else None,  # NOVO
             processing_time_ms=response.processing_time_ms,
             model_used=response.model_used,
         )
@@ -152,6 +164,58 @@ async def send_message(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Erro ao processar mensagem"
+        )
+
+
+@bartolo_router.post("/confirm-action", response_model=SendMessageResponse)
+async def confirm_action(
+    confirmation: ActionConfirmation,
+    user_id: int = Query(..., description="ID do usuario"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Confirma e executa uma ação proposta pelo Bartolo.
+
+    Após o Bartolo detectar uma ação e mostrar o preview,
+    o usuário pode confirmar ou cancelar através deste endpoint.
+    """
+    try:
+        action_executor = ActionExecutor(db)
+        result = await action_executor.execute_action(confirmation)
+
+        # Formatar resposta baseada no resultado
+        if result.success:
+            response_text = f"✅ {result.message}\n\n"
+            if result.details:
+                response_text += "**Detalhes:**\n"
+                for key, value in result.details.items():
+                    # Formatar key de snake_case para Title Case
+                    key_formatted = key.replace('_', ' ').title()
+                    response_text += f"- **{key_formatted}:** {value}\n"
+        else:
+            response_text = f"❌ {result.message}\n\n"
+            if result.error_message:
+                response_text += f"**Erro:** {result.error_message}\n"
+
+        return SendMessageResponse(
+            message_id=result.action_id,
+            session_id=confirmation.user_id,
+            response=response_text,
+            processing_time_ms=int(result.duration_seconds * 1000) if result.duration_seconds else 0,
+            model_used="action_executor",
+        )
+
+    except ValueError as e:
+        logger.error(f"Erro de validação ao confirmar ação: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Erro ao confirmar ação: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro ao executar ação"
         )
 
 

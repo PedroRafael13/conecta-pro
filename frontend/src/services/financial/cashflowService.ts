@@ -6,9 +6,27 @@
 import { getFinancialCashflow } from '@/types/generated/financial/financial-cashflow/financial-cashflow';
 import type {
   CashFlowEntryCreate,
+  CashFlowEntryUpdate,
+  CashFlowEntryRealize,
   CashFlowForecastCreate,
-  GetEntriesApiV1FinancialCashflowEntriesGetParams,
-  GetForecastApiV1FinancialCashflowForecastGetParams,
+  CashFlowForecastUpdate,
+  ForecastActualsUpdate,
+  AIForecastRequest,
+  AnomalyDetectionRequest,
+  ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams,
+  GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams,
+  GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams,
+  ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams,
+  GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams,
+  GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams,
+  GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams,
+  GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams,
+  GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams,
+  GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams,
+  GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams,
+  GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams,
+  GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams,
+  GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams,
 } from '@/types/generated/financial/models';
 
 const cashflow = getFinancialCashflow();
@@ -16,94 +34,194 @@ const cashflow = getFinancialCashflow();
 export const cashflowService = {
   // Entries
   async createEntry(data: CashFlowEntryCreate) {
-    const response = await cashflow.createEntryApiV1FinancialCashflowEntriesPost(
+    return await cashflow.createEntryApiV1FinancialCashflowCashflowEntriesPost(
       data
     );
-    return response.data;
   },
 
   async listEntries(
-    params: GetEntriesApiV1FinancialCashflowEntriesGetParams = {}
+    params: ListEntriesApiV1FinancialCashflowCashflowEntriesGetParams
   ) {
-    const response = await cashflow.getEntriesApiV1FinancialCashflowEntriesGet(
+    return await cashflow.listEntriesApiV1FinancialCashflowCashflowEntriesGet(
       params
     );
-    return response.data;
   },
 
   async getEntry(entryId: string) {
-    const response = await cashflow.getEntryApiV1FinancialCashflowEntriesEntryIdGet(
+    return await cashflow.getEntryApiV1FinancialCashflowCashflowEntriesEntryIdGet(
       entryId
     );
-    return response.data;
+  },
+
+  async updateEntry(entryId: string, data: CashFlowEntryUpdate) {
+    return await cashflow.updateEntryApiV1FinancialCashflowCashflowEntriesEntryIdPut(
+      entryId,
+      data
+    );
   },
 
   async deleteEntry(entryId: string) {
-    await cashflow.deleteEntryApiV1FinancialCashflowEntriesEntryIdDelete(
+    return await cashflow.deleteEntryApiV1FinancialCashflowCashflowEntriesEntryIdDelete(
       entryId
     );
   },
 
-  // Forecast
-  async createForecast(data: CashFlowForecastCreate) {
-    const response = await cashflow.createForecastApiV1FinancialCashflowForecastPost(
+  async realizeEntry(entryId: string, data: CashFlowEntryRealize) {
+    return await cashflow.realizeEntryApiV1FinancialCashflowCashflowEntriesEntryIdRealizePost(
+      entryId,
       data
     );
-    return response.data;
   },
 
-  async getForecast(
-    params: GetForecastApiV1FinancialCashflowForecastGetParams
+  async getPendingEntries(
+    params: GetPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGetParams
   ) {
-    const response = await cashflow.getForecastApiV1FinancialCashflowForecastGet(
+    return await cashflow.getPendingEntriesApiV1FinancialCashflowCashflowEntriesPendingGet(
       params
     );
-    return response.data;
+  },
+
+  async getEntryTotals(
+    params: GetEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGetParams
+  ) {
+    return await cashflow.getEntryTotalsApiV1FinancialCashflowCashflowEntriesTotalsGet(
+      params
+    );
+  },
+
+  // Forecasts
+  async createForecast(data: CashFlowForecastCreate) {
+    return await cashflow.createForecastApiV1FinancialCashflowCashflowForecastsPost(
+      data
+    );
+  },
+
+  async listForecasts(
+    params: ListForecastsApiV1FinancialCashflowCashflowForecastsGetParams
+  ) {
+    return await cashflow.listForecastsApiV1FinancialCashflowCashflowForecastsGet(
+      params
+    );
+  },
+
+  async getForecast(forecastId: string) {
+    return await cashflow.getForecastApiV1FinancialCashflowCashflowForecastsForecastIdGet(
+      forecastId
+    );
+  },
+
+  async updateForecast(forecastId: string, data: CashFlowForecastUpdate) {
+    return await cashflow.updateForecastApiV1FinancialCashflowCashflowForecastsForecastIdPut(
+      forecastId,
+      data
+    );
+  },
+
+  async deleteForecast(forecastId: string) {
+    return await cashflow.deleteForecastApiV1FinancialCashflowCashflowForecastsForecastIdDelete(
+      forecastId
+    );
+  },
+
+  async getActiveForecasts(
+    params: GetActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGetParams
+  ) {
+    return await cashflow.getActiveForecastsApiV1FinancialCashflowCashflowForecastsActiveGet(
+      params
+    );
+  },
+
+  async updateForecastActuals(forecastId: string, data: ForecastActualsUpdate) {
+    return await cashflow.updateForecastActualsApiV1FinancialCashflowCashflowForecastsForecastIdUpdateActualsPost(
+      forecastId,
+      data
+    );
   },
 
   // Analysis
-  async getDailyFlow(condominioId: string, startDate: string, endDate: string) {
-    const response = await cashflow.getDailyFlowApiV1FinancialCashflowDailyFlowGet(
-      { condominio_id: condominioId, start_date: startDate, end_date: endDate }
-    );
-    return response.data;
-  },
-
-  async getProjection(condominioId: string, months: number = 12) {
-    const response = await cashflow.getProjectionApiV1FinancialCashflowProjectionGet(
-      { condominio_id: condominioId, months }
-    );
-    return response.data;
-  },
-
-  async getDRE(condominioId: string, referenceMonth: string) {
-    const response = await cashflow.getDreApiV1FinancialCashflowDreGet(
-      { condominio_id: condominioId, reference_month: referenceMonth }
-    );
-    return response.data;
-  },
-
-  async getDashboard(condominioId: string) {
-    const response = await cashflow.getCashflowDashboardApiV1FinancialCashflowDashboardGet(
-      { condominio_id: condominioId }
-    );
-    return response.data;
-  },
-
-  // Reconciliation
-  async reconcileBanks(condominioId: string, date: string) {
-    const response = await cashflow.reconcileBanksApiV1FinancialCashflowReconcileBanksPost(
-      { condominio_id: condominioId, date }
-    );
-    return response.data;
-  },
-
-  // Reports
-  async exportToExcel(params: any) {
-    const response = await cashflow.exportCashflowToExcelApiV1FinancialCashflowExportExcelGet(
+  async getProjection(
+    params: GetProjectionApiV1FinancialCashflowCashflowProjectionGetParams
+  ) {
+    return await cashflow.getProjectionApiV1FinancialCashflowCashflowProjectionGet(
       params
     );
-    return response.data;
+  },
+
+  async getSummary(
+    params: GetSummaryApiV1FinancialCashflowCashflowSummaryGetParams
+  ) {
+    return await cashflow.getSummaryApiV1FinancialCashflowCashflowSummaryGet(
+      params
+    );
+  },
+
+  async getTrends(
+    params: GetTrendsApiV1FinancialCashflowCashflowTrendsGetParams
+  ) {
+    return await cashflow.getTrendsApiV1FinancialCashflowCashflowTrendsGet(
+      params
+    );
+  },
+
+  async getCategoryBreakdown(
+    params: GetCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGetParams
+  ) {
+    return await cashflow.getCategoryBreakdownApiV1FinancialCashflowCashflowCategoryBreakdownGet(
+      params
+    );
+  },
+
+  async getSupplierBreakdown(
+    params: GetSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGetParams
+  ) {
+    return await cashflow.getSupplierBreakdownApiV1FinancialCashflowCashflowSupplierBreakdownGet(
+      params
+    );
+  },
+
+  async getDashboard(
+    params: GetDashboardApiV1FinancialCashflowCashflowDashboardGetParams
+  ) {
+    return await cashflow.getDashboardApiV1FinancialCashflowCashflowDashboardGet(
+      params
+    );
+  },
+
+  // AI Features
+  async generateAiForecast(data: AIForecastRequest) {
+    return await cashflow.generateAiForecastApiV1FinancialCashflowCashflowAiForecastPost(
+      data
+    );
+  },
+
+  async detectAnomalies(data: AnomalyDetectionRequest) {
+    return await cashflow.detectAnomaliesApiV1FinancialCashflowCashflowAiAnomaliesPost(
+      data
+    );
+  },
+
+  async getOptimizationSuggestions(
+    params: GetOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGetParams
+  ) {
+    return await cashflow.getOptimizationSuggestionsApiV1FinancialCashflowCashflowAiSuggestionsGet(
+      params
+    );
+  },
+
+  async getRisks(
+    params: GetRisksApiV1FinancialCashflowCashflowAiRisksGetParams
+  ) {
+    return await cashflow.getRisksApiV1FinancialCashflowCashflowAiRisksGet(
+      params
+    );
+  },
+
+  async getOpportunities(
+    params: GetOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGetParams
+  ) {
+    return await cashflow.getOpportunitiesApiV1FinancialCashflowCashflowAiOpportunitiesGet(
+      params
+    );
   },
 };
 

@@ -1,0 +1,4252 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CRM Contracts API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/contracts": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Create Contract",
+        "description": "Cria um novo contrato.\n\nRequer autenticação. Contrato inicia em status DRAFT.",
+        "operationId": "create_contract_api_v1_contracts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "List Contracts",
+        "description": "Lista contratos com filtros e paginação.",
+        "operationId": "list_contracts_api_v1_contracts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Página atual",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Página atual"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Itens por página",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "Itens por página"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ContractStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "contract_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ContractType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Contract Type"
+            }
+          },
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "commercial_manager_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Commercial Manager Id"
+            }
+          },
+          {
+            "name": "account_manager_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Manager Id"
+            }
+          },
+          {
+            "name": "has_sla",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Has Sla"
+            }
+          },
+          {
+            "name": "min_value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Value"
+            }
+          },
+          {
+            "name": "max_value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0.0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Value"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/stats": {
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Get Contract Stats",
+        "description": "Obtém estatísticas de contratos.",
+        "operationId": "get_contract_stats_api_v1_contracts_stats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "commercial_manager_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Commercial Manager Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractStats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/alerts": {
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Get Contract Alerts",
+        "description": "Obtém alertas de contratos (vencimento, reajuste).",
+        "operationId": "get_contract_alerts_api_v1_contracts_alerts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days_ahead",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 90,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days Ahead"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractAlert"
+                  },
+                  "title": "Response Get Contract Alerts Api V1 Contracts Alerts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}": {
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Get Contract",
+        "description": "Obtém um contrato pelo ID com todos os itens.",
+        "operationId": "get_contract_api_v1_contracts__contract_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Update Contract",
+        "description": "Atualiza um contrato.\n\nApenas contratos em rascunho podem ser editados completamente.",
+        "operationId": "update_contract_api_v1_contracts__contract_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Delete Contract",
+        "description": "Remove um contrato (soft delete).\n\nApenas contratos em rascunho podem ser excluídos.",
+        "operationId": "delete_contract_api_v1_contracts__contract_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/submit": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Submit Contract For Signature",
+        "description": "Envia contrato para assinatura.\n\nMuda status de DRAFT para PENDING_SIGNATURE.",
+        "operationId": "submit_contract_for_signature_api_v1_contracts__contract_id__submit_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/activate": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Activate Contract",
+        "description": "Ativa o contrato após assinatura.",
+        "operationId": "activate_contract_api_v1_contracts__contract_id__activate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/suspend": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Suspend Contract",
+        "description": "Suspende um contrato ativo.",
+        "operationId": "suspend_contract_api_v1_contracts__contract_id__suspend_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/terminate": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Terminate Contract",
+        "description": "Encerra um contrato.",
+        "operationId": "terminate_contract_api_v1_contracts__contract_id__terminate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/renew": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Calculate Renewal",
+        "description": "Calcula renovação do contrato.\n\nRetorna simulação sem aplicar alterações.",
+        "operationId": "calculate_renewal_api_v1_contracts__contract_id__renew_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractRenewal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenewalResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/calculate-adjustment": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Calculate Adjustment",
+        "description": "Calcula reajuste do contrato.\n\nRetorna simulação sem aplicar alterações.",
+        "operationId": "calculate_adjustment_api_v1_contracts__contract_id__calculate_adjustment_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "custom_percent",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Custom Percent"
+            }
+          },
+          {
+            "name": "effective_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Effective Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdjustmentResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/items": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Add Contract Item",
+        "description": "Adiciona item ao contrato.",
+        "operationId": "add_contract_item_api_v1_contracts__contract_id__items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/items/{item_id}": {
+      "put": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Update Contract Item",
+        "description": "Atualiza item do contrato.",
+        "operationId": "update_contract_item_api_v1_contracts__contract_id__items__item_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Remove Contract Item",
+        "description": "Remove item do contrato.",
+        "operationId": "remove_contract_item_api_v1_contracts__contract_id__items__item_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/addendums": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Create Addendum",
+        "description": "Cria aditivo do contrato.",
+        "operationId": "create_addendum_api_v1_contracts__contract_id__addendums_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractAddendumCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractAddendumResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "List Addendums",
+        "description": "Lista aditivos do contrato.",
+        "operationId": "list_addendums_api_v1_contracts__contract_id__addendums_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractAddendumResponse"
+                  },
+                  "title": "Response List Addendums Api V1 Contracts  Contract Id  Addendums Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/addendums/{addendum_id}/sign": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Sign Addendum",
+        "description": "Assina aditivo e aplica alterações ao contrato.",
+        "operationId": "sign_addendum_api_v1_contracts_addendums__addendum_id__sign_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "addendum_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Addendum Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractAddendumSign"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractAddendumResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/templates": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Create Template",
+        "description": "Cria template de contrato.",
+        "operationId": "create_template_api_v1_contracts_templates_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractTemplateCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "List Templates",
+        "description": "Lista templates de contrato.",
+        "operationId": "list_templates_api_v1_contracts_templates_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "service_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ServiceType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Service Type"
+            }
+          },
+          {
+            "name": "approved_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Approved Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractTemplateListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/templates/{template_id}": {
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Get Template",
+        "description": "Obtém template por ID.",
+        "operationId": "get_template_api_v1_contracts_templates__template_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Update Template",
+        "description": "Atualiza template.",
+        "operationId": "update_template_api_v1_contracts_templates__template_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractTemplateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Delete Template",
+        "description": "Remove template (soft delete).",
+        "operationId": "delete_template_api_v1_contracts_templates__template_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/templates/{template_id}/approve": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Approve Template",
+        "description": "Aprova template juridicamente.",
+        "operationId": "approve_template_api_v1_contracts_templates__template_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/sla-reports": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Create Sla Report",
+        "description": "Cria relatório de SLA mensal.",
+        "operationId": "create_sla_report_api_v1_contracts__contract_id__sla_reports_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractSLAReportCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractSLAReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "List Sla Reports",
+        "description": "Lista relatórios de SLA do contrato.",
+        "operationId": "list_sla_reports_api_v1_contracts__contract_id__sla_reports_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ContractSLAReportResponse"
+                  },
+                  "title": "Response List Sla Reports Api V1 Contracts  Contract Id  Sla Reports Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/sla-reports/{report_id}/approve": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Approve Sla Report",
+        "description": "Aprova ou disputa relatório de SLA.",
+        "operationId": "approve_sla_report_api_v1_contracts_sla_reports__report_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractSLAReportApprove"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractSLAReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/contracts/{contract_id}/calculate-sla": {
+      "post": {
+        "tags": [
+          "CRM - Contracts"
+        ],
+        "summary": "Calculate Sla",
+        "description": "Calcula SLA do contrato baseado nos indicadores.\n\nRetorna simulação sem salvar relatório.",
+        "operationId": "calculate_sla_api_v1_contracts__contract_id__calculate_sla_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "contract_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Contract Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                },
+                "title": "Indicator Results"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SLACalculation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddendumType": {
+        "type": "string",
+        "enum": [
+          "adjustment",
+          "scope_change",
+          "term_change",
+          "team_change",
+          "equipment_change",
+          "other"
+        ],
+        "title": "AddendumType",
+        "description": "Tipos de aditivo."
+      },
+      "AdjustmentIndex": {
+        "type": "string",
+        "enum": [
+          "igpm",
+          "ipca",
+          "inpc",
+          "fixed",
+          "custom"
+        ],
+        "title": "AdjustmentIndex",
+        "description": "Índices de reajuste."
+      },
+      "AdjustmentResult": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "previous_value": {
+            "type": "string",
+            "title": "Previous Value"
+          },
+          "new_value": {
+            "type": "string",
+            "title": "New Value"
+          },
+          "adjustment_percent": {
+            "type": "string",
+            "title": "Adjustment Percent"
+          },
+          "index_used": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdjustmentIndex"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective Date"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "previous_value",
+          "new_value",
+          "adjustment_percent",
+          "effective_date"
+        ],
+        "title": "AdjustmentResult",
+        "description": "Resultado de reajuste de contrato."
+      },
+      "ContractAddendumCreate": {
+        "properties": {
+          "addendum_type": {
+            "$ref": "#/components/schemas/AddendumType"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective Date"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 10,
+            "title": "Description"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "adjustment_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Percent"
+          },
+          "adjustment_index": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdjustmentIndex"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "addendum_type",
+          "effective_date",
+          "description"
+        ],
+        "title": "ContractAddendumCreate",
+        "description": "Schema para criar aditivo."
+      },
+      "ContractAddendumResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "contract_id": {
+            "type": "string",
+            "title": "Contract Id"
+          },
+          "addendum_number": {
+            "type": "string",
+            "title": "Addendum Number"
+          },
+          "addendum_type": {
+            "$ref": "#/components/schemas/AddendumType"
+          },
+          "previous_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Value"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "adjustment_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Percent"
+          },
+          "adjustment_index": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdjustmentIndex"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective Date"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "signed": {
+            "type": "boolean",
+            "title": "Signed"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signed At"
+          },
+          "pdf_file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf File Path"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "contract_id",
+          "addendum_number",
+          "addendum_type",
+          "effective_date",
+          "description",
+          "signed",
+          "created_at"
+        ],
+        "title": "ContractAddendumResponse",
+        "description": "Resposta de aditivo."
+      },
+      "ContractAddendumSign": {
+        "properties": {
+          "signature_document_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Signature Document Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "signature_document_id"
+        ],
+        "title": "ContractAddendumSign",
+        "description": "Schema para assinar aditivo."
+      },
+      "ContractAlert": {
+        "properties": {
+          "contract_id": {
+            "type": "string",
+            "title": "Contract Id"
+          },
+          "contract_number": {
+            "type": "string",
+            "title": "Contract Number"
+          },
+          "alert_type": {
+            "type": "string",
+            "title": "Alert Type"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "days_until_event": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Until Event"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contract_id",
+          "contract_number",
+          "alert_type",
+          "severity",
+          "message"
+        ],
+        "title": "ContractAlert",
+        "description": "Alerta de contrato."
+      },
+      "ContractCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "contract_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ContractType"
+              }
+            ],
+            "default": "recurring"
+          },
+          "monthly_value": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Monthly Value"
+          },
+          "total_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Value"
+          },
+          "setup_fee": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Setup Fee",
+            "default": "0"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "grace_period_days": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Grace Period Days",
+            "default": 0
+          },
+          "notice_period_days": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Notice Period Days",
+            "default": 30
+          },
+          "auto_renewal": {
+            "type": "boolean",
+            "title": "Auto Renewal",
+            "default": true
+          },
+          "renewal_period_months": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Renewal Period Months",
+            "default": 12
+          },
+          "renewal_notification_days": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Renewal Notification Days",
+            "default": 30
+          },
+          "adjustment_enabled": {
+            "type": "boolean",
+            "title": "Adjustment Enabled",
+            "default": true
+          },
+          "adjustment_index": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdjustmentIndex"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "adjustment_fixed_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Fixed Percent"
+          },
+          "adjustment_base_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Base Date"
+          },
+          "has_sla": {
+            "type": "boolean",
+            "title": "Has Sla",
+            "default": false
+          },
+          "sla_config": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Config"
+          },
+          "signature_required": {
+            "type": "boolean",
+            "title": "Signature Required",
+            "default": true
+          },
+          "signature_provider": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signature Provider"
+          },
+          "client_id": {
+            "type": "string",
+            "maxLength": 36,
+            "minLength": 36,
+            "title": "Client Id"
+          },
+          "opportunity_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opportunity Id"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Id"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "clauses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clauses"
+          },
+          "commercial_manager_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial Manager Id"
+          },
+          "account_manager_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Manager Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "monthly_value",
+          "start_date",
+          "client_id"
+        ],
+        "title": "ContractCreate",
+        "description": "Schema para criar contrato."
+      },
+      "ContractDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "contract_number": {
+            "type": "string",
+            "title": "Contract Number"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "contract_type": {
+            "$ref": "#/components/schemas/ContractType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "monthly_value": {
+            "type": "string",
+            "title": "Monthly Value"
+          },
+          "total_value": {
+            "type": "string",
+            "title": "Total Value"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "auto_renewal": {
+            "type": "boolean",
+            "title": "Auto Renewal"
+          },
+          "adjustment_enabled": {
+            "type": "boolean",
+            "title": "Adjustment Enabled"
+          },
+          "has_sla": {
+            "type": "boolean",
+            "title": "Has Sla"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "is_active_contract": {
+            "type": "boolean",
+            "title": "Is Active Contract"
+          },
+          "is_expiring_soon": {
+            "type": "boolean",
+            "title": "Is Expiring Soon"
+          },
+          "days_until_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Until End"
+          },
+          "needs_adjustment": {
+            "type": "boolean",
+            "title": "Needs Adjustment"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "opportunity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opportunity Id"
+          },
+          "proposal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposal Id"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Id"
+          },
+          "setup_fee": {
+            "type": "string",
+            "title": "Setup Fee"
+          },
+          "grace_period_days": {
+            "type": "integer",
+            "title": "Grace Period Days"
+          },
+          "notice_period_days": {
+            "type": "integer",
+            "title": "Notice Period Days"
+          },
+          "renewal_period_months": {
+            "type": "integer",
+            "title": "Renewal Period Months"
+          },
+          "renewal_notification_days": {
+            "type": "integer",
+            "title": "Renewal Notification Days"
+          },
+          "adjustment_index": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdjustmentIndex"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "adjustment_fixed_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Fixed Percent"
+          },
+          "adjustment_base_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Base Date"
+          },
+          "last_adjustment_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Adjustment Date"
+          },
+          "next_adjustment_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Adjustment Date"
+          },
+          "sla_config": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Config"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "clauses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clauses"
+          },
+          "signature_required": {
+            "type": "boolean",
+            "title": "Signature Required"
+          },
+          "signature_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signature Provider"
+          },
+          "signed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signed At"
+          },
+          "signed_by_client": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signed By Client"
+          },
+          "signed_by_company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signed By Company"
+          },
+          "pdf_file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf File Path"
+          },
+          "commercial_manager_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial Manager Id"
+          },
+          "account_manager_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Manager Id"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContractItemResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "contract_number",
+          "name",
+          "contract_type",
+          "status",
+          "client_id",
+          "monthly_value",
+          "total_value",
+          "start_date",
+          "auto_renewal",
+          "adjustment_enabled",
+          "has_sla",
+          "created_at",
+          "is_active_contract",
+          "is_expiring_soon",
+          "needs_adjustment",
+          "setup_fee",
+          "grace_period_days",
+          "notice_period_days",
+          "renewal_period_months",
+          "renewal_notification_days",
+          "signature_required"
+        ],
+        "title": "ContractDetailResponse",
+        "description": "Resposta detalhada do contrato."
+      },
+      "ContractItemCreate": {
+        "properties": {
+          "service_type": {
+            "$ref": "#/components/schemas/ServiceType"
+          },
+          "service_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Service Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quantity",
+            "default": 1
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Unit Price"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service_type",
+          "service_name",
+          "unit_price"
+        ],
+        "title": "ContractItemCreate",
+        "description": "Schema para criar item do contrato."
+      },
+      "ContractItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "service_type": {
+            "$ref": "#/components/schemas/ServiceType"
+          },
+          "service_name": {
+            "type": "string",
+            "title": "Service Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "quantity": {
+            "type": "integer",
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "type": "string",
+            "title": "Unit Price"
+          },
+          "total_price": {
+            "type": "string",
+            "title": "Total Price"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "service_type",
+          "service_name",
+          "quantity",
+          "unit_price",
+          "total_price",
+          "created_at"
+        ],
+        "title": "ContractItemResponse",
+        "description": "Resposta de item do contrato."
+      },
+      "ContractItemUpdate": {
+        "properties": {
+          "service_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "service_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "ContractItemUpdate",
+        "description": "Schema para atualizar item do contrato."
+      },
+      "ContractListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContractResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "ContractListResponse",
+        "description": "Resposta paginada de contratos."
+      },
+      "ContractRenewal": {
+        "properties": {
+          "new_end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "New End Date"
+          },
+          "adjustment_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Percent"
+          },
+          "new_monthly_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Monthly Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_end_date"
+        ],
+        "title": "ContractRenewal",
+        "description": "Schema para renovação de contrato."
+      },
+      "ContractResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "contract_number": {
+            "type": "string",
+            "title": "Contract Number"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "contract_type": {
+            "$ref": "#/components/schemas/ContractType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "client_id": {
+            "type": "string",
+            "title": "Client Id"
+          },
+          "monthly_value": {
+            "type": "string",
+            "title": "Monthly Value"
+          },
+          "total_value": {
+            "type": "string",
+            "title": "Total Value"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "auto_renewal": {
+            "type": "boolean",
+            "title": "Auto Renewal"
+          },
+          "adjustment_enabled": {
+            "type": "boolean",
+            "title": "Adjustment Enabled"
+          },
+          "has_sla": {
+            "type": "boolean",
+            "title": "Has Sla"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "is_active_contract": {
+            "type": "boolean",
+            "title": "Is Active Contract"
+          },
+          "is_expiring_soon": {
+            "type": "boolean",
+            "title": "Is Expiring Soon"
+          },
+          "days_until_end": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Days Until End"
+          },
+          "needs_adjustment": {
+            "type": "boolean",
+            "title": "Needs Adjustment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "contract_number",
+          "name",
+          "contract_type",
+          "status",
+          "client_id",
+          "monthly_value",
+          "total_value",
+          "start_date",
+          "auto_renewal",
+          "adjustment_enabled",
+          "has_sla",
+          "created_at",
+          "is_active_contract",
+          "is_expiring_soon",
+          "needs_adjustment"
+        ],
+        "title": "ContractResponse",
+        "description": "Resposta resumida do contrato."
+      },
+      "ContractSLAReportApprove": {
+        "properties": {
+          "disputed": {
+            "type": "boolean",
+            "title": "Disputed",
+            "default": false
+          },
+          "dispute_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dispute Reason"
+          }
+        },
+        "type": "object",
+        "title": "ContractSLAReportApprove",
+        "description": "Schema para aprovar relatório de SLA."
+      },
+      "ContractSLAReportCreate": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 2020.0,
+            "title": "Year"
+          },
+          "month": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month"
+          },
+          "indicators": {
+            "items": {
+              "$ref": "#/components/schemas/SLAIndicatorResult"
+            },
+            "type": "array",
+            "title": "Indicators"
+          },
+          "overall_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 150.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Overall Score"
+          },
+          "penalty_applied": {
+            "type": "boolean",
+            "title": "Penalty Applied",
+            "default": false
+          },
+          "penalty_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Penalty Percent"
+          },
+          "penalty_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Penalty Amount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "year",
+          "month",
+          "indicators",
+          "overall_score"
+        ],
+        "title": "ContractSLAReportCreate",
+        "description": "Schema para criar relatório de SLA."
+      },
+      "ContractSLAReportResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "contract_id": {
+            "type": "string",
+            "title": "Contract Id"
+          },
+          "year": {
+            "type": "integer",
+            "title": "Year"
+          },
+          "month": {
+            "type": "integer",
+            "title": "Month"
+          },
+          "indicators": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Indicators"
+          },
+          "overall_score": {
+            "type": "string",
+            "title": "Overall Score"
+          },
+          "penalty_applied": {
+            "type": "boolean",
+            "title": "Penalty Applied"
+          },
+          "penalty_percent": {
+            "type": "string",
+            "title": "Penalty Percent"
+          },
+          "penalty_amount": {
+            "type": "string",
+            "title": "Penalty Amount"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "period_label": {
+            "type": "string",
+            "title": "Period Label"
+          },
+          "is_target_met": {
+            "type": "boolean",
+            "title": "Is Target Met"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "generated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generated By"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "contract_id",
+          "year",
+          "month",
+          "indicators",
+          "overall_score",
+          "penalty_applied",
+          "penalty_percent",
+          "penalty_amount",
+          "status",
+          "period_label",
+          "is_target_met",
+          "generated_at"
+        ],
+        "title": "ContractSLAReportResponse",
+        "description": "Resposta de relatório de SLA."
+      },
+      "ContractStats": {
+        "properties": {
+          "total_contracts": {
+            "type": "integer",
+            "title": "Total Contracts"
+          },
+          "active_contracts": {
+            "type": "integer",
+            "title": "Active Contracts"
+          },
+          "total_monthly_revenue": {
+            "type": "string",
+            "title": "Total Monthly Revenue"
+          },
+          "average_contract_value": {
+            "type": "string",
+            "title": "Average Contract Value"
+          },
+          "expiring_soon": {
+            "type": "integer",
+            "title": "Expiring Soon"
+          },
+          "needs_adjustment": {
+            "type": "integer",
+            "title": "Needs Adjustment"
+          },
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Status"
+          },
+          "by_type": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_contracts",
+          "active_contracts",
+          "total_monthly_revenue",
+          "average_contract_value",
+          "expiring_soon",
+          "needs_adjustment",
+          "by_status",
+          "by_type"
+        ],
+        "title": "ContractStats",
+        "description": "Estatísticas de contratos."
+      },
+      "ContractStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "pending_signature",
+          "active",
+          "suspended",
+          "cancelled",
+          "terminated"
+        ],
+        "title": "ContractStatus",
+        "description": "Status do contrato."
+      },
+      "ContractTemplateCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 3,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "service_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content_template": {
+            "type": "string",
+            "minLength": 100,
+            "title": "Content Template"
+          },
+          "clauses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clauses"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variables"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "content_template"
+        ],
+        "title": "ContractTemplateCreate",
+        "description": "Schema para criar template."
+      },
+      "ContractTemplateListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContractTemplateResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ContractTemplateListResponse",
+        "description": "Resposta de lista de templates."
+      },
+      "ContractTemplateResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "service_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content_template": {
+            "type": "string",
+            "title": "Content Template"
+          },
+          "clauses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clauses"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variables"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "approved_by_legal": {
+            "type": "boolean",
+            "title": "Approved By Legal"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "content_template",
+          "version",
+          "approved_by_legal",
+          "created_at"
+        ],
+        "title": "ContractTemplateResponse",
+        "description": "Resposta de template."
+      },
+      "ContractTemplateUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "service_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServiceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content_template": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Template"
+          },
+          "clauses": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clauses"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variables"
+          }
+        },
+        "type": "object",
+        "title": "ContractTemplateUpdate",
+        "description": "Schema para atualizar template."
+      },
+      "ContractType": {
+        "type": "string",
+        "enum": [
+          "recurring",
+          "one_time"
+        ],
+        "title": "ContractType",
+        "description": "Tipos de contrato."
+      },
+      "ContractUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "monthly_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthly Value"
+          },
+          "total_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Value"
+          },
+          "setup_fee": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Setup Fee"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "grace_period_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grace Period Days"
+          },
+          "notice_period_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice Period Days"
+          },
+          "auto_renewal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Renewal"
+          },
+          "renewal_period_months": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Renewal Period Months"
+          },
+          "renewal_notification_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Renewal Notification Days"
+          },
+          "adjustment_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Enabled"
+          },
+          "adjustment_index": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdjustmentIndex"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "adjustment_fixed_percent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Fixed Percent"
+          },
+          "has_sla": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Sla"
+          },
+          "sla_config": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Config"
+          },
+          "commercial_manager_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commercial Manager Id"
+          },
+          "account_manager_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 36,
+                "minLength": 36
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Manager Id"
+          }
+        },
+        "type": "object",
+        "title": "ContractUpdate",
+        "description": "Schema para atualizar contrato."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "RenewalResult": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "new_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New End Date"
+          },
+          "new_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Value"
+          },
+          "adjustment_applied": {
+            "type": "boolean",
+            "title": "Adjustment Applied",
+            "default": false
+          },
+          "adjustment_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adjustment Percent"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "RenewalResult",
+        "description": "Resultado de renovação de contrato."
+      },
+      "SLACalculation": {
+        "properties": {
+          "overall_score": {
+            "type": "string",
+            "title": "Overall Score"
+          },
+          "indicators": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Indicators"
+          },
+          "penalty_applicable": {
+            "type": "boolean",
+            "title": "Penalty Applicable"
+          },
+          "penalty_percent": {
+            "type": "string",
+            "title": "Penalty Percent"
+          },
+          "penalty_amount": {
+            "type": "string",
+            "title": "Penalty Amount"
+          },
+          "target_met": {
+            "type": "boolean",
+            "title": "Target Met"
+          }
+        },
+        "type": "object",
+        "required": [
+          "overall_score",
+          "indicators",
+          "penalty_applicable",
+          "penalty_percent",
+          "penalty_amount",
+          "target_met"
+        ],
+        "title": "SLACalculation",
+        "description": "Cálculo de SLA mensal."
+      },
+      "SLAIndicatorResult": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Target"
+          },
+          "actual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Actual"
+          },
+          "achieved": {
+            "type": "boolean",
+            "title": "Achieved"
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Weight",
+            "default": "1"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "target",
+          "actual",
+          "achieved"
+        ],
+        "title": "SLAIndicatorResult",
+        "description": "Resultado de um indicador de SLA."
+      },
+      "ServiceType": {
+        "type": "string",
+        "enum": [
+          "security",
+          "remote_gatehouse",
+          "electronic_security",
+          "monitoring_24h",
+          "cleaning",
+          "gardening",
+          "maintenance",
+          "facilities"
+        ],
+        "title": "ServiceType",
+        "description": "Tipos de serviço."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

@@ -39,8 +39,15 @@ async def create_folder(
         data.created_by = user_id
         return await service.create(data)
     except ValueError as e:
+        error_msg = str(e)
+        # Se é erro de duplicação, retorna 409 Conflict
+        if "Já existe uma pasta" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=error_msg
+            ) from e
+        # Outros erros de validação retornam 400
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
         ) from e
     except Exception as e:
         logger.error("Erro ao criar pasta: %s", e)
@@ -91,12 +98,30 @@ async def update_folder(
 ) -> FolderResponse:
     """Atualiza pasta."""
     service = FolderService(db)
-    folder = await service.update(folder_id, data)
-    if not folder:
+    try:
+        folder = await service.update(folder_id, data)
+        if not folder:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
+            )
+        return folder
+    except ValueError as e:
+        error_msg = str(e)
+        # Se é erro de duplicação, retorna 409 Conflict
+        if "Já existe uma pasta" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=error_msg
+            ) from e
+        # Outros erros de validação retornam 400
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Pasta não encontrada"
-        )
-    return folder
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
+        ) from e
+    except Exception as e:
+        logger.error("Erro ao atualizar pasta %s: %s", folder_id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Erro interno ao atualizar pasta",
+        ) from e
 
 
 @router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)

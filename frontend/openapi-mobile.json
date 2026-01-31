@@ -1,0 +1,2969 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - Mobile API",
+    "description": "APIs nativas para dispositivos móveis",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/mobile/health": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Health Check",
+        "description": "Verifica saúde do serviço mobile.",
+        "operationId": "health_check_api_v1_mobile_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mobile/config": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Get Mobile Config",
+        "description": "Obtém configuração do app mobile.\n\nRetorna versão mínima, features habilitadas e configurações de sync.",
+        "operationId": "get_mobile_config_api_v1_mobile_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileConfigResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/dashboard": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Get Mobile Dashboard",
+        "description": "Obtém dashboard otimizado para mobile.\n\nRetorna resumo, atividades recentes e ações rápidas.",
+        "operationId": "get_mobile_dashboard_api_v1_mobile_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileDashboardResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/sync": {
+      "post": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Sync Data",
+        "description": "Sincroniza dados com o servidor.\n\nProcessa operações offline do cliente e retorna mudanças do servidor.",
+        "operationId": "sync_data_api_v1_mobile_sync_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MobileSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileSyncResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/sync/status": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Get Sync Status",
+        "description": "Obtém status de sincronização do dispositivo.",
+        "operationId": "get_sync_status_api_v1_mobile_sync_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/sync/resolve-conflict": {
+      "post": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Resolve Sync Conflict",
+        "description": "Resolve conflito de sincronização.",
+        "operationId": "resolve_sync_conflict_api_v1_mobile_sync_resolve_conflict_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conflict_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conflict Id"
+            }
+          },
+          {
+            "name": "resolution",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "use_client, use_server, merge",
+              "title": "Resolution"
+            },
+            "description": "use_client, use_server, merge"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Merged Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mobile/offline-data": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Get Offline Data",
+        "description": "Obtém dados essenciais para funcionamento offline.\n\nRetorna perfil do usuário e dados essenciais dos módulos solicitados.",
+        "operationId": "get_offline_data_api_v1_mobile_offline_data_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "modules",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Módulos a sincronizar (separados por vírgula)",
+              "title": "Modules"
+            },
+            "description": "Módulos a sincronizar (separados por vírgula)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfflineDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mobile/batch": {
+      "post": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Execute Batch",
+        "description": "Executa múltiplas operações em batch.\n\nOtimiza chamadas múltiplas combinando em uma única requisição.",
+        "operationId": "execute_batch_api_v1_mobile_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/devices/register": {
+      "post": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Register Device",
+        "description": "Registra dispositivo para notificações push.\n\nArmazena token FCM/APNs para envio de notificações.",
+        "operationId": "register_device_api_v1_mobile_devices_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceTokenCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/devices/{device_id}": {
+      "delete": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Unregister Device",
+        "description": "Remove registro de dispositivo.",
+        "operationId": "unregister_device_api_v1_mobile_devices__device_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "device_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Device Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mobile/notifications": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "List Notifications",
+        "description": "Lista notificações do usuário.",
+        "operationId": "list_notifications_api_v1_mobile_notifications_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "unread_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Unread Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mobile/notifications/{notification_id}/read": {
+      "post": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Mark Notification Read",
+        "description": "Marca notificação como lida.",
+        "operationId": "mark_notification_read_api_v1_mobile_notifications__notification_id__read_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mobile/notifications/{notification_id}/delivered": {
+      "post": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Mark Notification Delivered",
+        "description": "Marca notificação como entregue (callback do dispositivo).",
+        "operationId": "mark_notification_delivered_api_v1_mobile_notifications__notification_id__delivered_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mobile/notifications/preferences": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Get Notification Preferences",
+        "description": "Obtém preferências de notificação do usuário.",
+        "operationId": "get_notification_preferences_api_v1_mobile_notifications_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Update Notification Preferences",
+        "description": "Atualiza preferências de notificação.",
+        "operationId": "update_notification_preferences_api_v1_mobile_notifications_preferences_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferencesUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/admin/notifications/broadcast": {
+      "post": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Send Broadcast Notification",
+        "description": "Envia notificação em broadcast.\n\nRequer permissão de administrador.",
+        "operationId": "send_broadcast_notification_api_v1_mobile_admin_notifications_broadcast_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BroadcastNotificationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BroadcastNotificationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mobile/admin/notifications/stats": {
+      "get": {
+        "tags": [
+          "Mobile API"
+        ],
+        "summary": "Get Notification Stats",
+        "description": "Obtém estatísticas de notificações.\n\nRequer permissão de administrador.",
+        "operationId": "get_notification_stats_api_v1_mobile_admin_notifications_stats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BatchOperation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "ID único da operação"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "description": "GET, POST, PUT, PATCH, DELETE"
+          },
+          "endpoint": {
+            "type": "string",
+            "title": "Endpoint",
+            "description": "Endpoint da API"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data",
+            "description": "Dados do request"
+          },
+          "params": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Params",
+            "description": "Query params"
+          },
+          "headers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headers",
+            "description": "Headers adicionais"
+          },
+          "can_parallelize": {
+            "type": "boolean",
+            "title": "Can Parallelize",
+            "description": "Pode executar em paralelo",
+            "default": true
+          },
+          "depends_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depends On",
+            "description": "ID de operação dependente"
+          },
+          "timeout_ms": {
+            "type": "integer",
+            "title": "Timeout Ms",
+            "description": "Timeout em ms",
+            "default": 30000
+          },
+          "retry_on_failure": {
+            "type": "boolean",
+            "title": "Retry On Failure",
+            "default": true
+          },
+          "max_retries": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Max Retries",
+            "default": 2
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "method",
+          "endpoint"
+        ],
+        "title": "BatchOperation",
+        "description": "Operação individual em um batch."
+      },
+      "BatchOperationResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "ID da operação"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "success, error, skipped"
+          },
+          "status_code": {
+            "type": "integer",
+            "title": "Status Code",
+            "description": "HTTP status code"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data",
+            "description": "Dados da resposta"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "Mensagem de erro"
+          },
+          "execution_time_ms": {
+            "type": "integer",
+            "title": "Execution Time Ms",
+            "description": "Tempo de execução em ms"
+          },
+          "retries": {
+            "type": "integer",
+            "title": "Retries",
+            "description": "Número de retries",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "status_code",
+          "execution_time_ms"
+        ],
+        "title": "BatchOperationResult",
+        "description": "Resultado de uma operação do batch."
+      },
+      "BatchRequest": {
+        "properties": {
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/BatchOperation"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Operations",
+            "description": "Lista de operações (máx 50)"
+          },
+          "parallel_execution": {
+            "type": "boolean",
+            "title": "Parallel Execution",
+            "description": "Executar operações em paralelo quando possível",
+            "default": true
+          },
+          "stop_on_error": {
+            "type": "boolean",
+            "title": "Stop On Error",
+            "description": "Parar execução no primeiro erro",
+            "default": false
+          },
+          "transaction_mode": {
+            "type": "boolean",
+            "title": "Transaction Mode",
+            "description": "Executar em transação (rollback em caso de erro)",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "operations"
+        ],
+        "title": "BatchRequest",
+        "description": "Request para operações em batch."
+      },
+      "BatchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BatchOperationResult"
+            },
+            "type": "array",
+            "title": "Results",
+            "description": "Resultados das operações"
+          },
+          "execution_time_ms": {
+            "type": "number",
+            "title": "Execution Time Ms",
+            "description": "Tempo total de execução"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count",
+            "description": "Operações bem sucedidas"
+          },
+          "error_count": {
+            "type": "integer",
+            "title": "Error Count",
+            "description": "Operações com erro"
+          },
+          "skipped_count": {
+            "type": "integer",
+            "title": "Skipped Count",
+            "description": "Operações puladas",
+            "default": 0
+          },
+          "transaction_committed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Committed",
+            "description": "Se transação foi commitada"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results",
+          "execution_time_ms",
+          "success_count",
+          "error_count"
+        ],
+        "title": "BatchResponse",
+        "description": "Response de operações em batch."
+      },
+      "BroadcastNotificationRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Body"
+          },
+          "notification_type": {
+            "type": "string",
+            "title": "Notification Type",
+            "default": "info"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "default": "normal"
+          },
+          "data_payload": {
+            "type": "object",
+            "title": "Data Payload"
+          },
+          "target_users": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Users",
+            "description": "IDs de usuários específicos (None = todos)"
+          },
+          "target_segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Segments",
+            "description": "Segmentos de usuários"
+          },
+          "target_platforms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Target Platforms",
+            "default": [
+              "android",
+              "ios"
+            ]
+          },
+          "scheduled_for": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled For"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "body"
+        ],
+        "title": "BroadcastNotificationRequest",
+        "description": "Request para notificação broadcast."
+      },
+      "BroadcastNotificationResponse": {
+        "properties": {
+          "broadcast_id": {
+            "type": "string",
+            "title": "Broadcast Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "total_recipients": {
+            "type": "integer",
+            "title": "Total Recipients"
+          },
+          "sent_count": {
+            "type": "integer",
+            "title": "Sent Count"
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count"
+          },
+          "scheduled_for": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled For"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "broadcast_id",
+          "title",
+          "body",
+          "total_recipients",
+          "sent_count",
+          "failed_count",
+          "status",
+          "created_at"
+        ],
+        "title": "BroadcastNotificationResponse",
+        "description": "Response de notificação broadcast."
+      },
+      "DashboardSummary": {
+        "properties": {
+          "total_leads": {
+            "type": "integer",
+            "title": "Total Leads",
+            "default": 0
+          },
+          "total_customers": {
+            "type": "integer",
+            "title": "Total Customers",
+            "default": 0
+          },
+          "total_orders": {
+            "type": "integer",
+            "title": "Total Orders",
+            "default": 0
+          },
+          "total_revenue": {
+            "type": "number",
+            "title": "Total Revenue",
+            "default": 0.0
+          },
+          "pending_tasks": {
+            "type": "integer",
+            "title": "Pending Tasks",
+            "default": 0
+          },
+          "unread_notifications": {
+            "type": "integer",
+            "title": "Unread Notifications",
+            "default": 0
+          },
+          "period_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period Start"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period End"
+          }
+        },
+        "type": "object",
+        "title": "DashboardSummary",
+        "description": "Resumo do dashboard."
+      },
+      "DeviceInfo": {
+        "properties": {
+          "device_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Id"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform",
+            "description": "ios, android, web"
+          },
+          "os_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os Version"
+          },
+          "app_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Version"
+          },
+          "connection_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connection Type",
+            "description": "wifi, 4g, 3g, slow, unknown",
+            "default": "unknown"
+          },
+          "battery_level": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Battery Level"
+          },
+          "storage_available_mb": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Available Mb"
+          }
+        },
+        "type": "object",
+        "required": [
+          "platform"
+        ],
+        "title": "DeviceInfo",
+        "description": "Informações do dispositivo."
+      },
+      "DeviceTokenCreate": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 10,
+            "title": "Token",
+            "description": "Token FCM/APNs"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform",
+            "description": "android, ios, web"
+          },
+          "device_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Id"
+          },
+          "device_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Name"
+          },
+          "device_model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Model"
+          },
+          "os_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os Version"
+          },
+          "app_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Version"
+          },
+          "app_build": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Build"
+          },
+          "locale": {
+            "type": "string",
+            "maxLength": 10,
+            "title": "Locale",
+            "default": "pt-BR"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token",
+          "platform"
+        ],
+        "title": "DeviceTokenCreate",
+        "description": "Schema para criar/registrar token de dispositivo."
+      },
+      "DeviceTokenResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "device_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Id"
+          },
+          "device_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Name"
+          },
+          "device_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Model"
+          },
+          "os_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os Version"
+          },
+          "app_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Version"
+          },
+          "push_enabled": {
+            "type": "boolean",
+            "title": "Push Enabled",
+            "default": true
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "locale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Locale"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone"
+          },
+          "last_used": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "platform",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DeviceTokenResponse",
+        "description": "Response de token de dispositivo."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthCheckResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "healthy"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service",
+            "default": "mobile-api"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "components": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Components",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "timestamp"
+        ],
+        "title": "HealthCheckResponse",
+        "description": "Health check do serviço mobile."
+      },
+      "LightweightChart": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "line, bar, pie, area"
+          },
+          "data": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels"
+          },
+          "colors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Colors",
+            "default": []
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "trend": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend"
+          },
+          "trend_direction": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Direction"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "type",
+          "data",
+          "labels"
+        ],
+        "title": "LightweightChart",
+        "description": "Gráfico otimizado para mobile."
+      },
+      "MobileConfigResponse": {
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "title": "Api Version",
+            "default": "1.0.0"
+          },
+          "min_app_version": {
+            "type": "string",
+            "title": "Min App Version",
+            "default": "1.0.0"
+          },
+          "force_update": {
+            "type": "boolean",
+            "title": "Force Update",
+            "default": false
+          },
+          "update_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Update Url"
+          },
+          "maintenance_mode": {
+            "type": "boolean",
+            "title": "Maintenance Mode",
+            "default": false
+          },
+          "maintenance_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maintenance Message"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/MobileFeature"
+            },
+            "type": "array",
+            "title": "Features",
+            "default": []
+          },
+          "sync_config": {
+            "type": "object",
+            "title": "Sync Config"
+          },
+          "push_config": {
+            "type": "object",
+            "title": "Push Config"
+          },
+          "analytics_config": {
+            "type": "object",
+            "title": "Analytics Config"
+          }
+        },
+        "type": "object",
+        "title": "MobileConfigResponse",
+        "description": "Configuração do app mobile."
+      },
+      "MobileDashboardResponse": {
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/DashboardSummary"
+          },
+          "recent_activities": {
+            "items": {
+              "$ref": "#/components/schemas/RecentActivity"
+            },
+            "type": "array",
+            "title": "Recent Activities",
+            "default": []
+          },
+          "quick_actions": {
+            "items": {
+              "$ref": "#/components/schemas/QuickAction"
+            },
+            "type": "array",
+            "title": "Quick Actions",
+            "default": []
+          },
+          "charts": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/LightweightChart"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Charts"
+          },
+          "last_updated": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Updated"
+          },
+          "cache_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Cache Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "last_updated",
+          "cache_expires_at"
+        ],
+        "title": "MobileDashboardResponse",
+        "description": "Dashboard otimizado para mobile."
+      },
+      "MobileFeature": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "min_app_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min App Version"
+          },
+          "config": {
+            "type": "object",
+            "title": "Config",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "MobileFeature",
+        "description": "Feature disponível no mobile."
+      },
+      "MobileSyncOperation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "ID único da operação"
+          },
+          "table": {
+            "type": "string",
+            "title": "Table",
+            "description": "Tabela afetada"
+          },
+          "operation": {
+            "type": "string",
+            "title": "Operation",
+            "description": "Tipo: create, update, delete"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id",
+            "description": "ID do registro"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data",
+            "description": "Dados da operação"
+          },
+          "changed_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Changed Fields",
+            "description": "Campos alterados",
+            "default": []
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Timestamp do cliente"
+          },
+          "can_parallelize": {
+            "type": "boolean",
+            "title": "Can Parallelize",
+            "description": "Pode executar em paralelo",
+            "default": true
+          },
+          "depends_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depends On",
+            "description": "Operação dependente"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version",
+            "description": "Versão do registro"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "table",
+          "operation",
+          "record_id",
+          "timestamp"
+        ],
+        "title": "MobileSyncOperation",
+        "description": "Operação de sincronização mobile."
+      },
+      "MobileSyncRequest": {
+        "properties": {
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/MobileSyncOperation"
+            },
+            "type": "array",
+            "title": "Operations",
+            "description": "Lista de operações a sincronizar",
+            "default": []
+          },
+          "last_sync_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync Token",
+            "description": "Token da última sincronização"
+          },
+          "device_info": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviceInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Informações do dispositivo"
+          },
+          "modules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Modules",
+            "description": "Módulos a sincronizar",
+            "default": []
+          },
+          "full_sync": {
+            "type": "boolean",
+            "title": "Full Sync",
+            "description": "Se é sincronização completa",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "MobileSyncRequest",
+        "description": "Request de sincronização."
+      },
+      "MobileSyncResponse": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "Timestamp do servidor"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/SyncOperationResult"
+            },
+            "type": "array",
+            "title": "Operations",
+            "description": "Resultados das operações",
+            "default": []
+          },
+          "server_changes": {
+            "items": {
+              "$ref": "#/components/schemas/ServerChange"
+            },
+            "type": "array",
+            "title": "Server Changes",
+            "description": "Mudanças do servidor",
+            "default": []
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/SyncConflict"
+            },
+            "type": "array",
+            "title": "Conflicts",
+            "description": "Conflitos detectados",
+            "default": []
+          },
+          "new_sync_token": {
+            "type": "string",
+            "title": "New Sync Token",
+            "description": "Novo token de sync"
+          },
+          "sync_complete": {
+            "type": "boolean",
+            "title": "Sync Complete",
+            "default": true
+          },
+          "next_sync_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Sync Token",
+            "description": "Token para continuar sync paginada"
+          },
+          "stats": {
+            "type": "object",
+            "title": "Stats",
+            "description": "Estatísticas da sincronização"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "user_id",
+          "new_sync_token"
+        ],
+        "title": "MobileSyncResponse",
+        "description": "Response de sincronização."
+      },
+      "ModuleOfflineData": {
+        "properties": {
+          "module": {
+            "type": "string",
+            "title": "Module"
+          },
+          "records": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Records"
+          },
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count"
+          },
+          "last_modified": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Modified"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "sync_priority": {
+            "type": "integer",
+            "title": "Sync Priority",
+            "description": "Prioridade de sincronização",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "module",
+          "records",
+          "total_count",
+          "last_modified",
+          "version"
+        ],
+        "title": "ModuleOfflineData",
+        "description": "Dados offline de um módulo."
+      },
+      "NotificationListResponse": {
+        "properties": {
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/PushNotificationResponse"
+            },
+            "type": "array",
+            "title": "Notifications"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "unread_count": {
+            "type": "integer",
+            "title": "Unread Count"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "default": 20
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "notifications",
+          "total",
+          "unread_count"
+        ],
+        "title": "NotificationListResponse",
+        "description": "Lista de notificações."
+      },
+      "NotificationPreferences": {
+        "properties": {
+          "push_enabled": {
+            "type": "boolean",
+            "title": "Push Enabled",
+            "description": "Notificações push habilitadas",
+            "default": true
+          },
+          "email_enabled": {
+            "type": "boolean",
+            "title": "Email Enabled",
+            "description": "Notificações por email",
+            "default": true
+          },
+          "sms_enabled": {
+            "type": "boolean",
+            "title": "Sms Enabled",
+            "description": "Notificações por SMS",
+            "default": false
+          },
+          "quiet_hours_enabled": {
+            "type": "boolean",
+            "title": "Quiet Hours Enabled",
+            "description": "Horário silencioso",
+            "default": false
+          },
+          "quiet_hours_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet Hours Start",
+            "description": "Início do horário silencioso (HH:MM)",
+            "default": "22:00"
+          },
+          "quiet_hours_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet Hours End",
+            "description": "Fim do horário silencioso (HH:MM)",
+            "default": "07:00"
+          },
+          "categories": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Categories",
+            "description": "Categorias habilitadas"
+          },
+          "sound_enabled": {
+            "type": "boolean",
+            "title": "Sound Enabled",
+            "default": true
+          },
+          "vibration_enabled": {
+            "type": "boolean",
+            "title": "Vibration Enabled",
+            "default": true
+          },
+          "badge_enabled": {
+            "type": "boolean",
+            "title": "Badge Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "NotificationPreferences",
+        "description": "Preferências de notificação do usuário."
+      },
+      "NotificationPreferencesUpdate": {
+        "properties": {
+          "push_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Push Enabled"
+          },
+          "email_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Enabled"
+          },
+          "sms_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sms Enabled"
+          },
+          "quiet_hours_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet Hours Enabled"
+          },
+          "quiet_hours_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet Hours Start"
+          },
+          "quiet_hours_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quiet Hours End"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "sound_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sound Enabled"
+          },
+          "vibration_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vibration Enabled"
+          },
+          "badge_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Enabled"
+          }
+        },
+        "type": "object",
+        "title": "NotificationPreferencesUpdate",
+        "description": "Update de preferências de notificação."
+      },
+      "OfflineDataResponse": {
+        "properties": {
+          "user_profile": {
+            "$ref": "#/components/schemas/UserProfileOffline"
+          },
+          "essential_data": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ModuleOfflineData"
+            },
+            "type": "object",
+            "title": "Essential Data",
+            "default": {}
+          },
+          "last_sync": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Sync"
+          },
+          "sync_token": {
+            "type": "string",
+            "title": "Sync Token"
+          },
+          "cache_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Cache Expires At"
+          },
+          "total_size_bytes": {
+            "type": "integer",
+            "title": "Total Size Bytes",
+            "default": 0
+          },
+          "modules_available": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Modules Available",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_profile",
+          "last_sync",
+          "sync_token",
+          "cache_expires_at"
+        ],
+        "title": "OfflineDataResponse",
+        "description": "Dados para funcionamento offline."
+      },
+      "PushNotificationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "notification_type": {
+            "type": "string",
+            "title": "Notification Type"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority"
+          },
+          "data_payload": {
+            "type": "object",
+            "title": "Data Payload",
+            "default": {}
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "action_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Url"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "title",
+          "body",
+          "notification_type",
+          "priority",
+          "status",
+          "created_at"
+        ],
+        "title": "PushNotificationResponse",
+        "description": "Response de notificação push."
+      },
+      "QuickAction": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "params": {
+            "type": "object",
+            "title": "Params",
+            "default": {}
+          },
+          "badge_count": {
+            "type": "integer",
+            "title": "Badge Count",
+            "default": 0
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "icon",
+          "action"
+        ],
+        "title": "QuickAction",
+        "description": "Ação rápida no mobile."
+      },
+      "RecentActivity": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "action_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "icon",
+          "timestamp"
+        ],
+        "title": "RecentActivity",
+        "description": "Atividade recente."
+      },
+      "ServerChange": {
+        "properties": {
+          "table": {
+            "type": "string",
+            "title": "Table"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          },
+          "operation": {
+            "type": "string",
+            "title": "Operation",
+            "description": "create, update, delete"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "table",
+          "record_id",
+          "operation",
+          "timestamp",
+          "version"
+        ],
+        "title": "ServerChange",
+        "description": "Mudança no servidor para sincronizar com cliente."
+      },
+      "SyncConflict": {
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "title": "Operation Id",
+            "description": "ID da operação com conflito"
+          },
+          "table": {
+            "type": "string",
+            "title": "Table",
+            "description": "Tabela do conflito"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id",
+            "description": "ID do registro"
+          },
+          "client_data": {
+            "type": "object",
+            "title": "Client Data",
+            "description": "Dados do cliente"
+          },
+          "server_data": {
+            "type": "object",
+            "title": "Server Data",
+            "description": "Dados do servidor"
+          },
+          "conflicting_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Conflicting Fields",
+            "description": "Campos em conflito"
+          },
+          "client_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Client Timestamp",
+            "description": "Timestamp do cliente"
+          },
+          "server_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Server Timestamp",
+            "description": "Timestamp do servidor"
+          },
+          "resolution_strategy": {
+            "type": "string",
+            "title": "Resolution Strategy",
+            "description": "Estratégia de resolução",
+            "default": "last_write_wins"
+          },
+          "resolved": {
+            "type": "boolean",
+            "title": "Resolved",
+            "description": "Se foi resolvido",
+            "default": false
+          },
+          "resolved_data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved Data",
+            "description": "Dados após resolução"
+          }
+        },
+        "type": "object",
+        "required": [
+          "operation_id",
+          "table",
+          "record_id",
+          "client_data",
+          "server_data",
+          "conflicting_fields",
+          "client_timestamp",
+          "server_timestamp"
+        ],
+        "title": "SyncConflict",
+        "description": "Conflito de sincronização."
+      },
+      "SyncOperationResult": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "ID da operação"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "success, error, conflict"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "server_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Server Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "SyncOperationResult",
+        "description": "Resultado de uma operação de sync."
+      },
+      "UserProfileOffline": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "default": []
+          },
+          "preferences": {
+            "type": "object",
+            "title": "Preferences",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role"
+        ],
+        "title": "UserProfileOffline",
+        "description": "Perfil do usuário para offline."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

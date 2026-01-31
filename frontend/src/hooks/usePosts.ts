@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { postsService } from '@/lib/services/posts';
 import type { Post, PostFilter, PostStats, PaginatedResponse } from '@/types/operacional';
 import { getErrorMessage } from '@/lib/api';
@@ -44,18 +44,44 @@ export function usePosts(options: UsePostsOptions = {}): UsePostsReturn {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PostFilter>(initialFilters);
 
+  // Controle para evitar requisições repetidas em caso de erro
+  const lastRequestRef = useRef<string>('');
+  const errorCountRef = useRef<number>(0);
+  const lastErrorTimeRef = useRef<number>(0);
+
   const loadPosts = useCallback(async () => {
+    // Cria uma chave única para esta requisição
+    const requestKey = JSON.stringify({ page, pageSize, filters });
+
+    // Se é a mesma requisição que falhou recentemente, aguarda backoff
+    const now = Date.now();
+    if (
+      requestKey === lastRequestRef.current &&
+      errorCountRef.current > 0 &&
+      now - lastErrorTimeRef.current < Math.min(errorCountRef.current * 2000, 30000)
+    ) {
+      return; // Evita retry muito rápido
+    }
+
     setIsLoading(true);
     setError(null);
+    lastRequestRef.current = requestKey;
 
     try {
       const response = await postsService.list(page, pageSize, filters);
       setPosts(response.items);
       setTotal(response.total);
       setTotalPages(response.total_pages);
+      // Reset error count on success
+      errorCountRef.current = 0;
     } catch (err) {
-      setError(getErrorMessage(err));
+      const errorMsg = getErrorMessage(err);
+      setError(errorMsg);
       setPosts([]);
+      // Incrementa contador de erros para backoff
+      errorCountRef.current += 1;
+      lastErrorTimeRef.current = now;
+      console.error(`[usePosts] Erro ao carregar postos (tentativa ${errorCountRef.current}):`, errorMsg);
     } finally {
       setIsLoading(false);
     }

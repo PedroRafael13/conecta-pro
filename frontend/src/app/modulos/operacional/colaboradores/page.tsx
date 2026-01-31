@@ -31,7 +31,25 @@ import {
   Briefcase,
   Phone,
   Calendar,
+  Edit,
+  Eye,
+  MoreHorizontal,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { employeesService } from '@/lib/services/employees';
 import { ExportButton } from '@/components/ui/export-button';
 
@@ -57,6 +75,44 @@ export default function ColaboradoresPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [source, setSource] = useState<string>('');
   const [total, setTotal] = useState(0);
+
+  // Estados para edição
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [editForm, setEditForm] = useState({
+    cargo: '',
+    departamento: '',
+    telefone: '',
+    status: '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleEdit = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setEditForm({
+      cargo: employee.cargo || '',
+      departamento: employee.departamento || '',
+      telefone: employee.telefone || '',
+      status: employee.status || 'ativo',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedEmployee) return;
+
+    setSaving(true);
+    try {
+      await employeesService.update(selectedEmployee.id, editForm);
+      setEditDialogOpen(false);
+      loadEmployees();
+    } catch (err: any) {
+      console.error('Erro ao salvar:', err);
+      setError(err.response?.data?.detail || 'Erro ao salvar alterações');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const loadEmployees = useCallback(async () => {
     try {
@@ -295,6 +351,7 @@ export default function ColaboradoresPage() {
                   <TableHead>Contato</TableHead>
                   <TableHead>Admissão</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -362,6 +419,25 @@ export default function ColaboradoresPage() {
                       )}
                     </TableCell>
                     <TableCell>{getStatusBadge(employee.status)}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEdit(employee)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Ver detalhes
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -369,6 +445,72 @@ export default function ColaboradoresPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Edição */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Editar Colaborador</DialogTitle>
+            <DialogDescription>
+              {selectedEmployee?.full_name || selectedEmployee?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="cargo">Cargo</Label>
+              <Input
+                id="cargo"
+                value={editForm.cargo}
+                onChange={(e) => setEditForm({ ...editForm, cargo: e.target.value })}
+                placeholder="Ex: Vigilante, Porteiro..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="departamento">Departamento</Label>
+              <Input
+                id="departamento"
+                value={editForm.departamento}
+                onChange={(e) => setEditForm({ ...editForm, departamento: e.target.value })}
+                placeholder="Ex: Operações, Segurança..."
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input
+                id="telefone"
+                value={editForm.telefone}
+                onChange={(e) => setEditForm({ ...editForm, telefone: e.target.value })}
+                placeholder="(11) 99999-9999"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={editForm.status}
+                onValueChange={(value) => setEditForm({ ...editForm, status: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                  <SelectItem value="afastado">Afastado</SelectItem>
+                  <SelectItem value="ferias">Férias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

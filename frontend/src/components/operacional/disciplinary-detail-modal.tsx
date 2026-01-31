@@ -12,6 +12,10 @@ import {
   Calendar,
   User,
   AlertTriangle,
+  Brain,
+  Scale,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { disciplinaryService } from '@/lib/services/disciplinary';
 import { getErrorMessage } from '@/lib/api';
@@ -44,6 +48,19 @@ export function DisciplinaryDetailModal({
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [approvalComments, setApprovalComments] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+
+  // IA Validation States
+  const [isValidatingCompliance, setIsValidatingCompliance] = useState(false);
+  const [isCheckingProportionality, setIsCheckingProportionality] = useState(false);
+  const [complianceResult, setComplianceResult] = useState<{
+    compliant: boolean;
+    issues: string[];
+    suggestions: string[];
+  } | null>(null);
+  const [proportionalityResult, setProportionalityResult] = useState<{
+    proportional: boolean;
+    analysis: string;
+  } | null>(null);
 
   if (!action) return null;
 
@@ -94,6 +111,36 @@ export function DisciplinaryDetailModal({
       setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleValidateCompliance = async () => {
+    setIsValidatingCompliance(true);
+    setError(null);
+    setComplianceResult(null);
+
+    try {
+      const result = await disciplinaryService.validateCompliance(action.id);
+      setComplianceResult(result);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsValidatingCompliance(false);
+    }
+  };
+
+  const handleCheckProportionality = async () => {
+    setIsCheckingProportionality(true);
+    setError(null);
+    setProportionalityResult(null);
+
+    try {
+      const result = await disciplinaryService.checkProportionality(action.id);
+      setProportionalityResult(result);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsCheckingProportionality(false);
     }
   };
 
@@ -251,6 +298,92 @@ export function DisciplinaryDetailModal({
             </div>
           </div>
         )}
+
+        {/* Validacao IA */}
+        <div className="border border-[hsl(var(--border))] rounded-lg p-4 space-y-4">
+          <h3 className="font-medium flex items-center gap-2">
+            <Brain className="w-4 h-4 text-purple-500" />
+            Validacao por IA
+          </h3>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleValidateCompliance}
+              disabled={isValidatingCompliance}
+            >
+              {isValidatingCompliance ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4 mr-2 text-blue-500" />
+              )}
+              Validar Conformidade CLT
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCheckProportionality}
+              disabled={isCheckingProportionality}
+            >
+              {isCheckingProportionality ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Scale className="w-4 h-4 mr-2 text-orange-500" />
+              )}
+              Verificar Proporcionalidade
+            </Button>
+          </div>
+
+          {/* Resultado Conformidade CLT */}
+          {complianceResult && (
+            <div className={`p-3 rounded-lg ${complianceResult.compliant ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                {complianceResult.compliant ? (
+                  <ShieldCheck className="w-5 h-5 text-green-500" />
+                ) : (
+                  <ShieldAlert className="w-5 h-5 text-red-500" />
+                )}
+                <span className={`font-medium ${complianceResult.compliant ? 'text-green-500' : 'text-red-500'}`}>
+                  {complianceResult.compliant ? 'Conforme com a CLT' : 'Problemas de Conformidade'}
+                </span>
+              </div>
+              {complianceResult.issues.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-medium text-red-500">Problemas encontrados:</p>
+                  <ul className="list-disc list-inside text-sm text-[hsl(var(--muted-foreground))]">
+                    {complianceResult.issues.map((issue, i) => (
+                      <li key={i}>{issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {complianceResult.suggestions.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm font-medium text-blue-500">Sugestoes:</p>
+                  <ul className="list-disc list-inside text-sm text-[hsl(var(--muted-foreground))]">
+                    {complianceResult.suggestions.map((suggestion, i) => (
+                      <li key={i}>{suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Resultado Proporcionalidade */}
+          {proportionalityResult && (
+            <div className={`p-3 rounded-lg ${proportionalityResult.proportional ? 'bg-green-500/10 border border-green-500/30' : 'bg-yellow-500/10 border border-yellow-500/30'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <Scale className={`w-5 h-5 ${proportionalityResult.proportional ? 'text-green-500' : 'text-yellow-500'}`} />
+                <span className={`font-medium ${proportionalityResult.proportional ? 'text-green-500' : 'text-yellow-500'}`}>
+                  {proportionalityResult.proportional ? 'Medida Proporcional' : 'Verificar Proporcionalidade'}
+                </span>
+              </div>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">{proportionalityResult.analysis}</p>
+            </div>
+          )}
+        </div>
 
         {/* Formulário de Aprovação */}
         {showApproveForm && (

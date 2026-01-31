@@ -22,6 +22,8 @@ import { getErrorMessage } from '@/lib/api';
 import { ShiftCalendar } from '@/components/operacional/shift-calendar';
 import { ShiftDayView } from '@/components/operacional/shift-day-view';
 import { ShiftCheckModal } from '@/components/operacional/shift-check-modal';
+import { ExportButton } from '@/components/ui/export-button';
+import { formatDataForExport } from '@/utils/export';
 import type { Employee, Post, Scale, Shift, ShiftFilter } from '@/types/operacional';
 
 const TIMEZONE = 'America/Manaus';
@@ -222,6 +224,21 @@ export default function TurnosPage() {
               <Button variant="outline" onClick={refresh} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
+              <ExportButton
+                data={formatDataForExport(shifts, {
+                  shift_date: 'Data',
+                  start_time: 'Início',
+                  end_time: 'Fim',
+                  post_name: 'Posto',
+                  employee_name: 'Colaborador',
+                  status: 'Status',
+                  check_in_time: 'Check-in',
+                  check_out_time: 'Check-out',
+                })}
+                filename="turnos"
+                pdfTitle="Relatório de Turnos"
+                formats={['excel', 'pdf', 'csv']}
+              />
             </div>
           </div>
         </div>

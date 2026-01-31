@@ -730,7 +730,7 @@ async def subscribe_push(
     device_token: str,
     platform: str,
     device_info: Optional[dict] = None,
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Registra dispositivo para receber notificações push."""
@@ -750,7 +750,7 @@ async def subscribe_push(
 @router.post("/push/unsubscribe", status_code=status.HTTP_200_OK)
 async def unsubscribe_push(
     device_token: str,
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Remove registro de dispositivo."""
@@ -770,7 +770,7 @@ async def list_push_notifications(
     unread_only: bool = False,
     limit: int = 50,
     offset: int = 0,
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Lista notificações push do usuário."""
@@ -796,7 +796,7 @@ async def list_push_notifications(
 @router.patch("/push/{notification_id}/read", status_code=status.HTTP_200_OK)
 async def mark_push_as_read(
     notification_id: UUID,
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Marca notificação como lida."""
@@ -813,7 +813,7 @@ async def mark_push_as_read(
 
 @router.post("/push/read-all", status_code=status.HTTP_200_OK)
 async def mark_all_push_as_read(
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Marca todas as notificações como lidas."""
@@ -827,7 +827,7 @@ async def mark_all_push_as_read(
 
 @router.get("/push/unread-count", status_code=status.HTTP_200_OK)
 async def get_push_unread_count(
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Retorna quantidade de notificações não lidas."""
@@ -846,7 +846,7 @@ async def send_push_notification(
     user_id: UUID,
     data: Optional[dict] = None,
     action_url: Optional[str] = None,
-    current_user: CurrentActiveUser = Depends(),
+    current_user: CurrentActiveUser = None,
     db: Session = Depends(get_db),
 ) -> dict:
     """Envia notificação push para usuário (admin apenas)."""

@@ -4,6 +4,7 @@ import logging
 from typing import Optional, List
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 
 from modules.ged.repositories.folder_repository import FolderRepository
 from modules.ged.models.folder import FolderType, FolderPermission
@@ -30,10 +31,27 @@ class FolderService:
 
     async def create(self, data: FolderCreate) -> FolderResponse:
         """Cria uma nova pasta."""
-        folder = await self.repository.create(data)
-        await self.session.commit()
-        logger.info("Pasta criada: %s - %s", folder.id, folder.name)
-        return FolderResponse.model_validate(folder)
+        try:
+            folder = await self.repository.create(data)
+            await self.session.commit()
+            logger.info("Pasta criada: %s - %s", folder.id, folder.name)
+            return FolderResponse.model_validate(folder)
+        except IntegrityError as e:
+            await self.session.rollback()
+            # Verifica se é erro de duplicação
+            if "idx_ged_folders_unique_name" in str(e.orig):
+                logger.warning(
+                    "Tentativa de criar pasta duplicada: %s (parent=%s, condo=%s)",
+                    data.name,
+                    data.parent_id,
+                    data.condominium_id,
+                )
+                raise ValueError(
+                    f"Já existe uma pasta com o nome '{data.name}' neste local"
+                )
+            # Outro tipo de erro de integridade
+            logger.error("Erro de integridade ao criar pasta: %s", str(e))
+            raise ValueError("Erro ao criar pasta: violação de integridade")
 
     async def get_by_id(self, folder_id: str) -> Optional[FolderResponse]:
         """Busca pasta por ID."""
@@ -53,12 +71,24 @@ class FolderService:
         self, folder_id: str, data: FolderUpdate
     ) -> Optional[FolderResponse]:
         """Atualiza uma pasta."""
-        folder = await self.repository.update(folder_id, data)
-        if not folder:
-            return None
-        await self.session.commit()
-        logger.info("Pasta atualizada: %s", folder_id)
-        return FolderResponse.model_validate(folder)
+        try:
+            folder = await self.repository.update(folder_id, data)
+            if not folder:
+                return None
+            await self.session.commit()
+            logger.info("Pasta atualizada: %s", folder_id)
+            return FolderResponse.model_validate(folder)
+        except IntegrityError as e:
+            await self.session.rollback()
+            if "idx_ged_folders_unique_name" in str(e.orig):
+                logger.warning(
+                    "Tentativa de renomear para nome duplicado: %s", data.name
+                )
+                raise ValueError(
+                    f"Já existe uma pasta com o nome '{data.name}' neste local"
+                )
+            logger.error("Erro de integridade ao atualizar pasta: %s", str(e))
+            raise ValueError("Erro ao atualizar pasta: violação de integridade")
 
     async def delete(self, folder_id: str) -> bool:
         """Remove pasta (soft delete)."""

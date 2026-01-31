@@ -12,7 +12,7 @@ import {
   Award, File, Folder, Package, Repeat, Settings,
   Camera, Fingerprint, Video, Webhook, LayoutDashboard,
   ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
-  Clock
+  Clock, Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,7 +33,7 @@ const iconMap: Record<string, React.ElementType> = {
   Award, File, Folder, Package, Repeat, Settings,
   Camera, Fingerprint, Video, Webhook, LayoutDashboard,
   ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
-  Clock
+  Clock, Megaphone
 };
 
 export default function ModulosLayout({

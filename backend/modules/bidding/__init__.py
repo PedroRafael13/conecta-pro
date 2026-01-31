@@ -44,7 +44,7 @@ from modules.bidding.services import (
     ContractService,
     CertificateService,
     PNCPService,
-    BiddingAIService,
+    # BiddingAIService,  # Removido temporariamente (deps: spacy, selenium)
 )
 
 __all__ = [
@@ -78,5 +78,5 @@ __all__ = [
     "ContractService",
     "CertificateService",
     "PNCPService",
-    "BiddingAIService",
+    # "BiddingAIService",  # Removido temporariamente
 ]

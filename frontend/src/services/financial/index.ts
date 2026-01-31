@@ -21,33 +21,50 @@
  */
 
 // Contas a Pagar
-export { default as supplierService } from './supplierService';
-export { default as payableService } from './payableService';
+import supplierService from './supplierService';
+import payableService from './payableService';
 
 // Contas a Receber
-export { default as customerService } from './customerService';
-export { default as receivableService } from './receivableService';
+import customerService from './customerService';
+import receivableService from './receivableService';
 
 // Fluxo de Caixa
-export { default as bankAccountService } from './bankAccountService';
-export { default as bankTransactionService } from './bankTransactionService';
-export { default as cashflowService } from './cashflowService';
+import bankAccountService from './bankAccountService';
+import bankTransactionService from './bankTransactionService';
+import cashflowService from './cashflowService';
 
 // Compras e Estoque
-export { default as purchaseService } from './purchaseService';
-export { default as inventoryService } from './inventoryService';
+import purchaseService from './purchaseService';
+import inventoryService from './inventoryService';
 
 // Contabilidade
-export { default as accountingService } from './accountingService';
+import accountingService from './accountingService';
 
 // Fiscal
-export { default as fiscalService } from './fiscalService';
+import fiscalService from './fiscalService';
 
 // BI e Analytics
-export { default as biDashboardService } from './biDashboardService';
+import biDashboardService from './biDashboardService';
 
 // Custeio ABC
-export { default as costingService } from './costingService';
+import costingService from './costingService';
+
+// Named exports
+export {
+  supplierService,
+  payableService,
+  customerService,
+  receivableService,
+  bankAccountService,
+  bankTransactionService,
+  cashflowService,
+  purchaseService,
+  inventoryService,
+  accountingService,
+  fiscalService,
+  biDashboardService,
+  costingService,
+};
 
 // Export consolidado
 export default {

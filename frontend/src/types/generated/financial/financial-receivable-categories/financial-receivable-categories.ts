@@ -5,137 +5,725 @@
  * Gestão Financeira Completa - 251 endpoints em 15 submódulos
  * OpenAPI spec version: 1.0.0
  */
-import axios from 'axios';
+import {
+  useMutation,
+  useQuery
+} from '@tanstack/react-query';
 import type {
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+  DataTag,
+  DefinedInitialDataOptions,
+  DefinedUseQueryResult,
+  MutationFunction,
+  QueryClient,
+  QueryFunction,
+  QueryKey,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseMutationResult,
+  UseQueryOptions,
+  UseQueryResult
+} from '@tanstack/react-query';
 
 import type {
   GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams,
+  HTTPValidationError,
   ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams,
   ReceivableCategoryCreate,
   ReceivableCategoryResponse,
   ReceivableCategoryUpdate
 } from '.././models';
 
+import { customInstance } from '../../../../lib/api-client';
 
 
 
-  export const getFinancialReceivableCategories = () => {
+
 /**
  * Cria uma nova categoria de conta a receber.
  * @summary Criar categoria
  */
-const createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost = <TData = AxiosResponse<ReceivableCategoryResponse>>(
-    receivableCategoryCreate: ReceivableCategoryCreate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/receivable-categories/receivable-categories/`,
-      receivableCategoryCreate,options
-    );
-  }
-/**
+export const createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost = (
+    receivableCategoryCreate: ReceivableCategoryCreate,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: receivableCategoryCreate, signal
+    },
+      );
+    }
+  
+
+
+export const getCreateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost>>, TError,{data: ReceivableCategoryCreate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost>>, TError,{data: ReceivableCategoryCreate}, TContext> => {
+
+const mutationKey = ['createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost>>, {data: ReceivableCategoryCreate}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPostMutationResult = NonNullable<Awaited<ReturnType<typeof createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost>>>
+    export type CreateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPostMutationBody = ReceivableCategoryCreate
+    export type CreateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPostMutationError = HTTPValidationError
+
+    /**
+ * @summary Criar categoria
+ */
+export const useCreateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost>>, TError,{data: ReceivableCategoryCreate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost>>,
+        TError,
+        {data: ReceivableCategoryCreate},
+        TContext
+      > => {
+
+      const mutationOptions = getCreateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Lista categorias com filtros.
  * @summary Listar categorias
  */
-const listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet = <TData = AxiosResponse<ReceivableCategoryResponse[]>>(
-    params: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/receivable-categories/receivable-categories/`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet = (
+    params: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse[]>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetQueryKey = (params?: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams,) => {
+    return [
+    `/api/v1/financial/receivable-categories/receivable-categories/`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetQueryOptions = <TData = Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError = HTTPValidationError>(params: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>> = ({ signal }) => listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetQueryResult = NonNullable<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>>
+export type ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetQueryError = HTTPValidationError
+
+
+export function useListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet<TData = Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet<TData = Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet<TData = Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Listar categorias
+ */
+
+export function useListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet<TData = Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError = HTTPValidationError>(
+ params: ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Retorna categorias em estrutura de arvore (apenas raiz).
  * @summary Arvore de categorias
  */
-const getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet = <TData = AxiosResponse<ReceivableCategoryResponse[]>>(
-    params: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/receivable-categories/receivable-categories/tree`,{
-    ...options,
-        params: {...params, ...options?.params},}
-    );
-  }
+export const getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet = (
+    params: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse[]>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/tree`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetQueryKey = (params?: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams,) => {
+    return [
+    `/api/v1/financial/receivable-categories/receivable-categories/tree`, ...(params ? [params]: [])
+    ] as const;
+    }
+
+    
+export const getGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetQueryOptions = <TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError = HTTPValidationError>(params: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetQueryKey(params);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>> = ({ signal }) => getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet(params, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>>
+export type GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetQueryError = HTTPValidationError
+
+
+export function useGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Arvore de categorias
+ */
+
+export function useGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet<TData = Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError = HTTPValidationError>(
+ params: GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Busca categoria por ID.
  * @summary Buscar categoria
  */
-const getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet = <TData = AxiosResponse<ReceivableCategoryResponse>>(
-    categoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}`,options
-    );
-  }
+export const getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet = (
+    categoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGetQueryKey = (categoryId?: string,) => {
+    return [
+    `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}`
+    ] as const;
+    }
+
+    
+export const getGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError = HTTPValidationError>(categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGetQueryKey(categoryId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>> = ({ signal }) => getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet(categoryId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(categoryId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>>
+export type GetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGetQueryError = HTTPValidationError
+
+
+export function useGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Buscar categoria
+ */
+
+export function useGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet<TData = Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGetQueryOptions(categoryId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Atualiza uma categoria.
  * @summary Atualizar categoria
  */
-const updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut = <TData = AxiosResponse<ReceivableCategoryResponse>>(
+export const updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut = (
     categoryId: string,
-    receivableCategoryUpdate: ReceivableCategoryUpdate, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.put(
-      `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}`,
-      receivableCategoryUpdate,options
-    );
-  }
-/**
+    receivableCategoryUpdate: ReceivableCategoryUpdate,
+ ) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: receivableCategoryUpdate
+    },
+      );
+    }
+  
+
+
+export const getUpdateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPutMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut>>, TError,{categoryId: string;data: ReceivableCategoryUpdate}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut>>, TError,{categoryId: string;data: ReceivableCategoryUpdate}, TContext> => {
+
+const mutationKey = ['updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut>>, {categoryId: string;data: ReceivableCategoryUpdate}> = (props) => {
+          const {categoryId,data} = props ?? {};
+
+          return  updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut(categoryId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPutMutationResult = NonNullable<Awaited<ReturnType<typeof updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut>>>
+    export type UpdateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPutMutationBody = ReceivableCategoryUpdate
+    export type UpdateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPutMutationError = HTTPValidationError
+
+    /**
+ * @summary Atualizar categoria
+ */
+export const useUpdateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut>>, TError,{categoryId: string;data: ReceivableCategoryUpdate}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut>>,
+        TError,
+        {categoryId: string;data: ReceivableCategoryUpdate},
+        TContext
+      > => {
+
+      const mutationOptions = getUpdateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPutMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Exclui uma categoria (soft delete).
  * @summary Excluir categoria
  */
-const deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete = <TData = AxiosResponse<void>>(
-    categoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.delete(
-      `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}`,options
-    );
-  }
-/**
+export const deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete = (
+    categoryId: string,
+ ) => {
+      
+      
+      return customInstance<void>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}`, method: 'DELETE'
+    },
+      );
+    }
+  
+
+
+export const getDeleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeleteMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete>>, TError,{categoryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete>>, TError,{categoryId: string}, TContext> => {
+
+const mutationKey = ['deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete>>, {categoryId: string}> = (props) => {
+          const {categoryId} = props ?? {};
+
+          return  deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete(categoryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete>>>
+    
+    export type DeleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeleteMutationError = HTTPValidationError
+
+    /**
+ * @summary Excluir categoria
+ */
+export const useDeleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete>>, TError,{categoryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete>>,
+        TError,
+        {categoryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeleteMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Retorna subcategorias de uma categoria.
  * @summary Subcategorias
  */
-const getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet = <TData = AxiosResponse<ReceivableCategoryResponse[]>>(
-    categoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.get(
-      `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}/children`,options
-    );
-  }
+export const getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet = (
+    categoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse[]>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}/children`, method: 'GET', signal
+    },
+      );
+    }
+  
+
+
+
+export const getGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGetQueryKey = (categoryId?: string,) => {
+    return [
+    `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}/children`
+    ] as const;
+    }
+
+    
+export const getGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGetQueryOptions = <TData = Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError = HTTPValidationError>(categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGetQueryKey(categoryId);
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>> = ({ signal }) => getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet(categoryId, signal);
+
+      
+
+      
+
+   return  { queryKey, queryFn, enabled: !!(categoryId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGetQueryResult = NonNullable<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>>
+export type GetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGetQueryError = HTTPValidationError
+
+
+export function useGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet<TData = Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError = HTTPValidationError>(
+ categoryId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>,
+          TError,
+          Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet<TData = Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>,
+          TError,
+          Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet<TData = Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Subcategorias
+ */
+
+export function useGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet<TData = Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError = HTTPValidationError>(
+ categoryId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGetQueryOptions(categoryId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
 /**
  * Ativa uma categoria.
  * @summary Ativar categoria
  */
-const activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost = <TData = AxiosResponse<ReceivableCategoryResponse>>(
-    categoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}/activate`,undefined,options
-    );
-  }
-/**
+export const activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost = (
+    categoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}/activate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getActivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost>>, TError,{categoryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost>>, TError,{categoryId: string}, TContext> => {
+
+const mutationKey = ['activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost>>, {categoryId: string}> = (props) => {
+          const {categoryId} = props ?? {};
+
+          return  activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost(categoryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ActivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost>>>
+    
+    export type ActivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Ativar categoria
+ */
+export const useActivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost>>, TError,{categoryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost>>,
+        TError,
+        {categoryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getActivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * Desativa uma categoria.
  * @summary Desativar categoria
  */
-const deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost = <TData = AxiosResponse<ReceivableCategoryResponse>>(
-    categoryId: string, options?: AxiosRequestConfig
- ): Promise<TData> => {
-    return axios.post(
-      `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}/deactivate`,undefined,options
-    );
-  }
-return {createCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPost,listCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGet,getCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGet,getCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGet,updateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPut,deleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDelete,getChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGet,activateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePost,deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost}};
-export type CreateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesPostResult = AxiosResponse<ReceivableCategoryResponse>
-export type ListCategoriesApiV1FinancialReceivableCategoriesReceivableCategoriesGetResult = AxiosResponse<ReceivableCategoryResponse[]>
-export type GetCategoryTreeApiV1FinancialReceivableCategoriesReceivableCategoriesTreeGetResult = AxiosResponse<ReceivableCategoryResponse[]>
-export type GetCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdGetResult = AxiosResponse<ReceivableCategoryResponse>
-export type UpdateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdPutResult = AxiosResponse<ReceivableCategoryResponse>
-export type DeleteCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeleteResult = AxiosResponse<void>
-export type GetChildrenApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdChildrenGetResult = AxiosResponse<ReceivableCategoryResponse[]>
-export type ActivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdActivatePostResult = AxiosResponse<ReceivableCategoryResponse>
-export type DeactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePostResult = AxiosResponse<ReceivableCategoryResponse>
+export const deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost = (
+    categoryId: string,
+ signal?: AbortSignal
+) => {
+      
+      
+      return customInstance<ReceivableCategoryResponse>(
+      {url: `/api/v1/financial/receivable-categories/receivable-categories/${categoryId}/deactivate`, method: 'POST', signal
+    },
+      );
+    }
+  
+
+
+export const getDeactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePostMutationOptions = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost>>, TError,{categoryId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost>>, TError,{categoryId: string}, TContext> => {
+
+const mutationKey = ['deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost>>, {categoryId: string}> = (props) => {
+          const {categoryId} = props ?? {};
+
+          return  deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost(categoryId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePostMutationResult = NonNullable<Awaited<ReturnType<typeof deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost>>>
+    
+    export type DeactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePostMutationError = HTTPValidationError
+
+    /**
+ * @summary Desativar categoria
+ */
+export const useDeactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost = <TError = HTTPValidationError,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost>>, TError,{categoryId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof deactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePost>>,
+        TError,
+        {categoryId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDeactivateCategoryApiV1FinancialReceivableCategoriesReceivableCategoriesCategoryIdDeactivatePostMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

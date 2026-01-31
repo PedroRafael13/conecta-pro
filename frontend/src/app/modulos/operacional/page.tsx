@@ -102,6 +102,33 @@ const subModules = [
     color: 'indigo',
     stats: null,
   },
+  {
+    id: 'diaristas',
+    title: 'Diaristas',
+    description: 'Gestão de diaristas com IA e avaliações',
+    icon: Users,
+    href: '/modulos/operacional/diaristas',
+    color: 'cyan',
+    stats: null,
+  },
+  {
+    id: 'substituicoes',
+    title: 'Substituições',
+    description: 'Gerenciar substituições de funcionários',
+    icon: UserCheck,
+    href: '/modulos/operacional/substituicoes',
+    color: 'orange',
+    stats: null,
+  },
+  {
+    id: 'banco-horas',
+    title: 'Banco de Horas',
+    description: 'Controle de horas extras e compensações',
+    icon: Clock,
+    href: '/modulos/operacional/banco-horas',
+    color: 'purple',
+    stats: null,
+  },
 ];
 
 export default function OperacionalPage() {
@@ -153,7 +180,7 @@ export default function OperacionalPage() {
   }
 
   return (
-    <OperacionalTourProvider userRole="USUARIO" autoStart={true} showNotification={true}>
+    <OperacionalTourProvider userRole="USUARIO" autoStart={false} showNotification={false}>
     <div className="min-h-screen bg-grid">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[hsl(var(--background))]/80 backdrop-blur-xl border-b border-[hsl(var(--border))]">

@@ -84,12 +84,12 @@ export function useFraudAnalytics(
  * Hook para perfil de risco de usuário
  */
 export function useUserRiskProfile(
-  userId: number,
+  userId: string | number,
   options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: ['fraud-user-risk-profile', userId],
-    queryFn: () => fraudDetectionService.getUserRiskProfile(userId),
+    queryFn: () => fraudDetectionService.getUserRiskProfile(String(userId)),
     enabled: !!userId,
     staleTime: 300000,
     ...options,

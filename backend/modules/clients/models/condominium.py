@@ -23,23 +23,23 @@ if TYPE_CHECKING:
 
 
 class CondominiumType(str, enum.Enum):
-    """Tipo de condomínio."""
-    RESIDENCIAL = "residencial"
-    COMERCIAL = "comercial"
-    MISTO = "misto"
+    """Tipo de condominio - valores sincronizados com banco."""
+    RESIDENTIAL = "residential"
+    COMMERCIAL = "commercial"
+    MIXED = "mixed"
     INDUSTRIAL = "industrial"
     HORIZONTAL = "horizontal"
     VERTICAL = "vertical"
-    LOTEAMENTO = "loteamento"
+    SUBDIVISION = "subdivision"
 
 
 class CondominiumStatus(str, enum.Enum):
-    """Status do condomínio."""
-    ATIVO = "ativo"
-    INATIVO = "inativo"
-    EM_IMPLANTACAO = "em_implantacao"
-    SUSPENSO = "suspenso"
-    ENCERRADO = "encerrado"
+    """Status do condominio - valores sincronizados com banco."""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    IMPLEMENTING = "implementing"
+    SUSPENDED = "suspended"
+    CLOSED = "closed"
 
 
 class AdministrationType(str, enum.Enum):
@@ -75,7 +75,7 @@ class Condominium(Base):
     # REMOVED: type field (não existe no banco de dados)
     # type = Column(Enum(CondominiumType), nullable=False, default=CondominiumType.RESIDENCIAL)
     status = Column(
-        Enum(CondominiumStatus), nullable=False, default=CondominiumStatus.EM_IMPLANTACAO
+        Enum(CondominiumStatus), nullable=False, default=CondominiumStatus.IMPLEMENTING
     )
     administration_type = Column(
         Enum(AdministrationType),
@@ -298,36 +298,36 @@ class Condominium(Base):
         return (self.syndic_end_date - date.today()).days
 
     def activate(self) -> None:
-        """Ativa o condomínio."""
-        self.status = CondominiumStatus.ATIVO
+        """Ativa o condominio."""
+        self.status = CondominiumStatus.ACTIVE
         self.is_active = True
         if not self.activation_date:
             self.activation_date = date.today()
         self.updated_at = datetime.utcnow()
 
     def deactivate(self) -> None:
-        """Desativa o condomínio."""
-        self.status = CondominiumStatus.INATIVO
+        """Desativa o condominio."""
+        self.status = CondominiumStatus.INACTIVE
         self.is_active = False
         self.updated_at = datetime.utcnow()
 
     def suspend(self, reason: Optional[str] = None) -> None:
-        """Suspende o condomínio."""
-        self.status = CondominiumStatus.SUSPENSO
+        """Suspende o condominio."""
+        self.status = CondominiumStatus.SUSPENDED
         if reason:
             self.notes = f"{self.notes or ''}\n[SUSPENSO] {datetime.now()}: {reason}".strip()
         self.updated_at = datetime.utcnow()
 
     def start_implantation(self) -> None:
-        """Inicia implantação."""
-        self.status = CondominiumStatus.EM_IMPLANTACAO
+        """Inicia implantacao."""
+        self.status = CondominiumStatus.IMPLEMENTING
         self.implantation_date = date.today()
         self.updated_at = datetime.utcnow()
 
     def finish_implantation(self) -> None:
-        """Finaliza implantação e ativa."""
+        """Finaliza implantacao e ativa."""
         self.activation_date = date.today()
-        self.status = CondominiumStatus.ATIVO
+        self.status = CondominiumStatus.ACTIVE
         self.is_active = True
         self.updated_at = datetime.utcnow()
 

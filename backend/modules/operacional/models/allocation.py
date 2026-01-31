@@ -107,6 +107,9 @@ class Allocation(Base):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     termination_reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
+    # Auditoria
+    created_by: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True)
+
     # Campos de controle
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

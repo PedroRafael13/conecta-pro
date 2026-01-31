@@ -46,6 +46,7 @@ class NotificationTemplate(Base):
     """Modelo de template de notificação multi-canal."""
 
     __tablename__ = "notification_templates"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id = Column(UUID(as_uuid=True), nullable=False, index=True)

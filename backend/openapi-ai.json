@@ -1,0 +1,4267 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - AI/Bartolo API",
+    "description": "API de Inteligência Artificial: OCR, Análise de Contratos, Detecção de Fraude, Assistente Bartolo e mais",
+    "version": "2.0.0"
+  },
+  "paths": {
+    "/api/v1/financial/receivables/ai/customer-risk/{customer_id}": {
+      "get": {
+        "tags": [
+          "Financial - Contas a Receber",
+          "Contas a Receber"
+        ],
+        "summary": "Analise de risco do cliente (IA)",
+        "description": "Retorna analise de risco do cliente usando IA.",
+        "operationId": "get_customer_risk_api_v1_financial_receivables_ai_customer_risk__customer_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Customer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/receivables/ai/collection-priorities": {
+      "get": {
+        "tags": [
+          "Financial - Contas a Receber",
+          "Contas a Receber"
+        ],
+        "summary": "Prioridades de cobranca (IA)",
+        "description": "Retorna lista priorizada de cobrancas usando IA.",
+        "operationId": "get_collection_priorities_api_v1_financial_receivables_ai_collection_priorities_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominio Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/receivables/ai/cash-flow-forecast": {
+      "get": {
+        "tags": [
+          "Financial - Contas a Receber",
+          "Contas a Receber"
+        ],
+        "summary": "Previsao de fluxo de caixa (IA)",
+        "description": "Retorna previsao de fluxo de caixa usando IA.",
+        "operationId": "get_cash_flow_forecast_api_v1_financial_receivables_ai_cash_flow_forecast_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominio Id"
+            }
+          },
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "description": "Meses de previsao",
+              "default": 6,
+              "title": "Months"
+            },
+            "description": "Meses de previsao"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/receivables/ai/delinquency-analysis": {
+      "get": {
+        "tags": [
+          "Financial - Contas a Receber",
+          "Contas a Receber"
+        ],
+        "summary": "Analise de inadimplencia (IA)",
+        "description": "Retorna analise de inadimplencia usando IA.",
+        "operationId": "get_delinquency_analysis_api_v1_financial_receivables_ai_delinquency_analysis_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/cashflow/ai/forecast": {
+      "post": {
+        "tags": [
+          "Financial - Fluxo de Caixa",
+          "Fluxo de Caixa"
+        ],
+        "summary": "Gerar previsão com IA",
+        "description": "Gera previsão de fluxo de caixa usando IA.",
+        "operationId": "generate_ai_forecast_api_v1_financial_cashflow_ai_forecast_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIForecastRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIForecastResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/financial/cashflow/ai/anomalies": {
+      "post": {
+        "tags": [
+          "Financial - Fluxo de Caixa",
+          "Fluxo de Caixa"
+        ],
+        "summary": "Detectar anomalias",
+        "description": "Detecta anomalias em fluxo de caixa usando IA.",
+        "operationId": "detect_anomalies_api_v1_financial_cashflow_ai_anomalies_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnomalyDetectionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnomalyDetectionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/financial/cashflow/ai/suggestions": {
+      "get": {
+        "tags": [
+          "Financial - Fluxo de Caixa",
+          "Fluxo de Caixa"
+        ],
+        "summary": "Sugestões de otimização",
+        "description": "Retorna sugestões de otimização baseadas em IA.",
+        "operationId": "get_optimization_suggestions_api_v1_financial_cashflow_ai_suggestions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OptimizationSuggestion"
+                  },
+                  "title": "Response Get Optimization Suggestions Api V1 Financial Cashflow Ai Suggestions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/cashflow/ai/risks": {
+      "get": {
+        "tags": [
+          "Financial - Fluxo de Caixa",
+          "Fluxo de Caixa"
+        ],
+        "summary": "Riscos identificados",
+        "description": "Retorna riscos identificados pela IA.",
+        "operationId": "get_risks_api_v1_financial_cashflow_ai_risks_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominio Id"
+            }
+          },
+          {
+            "name": "period_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 30,
+              "default": 90,
+              "title": "Period Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ForecastRisk"
+                  },
+                  "title": "Response Get Risks Api V1 Financial Cashflow Ai Risks Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/cashflow/ai/opportunities": {
+      "get": {
+        "tags": [
+          "Financial - Fluxo de Caixa",
+          "Fluxo de Caixa"
+        ],
+        "summary": "Oportunidades identificadas",
+        "description": "Retorna oportunidades identificadas pela IA.",
+        "operationId": "get_opportunities_api_v1_financial_cashflow_ai_opportunities_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominio Id"
+            }
+          },
+          {
+            "name": "period_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 30,
+              "default": 90,
+              "title": "Period Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ForecastOpportunity"
+                  },
+                  "title": "Response Get Opportunities Api V1 Financial Cashflow Ai Opportunities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/purchases/ai/suggest-suppliers": {
+      "post": {
+        "tags": [
+          "Financial - Compras",
+          "Compras"
+        ],
+        "summary": "Sugerir fornecedores",
+        "description": "Sugere fornecedores para um produto usando IA.",
+        "operationId": "suggest_suppliers_api_v1_financial_purchases_ai_suggest_suppliers_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominio Id"
+            }
+          },
+          {
+            "name": "product_description",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 3,
+              "title": "Product Description"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 20,
+              "minimum": 1,
+              "default": 5,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/purchases/ai/supplier-analysis/{supplier_id}": {
+      "get": {
+        "tags": [
+          "Financial - Compras",
+          "Compras"
+        ],
+        "summary": "Analisar fornecedor",
+        "description": "Analisa performance de um fornecedor usando IA.",
+        "operationId": "analyze_supplier_api_v1_financial_purchases_ai_supplier_analysis__supplier_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "supplier_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Supplier Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/purchases/ai/predict-demand": {
+      "post": {
+        "tags": [
+          "Financial - Compras",
+          "Compras"
+        ],
+        "summary": "Prever demanda",
+        "description": "Prevê demanda futura de um produto usando IA.",
+        "operationId": "predict_demand_api_v1_financial_purchases_ai_predict_demand_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "months_ahead",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "default": 3,
+              "title": "Months Ahead"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/financial/purchases/ai/reorder-point/{product_id}": {
+      "get": {
+        "tags": [
+          "Financial - Compras",
+          "Compras"
+        ],
+        "summary": "Calcular ponto de reposição",
+        "description": "Calcula ponto de reposição de um produto usando IA.",
+        "operationId": "calculate_reorder_point_api_v1_financial_purchases_ai_reorder_point__product_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Product Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/ai/classify": {
+      "post": {
+        "tags": [
+          "GED - Documentos",
+          "GED - Documentos"
+        ],
+        "summary": "Classify Document",
+        "description": "Classifica documento usando IA.",
+        "operationId": "classify_document_api_v1_ged_documents_ai_classify_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 10,
+              "title": "Text"
+            }
+          },
+          {
+            "name": "file_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Classify Document Api V1 Ged Documents Ai Classify Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/{document_id}/ai/analyze-ocr": {
+      "post": {
+        "tags": [
+          "GED - Documentos",
+          "GED - Documentos"
+        ],
+        "summary": "Analyze Ocr",
+        "description": "Analisa texto OCR do documento.",
+        "operationId": "analyze_ocr_api_v1_ged_documents__document_id__ai_analyze_ocr_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          },
+          {
+            "name": "ocr_text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Ocr Text"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentOCRResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/ai/extract-keywords": {
+      "post": {
+        "tags": [
+          "GED - Documentos",
+          "GED - Documentos"
+        ],
+        "summary": "Extract Keywords",
+        "description": "Extrai palavras-chave do texto.",
+        "operationId": "extract_keywords_api_v1_ged_documents_ai_extract_keywords_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "text",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 10,
+              "title": "Text"
+            }
+          },
+          {
+            "name": "max_keywords",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 20,
+              "title": "Max Keywords"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Extract Keywords Api V1 Ged Documents Ai Extract Keywords Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/ai/check-duplicates": {
+      "post": {
+        "tags": [
+          "GED - Documentos",
+          "GED - Documentos"
+        ],
+        "summary": "Check Duplicates",
+        "description": "Verifica documentos duplicados.",
+        "operationId": "check_duplicates_api_v1_ged_documents_ai_check_duplicates_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "checksum",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Checksum"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Title"
+            }
+          },
+          {
+            "name": "condominium_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Condominium Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Check Duplicates Api V1 Ged Documents Ai Check Duplicates Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/ai/insights": {
+      "get": {
+        "tags": [
+          "GED - Documentos",
+          "GED - Documentos"
+        ],
+        "summary": "Get Insights",
+        "description": "Retorna insights sobre documentos.",
+        "operationId": "get_insights_api_v1_ged_documents_ai_insights_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominium_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Condominium Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Insights Api V1 Ged Documents Ai Insights Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/ai/trends": {
+      "get": {
+        "tags": [
+          "GED - Documentos",
+          "GED - Documentos"
+        ],
+        "summary": "Get Trends",
+        "description": "Retorna tendências de documentos.",
+        "operationId": "get_trends_api_v1_ged_documents_ai_trends_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominium_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Condominium Id"
+            }
+          },
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 7,
+              "default": 30,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Trends Api V1 Ged Documents Ai Trends Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ged/documents/ai/dashboard": {
+      "get": {
+        "tags": [
+          "GED - Documentos",
+          "GED - Documentos"
+        ],
+        "summary": "Get Ai Dashboard",
+        "description": "Retorna dashboard com IA.",
+        "operationId": "get_ai_dashboard_api_v1_ged_documents_ai_dashboard_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominium_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Condominium Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Ai Dashboard Api V1 Ged Documents Ai Dashboard Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{client_id}/ai/profile": {
+      "get": {
+        "tags": [
+          "Clients - Cadastro",
+          "Clients"
+        ],
+        "summary": "Analyze Client Profile",
+        "description": "Analisa perfil do cliente com IA.",
+        "operationId": "analyze_client_profile_api_v1_clients__client_id__ai_profile_get",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{client_id}/ai/segmentation": {
+      "get": {
+        "tags": [
+          "Clients - Cadastro",
+          "Clients"
+        ],
+        "summary": "Suggest Segmentation",
+        "description": "Sugere segmentação para o cliente.",
+        "operationId": "suggest_segmentation_api_v1_clients__client_id__ai_segmentation_get",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{client_id}/ai/churn-risk": {
+      "get": {
+        "tags": [
+          "Clients - Cadastro",
+          "Clients"
+        ],
+        "summary": "Predict Churn Risk",
+        "description": "Prediz risco de churn do cliente.",
+        "operationId": "predict_churn_risk_api_v1_clients__client_id__ai_churn_risk_get",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/{client_id}/ai/recommendations": {
+      "get": {
+        "tags": [
+          "Clients - Cadastro",
+          "Clients"
+        ],
+        "summary": "Recommend Services",
+        "description": "Recomenda serviços para o cliente.",
+        "operationId": "recommend_services_api_v1_clients__client_id__ai_recommendations_get",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/condominiums/{condominium_id}/ai/health": {
+      "get": {
+        "tags": [
+          "Clients - Cadastro",
+          "Clients"
+        ],
+        "summary": "Analyze Condominium Health",
+        "description": "Analisa saúde do condomínio.",
+        "operationId": "analyze_condominium_health_api_v1_clients_condominiums__condominium_id__ai_health_get",
+        "parameters": [
+          {
+            "name": "condominium_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Condominium Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/clients/ai/dashboard": {
+      "get": {
+        "tags": [
+          "Clients - Cadastro",
+          "Clients"
+        ],
+        "summary": "Get Dashboard Insights",
+        "description": "Retorna insights para o dashboard.",
+        "operationId": "get_dashboard_insights_api_v1_clients_ai_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenances/ai/health/{equipment_id}": {
+      "get": {
+        "tags": [
+          "Equipment - Manutencao",
+          "Maintenances"
+        ],
+        "summary": "Analyze Health",
+        "description": "Analisa saúde do equipamento usando IA.",
+        "operationId": "analyze_health_api_v1_maintenances_ai_health__equipment_id__get",
+        "parameters": [
+          {
+            "name": "equipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Equipment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Analyze Health Api V1 Maintenances Ai Health  Equipment Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenances/ai/predict-failure/{equipment_id}": {
+      "get": {
+        "tags": [
+          "Equipment - Manutencao",
+          "Maintenances"
+        ],
+        "summary": "Predict Failure",
+        "description": "Prevê probabilidade de falha do equipamento.",
+        "operationId": "predict_failure_api_v1_maintenances_ai_predict_failure__equipment_id__get",
+        "parameters": [
+          {
+            "name": "equipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Equipment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Predict Failure Api V1 Maintenances Ai Predict Failure  Equipment Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenances/ai/recommend-schedule": {
+      "get": {
+        "tags": [
+          "Equipment - Manutencao",
+          "Maintenances"
+        ],
+        "summary": "Recommend Schedule",
+        "description": "Recomenda agenda de manutenções preventivas.",
+        "operationId": "recommend_schedule_api_v1_maintenances_ai_recommend_schedule_get",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Recommend Schedule Api V1 Maintenances Ai Recommend Schedule Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenances/ai/optimize-route/{technician_id}": {
+      "get": {
+        "tags": [
+          "Equipment - Manutencao",
+          "Maintenances"
+        ],
+        "summary": "Optimize Route",
+        "description": "Otimiza rota de manutenções para técnico.",
+        "operationId": "optimize_route_api_v1_maintenances_ai_optimize_route__technician_id__get",
+        "parameters": [
+          {
+            "name": "technician_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Technician Id"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Optimize Route Api V1 Maintenances Ai Optimize Route  Technician Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenances/ai/patterns": {
+      "get": {
+        "tags": [
+          "Equipment - Manutencao",
+          "Maintenances"
+        ],
+        "summary": "Analyze Patterns",
+        "description": "Analisa padrões de manutenção.",
+        "operationId": "analyze_patterns_api_v1_maintenances_ai_patterns_get",
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "months",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 24,
+              "minimum": 1,
+              "default": 12,
+              "title": "Months"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Analyze Patterns Api V1 Maintenances Ai Patterns Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/maintenances/ai/estimate-cost/{equipment_id}": {
+      "get": {
+        "tags": [
+          "Equipment - Manutencao",
+          "Maintenances"
+        ],
+        "summary": "Estimate Cost",
+        "description": "Estima custo de manutenção.",
+        "operationId": "estimate_cost_api_v1_maintenances_ai_estimate_cost__equipment_id__get",
+        "parameters": [
+          {
+            "name": "equipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Equipment Id"
+            }
+          },
+          {
+            "name": "maintenance_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "preventiva",
+              "title": "Maintenance Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Estimate Cost Api V1 Maintenances Ai Estimate Cost  Equipment Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/operacional/diaristas/ai/suggest": {
+      "get": {
+        "tags": [
+          "Operacional - Diaristas",
+          "Diaristas"
+        ],
+        "summary": "Suggest Diarists",
+        "description": "Sugere diaristas para uma data usando IA.",
+        "operationId": "suggest_diarists_api_v1_operacional_diaristas_ai_suggest_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "data",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Data"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DiaristType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          },
+          {
+            "name": "duracao_horas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "default": 8,
+              "title": "Duracao Horas"
+            }
+          },
+          {
+            "name": "priorizar_conhecidas",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Priorizar Conhecidas"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaristSuggestionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/operacional/diaristas/ai/availability": {
+      "get": {
+        "tags": [
+          "Operacional - Diaristas",
+          "Diaristas"
+        ],
+        "summary": "Analyze Availability",
+        "description": "Analisa disponibilidade de diaristas em um período.",
+        "operationId": "analyze_availability_api_v1_operacional_diaristas_ai_availability_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "data_inicio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Data Inicio"
+            }
+          },
+          {
+            "name": "data_fim",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Data Fim"
+            }
+          },
+          {
+            "name": "tipo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/DiaristType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tipo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaristAvailabilityResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/operacional/diaristas/ai/performance/{diarist_id}": {
+      "get": {
+        "tags": [
+          "Operacional - Diaristas",
+          "Diaristas"
+        ],
+        "summary": "Analyze Performance",
+        "description": "Analisa performance de uma diarista usando IA.",
+        "operationId": "analyze_performance_api_v1_operacional_diaristas_ai_performance__diarist_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "diarist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Diarist Id"
+            }
+          },
+          {
+            "name": "data_inicio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Inicio"
+            }
+          },
+          {
+            "name": "data_fim",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Data Fim"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaristPerformanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/operacional/diaristas/ai/optimize": {
+      "get": {
+        "tags": [
+          "Operacional - Diaristas",
+          "Diaristas"
+        ],
+        "summary": "Optimize Schedule",
+        "description": "Otimiza agendamentos do condomínio usando IA.",
+        "operationId": "optimize_schedule_api_v1_operacional_diaristas_ai_optimize_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "data_inicio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Data Inicio"
+            }
+          },
+          {
+            "name": "data_fim",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Data Fim"
+            }
+          },
+          {
+            "name": "budget",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Budget"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleOptimizationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/suggest": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Suggest Kits",
+        "description": "Sugere kits para uma entidade.",
+        "operationId": "suggest_kits_api_v1_document_kits_ai_suggest_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityType"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "cargo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cargo"
+            }
+          },
+          {
+            "name": "departamento",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Departamento"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/KitSuggestionResponse"
+                  },
+                  "title": "Response Suggest Kits Api V1 Document Kits Ai Suggest Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/compliance/{entity_type}/{entity_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Analyze Compliance",
+        "description": "Analisa conformidade de uma entidade.",
+        "operationId": "analyze_compliance_api_v1_document_kits_ai_compliance__entity_type___entity_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "entity_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityType"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Analyze Compliance Api V1 Document Kits Ai Compliance  Entity Type   Entity Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/predict/{assignment_id}": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Predict Completion",
+        "description": "Preve data de conclusao.",
+        "operationId": "predict_completion_api_v1_document_kits_ai_predict__assignment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Assignment Id"
+            }
+          },
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Predict Completion Api V1 Document Kits Ai Predict  Assignment Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/priorities": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Priorities",
+        "description": "Retorna atribuicoes prioritarias.",
+        "operationId": "get_priorities_api_v1_document_kits_ai_priorities_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Priorities Api V1 Document Kits Ai Priorities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/usage": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Analyze Usage",
+        "description": "Analisa uso dos kits.",
+        "operationId": "analyze_usage_api_v1_document_kits_ai_usage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Analyze Usage Api V1 Document Kits Ai Usage Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/document-kits/ai/expiring": {
+      "get": {
+        "tags": [
+          "Document Kits",
+          "Document Kits"
+        ],
+        "summary": "Get Expiring Documents",
+        "description": "Lista documentos proximos do vencimento.",
+        "operationId": "get_expiring_documents_api_v1_document_kits_ai_expiring_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "condominio_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID do condominio",
+              "title": "Condominio Id"
+            },
+            "description": "ID do condominio"
+          },
+          {
+            "name": "days_ahead",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Days Ahead"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "title": "Response Get Expiring Documents Api V1 Document Kits Ai Expiring Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/send": {
+      "post": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Send Message",
+        "description": "Envia mensagem para o Bartolo e recebe resposta.\n\nO Bartolo processa a mensagem considerando:\n- Perfil e permissoes do usuario\n- Modulo atual do sistema\n- Historico da conversa\n- Dados do sistema quando relevante",
+        "operationId": "send_message_api_v1_ai_bartolo_send_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "ID do usuario",
+              "title": "User Id"
+            },
+            "description": "ID do usuario"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendMessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/send/stream": {
+      "post": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Send Message Stream",
+        "description": "Envia mensagem com resposta em streaming.\n\nRetorna a resposta progressivamente enquanto e gerada.\nUtil para respostas longas.",
+        "operationId": "send_message_stream_api_v1_ai_bartolo_send_stream_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "ID do usuario",
+              "title": "User Id"
+            },
+            "description": "ID do usuario"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/greeting": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Get Greeting",
+        "description": "Retorna saudacao personalizada do Bartolo.\n\nConsidera nome do usuario e hora do dia.",
+        "operationId": "get_greeting_api_v1_ai_bartolo_greeting_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "ID do usuario",
+              "title": "User Id"
+            },
+            "description": "ID do usuario"
+          },
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da sessao",
+              "title": "Session Id"
+            },
+            "description": "ID da sessao"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/feedback": {
+      "post": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Submit Feedback",
+        "description": "Registra feedback sobre uma resposta do Bartolo.\n\nO feedback e usado para melhorar respostas futuras.",
+        "operationId": "submit_feedback_api_v1_ai_bartolo_feedback_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/wizards": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "List Wizards",
+        "description": "Lista wizards disponiveis.\n\nWizards sao assistentes guiados para tarefas complexas.",
+        "operationId": "list_wizards_api_v1_ai_bartolo_wizards_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/wizard/start": {
+      "post": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Start Wizard",
+        "description": "Inicia um wizard de assistencia guiada.\n\nWizards disponiveis:\n- proposta_comercial: Monta proposta comercial passo a passo\n- admissao_funcionario: Guia processo de admissao",
+        "operationId": "start_wizard_api_v1_ai_bartolo_wizard_start_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "ID do usuario",
+              "title": "User Id"
+            },
+            "description": "ID do usuario"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WizardStartRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/wizard/input": {
+      "post": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Wizard Input",
+        "description": "Processa entrada do usuario no wizard ativo.",
+        "operationId": "wizard_input_api_v1_ai_bartolo_wizard_input_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "ID do usuario",
+              "title": "User Id"
+            },
+            "description": "ID do usuario"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WizardInputRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/wizard/status": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Wizard Status",
+        "description": "Retorna status do wizard ativo.",
+        "operationId": "wizard_status_api_v1_ai_bartolo_wizard_status_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da sessao",
+              "title": "Session Id"
+            },
+            "description": "ID da sessao"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "ID do usuario",
+              "title": "User Id"
+            },
+            "description": "ID do usuario"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/wizard/cancel": {
+      "post": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Cancel Wizard",
+        "description": "Cancela wizard ativo.",
+        "operationId": "cancel_wizard_api_v1_ai_bartolo_wizard_cancel_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID da sessao",
+              "title": "Session Id"
+            },
+            "description": "ID da sessao"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "ID do usuario",
+              "title": "User Id"
+            },
+            "description": "ID do usuario"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/modules": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "List Modules",
+        "description": "Lista modulos disponiveis com suas capacidades.",
+        "operationId": "list_modules_api_v1_ai_bartolo_modules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/modules/{module_id}": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Get Module Info",
+        "description": "Retorna informacoes detalhadas de um modulo.",
+        "operationId": "get_module_info_api_v1_ai_bartolo_modules__module_id__get",
+        "parameters": [
+          {
+            "name": "module_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Module Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/stats": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Get Stats",
+        "description": "Retorna estatisticas do Bartolo.",
+        "operationId": "get_stats_api_v1_ai_bartolo_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/health": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Health Check",
+        "description": "Health check do Bartolo.",
+        "operationId": "health_check_api_v1_ai_bartolo_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/learning/stats": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Get Learning Stats",
+        "description": "Retorna estatisticas de aprendizado.",
+        "operationId": "get_learning_stats_api_v1_ai_bartolo_learning_stats_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/bartolo/learning/patterns": {
+      "get": {
+        "tags": [
+          "AI - Bartolo Assistente",
+          "Bartolo - Assistente Inteligente"
+        ],
+        "summary": "Get Learned Patterns",
+        "description": "Retorna padroes aprendidos.",
+        "operationId": "get_learned_patterns_api_v1_ai_bartolo_learning_patterns_get",
+        "parameters": [
+          {
+            "name": "pattern_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por tipo",
+              "title": "Pattern Type"
+            },
+            "description": "Filtrar por tipo"
+          },
+          {
+            "name": "min_usage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Uso minimo",
+              "default": 3,
+              "title": "Min Usage"
+            },
+            "description": "Uso minimo"
+          },
+          {
+            "name": "min_success_rate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "description": "Taxa de sucesso minima",
+              "default": 0.7,
+              "title": "Min Success Rate"
+            },
+            "description": "Taxa de sucesso minima"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AIForecastRequest": {
+        "properties": {
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "months_ahead": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Months Ahead",
+            "default": 3
+          },
+          "include_scenarios": {
+            "type": "boolean",
+            "title": "Include Scenarios",
+            "default": true
+          },
+          "confidence_threshold": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Confidence Threshold",
+            "default": 70
+          }
+        },
+        "type": "object",
+        "required": [
+          "condominio_id"
+        ],
+        "title": "AIForecastRequest",
+        "description": "Request para previsao por IA."
+      },
+      "AIForecastResponse": {
+        "properties": {
+          "forecast": {
+            "$ref": "#/components/schemas/CashFlowForecastResponse"
+          },
+          "scenarios": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Scenarios"
+          },
+          "confidence_factors": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Confidence Factors"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          },
+          "risks": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Risks"
+          },
+          "opportunities": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Opportunities"
+          }
+        },
+        "type": "object",
+        "required": [
+          "forecast",
+          "scenarios",
+          "confidence_factors",
+          "recommendations",
+          "risks",
+          "opportunities"
+        ],
+        "title": "AIForecastResponse",
+        "description": "Resposta de previsao por IA."
+      },
+      "AnomalyDetectionRequest": {
+        "properties": {
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "period_months": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 3.0,
+            "title": "Period Months",
+            "default": 6
+          },
+          "sensitivity": {
+            "type": "string",
+            "pattern": "^(low|medium|high)$",
+            "title": "Sensitivity",
+            "default": "medium"
+          }
+        },
+        "type": "object",
+        "required": [
+          "condominio_id"
+        ],
+        "title": "AnomalyDetectionRequest",
+        "description": "Request para deteccao de anomalias."
+      },
+      "AnomalyDetectionResponse": {
+        "properties": {
+          "anomalies": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Anomalies"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "by_severity": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Severity"
+          },
+          "by_category": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "anomalies",
+          "total",
+          "by_severity",
+          "by_category"
+        ],
+        "title": "AnomalyDetectionResponse",
+        "description": "Resposta de deteccao de anomalias."
+      },
+      "CashFlowForecastResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "period_type": {
+            "type": "string",
+            "title": "Period Type",
+            "default": "mensal"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start"
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End"
+          },
+          "forecast_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Forecast Date"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "condominio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Condominio Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "expected_inflows": {
+            "type": "string",
+            "title": "Expected Inflows"
+          },
+          "expected_outflows": {
+            "type": "string",
+            "title": "Expected Outflows"
+          },
+          "expected_opening_balance": {
+            "type": "string",
+            "title": "Expected Opening Balance"
+          },
+          "expected_closing_balance": {
+            "type": "string",
+            "title": "Expected Closing Balance"
+          },
+          "expected_net_flow": {
+            "type": "string",
+            "title": "Expected Net Flow"
+          },
+          "actual_inflows": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Inflows"
+          },
+          "actual_outflows": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Outflows"
+          },
+          "actual_closing_balance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Closing Balance"
+          },
+          "balance_variance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Variance"
+          },
+          "confidence_level": {
+            "type": "integer",
+            "title": "Confidence Level"
+          },
+          "confidence_category": {
+            "type": "string",
+            "title": "Confidence Category"
+          },
+          "ai_generated": {
+            "type": "boolean",
+            "title": "Ai Generated"
+          },
+          "has_negative_balance_alert": {
+            "type": "boolean",
+            "title": "Has Negative Balance Alert"
+          },
+          "risks": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Risks"
+          },
+          "opportunities": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Opportunities"
+          },
+          "alerts": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "period_start",
+          "period_end",
+          "forecast_date",
+          "id",
+          "condominio_id",
+          "status",
+          "expected_inflows",
+          "expected_outflows",
+          "expected_opening_balance",
+          "expected_closing_balance",
+          "expected_net_flow",
+          "actual_inflows",
+          "actual_outflows",
+          "actual_closing_balance",
+          "balance_variance",
+          "confidence_level",
+          "confidence_category",
+          "ai_generated",
+          "has_negative_balance_alert",
+          "risks",
+          "opportunities",
+          "alerts",
+          "created_at"
+        ],
+        "title": "CashFlowForecastResponse",
+        "description": "Schema de resposta para previsao."
+      },
+      "DiaristAvailabilityResponse": {
+        "properties": {
+          "diarist_id": {
+            "type": "string",
+            "title": "Diarist Id"
+          },
+          "diarist_nome": {
+            "type": "string",
+            "title": "Diarist Nome"
+          },
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "horario_inicio": {
+            "type": "string",
+            "format": "time",
+            "title": "Horario Inicio"
+          },
+          "horario_fim": {
+            "type": "string",
+            "format": "time",
+            "title": "Horario Fim"
+          },
+          "disponivel": {
+            "type": "boolean",
+            "title": "Disponivel"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "diarist_id",
+          "diarist_nome",
+          "data",
+          "horario_inicio",
+          "horario_fim",
+          "disponivel"
+        ],
+        "title": "DiaristAvailabilityResponse",
+        "description": "Schema de disponibilidade."
+      },
+      "DiaristPerformanceResponse": {
+        "properties": {
+          "diarist_id": {
+            "type": "string",
+            "title": "Diarist Id"
+          },
+          "diarist_nome": {
+            "type": "string",
+            "title": "Diarist Nome"
+          },
+          "periodo": {
+            "type": "string",
+            "title": "Periodo"
+          },
+          "total_diarias": {
+            "type": "integer",
+            "title": "Total Diarias"
+          },
+          "total_horas": {
+            "type": "number",
+            "title": "Total Horas"
+          },
+          "taxa_comparecimento": {
+            "type": "number",
+            "title": "Taxa Comparecimento"
+          },
+          "taxa_pontualidade": {
+            "type": "number",
+            "title": "Taxa Pontualidade"
+          },
+          "media_avaliacao": {
+            "type": "number",
+            "title": "Media Avaliacao"
+          },
+          "total_recebido": {
+            "type": "number",
+            "title": "Total Recebido"
+          },
+          "tendencia": {
+            "type": "string",
+            "title": "Tendencia"
+          },
+          "recomendacoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recomendacoes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "diarist_id",
+          "diarist_nome",
+          "periodo",
+          "total_diarias",
+          "total_horas",
+          "taxa_comparecimento",
+          "taxa_pontualidade",
+          "media_avaliacao",
+          "total_recebido",
+          "tendencia",
+          "recomendacoes"
+        ],
+        "title": "DiaristPerformanceResponse",
+        "description": "Schema de performance."
+      },
+      "DiaristSuggestionResponse": {
+        "properties": {
+          "diarist_id": {
+            "type": "string",
+            "title": "Diarist Id"
+          },
+          "diarist_nome": {
+            "type": "string",
+            "title": "Diarist Nome"
+          },
+          "diarist_tipo": {
+            "type": "string",
+            "title": "Diarist Tipo"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "motivo": {
+            "type": "string",
+            "title": "Motivo"
+          },
+          "disponivel": {
+            "type": "boolean",
+            "title": "Disponivel"
+          },
+          "valor_diaria": {
+            "type": "number",
+            "title": "Valor Diaria"
+          },
+          "media_avaliacao": {
+            "type": "number",
+            "title": "Media Avaliacao"
+          },
+          "total_diarias": {
+            "type": "integer",
+            "title": "Total Diarias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "diarist_id",
+          "diarist_nome",
+          "diarist_tipo",
+          "score",
+          "motivo",
+          "disponivel",
+          "valor_diaria",
+          "media_avaliacao",
+          "total_diarias"
+        ],
+        "title": "DiaristSuggestionResponse",
+        "description": "Schema de sugestao de diarista."
+      },
+      "DiaristType": {
+        "type": "string",
+        "enum": [
+          "limpeza",
+          "faxina",
+          "jardinagem",
+          "manutencao",
+          "cozinha",
+          "passadeira",
+          "cuidador",
+          "baba",
+          "motorista",
+          "outro"
+        ],
+        "title": "DiaristType",
+        "description": "Tipos de diarista."
+      },
+      "DocumentOCRResult": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Keywords"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "pages_processed": {
+            "type": "integer",
+            "title": "Pages Processed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "confidence",
+          "keywords",
+          "language",
+          "pages_processed"
+        ],
+        "title": "DocumentOCRResult",
+        "description": "Resultado de OCR."
+      },
+      "EntityType": {
+        "type": "string",
+        "enum": [
+          "FUNCIONARIO",
+          "CANDIDATO",
+          "CONTRATO",
+          "CLIENTE",
+          "FORNECEDOR",
+          "EQUIPAMENTO",
+          "POSTO",
+          "TREINAMENTO",
+          "OUTRO"
+        ],
+        "title": "EntityType",
+        "description": "Tipo de entidade para atribuicao."
+      },
+      "FeedbackRequest": {
+        "properties": {
+          "interaction_id": {
+            "type": "string",
+            "title": "Interaction Id",
+            "description": "ID da interacao"
+          },
+          "feedback_type": {
+            "type": "string",
+            "title": "Feedback Type",
+            "description": "Tipo de feedback: helpful, not_helpful, incorrect, etc"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 5.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating",
+            "description": "Nota de 1 a 5"
+          },
+          "feedback_text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Text",
+            "description": "Comentario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "interaction_id",
+          "feedback_type"
+        ],
+        "title": "FeedbackRequest",
+        "description": "Request de feedback."
+      },
+      "ForecastOpportunity": {
+        "properties": {
+          "opportunity_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Opportunity Type"
+          },
+          "probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Probability"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "action": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "opportunity_type",
+          "probability",
+          "value",
+          "action"
+        ],
+        "title": "ForecastOpportunity",
+        "description": "Schema para adicionar oportunidade."
+      },
+      "ForecastRisk": {
+        "properties": {
+          "risk_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Risk Type"
+          },
+          "probability": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Probability"
+          },
+          "impact": {
+            "type": "string",
+            "title": "Impact"
+          },
+          "mitigation": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Mitigation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "risk_type",
+          "probability",
+          "impact",
+          "mitigation"
+        ],
+        "title": "ForecastRisk",
+        "description": "Schema para adicionar risco."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "KitSuggestionResponse": {
+        "properties": {
+          "kit_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Kit Id"
+          },
+          "kit_nome": {
+            "type": "string",
+            "title": "Kit Nome"
+          },
+          "kit_tipo": {
+            "$ref": "#/components/schemas/KitType"
+          },
+          "relevancia_score": {
+            "type": "number",
+            "title": "Relevancia Score"
+          },
+          "motivo": {
+            "type": "string",
+            "title": "Motivo"
+          },
+          "itens_count": {
+            "type": "integer",
+            "title": "Itens Count"
+          },
+          "prazo_sugerido_dias": {
+            "type": "integer",
+            "title": "Prazo Sugerido Dias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kit_id",
+          "kit_nome",
+          "kit_tipo",
+          "relevancia_score",
+          "motivo",
+          "itens_count",
+          "prazo_sugerido_dias"
+        ],
+        "title": "KitSuggestionResponse",
+        "description": "Sugestao de kit para entidade."
+      },
+      "KitType": {
+        "type": "string",
+        "enum": [
+          "ADMISSAO",
+          "DEMISSAO",
+          "FERIAS",
+          "AFASTAMENTO",
+          "PROMOCAO",
+          "TRANSFERENCIA",
+          "CONTRATO_CLIENTE",
+          "ENCERRAMENTO_CONTRATO",
+          "MENSAL",
+          "TREINAMENTO",
+          "CERTIFICACAO",
+          "VIGILANTE",
+          "EQUIPAMENTO",
+          "AUDITORIA",
+          "LICITACAO",
+          "RENOVACAO",
+          "OUTRO"
+        ],
+        "title": "KitType",
+        "description": "Tipo de kit documental."
+      },
+      "OptimizationSuggestion": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "potential_savings": {
+            "type": "string",
+            "title": "Potential Savings"
+          },
+          "implementation_effort": {
+            "type": "string",
+            "title": "Implementation Effort"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority"
+          },
+          "action_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Action Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "description",
+          "potential_savings",
+          "implementation_effort",
+          "priority",
+          "action_items"
+        ],
+        "title": "OptimizationSuggestion",
+        "description": "Sugestao de otimizacao."
+      },
+      "ScheduleOptimizationResponse": {
+        "properties": {
+          "data": {
+            "type": "string",
+            "format": "date",
+            "title": "Data"
+          },
+          "sugestoes": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sugestoes"
+          },
+          "conflitos": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Conflitos"
+          },
+          "recomendacoes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recomendacoes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "sugestoes",
+          "conflitos",
+          "recomendacoes"
+        ],
+        "title": "ScheduleOptimizationResponse",
+        "description": "Schema de otimizacao de agenda."
+      },
+      "SendMessageRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "description": "Mensagem do usuario"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "ID da sessao"
+          },
+          "module": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Module",
+            "description": "Modulo atual"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata",
+            "description": "Metadados adicionais"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "session_id"
+        ],
+        "title": "SendMessageRequest",
+        "description": "Request para enviar mensagem."
+      },
+      "SendMessageResponse": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "response": {
+            "type": "string",
+            "title": "Response"
+          },
+          "response_html": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Html"
+          },
+          "intent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intent"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "default": 0.0
+          },
+          "suggestions": {
+            "items": {},
+            "type": "array",
+            "title": "Suggestions",
+            "default": []
+          },
+          "actions": {
+            "items": {},
+            "type": "array",
+            "title": "Actions",
+            "default": []
+          },
+          "wizard_response": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wizard Response"
+          },
+          "data_results": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Results"
+          },
+          "processing_time_ms": {
+            "type": "integer",
+            "title": "Processing Time Ms",
+            "default": 0
+          },
+          "model_used": {
+            "type": "string",
+            "title": "Model Used",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "session_id",
+          "response"
+        ],
+        "title": "SendMessageResponse",
+        "description": "Response de mensagem."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WizardInputRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "ID da sessao"
+          },
+          "user_input": {
+            "type": "string",
+            "title": "User Input",
+            "description": "Entrada do usuario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "user_input"
+        ],
+        "title": "WizardInputRequest",
+        "description": "Request de input no wizard."
+      },
+      "WizardStartRequest": {
+        "properties": {
+          "wizard_type": {
+            "type": "string",
+            "title": "Wizard Type",
+            "description": "Tipo do wizard"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "ID da sessao"
+          },
+          "initial_data": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Data",
+            "description": "Dados iniciais"
+          }
+        },
+        "type": "object",
+        "required": [
+          "wizard_type",
+          "session_id"
+        ],
+        "title": "WizardStartRequest",
+        "description": "Request para iniciar wizard."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

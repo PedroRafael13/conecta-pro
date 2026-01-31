@@ -57,7 +57,7 @@ export function usePayable(payableId: string, enabled = true) {
 export function usePayableDashboard(condominioId: string) {
   return useQuery({
     queryKey: payableKeys.dashboard(condominioId),
-    queryFn: () => payableService.getDashboard(condominioId),
+    queryFn: () => payableService.getStats({ condominio_id: condominioId }),
     enabled: !!condominioId,
   });
 }
@@ -89,7 +89,8 @@ export function useUpdatePayable() {
 export function useProcessPayment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => payableService.processPayment(data),
+    mutationFn: ({ installmentId, data }: { installmentId: string; data: any }) =>
+      payableService.registerPayment(installmentId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: payableKeys.lists() });
     },
@@ -125,11 +126,11 @@ export function useCustomer(customerId: string, enabled = true) {
   });
 }
 
-export function useCustomerStats(condominioId: string) {
+export function useCustomerStats(customerId: string) {
   return useQuery({
-    queryKey: customerKeys.stats(condominioId),
-    queryFn: () => customerService.getStats(condominioId),
-    enabled: !!condominioId,
+    queryKey: customerKeys.stats(customerId),
+    queryFn: () => customerService.getDebtSummary(customerId),
+    enabled: !!customerId,
   });
 }
 
@@ -175,7 +176,7 @@ export function useReceivable(receivableId: string, enabled = true) {
 export function useReceivableDashboard(condominioId: string) {
   return useQuery({
     queryKey: receivableKeys.dashboard(condominioId),
-    queryFn: () => receivableService.getDashboard(condominioId),
+    queryFn: () => receivableService.getStats({ condominio_id: condominioId }),
     enabled: !!condominioId,
   });
 }
@@ -193,13 +194,7 @@ export function useCreateReceivable() {
 export function useGenerateBilling() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      condominioId,
-      referenceMonth,
-    }: {
-      condominioId: string;
-      referenceMonth: string;
-    }) => receivableService.generateBilling(condominioId, referenceMonth),
+    mutationFn: (data: any) => receivableService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: receivableKeys.lists() });
     },
@@ -237,7 +232,7 @@ export function useBankAccount(accountId: string, enabled = true) {
 export function useBankAccountBalance(accountId: string, enabled = true) {
   return useQuery({
     queryKey: bankAccountKeys.balance(accountId),
-    queryFn: () => bankAccountService.getBalance(accountId),
+    queryFn: () => bankAccountService.getById(accountId), // getBalance não existe - usar getById
     enabled: enabled && !!accountId,
     refetchInterval: 30000, // Atualiza a cada 30s
   });
@@ -287,12 +282,12 @@ export function useImportOFX() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      accountId,
-      file,
+      body,
+      params,
     }: {
-      accountId: string;
-      file: File;
-    }) => bankTransactionService.importOFX(accountId, file),
+      body: { file: Blob };
+      params: { bank_account_id: string };
+    }) => bankTransactionService.importOfxFile(body, params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: bankTransactionKeys.lists() });
     },
@@ -324,15 +319,15 @@ export function useCashflowEntries(params: any = {}) {
 export function useCashflowForecast(params: any) {
   return useQuery({
     queryKey: cashflowKeys.forecast(params),
-    queryFn: () => cashflowService.getForecast(params),
+    queryFn: () => cashflowService.listForecasts(params),
     enabled: !!params.condominio_id,
   });
 }
 
-export function useCashflowProjection(condominioId: string, months = 12) {
+export function useCashflowProjection(condominioId: string, _months = 12) {
   return useQuery({
-    queryKey: cashflowKeys.projection(condominioId, months),
-    queryFn: () => cashflowService.getProjection(condominioId, months),
+    queryKey: cashflowKeys.projection(condominioId, _months),
+    queryFn: () => cashflowService.getProjection({ condominio_id: condominioId }),
     enabled: !!condominioId,
   });
 }
@@ -340,7 +335,7 @@ export function useCashflowProjection(condominioId: string, months = 12) {
 export function useCashflowDashboard(condominioId: string) {
   return useQuery({
     queryKey: cashflowKeys.dashboard(condominioId),
-    queryFn: () => cashflowService.getDashboard(condominioId),
+    queryFn: () => cashflowService.getDashboard({ condominio_id: condominioId }),
     enabled: !!condominioId,
   });
 }
@@ -387,7 +382,7 @@ export function usePurchaseOrders(params: any = {}) {
 export function usePurchaseDashboard(condominioId: string) {
   return useQuery({
     queryKey: purchaseKeys.dashboard(condominioId),
-    queryFn: () => purchaseService.getDashboard(condominioId),
+    queryFn: () => purchaseService.getRequisitionStats({ condominio_id: condominioId }), // getDashboard não existe
     enabled: !!condominioId,
   });
 }
@@ -437,35 +432,35 @@ export function useWarehouses(params: any = {}) {
 export function useInventoryItems(params: any = {}) {
   return useQuery({
     queryKey: inventoryKeys.items(),
-    queryFn: () => inventoryService.listItems(params),
+    queryFn: () => inventoryService.listStockItems(params),
   });
 }
 
 export function useInventoryItem(itemId: string, enabled = true) {
   return useQuery({
     queryKey: inventoryKeys.item(itemId),
-    queryFn: () => inventoryService.getItem(itemId),
+    queryFn: () => inventoryService.getStockItem(itemId),
     enabled: enabled && !!itemId,
   });
 }
 
 export function useStockBalance(
   itemId: string,
-  warehouseId?: string,
+  _warehouseId?: string,
   enabled = true
 ) {
   return useQuery({
-    queryKey: inventoryKeys.balance(itemId, warehouseId),
-    queryFn: () => inventoryService.getItemBalance(itemId, warehouseId),
+    queryKey: inventoryKeys.balance(itemId, _warehouseId),
+    queryFn: () => inventoryService.getStockItem(itemId), // getItemBalance não existe
     enabled: enabled && !!itemId,
   });
 }
 
-export function useInventoryDashboard(condominioId: string) {
+export function useInventoryDashboard(_condominioId: string) {
   return useQuery({
-    queryKey: inventoryKeys.dashboard(condominioId),
-    queryFn: () => inventoryService.getDashboard(condominioId),
-    enabled: !!condominioId,
+    queryKey: inventoryKeys.dashboard(_condominioId),
+    queryFn: () => inventoryService.getStockStats(), // getDashboard não existe
+    enabled: !!_condominioId,
   });
 }
 
@@ -514,11 +509,11 @@ export function useJournalEntries(params: any = {}) {
   });
 }
 
-export function useTrialBalance(condominioId: string, periodId: string) {
+export function useTrialBalance(_condominioId: string, chartId?: string) {
   return useQuery({
-    queryKey: accountingKeys.trialBalance(condominioId, periodId),
-    queryFn: () => accountingService.getTrialBalance(condominioId, periodId),
-    enabled: !!condominioId && !!periodId,
+    queryKey: accountingKeys.trialBalance(_condominioId, chartId || ''),
+    queryFn: () => accountingService.getTrialBalance({ chart_id: chartId }),
+    enabled: !!_condominioId,
   });
 }
 
@@ -619,57 +614,69 @@ export function useBIDashboards(params: any = {}) {
   });
 }
 
-export function useBIDashboard(dashboardId: string, enabled = true) {
+export function useBIDashboard(dashboardId: string, condominioId: string, enabled = true) {
   return useQuery({
     queryKey: biDashboardKeys.dashboard(dashboardId),
-    queryFn: () => biDashboardService.getDashboard(dashboardId),
-    enabled: enabled && !!dashboardId,
+    queryFn: () => biDashboardService.getDashboard(dashboardId, { condominio_id: condominioId }),
+    enabled: enabled && !!dashboardId && !!condominioId,
   });
 }
 
 export function useFinancialOverview(condominioId: string) {
   return useQuery({
     queryKey: biDashboardKeys.overview(condominioId),
-    queryFn: () => biDashboardService.getFinancialOverview(condominioId),
+    queryFn: () => biDashboardService.getFinancialSummary({ condominio_id: condominioId }),
     enabled: !!condominioId,
   });
 }
 
 export function useRevenueAnalysis(
   condominioId: string,
-  startDate: string,
-  endDate: string
+  currentDays = 30,
+  previousDays = 30
 ) {
   return useQuery({
     queryKey: [
       ...biDashboardKeys.all,
       'revenue',
       condominioId,
-      startDate,
-      endDate,
+      currentDays,
+      previousDays,
     ],
     queryFn: () =>
-      biDashboardService.getRevenueAnalysis(condominioId, startDate, endDate),
-    enabled: !!condominioId && !!startDate && !!endDate,
+      biDashboardService.comparePeriods({
+        condominio_id: condominioId,
+        data_source: 'receivables' as any,
+        metric_field: 'valor',
+        current_days: currentDays,
+        previous_days: previousDays,
+      }),
+    enabled: !!condominioId,
   });
 }
 
 export function useExpenseAnalysis(
   condominioId: string,
-  startDate: string,
-  endDate: string
+  currentDays = 30,
+  previousDays = 30
 ) {
   return useQuery({
     queryKey: [
       ...biDashboardKeys.all,
       'expense',
       condominioId,
-      startDate,
-      endDate,
+      currentDays,
+      previousDays,
     ],
     queryFn: () =>
-      biDashboardService.getExpenseAnalysis(condominioId, startDate, endDate),
-    enabled: !!condominioId && !!startDate && !!endDate,
+      biDashboardService.comparePeriods({
+        condominio_id: condominioId,
+        data_source: 'payables' as any,
+        metric_field: 'valor',
+        current_days: currentDays,
+        previous_days: previousDays,
+      }),
+    enabled: !!condominioId,
   });
 }
 
@@ -718,16 +725,16 @@ export function useCostObjects(params: any = {}) {
 export function useCostingDashboard(condominioId: string) {
   return useQuery({
     queryKey: costingKeys.dashboard(condominioId),
-    queryFn: () => costingService.getDashboard(condominioId),
+    queryFn: () => costingService.getDashboard({ condominio_id: condominioId }),
     enabled: !!condominioId,
   });
 }
 
-export function useCostAnalysis(condominioId: string, periodId: string) {
+export function useCostAnalysis(condominioId: string, _periodId: string) {
   return useQuery({
-    queryKey: [...costingKeys.all, 'analysis', condominioId, periodId],
-    queryFn: () => costingService.getCostAnalysis(condominioId, periodId),
-    enabled: !!condominioId && !!periodId,
+    queryKey: [...costingKeys.all, 'analysis', condominioId, _periodId],
+    queryFn: () => costingService.analyzeProfitability({ condominio_id: condominioId }),
+    enabled: !!condominioId && !!_periodId,
   });
 }
 

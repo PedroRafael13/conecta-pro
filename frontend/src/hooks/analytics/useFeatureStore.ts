@@ -11,13 +11,13 @@ import { featureStoreService } from '@/services/analytics';
  * Hook para features de usuário
  */
 export function useUserFeatures(
-  userId: number,
+  userId: string | number,
   features?: string[],
   options?: Omit<UseQueryOptions<any>, 'queryKey' | 'queryFn'>
 ) {
   return useQuery({
     queryKey: ['ml-user-features', userId, features],
-    queryFn: () => featureStoreService.getUserFeatures(userId, features),
+    queryFn: () => featureStoreService.getUserFeatures(String(userId), features),
     enabled: !!userId,
     staleTime: 300000, // 5 minutos
     ...options,

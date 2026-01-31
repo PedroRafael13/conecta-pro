@@ -141,8 +141,21 @@ function PastasContent() {
         description: `A pasta "${formData.name}" foi criada com sucesso.`,
       });
       loadFolders();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar pasta:', error);
+
+      // Tratar erro 409 (pasta duplicada)
+      if (error?.response?.status === 409 || error?.status === 409) {
+        const errorMsg = error?.response?.data?.detail || error?.message || 'Já existe uma pasta com este nome neste local';
+        toast({
+          variant: 'destructive',
+          title: 'Pasta duplicada',
+          description: errorMsg,
+        });
+        return;
+      }
+
+      // Outros erros
       toast({
         variant: 'destructive',
         title: 'Erro ao criar pasta',
@@ -168,8 +181,21 @@ function PastasContent() {
         description: `A pasta "${formData.name}" foi atualizada com sucesso.`,
       });
       loadFolders();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar pasta:', error);
+
+      // Tratar erro 409 (nome duplicado)
+      if (error?.response?.status === 409 || error?.status === 409) {
+        const errorMsg = error?.response?.data?.detail || error?.message || 'Já existe uma pasta com este nome neste local';
+        toast({
+          variant: 'destructive',
+          title: 'Nome duplicado',
+          description: errorMsg,
+        });
+        return;
+      }
+
+      // Outros erros
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar',

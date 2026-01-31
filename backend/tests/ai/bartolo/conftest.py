@@ -40,3 +40,17 @@ def bartolo_engine():
     """Fixture para BartoloEngine"""
     from modules.ai.bartolo.services.bartolo_engine import BartoloEngine
     return BartoloEngine()
+
+
+@pytest.fixture
+def action_detector():
+    """Fixture para ActionDetector"""
+    from modules.ai.bartolo.actions.action_detector import ActionDetector
+    return ActionDetector()
+
+
+@pytest.fixture
+def wizard_manager():
+    """Fixture para WizardManager"""
+    from modules.ai.bartolo.wizards.wizard_manager import WizardManager
+    return WizardManager()
