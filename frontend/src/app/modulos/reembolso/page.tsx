@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
 import { useReimbursements, useReimbursementStats } from '@/hooks/useReimbursement';
+import { useDeleteReimbursementRequest } from '@/hooks/reimbursement';
 import { getErrorMessage } from '@/lib/api';
 import { ReimbursementFormModal } from '@/components/reembolso/reimbursement-form-modal';
 import { ReimbursementDetailModal } from '@/components/reembolso/reimbursement-detail-modal';
@@ -54,6 +55,7 @@ export default function ReembolsoPage() {
     refresh,
   } = useReimbursements({ initialPageSize: 10, myOnly: true });
   const { stats, refresh: refreshStats } = useReimbursementStats({ myOnly: true });
+  const deleteReimbursementMutation = useDeleteReimbursementRequest();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -111,7 +113,7 @@ export default function ReembolsoPage() {
     setDeleteError(null);
 
     try {
-      await reimbursementService.delete(selectedRequest.id);
+      await deleteReimbursementMutation.mutateAsync(selectedRequest.id);
       setShowDeleteModal(false);
       setSelectedRequest(null);
       refresh();

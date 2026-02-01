@@ -29,9 +29,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
-import { useSubstitutions } from '@/hooks/operacional/useSubstitutions';
 import {
-  substitutionsService,
+  useSubstitutions,
+  usePendingSubstitutions,
+  useSuggestSubstitutes,
+  useConfirmSubstitution,
+  useRejectSubstitution,
+} from '@/hooks/operacional/useSubstitutions';
+import {
   type Substitution,
   type SubstitutionStatus,
   type SubstitutionReason,
@@ -47,7 +52,10 @@ export default function SubstituicoesPage() {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
   const { data: substitutions = [], isLoading, error, refetch } = useSubstitutions();
-  const [pendingSubstitutions, setPendingSubstitutions] = useState<Substitution[]>([]);
+  const { data: pendingSubstitutions = [] } = usePendingSubstitutions();
+  const suggestMutation = useSuggestSubstitutes();
+  const confirmMutation = useConfirmSubstitution();
+  const rejectMutation = useRejectSubstitution();
   const total = substitutions.length;
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -64,13 +72,8 @@ export default function SubstituicoesPage() {
   const [suggestions, setSuggestions] = useState<SubstituteSuggestion[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
-  const loadPending = useCallback(async () => {
-    try {
-      const pendingResponse = await substitutionsService.getPending();
-      setPendingSubstitutions(pendingResponse);
-    } catch (err) {
-      console.error('Erro ao carregar substituicoes pendentes:', err);
-    }
+  const loadPending = useCallback(() => {
+    // Dados pendentes agora vêm do hook usePendingSubstitutions
   }, []);
 
   useEffect(() => {
@@ -92,13 +95,15 @@ export default function SubstituicoesPage() {
     setLoadingSuggestions(true);
 
     try {
-      const result = await substitutionsService.getSuggestions({
-        shift_id: substitution.shift_id,
-        max_suggestions: 5,
-        prefer_same_post: true,
-        consider_distance: true,
+      const result = await suggestMutation.mutateAsync({
+        data: {
+          shift_id: substitution.shift_id,
+          max_suggestions: 5,
+          prefer_same_post: true,
+          consider_distance: true,
+        },
       });
-      setSuggestions(result);
+      setSuggestions(result ?? []);
     } catch (err) {
       console.error('Erro ao buscar sugestoes:', err);
       setSuggestions([]);
@@ -109,11 +114,12 @@ export default function SubstituicoesPage() {
 
   const handleConfirm = async (substitution: Substitution, employeeId: string) => {
     try {
-      await substitutionsService.confirm(substitution.id, {
-        substitute_employee_id: employeeId,
+      await confirmMutation.mutateAsync({
+        substitutionId: substitution.id,
+        data: { substitute_employee_id: employeeId },
       });
       setShowSuggestionsModal(false);
-      loadSubstitutions();
+      refetch();
     } catch (err) {
       console.error('Erro ao confirmar substituicao:', err);
     }
@@ -124,8 +130,11 @@ export default function SubstituicoesPage() {
     if (!reason) return;
 
     try {
-      await substitutionsService.reject(substitution.id, { rejection_reason: reason });
-      loadSubstitutions();
+      await rejectMutation.mutateAsync({
+        substitutionId: substitution.id,
+        data: { rejection_reason: reason },
+      });
+      refetch();
     } catch (err) {
       console.error('Erro ao rejeitar substituicao:', err);
     }
@@ -203,7 +212,7 @@ export default function SubstituicoesPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={loadSubstitutions} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -354,7 +363,7 @@ export default function SubstituicoesPage() {
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={loadSubstitutions} className="ml-auto">
+            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
               Tentar novamente
             </Button>
           </div>

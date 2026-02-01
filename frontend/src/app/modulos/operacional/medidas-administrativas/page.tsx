@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
 import { useDisciplinary, useDisciplinaryStats } from '@/hooks/useDisciplinary';
+import { useDeleteDisciplinaryAction } from '@/hooks/operacional/useDisciplinary';
 import { getErrorMessage } from '@/lib/api';
 import { DisciplinaryFormModal } from '@/components/operacional/disciplinary-form-modal';
 import { DisciplinaryDetailModal } from '@/components/operacional/disciplinary-detail-modal';
@@ -62,6 +63,7 @@ export default function MedidasAdministrativasPage() {
     refresh,
   } = useDisciplinary({ initialPageSize: 10 });
   const { stats, refresh: refreshStats } = useDisciplinaryStats();
+  const deleteDisciplinaryMutation = useDeleteDisciplinaryAction();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<DisciplinaryActionStatus | ''>('');
@@ -125,7 +127,7 @@ export default function MedidasAdministrativasPage() {
     setDeleteError(null);
 
     try {
-      await disciplinaryService.delete(selectedAction.id);
+      await deleteDisciplinaryMutation.mutateAsync({ actionId: selectedAction.id });
       setShowDeleteModal(false);
       setSelectedAction(null);
       handleRefresh();

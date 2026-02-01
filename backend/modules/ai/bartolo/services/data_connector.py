@@ -9,42 +9,42 @@ import logging
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime, date
-from typing import Any, Optional
+from datetime import date, datetime, timedelta
 from enum import Enum
+from typing import Any
 
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from modules.operacional.communication.models.announcement import AnnouncementStatus
+from modules.operacional.communication.repositories.communication_repository import AnnouncementRepository
+from modules.operacional.diaristas.models.diarist import Diarist
+from modules.operacional.disciplinary.models.disciplinary_action import DisciplinaryActionStatus
+from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
+from modules.operacional.inspection_rounds.repositories.inspection_round_repository import InspectionRoundRepository
+
+# Models para queries diretas
+from modules.operacional.models.employee import Employee
+from modules.operacional.occurrences.models.occurrence import OccurrenceStatus
+
+# Repositórios dos submódulos
+from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
 
 # Repositórios do módulo Operacional
 from modules.operacional.repositories import (
+    AllocationRepository,
     PostRepository,
     ScaleRepository,
-    AllocationRepository,
     ShiftRepository,
     SubstitutionRepository,
     TimeBankRepository,
 )
-
-# Models para queries diretas
-from modules.operacional.models.employee import Employee
-from modules.operacional.diaristas.models.diarist import Diarist
-from modules.operacional.occurrences.models.occurrence import Occurrence, OccurrenceStatus
-from modules.operacional.disciplinary.models.disciplinary_action import DisciplinaryAction, DisciplinaryActionStatus
-from modules.operacional.communication.models.announcement import Announcement, AnnouncementStatus
-from modules.operacional.inspection_rounds.models.inspection_round import InspectionRound, InspectionRoundStatus
-
-# Repositórios dos submódulos
-from modules.operacional.occurrences.repositories.occurrence_repository import OccurrenceRepository
-from modules.operacional.disciplinary.repositories.disciplinary_repository import DisciplinaryRepository
-from modules.operacional.communication.repositories.communication_repository import AnnouncementRepository
-from modules.operacional.inspection_rounds.repositories.inspection_round_repository import InspectionRoundRepository
 
 logger = logging.getLogger(__name__)
 
 
 class QueryType(str, Enum):
     """Tipos de consulta."""
+
     COUNT = "count"
     LIST = "list"
     DETAIL = "detail"
@@ -72,23 +72,25 @@ class QueryType(str, Enum):
 @dataclass
 class DataQuery:
     """Consulta de dados."""
+
     entity: str
     query_type: QueryType
     filters: dict
     fields: list
     limit: int = 10
-    order_by: Optional[str] = None
+    order_by: str | None = None
 
 
 @dataclass
 class DataResult:
     """Resultado de consulta."""
+
     success: bool
     query_type: QueryType
     entity: str
     data: Any
     total_count: int = 0
-    message: Optional[str] = None
+    message: str | None = None
     executed_at: datetime = None
 
     def to_natural_language(self) -> str:
@@ -169,11 +171,9 @@ class DataConnector:
         "colaboradores": {"type": "model", "model": Employee, "name_field": "nome"},
         "diarista": {"type": "model", "model": Diarist, "name_field": "nome", "active_field": "ativo"},
         "diaristas": {"type": "model", "model": Diarist, "name_field": "nome", "active_field": "ativo"},
-
         # Ocorrências
         "ocorrencia": {"type": "repository", "repository": "occurrence", "name_field": "title"},
         "ocorrencias": {"type": "repository", "repository": "occurrence", "name_field": "title"},
-
         # Disciplinares
         "advertencia": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
         "advertencias": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
@@ -181,23 +181,19 @@ class DataConnector:
         "medidas_disciplinares": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
         "suspensao": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
         "suspensoes": {"type": "repository", "repository": "disciplinary", "name_field": "code"},
-
         # Comunicação
         "comunicado": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
         "comunicados": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
         "anuncio": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
         "anuncios": {"type": "repository", "repository": "announcement", "name_field": "titulo"},
-
         # Rondas
         "ronda": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
         "rondas": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
         "inspecao": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
         "inspecoes": {"type": "repository", "repository": "inspection_round", "name_field": "code"},
-
         # Core faltantes
         "substituicao": {"type": "repository", "repository": "substitution", "name_field": "employee_name"},
         "banco_horas": {"type": "repository", "repository": "time_bank", "name_field": "employee_name"},
-
         # Outros módulos (mock por enquanto)
         "cliente": {"type": "mock", "name_field": "name"},
         "clientes": {"type": "mock", "name_field": "name"},
@@ -214,7 +210,6 @@ class DataConnector:
         (r"(\w+)\s+cadastrados?", QueryType.COUNT),
         (r"temos\s+(?:quantos?|quantas?)\s+(\w+)", QueryType.COUNT),
         (r"hoje\s+temos?\s+(?:quantos?|quantas?)\s+(\w+)", QueryType.COUNT),
-
         # Listagem
         (r"listar?\s+(\w+)", QueryType.LIST),
         (r"mostrar?\s+(\w+)", QueryType.LIST),
@@ -224,7 +219,6 @@ class DataConnector:
         (r"(\w+)\s+disponiveis?", QueryType.LIST),
         (r"(\w+)\s+disponivel\s+hoje", QueryType.LIST),
         (r"(?:quais?|quais?)\s+foram?\s+os?\s+ultimos?\s+(\w+)", QueryType.LIST),
-
         # Detalhe
         (r"detalhes?\s+d[oa]\s+(\w+)", QueryType.DETAIL),
         (r"informacoes?\s+d[oa]\s+(\w+)", QueryType.DETAIL),
@@ -267,7 +261,6 @@ class DataConnector:
         (r"vagas?\s+(?:em\s+)?aberto", QueryType.COBERTURA_CRITICA),
         (r"posicoes?\s+(?:sem\s+)?preencher", QueryType.COBERTURA_CRITICA),
         (r"locais?\s+(?:sem\s+)?cobertura", QueryType.COBERTURA_CRITICA),
-
         # ==================================================================
         # FUNCIONARIOS_TRABALHANDO - Quem está em serviço agora
         # ==================================================================
@@ -294,7 +287,6 @@ class DataConnector:
         (r"colaboradores?\s+(?:em\s+)?(?:servico|turno)", QueryType.FUNCIONARIOS_TRABALHANDO),
         (r"vigilantes?\s+(?:em\s+)?(?:servico|turno)", QueryType.FUNCIONARIOS_TRABALHANDO),
         (r"porteiros?\s+(?:em\s+)?(?:servico|turno)", QueryType.FUNCIONARIOS_TRABALHANDO),
-
         # ==================================================================
         # FUNCIONARIOS_FOLGA - Disponíveis para convocação
         # ==================================================================
@@ -319,7 +311,6 @@ class DataConnector:
         (r"reservas?\s+(?:disponiveis?)?", QueryType.FUNCIONARIOS_FOLGA),
         (r"plantonistas?\s+(?:disponiveis?)?", QueryType.FUNCIONARIOS_FOLGA),
         (r"sobreaviso", QueryType.FUNCIONARIOS_FOLGA),
-
         # ==================================================================
         # ESCALAS_PENDENTES - Escalas aguardando aprovação/publicação
         # ==================================================================
@@ -341,7 +332,6 @@ class DataConnector:
         # Status
         (r"status\s+(?:das?\s+)?escalas?", QueryType.ESCALAS_PENDENTES),
         (r"situacao\s+(?:das?\s+)?escalas?", QueryType.ESCALAS_PENDENTES),
-
         # ==================================================================
         # HORA_EXTRA_RANKING - Ranking de horas extras
         # ==================================================================
@@ -362,7 +352,6 @@ class DataConnector:
         (r"quem\s+(?:esta|ta)\s+(?:no\s+)?limite", QueryType.HORA_EXTRA_RANKING),
         (r"funcionarios?\s+(?:no\s+)?limite\s+(?:de\s+)?(?:he|HE|horas)", QueryType.HORA_EXTRA_RANKING),
         (r"excesso\s+(?:de\s+)?horas", QueryType.HORA_EXTRA_RANKING),
-
         # ==================================================================
         # SUBSTITUICOES_PENDENTES - Substituições aguardando resolução
         # ==================================================================
@@ -381,7 +370,6 @@ class DataConnector:
         # Aguardando
         (r"(?:aguardando|esperando)\s+(?:substituto|cobertura|troca)", QueryType.SUBSTITUICOES_PENDENTES),
         (r"precisando\s+(?:de\s+)?(?:substituto|cobertura)", QueryType.SUBSTITUICOES_PENDENTES),
-
         # ==================================================================
         # ATRASOS_HOJE - Funcionários atrasados hoje
         # ==================================================================
@@ -404,7 +392,6 @@ class DataConnector:
         (r"ausencias?\s+(?:de\s+)?hoje", QueryType.ATRASOS_HOJE),
         (r"faltas?\s+(?:de\s+)?hoje", QueryType.ATRASOS_HOJE),
         (r"quem\s+(?:faltou|nao\s+veio)", QueryType.ATRASOS_HOJE),
-
         # ==================================================================
         # OPERACAO_GERAL - Resumo operacional
         # ==================================================================
@@ -421,7 +408,6 @@ class DataConnector:
         # Dia
         (r"(?:o\s+)?que\s+(?:esta\s+)?acontecendo", QueryType.OPERACAO_GERAL),
         (r"novidades?\s+(?:do\s+)?dia", QueryType.OPERACAO_GERAL),
-
         # ==================================================================
         # DAILY_SUMMARY - Resumo do dia
         # ==================================================================
@@ -432,7 +418,6 @@ class DataConnector:
         (r"como\s+(?:esta|foi)\s+(?:o\s+)?dia", QueryType.DAILY_SUMMARY),
         (r"visao\s+geral\s+(?:do\s+)?dia", QueryType.DAILY_SUMMARY),
         (r"status\s+(?:do\s+)?dia", QueryType.DAILY_SUMMARY),
-
         # ==================================================================
         # ALERTS - Alertas pendentes
         # ==================================================================
@@ -453,7 +438,6 @@ class DataConnector:
         (r"(?:urgente|critico|importante)", QueryType.ALERTS),
         (r"(?:preciso|precisamos)\s+(?:resolver|atender)", QueryType.ALERTS),
         (r"(?:atencao|atenção)(?:\s+imediata)?", QueryType.ALERTS),
-
         # ==================================================================
         # KPIS - Indicadores de performance
         # ==================================================================
@@ -465,7 +449,6 @@ class DataConnector:
         (r"performance(?:\s+(?:do\s+)?(?:dia|sistema))?", QueryType.KPIS),
         (r"desempenho\s+(?:do\s+)?(?:dia|sistema)", QueryType.KPIS),
         (r"painel\s+(?:de\s+)?(?:controle|indicadores)", QueryType.KPIS),
-
         # ==================================================================
         # OCORRENCIAS_ABERTAS - Ocorrências não resolvidas
         # ==================================================================
@@ -494,7 +477,6 @@ class DataConnector:
         (r"registros?\s+(?:de\s+)?(?:infracoes?|ocorrencias?)", QueryType.OCORRENCIAS_ABERTAS),
         (r"historico\s+(?:de\s+)?ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
         (r"status\s+(?:das?\s+)?ocorrencias?", QueryType.OCORRENCIAS_ABERTAS),
-
         # ==================================================================
         # MEDIDAS_PENDENTES - Medidas disciplinares pendentes
         # ==================================================================
@@ -523,7 +505,6 @@ class DataConnector:
         (r"pendentes?\s+(?:de\s+)?(?:aprovacao|assinatura)\s+(?:disciplinar|advertencia)", QueryType.MEDIDAS_PENDENTES),
         (r"aprovacao\s+(?:de\s+)?(?:advertencias?|medidas?)", QueryType.MEDIDAS_PENDENTES),
         (r"status\s+(?:das?\s+)?(?:advertencias?|medidas?\s+disciplinares?)", QueryType.MEDIDAS_PENDENTES),
-
         # ==================================================================
         # COMUNICADOS_ATIVOS - Comunicados publicados/ativos
         # ==================================================================
@@ -550,7 +531,6 @@ class DataConnector:
         (r"informativos?\s+(?:publicados?|ativos?|pendentes?)", QueryType.COMUNICADOS_ATIVOS),
         (r"(?:circulares?|mural)(?:\s+(?:de\s+)?(?:avisos?|comunicados?))?", QueryType.COMUNICADOS_ATIVOS),
         (r"status\s+(?:dos?\s+)?comunicados?", QueryType.COMUNICADOS_ATIVOS),
-
         # ==================================================================
         # RONDAS_HOJE - Rondas de inspeção do dia
         # ==================================================================
@@ -591,10 +571,10 @@ class DataConnector:
     def _normalize_text(text: str) -> str:
         """Remove acentos e normaliza texto para matching."""
         # Normaliza para NFD (separa base + acento) e remove acentos
-        nfd = unicodedata.normalize('NFD', text)
-        return ''.join(char for char in nfd if unicodedata.category(char) != 'Mn')
+        nfd = unicodedata.normalize("NFD", text)
+        return "".join(char for char in nfd if unicodedata.category(char) != "Mn")
 
-    def detect_data_query(self, message: str) -> Optional[DataQuery]:
+    def detect_data_query(self, message: str) -> DataQuery | None:
         """
         Detecta se mensagem contem consulta de dados.
 
@@ -651,6 +631,8 @@ class DataConnector:
         if "hoje" in message:
             filters["date"] = date.today()
             filters["today"] = True
+        elif "ontem" in message:
+            filters["date"] = date.today() - timedelta(days=1)
         elif "este mes" in message or "mes atual" in message:
             today = date.today()
             filters["month"] = today.month
@@ -761,9 +743,7 @@ class DataConnector:
                 executed_at=datetime.utcnow(),
             )
 
-    async def _execute_repository_query(
-        self, query: DataQuery, entity_info: dict
-    ) -> DataResult:
+    async def _execute_repository_query(self, query: DataQuery, entity_info: dict) -> DataResult:
         """
         Executa consulta usando repository pattern.
 
@@ -827,9 +807,7 @@ class DataConnector:
                 filters["status"] = query.filters["status"]
             if "order_by" in query.filters:
                 filters["order_by"] = query.filters["order_by"]
-            items, total = await repository.list(
-                page=1, page_size=min(query.limit, 10), **filters
-            )
+            items, total = await repository.list(page=1, page_size=min(query.limit, 10), **filters)
 
             # Formatar items para exibição
             formatted_items = []
@@ -859,9 +837,7 @@ class DataConnector:
         # Default para outros tipos
         return await self._execute_mock_query(query)
 
-    async def _execute_model_query(
-        self, query: DataQuery, entity_info: dict
-    ) -> DataResult:
+    async def _execute_model_query(self, query: DataQuery, entity_info: dict) -> DataResult:
         """
         Executa consulta direta em model SQLAlchemy.
 
@@ -885,9 +861,7 @@ class DataConnector:
 
         # Executar query baseado no tipo
         if query.query_type == QueryType.COUNT:
-            result = await self.db.execute(
-                select(func.count(model.id)).where(base_condition)
-            )
+            result = await self.db.execute(select(func.count(model.id)).where(base_condition))
             total = result.scalar() or 0
 
             return DataResult(
@@ -901,9 +875,7 @@ class DataConnector:
 
         elif query.query_type == QueryType.LIST:
             stmt = (
-                select(model)
-                .where(base_condition)
-                .limit(min(query.limit, 100))  # Aumentado de 10 para 100
+                select(model).where(base_condition).limit(min(query.limit, 100))  # Aumentado de 10 para 100
             )
 
             # Aplicar filtros básicos
@@ -911,16 +883,14 @@ class DataConnector:
                 stmt = stmt.where(model.status == query.filters["status"])
 
             # Filtro de turno + escalado
-            has_shift_filter = query.entity == "funcionarios" and ("shift" in query.filters or "escalado" in query.filters)
+            has_shift_filter = query.entity == "funcionarios" and (
+                "shift" in query.filters or "escalado" in query.filters
+            )
             if has_shift_filter:
                 from modules.operacional.models.shift import Shift
 
                 # Rebuild stmt com JOIN shifts
-                stmt = (
-                    select(model)
-                    .join(Shift, Shift.employee_id == model.id)
-                    .where(base_condition)
-                )
+                stmt = select(model).join(Shift, Shift.employee_id == model.id).where(base_condition)
 
                 # Filtro de data (hoje)
                 if query.filters.get("today") or query.filters.get("date"):
@@ -969,9 +939,7 @@ class DataConnector:
             if has_shift_filter:
                 total = len(formatted_items)
             else:
-                count_result = await self.db.execute(
-                    select(func.count(model.id)).where(base_condition)
-                )
+                count_result = await self.db.execute(select(func.count(model.id)).where(base_condition))
                 total = count_result.scalar() or 0
 
             return DataResult(
@@ -1092,7 +1060,7 @@ class DataConnector:
                 success=True,
                 query_type=QueryType.LIST,
                 entity=query.entity,
-                data=items[:query.limit],
+                data=items[: query.limit],
                 total_count=len(items),
                 executed_at=datetime.utcnow(),
             )
@@ -1134,9 +1102,7 @@ class DataConnector:
     async def _get_operacional_dashboard(self) -> dict:
         """Retorna dados reais do dashboard operacional."""
         # Funcionários ativos
-        emp_count = await self.db.execute(
-            select(func.count(Employee.id)).where(Employee.is_active.is_(True))
-        )
+        emp_count = await self.db.execute(select(func.count(Employee.id)).where(Employee.is_active.is_(True)))
         funcionarios_ativos = emp_count.scalar() or 0
 
         # Postos (usando repository para aproveitar get_stats)
@@ -1206,9 +1172,7 @@ class DataConnector:
         try:
             if self.db:
                 # Funcionários ativos
-                emp_result = await self.db.execute(
-                    select(func.count(Employee.id)).where(Employee.is_active.is_(True))
-                )
+                emp_result = await self.db.execute(select(func.count(Employee.id)).where(Employee.is_active.is_(True)))
                 summary_data["funcionarios_ativos"] = emp_result.scalar() or 0
 
                 # Postos e estatísticas
@@ -1230,9 +1194,7 @@ class DataConnector:
                 # Turnos do dia (sem filtro de data por enquanto)
                 shift_repo = ShiftRepository(self.db)
                 try:
-                    shifts_today, total_shifts = await shift_repo.list(
-                        page=1, page_size=1
-                    )
+                    shifts_today, total_shifts = await shift_repo.list(page=1, page_size=1)
                     summary_data["turnos_hoje"] = total_shifts
                 except Exception as e:
                     logger.warning(f"Erro ao buscar turnos: {e}")
@@ -1262,21 +1224,21 @@ class DataConnector:
                 }
 
             # Formatar resposta em linguagem natural
-            response_text = f"""📊 **RESUMO DO DIA - {today.strftime('%d/%m/%Y')}**
+            response_text = f"""📊 **RESUMO DO DIA - {today.strftime("%d/%m/%Y")}**
 
 **Equipe:**
-- Funcionários ativos: **{summary_data.get('funcionarios_ativos', 0)}**
-- Efetivo alocado: **{summary_data.get('efetivo_alocado', 0)}** de {summary_data.get('efetivo_requerido', 0)} requeridos
-- Taxa de cobertura: **{summary_data.get('taxa_cobertura', 0)}%**
+- Funcionários ativos: **{summary_data.get("funcionarios_ativos", 0)}**
+- Efetivo alocado: **{summary_data.get("efetivo_alocado", 0)}** de {summary_data.get("efetivo_requerido", 0)} requeridos
+- Taxa de cobertura: **{summary_data.get("taxa_cobertura", 0)}%**
 
 **Postos:**
-- Postos ativos: **{summary_data.get('postos_ativos', 0)}**
-- Postos preenchidos: **{summary_data.get('postos_preenchidos', 0)}**
-- Postos com vagas: **{summary_data.get('postos_com_vagas', 0)}**
+- Postos ativos: **{summary_data.get("postos_ativos", 0)}**
+- Postos preenchidos: **{summary_data.get("postos_preenchidos", 0)}**
+- Postos com vagas: **{summary_data.get("postos_com_vagas", 0)}**
 
 **Operação:**
-- Turnos programados hoje: **{summary_data.get('turnos_hoje', 0)}**
-- Substituições ativas: **{summary_data.get('substituicoes_ativas', 0)}**"""
+- Turnos programados hoje: **{summary_data.get("turnos_hoje", 0)}**
+- Substituições ativas: **{summary_data.get("substituicoes_ativas", 0)}**"""
 
             return DataResult(
                 success=True,
@@ -1317,12 +1279,14 @@ class DataConnector:
                 post_repo = PostRepository(self.db)
                 post_stats = await post_repo.get_stats()
                 if post_stats.with_vacancy > 0:
-                    alerts.append({
-                        "tipo": "cobertura",
-                        "severidade": "alta",
-                        "mensagem": f"⚠️ {post_stats.with_vacancy} postos com vagas abertas",
-                        "acao": "Verificar alocações pendentes"
-                    })
+                    alerts.append(
+                        {
+                            "tipo": "cobertura",
+                            "severidade": "alta",
+                            "mensagem": f"⚠️ {post_stats.with_vacancy} postos com vagas abertas",
+                            "acao": "Verificar alocações pendentes",
+                        }
+                    )
 
                 # Escalas em draft (pendentes de publicação)
                 try:
@@ -1330,12 +1294,14 @@ class DataConnector:
                     scales_draft, total_draft = await scale_repo.list(page=1, page_size=10)
                     # TODO: Filtrar por status quando disponível
                     if total_draft > 0:
-                        alerts.append({
-                            "tipo": "escala",
-                            "severidade": "media",
-                            "mensagem": f"📋 {total_draft} escalas cadastradas",
-                            "acao": "Revisar escalas"
-                        })
+                        alerts.append(
+                            {
+                                "tipo": "escala",
+                                "severidade": "media",
+                                "mensagem": f"📋 {total_draft} escalas cadastradas",
+                                "acao": "Revisar escalas",
+                            }
+                        )
                 except Exception as e:
                     logger.warning(f"Erro ao buscar escalas: {e}")
 
@@ -1344,12 +1310,14 @@ class DataConnector:
                     sub_repo = SubstitutionRepository(self.db)
                     subs_pending, total_pending = await sub_repo.list(page=1, page_size=10)
                     if total_pending > 0:
-                        alerts.append({
-                            "tipo": "substituicao",
-                            "severidade": "media",
-                            "mensagem": f"🔄 {total_pending} substituições registradas",
-                            "acao": "Verificar substituições"
-                        })
+                        alerts.append(
+                            {
+                                "tipo": "substituicao",
+                                "severidade": "media",
+                                "mensagem": f"🔄 {total_pending} substituições registradas",
+                                "acao": "Verificar substituições",
+                            }
+                        )
                 except Exception as e:
                     logger.warning(f"Erro ao buscar substituições: {e}")
 
@@ -1359,9 +1327,24 @@ class DataConnector:
             else:
                 # Alertas mock
                 alerts = [
-                    {"tipo": "cobertura", "severidade": "alta", "mensagem": "⚠️ 3 postos com vagas abertas", "acao": "Verificar alocações"},
-                    {"tipo": "escala", "severidade": "media", "mensagem": "📋 2 escalas aguardando publicação", "acao": "Publicar escalas"},
-                    {"tipo": "documento", "severidade": "media", "mensagem": "📄 5 documentos vencendo em 30 dias", "acao": "Renovar documentos"},
+                    {
+                        "tipo": "cobertura",
+                        "severidade": "alta",
+                        "mensagem": "⚠️ 3 postos com vagas abertas",
+                        "acao": "Verificar alocações",
+                    },
+                    {
+                        "tipo": "escala",
+                        "severidade": "media",
+                        "mensagem": "📋 2 escalas aguardando publicação",
+                        "acao": "Publicar escalas",
+                    },
+                    {
+                        "tipo": "documento",
+                        "severidade": "media",
+                        "mensagem": "📄 5 documentos vencendo em 30 dias",
+                        "acao": "Renovar documentos",
+                    },
                 ]
 
             # Formatar resposta
@@ -1415,9 +1398,7 @@ class DataConnector:
         try:
             if self.db:
                 # Funcionários
-                emp_result = await self.db.execute(
-                    select(func.count(Employee.id)).where(Employee.is_active.is_(True))
-                )
+                emp_result = await self.db.execute(select(func.count(Employee.id)).where(Employee.is_active.is_(True)))
                 kpis["funcionarios_ativos"] = emp_result.scalar() or 0
 
                 # Postos e cobertura
@@ -1430,17 +1411,13 @@ class DataConnector:
 
                 # Taxa de cobertura
                 if post_stats.total_headcount > 0:
-                    kpis["taxa_cobertura"] = round(
-                        (post_stats.total_allocated / post_stats.total_headcount) * 100, 1
-                    )
+                    kpis["taxa_cobertura"] = round((post_stats.total_allocated / post_stats.total_headcount) * 100, 1)
                 else:
                     kpis["taxa_cobertura"] = 0
 
                 # Taxa de ocupação de postos
                 if post_stats.total > 0:
-                    kpis["taxa_ocupacao_postos"] = round(
-                        (post_stats.filled / post_stats.total) * 100, 1
-                    )
+                    kpis["taxa_ocupacao_postos"] = round((post_stats.filled / post_stats.total) * 100, 1)
                 else:
                     kpis["taxa_ocupacao_postos"] = 0
 
@@ -1480,23 +1457,23 @@ class DataConnector:
             response_text = f"""📈 **KPIs PRINCIPAIS DO SISTEMA**
 
 **Equipe:**
-- Funcionários ativos: **{kpis.get('funcionarios_ativos', 0)}**
-- Efetivo alocado: **{kpis.get('efetivo_alocado', 0)}** / {kpis.get('efetivo_requerido', 0)} requeridos
-- Alocações ativas: **{kpis.get('alocacoes_ativas', 0)}**
+- Funcionários ativos: **{kpis.get("funcionarios_ativos", 0)}**
+- Efetivo alocado: **{kpis.get("efetivo_alocado", 0)}** / {kpis.get("efetivo_requerido", 0)} requeridos
+- Alocações ativas: **{kpis.get("alocacoes_ativas", 0)}**
 
 **Cobertura:**
-- Taxa de cobertura: **{kpis.get('taxa_cobertura', 0)}%**
-- Taxa de ocupação de postos: **{kpis.get('taxa_ocupacao_postos', 0)}%**
+- Taxa de cobertura: **{kpis.get("taxa_cobertura", 0)}%**
+- Taxa de ocupação de postos: **{kpis.get("taxa_ocupacao_postos", 0)}%**
 
 **Postos:**
-- Total de postos: **{kpis.get('postos_total', 0)}**
-- Postos preenchidos: **{kpis.get('postos_preenchidos', 0)}**
+- Total de postos: **{kpis.get("postos_total", 0)}**
+- Postos preenchidos: **{kpis.get("postos_preenchidos", 0)}**
 
 **Financeiro:**
-- Custo mensal estimado: **R$ {kpis.get('custo_mensal_total', 0):,.2f}**
+- Custo mensal estimado: **R$ {kpis.get("custo_mensal_total", 0):,.2f}**
 
 **Operacional:**
-- Substituições ativas: **{kpis.get('substituicoes_ativas', 0)}**"""
+- Substituições ativas: **{kpis.get("substituicoes_ativas", 0)}**"""
 
             return DataResult(
                 success=True,
@@ -1538,20 +1515,22 @@ class DataConnector:
                 posts, total = await post_repo.list(page=1, page_size=100)
 
                 for post in posts:
-                    headcount = getattr(post, 'headcount', 0) or 0
-                    allocated = getattr(post, 'allocated_count', 0) or 0
+                    headcount = getattr(post, "headcount", 0) or 0
+                    allocated = getattr(post, "allocated_count", 0) or 0
 
                     if headcount > 0:
                         cobertura = (allocated / headcount) * 100
                         if cobertura < 80:
-                            postos_criticos.append({
-                                "nome": post.name,
-                                "codigo": getattr(post, 'code', 'N/A'),
-                                "alocados": allocated,
-                                "requeridos": headcount,
-                                "cobertura": round(cobertura, 1),
-                                "deficit": headcount - allocated,
-                            })
+                            postos_criticos.append(
+                                {
+                                    "nome": post.name,
+                                    "codigo": getattr(post, "code", "N/A"),
+                                    "alocados": allocated,
+                                    "requeridos": headcount,
+                                    "cobertura": round(cobertura, 1),
+                                    "deficit": headcount - allocated,
+                                }
+                            )
 
                 # Ordenar por cobertura (menor primeiro)
                 postos_criticos.sort(key=lambda x: x["cobertura"])
@@ -1559,9 +1538,30 @@ class DataConnector:
             else:
                 # Mock data
                 postos_criticos = [
-                    {"nome": "Portaria Principal - Ed. Centro", "codigo": "P001", "alocados": 2, "requeridos": 4, "cobertura": 50.0, "deficit": 2},
-                    {"nome": "Vigilancia Noturna - Shopping", "codigo": "P015", "alocados": 3, "requeridos": 5, "cobertura": 60.0, "deficit": 2},
-                    {"nome": "Recepcao - Hospital", "codigo": "P022", "alocados": 6, "requeridos": 8, "cobertura": 75.0, "deficit": 2},
+                    {
+                        "nome": "Portaria Principal - Ed. Centro",
+                        "codigo": "P001",
+                        "alocados": 2,
+                        "requeridos": 4,
+                        "cobertura": 50.0,
+                        "deficit": 2,
+                    },
+                    {
+                        "nome": "Vigilancia Noturna - Shopping",
+                        "codigo": "P015",
+                        "alocados": 3,
+                        "requeridos": 5,
+                        "cobertura": 60.0,
+                        "deficit": 2,
+                    },
+                    {
+                        "nome": "Recepcao - Hospital",
+                        "codigo": "P022",
+                        "alocados": 6,
+                        "requeridos": 8,
+                        "cobertura": 75.0,
+                        "deficit": 2,
+                    },
                 ]
 
             # Formatar resposta
@@ -1582,7 +1582,9 @@ Postos com menos de 80% de cobertura:
 
 **Ação recomendada:** Verificar disponibilidade de funcionários para cobrir déficit."""
             else:
-                response_text = "✅ **Nenhum posto com cobertura crítica!** Todos os postos estão com cobertura acima de 80%."
+                response_text = (
+                    "✅ **Nenhum posto com cobertura crítica!** Todos os postos estão com cobertura acima de 80%."
+                )
 
             return DataResult(
                 success=True,
@@ -1612,11 +1614,9 @@ Postos com menos de 80% de cobertura:
         Consulta turnos ativos no momento e lista
         os funcionarios que estao trabalhando.
         """
-        from datetime import datetime as dt
 
         try:
             funcionarios_trabalhando = []
-            agora = dt.now()
 
             if self.db:
                 shift_repo = ShiftRepository(self.db)
@@ -1628,23 +1628,25 @@ Postos com menos de 80% de cobertura:
                     # (simplificado - em produção, verificar horários)
                     employee_name = None
                     if isinstance(shift, dict):
-                        employee_name = shift.get('employee_name')
-                        post_name = shift.get('post_name', 'N/A')
-                        start_time = shift.get('start_time', 'N/A')
-                        end_time = shift.get('end_time', 'N/A')
+                        employee_name = shift.get("employee_name")
+                        post_name = shift.get("post_name", "N/A")
+                        start_time = shift.get("start_time", "N/A")
+                        end_time = shift.get("end_time", "N/A")
                     else:
-                        employee_name = getattr(shift, 'employee_name', None)
-                        post_name = getattr(shift, 'post_name', 'N/A')
-                        start_time = getattr(shift, 'start_time', 'N/A')
-                        end_time = getattr(shift, 'end_time', 'N/A')
+                        employee_name = getattr(shift, "employee_name", None)
+                        post_name = getattr(shift, "post_name", "N/A")
+                        start_time = getattr(shift, "start_time", "N/A")
+                        end_time = getattr(shift, "end_time", "N/A")
 
                     if employee_name:
-                        funcionarios_trabalhando.append({
-                            "nome": employee_name,
-                            "posto": post_name,
-                            "entrada": str(start_time) if start_time else 'N/A',
-                            "saida": str(end_time) if end_time else 'N/A',
-                        })
+                        funcionarios_trabalhando.append(
+                            {
+                                "nome": employee_name,
+                                "posto": post_name,
+                                "entrada": str(start_time) if start_time else "N/A",
+                                "saida": str(end_time) if end_time else "N/A",
+                            }
+                        )
 
             else:
                 # Mock data
@@ -1707,9 +1709,7 @@ Postos com menos de 80% de cobertura:
 
             if self.db:
                 # Buscar todos os funcionários ativos
-                result = await self.db.execute(
-                    select(Employee).where(Employee.is_active.is_(True))
-                )
+                result = await self.db.execute(select(Employee).where(Employee.is_active.is_(True)))
                 todos_funcionarios = list(result.scalars().all())
 
                 # Buscar funcionários com turno hoje
@@ -1720,20 +1720,22 @@ Postos com menos de 80% de cobertura:
                 ids_trabalhando = set()
                 for shift in shifts:
                     if isinstance(shift, dict):
-                        emp_id = shift.get('employee_id')
+                        emp_id = shift.get("employee_id")
                     else:
-                        emp_id = getattr(shift, 'employee_id', None)
+                        emp_id = getattr(shift, "employee_id", None)
                     if emp_id:
                         ids_trabalhando.add(str(emp_id))
 
                 # Filtrar quem está de folga
                 for emp in todos_funcionarios:
                     if str(emp.id) not in ids_trabalhando:
-                        funcionarios_folga.append({
-                            "nome": emp.nome,
-                            "matricula": getattr(emp, 'matricula', 'N/A'),
-                            "cargo": getattr(emp, 'cargo', 'N/A'),
-                        })
+                        funcionarios_folga.append(
+                            {
+                                "nome": emp.nome,
+                                "matricula": getattr(emp, "matricula", "N/A"),
+                                "cargo": getattr(emp, "cargo", "N/A"),
+                            }
+                        )
 
             else:
                 # Mock data
@@ -1754,7 +1756,7 @@ Postos com menos de 80% de cobertura:
                 if len(funcionarios_folga) > 20:
                     extra = f"\n\n_(e mais {len(funcionarios_folga) - 20} funcionários)_"
 
-                response_text = f"""🏠 **FUNCIONÁRIOS DE FOLGA HOJE** ({len(funcionarios_folga)}) - {today.strftime('%d/%m/%Y')}
+                response_text = f"""🏠 **FUNCIONÁRIOS DE FOLGA HOJE** ({len(funcionarios_folga)}) - {today.strftime("%d/%m/%Y")}
 
 {chr(10).join(lines)}{extra}"""
             else:
@@ -1797,29 +1799,49 @@ Postos com menos de 80% de cobertura:
 
                 for scale in scales:
                     # Filtrar por status pendente/draft se disponível
-                    status = getattr(scale, 'status', None)
-                    if status in ('draft', 'pending', None):
-                        escalas_pendentes.append({
-                            "nome": scale.name,
-                            "codigo": getattr(scale, 'code', 'N/A'),
-                            "status": status or 'draft',
-                            "periodo": f"{getattr(scale, 'start_date', 'N/A')} - {getattr(scale, 'end_date', 'N/A')}",
-                            "funcionarios": getattr(scale, 'employee_count', 0),
-                        })
+                    status = getattr(scale, "status", None)
+                    if status in ("draft", "pending", None):
+                        escalas_pendentes.append(
+                            {
+                                "nome": scale.name,
+                                "codigo": getattr(scale, "code", "N/A"),
+                                "status": status or "draft",
+                                "periodo": f"{getattr(scale, 'start_date', 'N/A')} - {getattr(scale, 'end_date', 'N/A')}",
+                                "funcionarios": getattr(scale, "employee_count", 0),
+                            }
+                        )
 
             else:
                 # Mock data
                 escalas_pendentes = [
-                    {"nome": "Escala Janeiro - Portaria", "codigo": "ESC-2024-001", "status": "draft", "periodo": "01/01 - 31/01", "funcionarios": 12},
-                    {"nome": "Escala Janeiro - Vigilância", "codigo": "ESC-2024-002", "status": "pending", "periodo": "01/01 - 31/01", "funcionarios": 8},
-                    {"nome": "Escala Fevereiro - Limpeza", "codigo": "ESC-2024-003", "status": "draft", "periodo": "01/02 - 28/02", "funcionarios": 15},
+                    {
+                        "nome": "Escala Janeiro - Portaria",
+                        "codigo": "ESC-2024-001",
+                        "status": "draft",
+                        "periodo": "01/01 - 31/01",
+                        "funcionarios": 12,
+                    },
+                    {
+                        "nome": "Escala Janeiro - Vigilância",
+                        "codigo": "ESC-2024-002",
+                        "status": "pending",
+                        "periodo": "01/01 - 31/01",
+                        "funcionarios": 8,
+                    },
+                    {
+                        "nome": "Escala Fevereiro - Limpeza",
+                        "codigo": "ESC-2024-003",
+                        "status": "draft",
+                        "periodo": "01/02 - 28/02",
+                        "funcionarios": 15,
+                    },
                 ]
 
             # Formatar resposta
             if escalas_pendentes:
                 lines = []
                 for e in escalas_pendentes[:10]:
-                    status_icon = "📝" if e['status'] == 'draft' else "⏳"
+                    status_icon = "📝" if e["status"] == "draft" else "⏳"
                     lines.append(
                         f"- {status_icon} **{e['nome']}** ({e['codigo']})\n"
                         f"  Status: {e['status']} | Período: {e['periodo']} | {e['funcionarios']} funcionários"
@@ -1874,20 +1896,22 @@ Postos com menos de 80% de cobertura:
 
                     for balance in balances:
                         if isinstance(balance, dict):
-                            nome = balance.get('employee_name', 'N/A')
-                            saldo = balance.get('balance_hours', 0)
-                            extras = balance.get('extra_hours', 0)
+                            nome = balance.get("employee_name", "N/A")
+                            saldo = balance.get("balance_hours", 0)
+                            extras = balance.get("extra_hours", 0)
                         else:
-                            nome = getattr(balance, 'employee_name', 'N/A')
-                            saldo = getattr(balance, 'balance_hours', 0)
-                            extras = getattr(balance, 'extra_hours', 0)
+                            nome = getattr(balance, "employee_name", "N/A")
+                            saldo = getattr(balance, "balance_hours", 0)
+                            extras = getattr(balance, "extra_hours", 0)
 
                         if extras > 0 or saldo != 0:
-                            ranking_horas.append({
-                                "nome": nome,
-                                "horas_extras": extras,
-                                "saldo_banco": saldo,
-                            })
+                            ranking_horas.append(
+                                {
+                                    "nome": nome,
+                                    "horas_extras": extras,
+                                    "saldo_banco": saldo,
+                                }
+                            )
 
                     # Ordenar por horas extras (maior primeiro)
                     ranking_horas.sort(key=lambda x: x["horas_extras"], reverse=True)
@@ -1912,14 +1936,14 @@ Postos com menos de 80% de cobertura:
             if ranking_horas:
                 lines = []
                 for i, f in enumerate(ranking_horas[:10], 1):
-                    saldo_icon = "🟢" if f['saldo_banco'] >= 0 else "🔴"
+                    saldo_icon = "🟢" if f["saldo_banco"] >= 0 else "🔴"
                     lines.append(
                         f"{i}. **{f['nome']}** - {f['horas_extras']:.1f}h extras | "
                         f"Saldo: {saldo_icon} {f['saldo_banco']:+.1f}h"
                     )
 
-                total_extras = sum(f['horas_extras'] for f in ranking_horas)
-                total_saldo = sum(f['saldo_banco'] for f in ranking_horas)
+                total_extras = sum(f["horas_extras"] for f in ranking_horas)
+                total_saldo = sum(f["saldo_banco"] for f in ranking_horas)
 
                 response_text = f"""⏰ **RANKING DE HORAS EXTRAS** (Top 10)
 
@@ -1970,48 +1994,73 @@ Postos com menos de 80% de cobertura:
 
                 for sub in subs:
                     if isinstance(sub, dict):
-                        status = sub.get('status', 'pending')
-                        if status in ('pending', 'open', None):
-                            substituicoes.append({
-                                "funcionario_ausente": sub.get('absent_employee_name', 'N/A'),
-                                "substituto": sub.get('substitute_employee_name', 'A definir'),
-                                "posto": sub.get('post_name', 'N/A'),
-                                "data": str(sub.get('date', 'N/A')),
-                                "motivo": sub.get('reason', 'N/A'),
-                                "status": status,
-                            })
+                        status = sub.get("status", "pending")
+                        if status in ("pending", "open", None):
+                            substituicoes.append(
+                                {
+                                    "funcionario_ausente": sub.get("absent_employee_name", "N/A"),
+                                    "substituto": sub.get("substitute_employee_name", "A definir"),
+                                    "posto": sub.get("post_name", "N/A"),
+                                    "data": str(sub.get("date", "N/A")),
+                                    "motivo": sub.get("reason", "N/A"),
+                                    "status": status,
+                                }
+                            )
                     else:
-                        status = getattr(sub, 'status', 'pending')
-                        if status in ('pending', 'open', None):
-                            substituicoes.append({
-                                "funcionario_ausente": getattr(sub, 'absent_employee_name', 'N/A'),
-                                "substituto": getattr(sub, 'substitute_employee_name', 'A definir'),
-                                "posto": getattr(sub, 'post_name', 'N/A'),
-                                "data": str(getattr(sub, 'date', 'N/A')),
-                                "motivo": getattr(sub, 'reason', 'N/A'),
-                                "status": status,
-                            })
+                        status = getattr(sub, "status", "pending")
+                        if status in ("pending", "open", None):
+                            substituicoes.append(
+                                {
+                                    "funcionario_ausente": getattr(sub, "absent_employee_name", "N/A"),
+                                    "substituto": getattr(sub, "substitute_employee_name", "A definir"),
+                                    "posto": getattr(sub, "post_name", "N/A"),
+                                    "data": str(getattr(sub, "date", "N/A")),
+                                    "motivo": getattr(sub, "reason", "N/A"),
+                                    "status": status,
+                                }
+                            )
 
             else:
                 # Mock data
                 substituicoes = [
-                    {"funcionario_ausente": "José Silva", "substituto": "A definir", "posto": "Portaria Principal", "data": "29/01/2024", "motivo": "Atestado médico", "status": "pending"},
-                    {"funcionario_ausente": "Maria Santos", "substituto": "A definir", "posto": "Recepção Centro", "data": "30/01/2024", "motivo": "Folga compensatória", "status": "pending"},
-                    {"funcionario_ausente": "Pedro Oliveira", "substituto": "Carlos Lima", "posto": "Vigilância Noturna", "data": "29/01/2024", "motivo": "Licença", "status": "partial"},
+                    {
+                        "funcionario_ausente": "José Silva",
+                        "substituto": "A definir",
+                        "posto": "Portaria Principal",
+                        "data": "29/01/2024",
+                        "motivo": "Atestado médico",
+                        "status": "pending",
+                    },
+                    {
+                        "funcionario_ausente": "Maria Santos",
+                        "substituto": "A definir",
+                        "posto": "Recepção Centro",
+                        "data": "30/01/2024",
+                        "motivo": "Folga compensatória",
+                        "status": "pending",
+                    },
+                    {
+                        "funcionario_ausente": "Pedro Oliveira",
+                        "substituto": "Carlos Lima",
+                        "posto": "Vigilância Noturna",
+                        "data": "29/01/2024",
+                        "motivo": "Licença",
+                        "status": "partial",
+                    },
                 ]
 
             # Formatar resposta
             if substituicoes:
                 lines = []
                 for s in substituicoes[:10]:
-                    sub_text = s['substituto'] if s['substituto'] != 'A definir' else '❓ A definir'
+                    sub_text = s["substituto"] if s["substituto"] != "A definir" else "❓ A definir"
                     lines.append(
                         f"- **{s['funcionario_ausente']}** ({s['data']})\n"
                         f"  Posto: {s['posto']} | Substituto: {sub_text}\n"
                         f"  Motivo: {s['motivo']}"
                     )
 
-                urgentes = sum(1 for s in substituicoes if s['substituto'] == 'A definir')
+                urgentes = sum(1 for s in substituicoes if s["substituto"] == "A definir")
 
                 response_text = f"""🔄 **SUBSTITUIÇÕES PENDENTES** ({len(substituicoes)})
 
@@ -2065,33 +2114,53 @@ Postos com menos de 80% de cobertura:
                 for shift in shifts:
                     # Verificar se tem registro de entrada atrasada
                     if isinstance(shift, dict):
-                        check_in = shift.get('actual_check_in')
-                        scheduled_start = shift.get('start_time')
-                        employee_name = shift.get('employee_name')
-                        post_name = shift.get('post_name', 'N/A')
+                        check_in = shift.get("actual_check_in")
+                        scheduled_start = shift.get("start_time")
+                        employee_name = shift.get("employee_name")
+                        post_name = shift.get("post_name", "N/A")
                     else:
-                        check_in = getattr(shift, 'actual_check_in', None)
-                        scheduled_start = getattr(shift, 'start_time', None)
-                        employee_name = getattr(shift, 'employee_name', None)
-                        post_name = getattr(shift, 'post_name', 'N/A')
+                        check_in = getattr(shift, "actual_check_in", None)
+                        scheduled_start = getattr(shift, "start_time", None)
+                        employee_name = getattr(shift, "employee_name", None)
+                        post_name = getattr(shift, "post_name", "N/A")
 
                     # Calcular atraso se tiver ambos horários
                     if check_in and scheduled_start and employee_name:
                         # Simplificado - em produção calcular diferença real
-                        atrasos.append({
-                            "nome": employee_name,
-                            "posto": post_name,
-                            "horario_previsto": str(scheduled_start),
-                            "horario_chegada": str(check_in),
-                            "atraso_minutos": 15,  # Placeholder
-                        })
+                        atrasos.append(
+                            {
+                                "nome": employee_name,
+                                "posto": post_name,
+                                "horario_previsto": str(scheduled_start),
+                                "horario_chegada": str(check_in),
+                                "atraso_minutos": 15,  # Placeholder
+                            }
+                        )
 
             if not atrasos:
                 # Mock data
                 atrasos = [
-                    {"nome": "José Silva", "posto": "Portaria Principal", "horario_previsto": "06:00", "horario_chegada": "06:23", "atraso_minutos": 23},
-                    {"nome": "Maria Santos", "posto": "Recepção Centro", "horario_previsto": "07:00", "horario_chegada": "07:15", "atraso_minutos": 15},
-                    {"nome": "Carlos Lima", "posto": "Manutenção", "horario_previsto": "08:00", "horario_chegada": "08:08", "atraso_minutos": 8},
+                    {
+                        "nome": "José Silva",
+                        "posto": "Portaria Principal",
+                        "horario_previsto": "06:00",
+                        "horario_chegada": "06:23",
+                        "atraso_minutos": 23,
+                    },
+                    {
+                        "nome": "Maria Santos",
+                        "posto": "Recepção Centro",
+                        "horario_previsto": "07:00",
+                        "horario_chegada": "07:15",
+                        "atraso_minutos": 15,
+                    },
+                    {
+                        "nome": "Carlos Lima",
+                        "posto": "Manutenção",
+                        "horario_previsto": "08:00",
+                        "horario_chegada": "08:08",
+                        "atraso_minutos": 8,
+                    },
                 ]
 
             # Ordenar por atraso (maior primeiro)
@@ -2101,16 +2170,16 @@ Postos com menos de 80% de cobertura:
             if atrasos:
                 lines = []
                 for a in atrasos[:15]:
-                    severity = "🔴" if a['atraso_minutos'] > 15 else "🟡"
+                    severity = "🔴" if a["atraso_minutos"] > 15 else "🟡"
                     lines.append(
                         f"- {severity} **{a['nome']}** - {a['atraso_minutos']} min\n"
                         f"  {a['posto']} | Previsto: {a['horario_previsto']} → Chegou: {a['horario_chegada']}"
                     )
 
-                total_minutos = sum(a['atraso_minutos'] for a in atrasos)
-                graves = sum(1 for a in atrasos if a['atraso_minutos'] > 15)
+                total_minutos = sum(a["atraso_minutos"] for a in atrasos)
+                graves = sum(1 for a in atrasos if a["atraso_minutos"] > 15)
 
-                response_text = f"""⏱️ **ATRASOS DE HOJE** ({len(atrasos)}) - {today.strftime('%d/%m/%Y')}
+                response_text = f"""⏱️ **ATRASOS DE HOJE** ({len(atrasos)}) - {today.strftime("%d/%m/%Y")}
 
 {chr(10).join(lines)}
 
@@ -2155,15 +2224,13 @@ Postos com menos de 80% de cobertura:
 
         try:
             operacao = {
-                "data": today.strftime('%d/%m/%Y'),
-                "hora": datetime.now().strftime('%H:%M'),
+                "data": today.strftime("%d/%m/%Y"),
+                "hora": datetime.now().strftime("%H:%M"),
             }
 
             if self.db:
                 # Funcionários ativos
-                emp_result = await self.db.execute(
-                    select(func.count(Employee.id)).where(Employee.is_active.is_(True))
-                )
+                emp_result = await self.db.execute(select(func.count(Employee.id)).where(Employee.is_active.is_(True)))
                 operacao["funcionarios_ativos"] = emp_result.scalar() or 0
 
                 # Postos e cobertura
@@ -2217,8 +2284,8 @@ Postos com menos de 80% de cobertura:
             else:
                 # Mock data
                 operacao = {
-                    "data": today.strftime('%d/%m/%Y'),
-                    "hora": datetime.now().strftime('%H:%M'),
+                    "data": today.strftime("%d/%m/%Y"),
+                    "hora": datetime.now().strftime("%H:%M"),
                     "funcionarios_ativos": 387,
                     "postos_total": 45,
                     "postos_preenchidos": 42,
@@ -2235,26 +2302,26 @@ Postos com menos de 80% de cobertura:
 
             # Formatar resposta
             response_text = f"""🏢 **VISÃO GERAL DA OPERAÇÃO**
-📅 {operacao['data']} às {operacao['hora']}
+📅 {operacao["data"]} às {operacao["hora"]}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-**STATUS GERAL:** {operacao.get('status_icon', '🟢')} {operacao.get('status', 'OK')}
+**STATUS GERAL:** {operacao.get("status_icon", "🟢")} {operacao.get("status", "OK")}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **👥 EQUIPE**
-- Funcionários ativos: **{operacao.get('funcionarios_ativos', 0)}**
-- Efetivo alocado: **{operacao.get('efetivo_alocado', 0)}** / {operacao.get('efetivo_requerido', 0)}
-- Taxa de cobertura: **{operacao.get('taxa_cobertura', 0)}%**
+- Funcionários ativos: **{operacao.get("funcionarios_ativos", 0)}**
+- Efetivo alocado: **{operacao.get("efetivo_alocado", 0)}** / {operacao.get("efetivo_requerido", 0)}
+- Taxa de cobertura: **{operacao.get("taxa_cobertura", 0)}%**
 
 **📍 POSTOS**
-- Total de postos: **{operacao.get('postos_total', 0)}**
-- Postos preenchidos: **{operacao.get('postos_preenchidos', 0)}**
-- Postos com vagas: **{operacao.get('postos_com_vagas', 0)}**
+- Total de postos: **{operacao.get("postos_total", 0)}**
+- Postos preenchidos: **{operacao.get("postos_preenchidos", 0)}**
+- Postos com vagas: **{operacao.get("postos_com_vagas", 0)}**
 
 **📋 OPERACIONAL**
-- Turnos programados hoje: **{operacao.get('turnos_hoje', 0)}**
-- Substituições pendentes: **{operacao.get('substituicoes_pendentes', 0)}**
-- Escalas cadastradas: **{operacao.get('escalas_cadastradas', 0)}**
+- Turnos programados hoje: **{operacao.get("turnos_hoje", 0)}**
+- Substituições pendentes: **{operacao.get("substituicoes_pendentes", 0)}**
+- Escalas cadastradas: **{operacao.get("escalas_cadastradas", 0)}**
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 _Para detalhes, pergunte sobre itens específicos._"""
@@ -2305,35 +2372,60 @@ _Para detalhes, pergunte sobre itens específicos._"""
                         OccurrenceStatus.ABERTA.value,
                         OccurrenceStatus.EM_ANALISE.value,
                     ):
-                        ocorrencias.append({
-                            "codigo": occ.code,
-                            "titulo": occ.title,
-                            "tipo": occ.occurrence_type,
-                            "severidade": occ.severity,
-                            "status": occ.status,
-                            "data": occ.occurred_at.strftime('%d/%m/%Y %H:%M') if occ.occurred_at else 'N/A',
-                        })
+                        ocorrencias.append(
+                            {
+                                "codigo": occ.code,
+                                "titulo": occ.title,
+                                "tipo": occ.occurrence_type,
+                                "severidade": occ.severity,
+                                "status": occ.status,
+                                "data": occ.occurred_at.strftime("%d/%m/%Y %H:%M") if occ.occurred_at else "N/A",
+                            }
+                        )
 
             if not ocorrencias:
                 # Mock data
                 ocorrencias = [
-                    {"codigo": "OCO-2026-00012", "titulo": "Abandono de posto - Portaria B", "tipo": "abandono_posto", "severidade": "grave", "status": "aberta", "data": today.strftime('%d/%m/%Y') + " 08:30"},
-                    {"codigo": "OCO-2026-00011", "titulo": "Uso de celular em servico", "tipo": "uso_celular", "severidade": "leve", "status": "em_analise", "data": today.strftime('%d/%m/%Y') + " 07:15"},
-                    {"codigo": "OCO-2026-00010", "titulo": "Falta de uniforme", "tipo": "falta_uniforme", "severidade": "moderada", "status": "aberta", "data": (today.strftime('%d/%m/%Y')) + " 06:00"},
+                    {
+                        "codigo": "OCO-2026-00012",
+                        "titulo": "Abandono de posto - Portaria B",
+                        "tipo": "abandono_posto",
+                        "severidade": "grave",
+                        "status": "aberta",
+                        "data": today.strftime("%d/%m/%Y") + " 08:30",
+                    },
+                    {
+                        "codigo": "OCO-2026-00011",
+                        "titulo": "Uso de celular em servico",
+                        "tipo": "uso_celular",
+                        "severidade": "leve",
+                        "status": "em_analise",
+                        "data": today.strftime("%d/%m/%Y") + " 07:15",
+                    },
+                    {
+                        "codigo": "OCO-2026-00010",
+                        "titulo": "Falta de uniforme",
+                        "tipo": "falta_uniforme",
+                        "severidade": "moderada",
+                        "status": "aberta",
+                        "data": (today.strftime("%d/%m/%Y")) + " 06:00",
+                    },
                 ]
 
             # Formatar resposta
             if ocorrencias:
                 lines = []
                 for o in ocorrencias[:15]:
-                    sev_icon = {"leve": "🟡", "moderada": "🟠", "grave": "🔴", "gravissima": "🚨"}.get(o['severidade'], "⚪")
-                    status_text = "Aberta" if o['status'] == "aberta" else "Em Analise"
+                    sev_icon = {"leve": "🟡", "moderada": "🟠", "grave": "🔴", "gravissima": "🚨"}.get(
+                        o["severidade"], "⚪"
+                    )
+                    status_text = "Aberta" if o["status"] == "aberta" else "Em Analise"
                     lines.append(
                         f"- {sev_icon} **{o['codigo']}** - {o['titulo']}\n"
                         f"  Severidade: {o['severidade']} | Status: {status_text} | {o['data']}"
                     )
 
-                graves = sum(1 for o in ocorrencias if o['severidade'] in ('grave', 'gravissima'))
+                graves = sum(1 for o in ocorrencias if o["severidade"] in ("grave", "gravissima"))
 
                 response_text = f"""📋 **OCORRENCIAS ABERTAS** ({len(ocorrencias)})
 
@@ -2341,7 +2433,7 @@ _Para detalhes, pergunte sobre itens específicos._"""
 
 **Resumo:**
 - Total abertas: **{len(ocorrencias)}**
-- Graves/Gravissimas: **{graves}** {'🚨' if graves > 0 else ''}
+- Graves/Gravissimas: **{graves}** {"🚨" if graves > 0 else ""}
 
 **Legenda:** 🟡 Leve | 🟠 Moderada | 🔴 Grave | 🚨 Gravissima"""
             else:
@@ -2389,36 +2481,61 @@ _Para detalhes, pergunte sobre itens específicos._"""
                         DisciplinaryActionStatus.APROVADA.value,
                         DisciplinaryActionStatus.PENDENTE_ASSINATURA.value,
                     ):
-                        medidas.append({
-                            "codigo": action.code,
-                            "tipo": action.type_display_name,
-                            "funcionario": action.employee_name,
-                            "motivo": action.reason_category,
-                            "status": action.status_display_name,
-                            "data_incidente": action.incident_date.strftime('%d/%m/%Y') if action.incident_date else 'N/A',
-                        })
+                        medidas.append(
+                            {
+                                "codigo": action.code,
+                                "tipo": action.type_display_name,
+                                "funcionario": action.employee_name,
+                                "motivo": action.reason_category,
+                                "status": action.status_display_name,
+                                "data_incidente": action.incident_date.strftime("%d/%m/%Y")
+                                if action.incident_date
+                                else "N/A",
+                            }
+                        )
 
             if not medidas:
                 # Mock data
                 medidas = [
-                    {"codigo": "ADV-2026-00005", "tipo": "Advertencia Escrita", "funcionario": "Jose Silva", "motivo": "falta", "status": "Pendente Aprovacao", "data_incidente": "28/01/2026"},
-                    {"codigo": "SUS-2026-00002", "tipo": "Suspensao", "funcionario": "Carlos Lima", "motivo": "insubordinacao", "status": "Pendente Assinatura", "data_incidente": "27/01/2026"},
-                    {"codigo": "ADV-2026-00004", "tipo": "Advertencia Verbal", "funcionario": "Maria Santos", "motivo": "atraso", "status": "Rascunho", "data_incidente": "29/01/2026"},
+                    {
+                        "codigo": "ADV-2026-00005",
+                        "tipo": "Advertencia Escrita",
+                        "funcionario": "Jose Silva",
+                        "motivo": "falta",
+                        "status": "Pendente Aprovacao",
+                        "data_incidente": "28/01/2026",
+                    },
+                    {
+                        "codigo": "SUS-2026-00002",
+                        "tipo": "Suspensao",
+                        "funcionario": "Carlos Lima",
+                        "motivo": "insubordinacao",
+                        "status": "Pendente Assinatura",
+                        "data_incidente": "27/01/2026",
+                    },
+                    {
+                        "codigo": "ADV-2026-00004",
+                        "tipo": "Advertencia Verbal",
+                        "funcionario": "Maria Santos",
+                        "motivo": "atraso",
+                        "status": "Rascunho",
+                        "data_incidente": "29/01/2026",
+                    },
                 ]
 
             # Formatar resposta
             if medidas:
                 lines = []
                 for m in medidas[:15]:
-                    tipo_icon = "📝" if "Verbal" in m['tipo'] else "📄" if "Escrita" in m['tipo'] else "⚠️"
+                    tipo_icon = "📝" if "Verbal" in m["tipo"] else "📄" if "Escrita" in m["tipo"] else "⚠️"
                     lines.append(
                         f"- {tipo_icon} **{m['codigo']}** - {m['tipo']}\n"
                         f"  Funcionario: {m['funcionario']} | Motivo: {m['motivo']}\n"
                         f"  Status: {m['status']} | Incidente: {m['data_incidente']}"
                     )
 
-                pendentes_aprov = sum(1 for m in medidas if m['status'] == 'Pendente Aprovacao')
-                pendentes_assin = sum(1 for m in medidas if m['status'] == 'Pendente Assinatura')
+                pendentes_aprov = sum(1 for m in medidas if m["status"] == "Pendente Aprovacao")
+                pendentes_assin = sum(1 for m in medidas if m["status"] == "Pendente Assinatura")
 
                 response_text = f"""⚖️ **MEDIDAS DISCIPLINARES PENDENTES** ({len(medidas)})
 
@@ -2473,37 +2590,67 @@ _Para detalhes, pergunte sobre itens específicos._"""
                         AnnouncementStatus.PUBLISHED.value,
                         AnnouncementStatus.PUBLICADO.value,
                     ):
-                        comunicados.append({
-                            "titulo": ann.titulo,
-                            "tipo": ann.tipo,
-                            "prioridade": ann.prioridade,
-                            "status": ann.status,
-                            "visualizacoes": ann.total_visualizacoes,
-                            "confirmacoes": ann.total_confirmacoes,
-                            "data_publicacao": ann.data_publicacao.strftime('%d/%m/%Y %H:%M') if ann.data_publicacao else 'N/A',
-                        })
+                        comunicados.append(
+                            {
+                                "titulo": ann.titulo,
+                                "tipo": ann.tipo,
+                                "prioridade": ann.prioridade,
+                                "status": ann.status,
+                                "visualizacoes": ann.total_visualizacoes,
+                                "confirmacoes": ann.total_confirmacoes,
+                                "data_publicacao": ann.data_publicacao.strftime("%d/%m/%Y %H:%M")
+                                if ann.data_publicacao
+                                else "N/A",
+                            }
+                        )
 
             if not comunicados:
                 # Mock data
                 today = date.today()
                 comunicados = [
-                    {"titulo": "Alteracao de procedimento - Portaria", "tipo": "procedimento", "prioridade": "alta", "status": "published", "visualizacoes": 45, "confirmacoes": 32, "data_publicacao": today.strftime('%d/%m/%Y') + " 09:00"},
-                    {"titulo": "Escala de feriado - Carnaval 2026", "tipo": "escala", "prioridade": "urgente", "status": "published", "visualizacoes": 120, "confirmacoes": 95, "data_publicacao": today.strftime('%d/%m/%Y') + " 08:00"},
-                    {"titulo": "Novo uniforme disponivel", "tipo": "informativo", "prioridade": "normal", "status": "published", "visualizacoes": 30, "confirmacoes": 10, "data_publicacao": today.strftime('%d/%m/%Y') + " 07:30"},
+                    {
+                        "titulo": "Alteracao de procedimento - Portaria",
+                        "tipo": "procedimento",
+                        "prioridade": "alta",
+                        "status": "published",
+                        "visualizacoes": 45,
+                        "confirmacoes": 32,
+                        "data_publicacao": today.strftime("%d/%m/%Y") + " 09:00",
+                    },
+                    {
+                        "titulo": "Escala de feriado - Carnaval 2026",
+                        "tipo": "escala",
+                        "prioridade": "urgente",
+                        "status": "published",
+                        "visualizacoes": 120,
+                        "confirmacoes": 95,
+                        "data_publicacao": today.strftime("%d/%m/%Y") + " 08:00",
+                    },
+                    {
+                        "titulo": "Novo uniforme disponivel",
+                        "tipo": "informativo",
+                        "prioridade": "normal",
+                        "status": "published",
+                        "visualizacoes": 30,
+                        "confirmacoes": 10,
+                        "data_publicacao": today.strftime("%d/%m/%Y") + " 07:30",
+                    },
                 ]
 
             # Formatar resposta
             if comunicados:
                 lines = []
                 for c in comunicados[:10]:
-                    prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(c['prioridade'], "🟢")
+                    prio_icon = {"urgente": "🔴", "alta": "🟠", "normal": "🟢", "baixa": "⚪"}.get(
+                        c["prioridade"], "🟢"
+                    )
                     lines.append(
                         f"- {prio_icon} **{c['titulo']}**\n"
                         f"  Tipo: {c['tipo']} | Prioridade: {c['prioridade']}\n"
                         f"  Visualizacoes: {c['visualizacoes']} | Confirmacoes: {c['confirmacoes']} | {c['data_publicacao']}"
                     )
 
-                urgentes = sum(1 for c in comunicados if c['prioridade'] in ('urgente', 'alta'))
+                urgentes = sum(1 for c in comunicados if c["prioridade"] in ("urgente", "alta"))
 
                 response_text = f"""📢 **COMUNICADOS ATIVOS** ({len(comunicados)})
 
@@ -2556,39 +2703,73 @@ _Para detalhes, pergunte sobre itens específicos._"""
                 # Buscar rondas em andamento
                 em_andamento = await repo.get_rounds_in_progress()
                 for r in em_andamento:
-                    rondas.append({
-                        "codigo": r.code,
-                        "inspetor": r.inspector_name,
-                        "cargo": r.inspector_role_display,
-                        "status": "Em Andamento",
-                        "status_icon": "🔄",
-                        "postos_visitados": len(r.posts_visited or []),
-                        "postos_total": len(r.posts_to_visit or []),
-                        "ocorrencias": r.total_occurrences,
-                        "progresso": f"{r.progress_percentage}%",
-                    })
+                    rondas.append(
+                        {
+                            "codigo": r.code,
+                            "inspetor": r.inspector_name,
+                            "cargo": r.inspector_role_display,
+                            "status": "Em Andamento",
+                            "status_icon": "🔄",
+                            "postos_visitados": len(r.posts_visited or []),
+                            "postos_total": len(r.posts_to_visit or []),
+                            "ocorrencias": r.total_occurrences,
+                            "progresso": f"{r.progress_percentage}%",
+                        }
+                    )
 
                 # Buscar rondas agendadas para hoje
                 agendadas = await repo.get_rounds_scheduled_today()
                 for r in agendadas:
-                    rondas.append({
-                        "codigo": r.code,
-                        "inspetor": r.inspector_name,
-                        "cargo": r.inspector_role_display,
-                        "status": "Agendada",
-                        "status_icon": "📅",
-                        "postos_visitados": 0,
-                        "postos_total": len(r.posts_to_visit or []),
-                        "ocorrencias": 0,
-                        "progresso": "0%",
-                    })
+                    rondas.append(
+                        {
+                            "codigo": r.code,
+                            "inspetor": r.inspector_name,
+                            "cargo": r.inspector_role_display,
+                            "status": "Agendada",
+                            "status_icon": "📅",
+                            "postos_visitados": 0,
+                            "postos_total": len(r.posts_to_visit or []),
+                            "ocorrencias": 0,
+                            "progresso": "0%",
+                        }
+                    )
 
             if not rondas:
                 # Mock data
                 rondas = [
-                    {"codigo": "RON-2026-00045", "inspetor": "Carlos Supervisor", "cargo": "Supervisor Operacional", "status": "Em Andamento", "status_icon": "🔄", "postos_visitados": 3, "postos_total": 8, "ocorrencias": 2, "progresso": "37.5%"},
-                    {"codigo": "RON-2026-00046", "inspetor": "Ana Gerente", "cargo": "Gerente Operacional", "status": "Agendada", "status_icon": "📅", "postos_visitados": 0, "postos_total": 5, "ocorrencias": 0, "progresso": "0%"},
-                    {"codigo": "RON-2026-00044", "inspetor": "Pedro Inspetor", "cargo": "Inspetor Operacional", "status": "Concluida", "status_icon": "✅", "postos_visitados": 6, "postos_total": 6, "ocorrencias": 1, "progresso": "100%"},
+                    {
+                        "codigo": "RON-2026-00045",
+                        "inspetor": "Carlos Supervisor",
+                        "cargo": "Supervisor Operacional",
+                        "status": "Em Andamento",
+                        "status_icon": "🔄",
+                        "postos_visitados": 3,
+                        "postos_total": 8,
+                        "ocorrencias": 2,
+                        "progresso": "37.5%",
+                    },
+                    {
+                        "codigo": "RON-2026-00046",
+                        "inspetor": "Ana Gerente",
+                        "cargo": "Gerente Operacional",
+                        "status": "Agendada",
+                        "status_icon": "📅",
+                        "postos_visitados": 0,
+                        "postos_total": 5,
+                        "ocorrencias": 0,
+                        "progresso": "0%",
+                    },
+                    {
+                        "codigo": "RON-2026-00044",
+                        "inspetor": "Pedro Inspetor",
+                        "cargo": "Inspetor Operacional",
+                        "status": "Concluida",
+                        "status_icon": "✅",
+                        "postos_visitados": 6,
+                        "postos_total": 6,
+                        "ocorrencias": 1,
+                        "progresso": "100%",
+                    },
                 ]
 
             # Formatar resposta
@@ -2602,11 +2783,11 @@ _Para detalhes, pergunte sobre itens específicos._"""
                         f"Ocorrencias: {r['ocorrencias']} | Progresso: {r['progresso']}"
                     )
 
-                em_andamento_count = sum(1 for r in rondas if r['status'] == 'Em Andamento')
-                agendadas_count = sum(1 for r in rondas if r['status'] == 'Agendada')
-                total_ocorrencias = sum(r['ocorrencias'] for r in rondas)
+                em_andamento_count = sum(1 for r in rondas if r["status"] == "Em Andamento")
+                agendadas_count = sum(1 for r in rondas if r["status"] == "Agendada")
+                total_ocorrencias = sum(r["ocorrencias"] for r in rondas)
 
-                response_text = f"""🔍 **RONDAS DE INSPECAO - {today.strftime('%d/%m/%Y')}** ({len(rondas)})
+                response_text = f"""🔍 **RONDAS DE INSPECAO - {today.strftime("%d/%m/%Y")}** ({len(rondas)})
 
 {chr(10).join(lines)}
 
@@ -2659,6 +2840,6 @@ _Para detalhes, pergunte sobre itens específicos._"""
         # Por enquanto retorna lista vazia
         return []
 
-    def get_entity_info(self, entity: str) -> Optional[dict]:
+    def get_entity_info(self, entity: str) -> dict | None:
         """Retorna informacoes sobre uma entidade."""
         return self.ENTITY_MAP.get(entity.lower())

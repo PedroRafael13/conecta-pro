@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { usePendingApprovals, useReimbursementStats } from '@/hooks/useReimbursement';
+import { useApproveReimbursement, useRejectReimbursement } from '@/hooks/reimbursement';
 import { getErrorMessage } from '@/lib/api';
 import { ReimbursementApprovalModal } from '@/components/reembolso/reimbursement-approval-modal';
 import { ReimbursementDetailModal } from '@/components/reembolso/reimbursement-detail-modal';
@@ -49,6 +50,8 @@ export default function AprovacoesPage() {
     refresh,
   } = usePendingApprovals({ initialPageSize: 10 });
   const { stats, refresh: refreshStats } = useReimbursementStats();
+  const approveMutation = useApproveReimbursement();
+  const rejectMutation = useRejectReimbursement();
 
   // Modal states
   const [selectedRequest, setSelectedRequest] = useState<ReimbursementRequest | null>(null);
@@ -80,7 +83,7 @@ export default function AprovacoesPage() {
     setApprovalError(null);
 
     try {
-      await reimbursementService.approve(request.id);
+      await approveMutation.mutateAsync({ requestId: request.id });
       refresh();
       refreshStats();
     } catch (err) {
@@ -95,7 +98,7 @@ export default function AprovacoesPage() {
     setApprovalError(null);
 
     try {
-      await reimbursementService.reject(request.id, { reason });
+      await rejectMutation.mutateAsync({ requestId: request.id, data: { reason } });
       refresh();
       refreshStats();
     } catch (err) {

@@ -57,6 +57,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import Link from 'next/link';
+import { customInstance } from '@/lib/api-client';
 import { Folder, formatFileSize, FOLDER_TYPES } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
 
 function PastasContent() {
@@ -88,19 +89,30 @@ function PastasContent() {
 
       if (folderId) {
         // Carregar pasta atual
-        const folder = await folderService.get(folderId);
+        const folder = await customInstance<Folder>({
+          url: `/api/v1/ged/folders/${folderId}`,
+          method: 'GET',
+        });
         setCurrentFolder(folder);
 
         // Carregar subpastas
-        const response = await folderService.list({ parent_id: folderId, page_size: 100 });
+        const response = await customInstance<{ items: Folder[] }>({
+          url: '/api/v1/ged/folders/',
+          method: 'GET',
+          params: { parent_id: folderId, page_size: 100 },
+        });
         setFolders(response.items);
 
         setBreadcrumb([folder]);
       } else {
         // Carregar pastas raiz
         setCurrentFolder(null);
-        const response = await folderService.list({ page_size: 100 });
-        const rootFolders = response.items.filter(f => f.is_root);
+        const response = await customInstance<{ items: Folder[] }>({
+          url: '/api/v1/ged/folders/',
+          method: 'GET',
+          params: { page_size: 100 },
+        });
+        const rootFolders = response.items.filter((f: any) => f.is_root);
         setFolders(rootFolders);
         setBreadcrumb([]);
       }
@@ -129,9 +141,13 @@ function PastasContent() {
   // Criar nova pasta
   const handleCreateFolder = async () => {
     try {
-      await folderService.create({
-        ...formData,
-        parent_id: folderId || undefined,
+      await customInstance({
+        url: '/api/v1/ged/folders/',
+        method: 'POST',
+        data: {
+          ...formData,
+          parent_id: folderId || undefined,
+        },
       });
       setDialogOpen(false);
       setFormData({ name: '', description: '', folder_type: 'condominio', is_public: false });
@@ -168,10 +184,14 @@ function PastasContent() {
   const handleEditFolder = async () => {
     if (!selectedFolder) return;
     try {
-      await folderService.update(selectedFolder.id, {
-        name: formData.name,
-        description: formData.description,
-        is_public: formData.is_public,
+      await customInstance({
+        url: `/api/v1/ged/folders/${selectedFolder.id}`,
+        method: 'PUT',
+        data: {
+          name: formData.name,
+          description: formData.description,
+          is_public: formData.is_public,
+        },
       });
       setEditDialogOpen(false);
       setSelectedFolder(null);
@@ -208,7 +228,10 @@ function PastasContent() {
   const handleDeleteFolder = async () => {
     if (!selectedFolder) return;
     try {
-      await folderService.delete(selectedFolder.id);
+      await customInstance({
+        url: `/api/v1/ged/folders/${selectedFolder.id}`,
+        method: 'DELETE',
+      });
       setDeleteDialogOpen(false);
       toast({
         variant: 'success',

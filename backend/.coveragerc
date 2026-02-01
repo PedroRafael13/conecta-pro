@@ -1,0 +1,29 @@
+[run]
+source = modules,core,api
+omit =
+    */tests/*
+    */migrations/*
+    */__pycache__/*
+    */alembic/*
+    */.venv/*
+    */venv/*
+
+[report]
+fail_under = 40
+show_missing = true
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.
+    raise NotImplementedError
+    pass
+    @abstractmethod
+
+[html]
+directory = ../reports/coverage_html
+
+[json]
+output = ../reports/coverage.json
+
+[xml]
+output = ../reports/coverage.xml

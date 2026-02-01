@@ -17,8 +17,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { customInstance } from '@/lib/api-client';
 import {
-  diaristsService,
   type PayrollReport,
   type PayrollDiaristItem,
 } from '@/lib/services/diarists';
@@ -47,7 +47,11 @@ export default function FechamentoFolhaPage() {
     setReport(null);
 
     try {
-      const result = await diaristsService.getPayrollReport(competencia);
+      const result = await customInstance<PayrollReport>({
+        url: '/api/v1/operacional/diaristas/payments/payroll-report',
+        method: 'GET',
+        params: { competencia },
+      });
       setReport(result);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -68,10 +72,14 @@ export default function FechamentoFolhaPage() {
 
     try {
       const condominioId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-      const result = await diaristsService.generatePayrollPayments({
-        condominio_id: condominioId,
-        competencia,
-        forma_pagamento: 'pix',
+      const result = await customInstance<any>({
+        url: '/api/v1/operacional/diaristas/payments/generate',
+        method: 'POST',
+        data: {
+          condominio_id: condominioId,
+          competencia,
+          forma_pagamento: 'pix',
+        },
       });
 
       if (result.total_erros > 0) {

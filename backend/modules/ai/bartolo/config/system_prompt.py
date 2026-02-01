@@ -5,10 +5,8 @@ Este e o prompt rico e detalhado que define todo o conhecimento
 do Bartolo sobre o sistema Conecta PRO.
 """
 
-from typing import Optional
 from modules.ai.bartolo.config.identity import BARTOLO_IDENTITY
 from modules.ai.bartolo.config.modules import MODULE_PROMPTS, ModuleCategory
-
 
 # =====================================================
 # SYSTEM PROMPT PRINCIPAL
@@ -558,9 +556,9 @@ Agora, ajude o usuario da melhor forma possivel!
 
 
 def build_full_system_prompt(
-    user_context: Optional[str] = None,
-    module: Optional[str] = None,
-    additional_context: Optional[str] = None,
+    user_context: str | None = None,
+    module: str | None = None,
+    additional_context: str | None = None,
 ) -> str:
     """
     Constroi o system prompt completo do Bartolo.
@@ -578,7 +576,7 @@ def build_full_system_prompt(
     for category in ModuleCategory:
         categoria_nome = category.value.upper()
         modulos = []
-        for mod_id, mod_config in MODULE_PROMPTS.items():
+        for _mod_id, mod_config in MODULE_PROMPTS.items():
             if mod_config.get("category") == category:
                 modulos.append(f"  - {mod_config['name']}: {mod_config['description']}")
 
@@ -594,10 +592,10 @@ def build_full_system_prompt(
         module_info = MODULE_PROMPTS[module]
         module_context = f"""
 =====================================================
-MODULO ATUAL: {module_info['name']}
+MODULO ATUAL: {module_info["name"]}
 =====================================================
 
-{module_info['prompt']}
+{module_info["prompt"]}
 """
 
     # Formata contexto do usuario
@@ -643,7 +641,11 @@ Licitacoes (Editais, PNCP), GED (Documentos).
 EXPERTISE: CLT, CCT SINDCOND 2026, eSocial, calculos trabalhistas,
 processos operacionais, legislacao fiscal.
 
-Ajude de forma objetiva, proativa e profissional.
+REGRAS DE RESPOSTA:
+- Seja DIRETO e CONCISO. Maximo 3-4 paragrafos.
+- Use bullet points para listas.
+- Nao repita a pergunta do usuario.
+- Responda em portugues brasileiro.
 """
 
 

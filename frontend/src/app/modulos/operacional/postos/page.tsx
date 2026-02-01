@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ConfirmModal } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
-import { usePosts } from '@/hooks/operacional/usePosts';
+import { usePosts, useDeletePost } from '@/hooks/operacional/usePosts';
 import { getErrorMessage } from '@/lib/api';
 import { PostDetailModal } from '@/components/operacional/post-detail-modal';
 import { PostFormModal } from '@/components/operacional/post-form-modal';
@@ -54,6 +54,7 @@ export default function PostosPage() {
   const [filters, setFilters] = useState({});
   const stats = null;
   const refreshStats = () => {};
+  const deletePostMutation = useDeletePost();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -128,7 +129,7 @@ export default function PostosPage() {
     setDeleteError(null);
 
     try {
-      await postsService.delete(selectedPost.id);
+      await deletePostMutation.mutateAsync({ postId: selectedPost.id });
       setShowDeleteModal(false);
       setSelectedPost(null);
       refresh();

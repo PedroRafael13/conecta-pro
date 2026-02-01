@@ -7,20 +7,21 @@ Usado quando o classificador regex (IntentClassifier) retorna baixa confiança.
 Chama um LLM com um mini-prompt otimizado para classificação de intenções.
 """
 
-from typing import Dict, Any, Optional, Tuple
+import hashlib
+import json
+import logging
+import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-import json
-import logging
-import hashlib
-import re
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class FallbackIntentCategory(str, Enum):
     """Categorias de intenção para o fallback classifier."""
+
     # Operações de escala
     ESCALA_GERAR = "escala_gerar"
     ESCALA_CONSULTAR = "escala_consultar"
@@ -76,14 +77,15 @@ INTENT_MAPPING = {
 @dataclass
 class FallbackResult:
     """Resultado do classificador de fallback."""
+
     intent: FallbackIntentCategory
     confidence: float
     reasoning: str
-    agent_type: Optional[str] = None  # escala, substituicao, alerta, data, None
-    agent_intent: Optional[str] = None  # intent específico do agente
+    agent_type: str | None = None  # escala, substituicao, alerta, data, None
+    agent_intent: str | None = None  # intent específico do agente
     from_cache: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "intent": self.intent.value,
             "confidence": self.confidence,
@@ -167,7 +169,7 @@ FORMATO DE RESPOSTA:
             llm_provider: Provedor de LLM (opcional, pode ser injetado depois)
         """
         self.llm_provider = llm_provider
-        self._cache: Dict[str, Tuple[FallbackResult, datetime]] = {}
+        self._cache: dict[str, tuple[FallbackResult, datetime]] = {}
 
     def set_llm_provider(self, llm_provider):
         """Define o provedor de LLM."""
@@ -178,11 +180,11 @@ FORMATO DE RESPOSTA:
         # Normaliza a mensagem
         normalized = message.lower().strip()
         # Remove acentos e caracteres especiais
-        normalized = re.sub(r'[^\w\s]', '', normalized)
+        normalized = re.sub(r"[^\w\s]", "", normalized)
         # Hash para key compacta
-        return hashlib.md5(normalized.encode()).hexdigest()
+        return hashlib.md5(normalized.encode(), usedforsecurity=False).hexdigest()  # noqa: S324
 
-    def _get_from_cache(self, message: str) -> Optional[FallbackResult]:
+    def _get_from_cache(self, message: str) -> FallbackResult | None:
         """Busca resultado no cache."""
         cache_key = self._get_cache_key(message)
 
@@ -210,13 +212,13 @@ FORMATO DE RESPOSTA:
             sorted_items = sorted(
                 self._cache.items(),
                 key=lambda x: x[1][1],  # Ordena por timestamp
-                reverse=True
+                reverse=True,
             )
             self._cache = dict(sorted_items[:800])
 
-    def _build_user_prompt(self, message: str, context: Optional[Dict] = None) -> str:
+    def _build_user_prompt(self, message: str, context: dict | None = None) -> str:
         """Constrói o prompt do usuário para classificação."""
-        prompt = f"Classifique a intenção desta mensagem:\n\n\"{message}\""
+        prompt = f'Classifique a intenção desta mensagem:\n\n"{message}"'
 
         if context:
             if context.get("role"):
@@ -231,7 +233,7 @@ FORMATO DE RESPOSTA:
         try:
             # Tenta extrair JSON da resposta
             # O LLM pode retornar com texto antes/depois do JSON
-            json_match = re.search(r'\{[^{}]*\}', response)
+            json_match = re.search(r"\{[^{}]*\}", response)
             if json_match:
                 data = json.loads(json_match.group())
             else:
@@ -277,7 +279,7 @@ FORMATO DE RESPOSTA:
         self,
         message: str,
         regex_confidence: float = 0.0,
-        context: Optional[Dict] = None,
+        context: dict | None = None,
     ) -> FallbackResult:
         """
         Classifica a intenção da mensagem usando LLM.
@@ -314,13 +316,12 @@ FORMATO DE RESPOSTA:
             response = await self.llm_provider.generate(
                 system_prompt=self.CLASSIFIER_SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_prompt}],
-                model="gpt-3.5-turbo",  # Modelo mais rápido e barato
                 temperature=0.1,  # Baixa temperatura para respostas consistentes
                 max_tokens=150,  # Resposta curta
             )
 
-            # 4. Parseia resposta
-            result = self._parse_llm_response(response)
+            # 4. Parseia resposta (response é LLMResponse, extrair .content)
+            result = self._parse_llm_response(response.content)
 
             # 5. Salva no cache
             self._save_to_cache(message, result)
@@ -354,13 +355,10 @@ FORMATO DE RESPOSTA:
         self._cache.clear()
         logger.info("LLM Fallback cache cleared")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Retorna estatísticas do cache."""
         now = datetime.utcnow()
-        valid_entries = sum(
-            1 for _, (_, ts) in self._cache.items()
-            if now - ts < timedelta(seconds=self.CACHE_TTL)
-        )
+        valid_entries = sum(1 for _, (_, ts) in self._cache.items() if now - ts < timedelta(seconds=self.CACHE_TTL))
         return {
             "total_entries": len(self._cache),
             "valid_entries": valid_entries,

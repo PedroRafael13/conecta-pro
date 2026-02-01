@@ -1,0 +1,38 @@
+# Ruff configuration for Conecta PRO Backend
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "S",    # flake8-bandit
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "SIM",  # flake8-simplify
+]
+ignore = [
+    "S101",   # assert usado em testes
+    "S104",   # bind to 0.0.0.0
+    "E501",   # line too long (ja controlado pelo formatter)
+    "B008",   # Depends() em defaults - padrao FastAPI
+    "B904",   # raise from dentro de except - muitos falsos positivos
+    "B017",   # pytest.raises(Exception) - aceitavel em testes
+    "SIM102", # collapsible-if - prejudica legibilidade em logica complexa
+    "SIM103", # return-bool-condition-directly - nem sempre mais claro
+    "SIM108", # if-else-block-instead-of-if-exp - ternarios longos sao menos legiveis
+    "SIM110", # reimplemented-builtin - for+return vs any() e preferencia
+]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S106", "B017", "F401"]
+"alembic/**/*.py" = ["E501"]
+
+[format]
+quote-style = "double"
+indent-style = "space"

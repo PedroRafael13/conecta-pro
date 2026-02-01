@@ -37,6 +37,10 @@ axiosInstance.interceptors.response.use(
   }
 );
 
+interface CancellablePromise<T> extends Promise<T> {
+  cancel: () => void;
+}
+
 export const customInstance = <T>(
   config: AxiosRequestConfig,
   options?: AxiosRequestConfig
@@ -47,9 +51,8 @@ export const customInstance = <T>(
     ...config,
     ...options,
     cancelToken: source.token,
-  }).then(({ data }) => data);
+  }).then(({ data }) => data) as CancellablePromise<AxiosResponse<T>>;
 
-  // @ts-ignore
   promise.cancel = () => {
     source.cancel('Query was cancelled');
   };

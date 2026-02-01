@@ -5,26 +5,25 @@ Gerencia a criacao, execucao e persistencia de wizards.
 """
 
 import logging
-from typing import Optional, Type
 from uuid import UUID
 
-from modules.ai.bartolo.wizards.base_wizard import BaseWizard, WizardResponse, WizardState
-from modules.ai.bartolo.wizards.proposta_wizard import PropostaComercialWizard
 from modules.ai.bartolo.wizards.admissao_wizard import AdmissaoWizard
-from modules.ai.bartolo.wizards.ocorrencia_wizard import OcorrenciaWizard
-from modules.ai.bartolo.wizards.disciplinar_wizard import DisciplinarWizard
-from modules.ai.bartolo.wizards.ronda_wizard import RondaWizard
 from modules.ai.bartolo.wizards.banco_horas_wizard import BancoHorasWizard
-from modules.ai.bartolo.wizards.escala_wizard import EscalaWizard
-from modules.ai.bartolo.wizards.posto_wizard import PostoWizard
-from modules.ai.bartolo.wizards.diarista_wizard import DiaristaWizard
+from modules.ai.bartolo.wizards.base_wizard import BaseWizard, WizardResponse, WizardState
 from modules.ai.bartolo.wizards.comunicado_wizard import ComunicadoWizard
+from modules.ai.bartolo.wizards.diarista_wizard import DiaristaWizard
+from modules.ai.bartolo.wizards.disciplinar_wizard import DisciplinarWizard
+from modules.ai.bartolo.wizards.escala_wizard import EscalaWizard
+from modules.ai.bartolo.wizards.ocorrencia_wizard import OcorrenciaWizard
+from modules.ai.bartolo.wizards.posto_wizard import PostoWizard
+from modules.ai.bartolo.wizards.proposta_wizard import PropostaComercialWizard
+from modules.ai.bartolo.wizards.ronda_wizard import RondaWizard
 
 logger = logging.getLogger(__name__)
 
 
 # Registro de wizards disponiveis
-WIZARD_REGISTRY: dict[str, Type[BaseWizard]] = {
+WIZARD_REGISTRY: dict[str, type[BaseWizard]] = {
     "proposta_comercial": PropostaComercialWizard,
     "proposta_portaria": PropostaComercialWizard,
     "proposta_limpeza": PropostaComercialWizard,
@@ -79,16 +78,18 @@ class WizardManager:
         wizards = []
         seen = set()
 
-        for wizard_type, wizard_class in WIZARD_REGISTRY.items():
+        for _wizard_type, wizard_class in WIZARD_REGISTRY.items():
             if wizard_class not in seen:
                 seen.add(wizard_class)
                 # Cria instancia temporaria para pegar info
                 temp = wizard_class(0, "temp")
-                wizards.append({
-                    "type": temp.get_wizard_type(),
-                    "name": temp.get_wizard_name(),
-                    "description": temp.get_wizard_description(),
-                })
+                wizards.append(
+                    {
+                        "type": temp.get_wizard_type(),
+                        "name": temp.get_wizard_name(),
+                        "description": temp.get_wizard_description(),
+                    }
+                )
 
         return wizards
 
@@ -145,13 +146,13 @@ class WizardManager:
             "redigir comunicado": "comunicado",
         }
 
-        for keyword, wizard in wizard_keywords.items():
+        for keyword, _wizard in wizard_keywords.items():
             if keyword in intent_lower:
                 return True
 
         return False
 
-    def detect_wizard_type(self, intent: str) -> Optional[str]:
+    def detect_wizard_type(self, intent: str) -> str | None:
         """
         Detecta qual wizard usar baseado na intencao.
 
@@ -166,10 +167,22 @@ class WizardManager:
 
         # CORRECAO: Detecta verbos de consulta - NAO deve iniciar wizard
         query_verbs = [
-            'verificar', 'ver', 'listar', 'mostrar', 'consultar', 'buscar',
-            'checar', 'conferir', 'exibir', 'qual', 'quais', 'quantos', 'tem', 'existe'
+            "verificar",
+            "ver",
+            "listar",
+            "mostrar",
+            "consultar",
+            "buscar",
+            "checar",
+            "conferir",
+            "exibir",
+            "qual",
+            "quais",
+            "quantos",
+            "tem",
+            "existe",
         ]
-        first_word = intent_lower.split()[0] if intent_lower.split() else ''
+        first_word = intent_lower.split()[0] if intent_lower.split() else ""
         if first_word in query_verbs or any(verb in intent_lower.split()[:3] for verb in query_verbs):
             # É consulta, não wizard - retorna None
             return None
@@ -188,7 +201,10 @@ class WizardManager:
             return "disciplinar"
 
         # Ronda: só wizard se for CRIAR/REGISTRAR ronda, não VERIFICAR ronda
-        if any(k in intent_lower for k in ["criar ronda", "nova ronda", "registrar ronda", "agendar ronda", "programar ronda"]):
+        if any(
+            k in intent_lower
+            for k in ["criar ronda", "nova ronda", "registrar ronda", "agendar ronda", "programar ronda"]
+        ):
             return "ronda"
 
         if any(k in intent_lower for k in ["registrar horas", "lancar horas", "compensar horas"]):
@@ -206,16 +222,19 @@ class WizardManager:
             return "diarista"
 
         # Comunicado: só wizard para CRIAR comunicado
-        if any(k in intent_lower for k in ["criar comunicado", "novo comunicado", "redigir comunicado", "enviar comunicado"]):
+        if any(
+            k in intent_lower
+            for k in ["criar comunicado", "novo comunicado", "redigir comunicado", "enviar comunicado"]
+        ):
             return "comunicado"
 
         return None
 
-    def get_session_key(self, user_id: int, session_id: str) -> str:
+    def get_session_key(self, user_id: str, session_id: str) -> str:
         """Gera chave de sessao."""
         return f"{user_id}:{session_id}"
 
-    def has_active_wizard(self, user_id: int, session_id: str) -> bool:
+    def has_active_wizard(self, user_id: str, session_id: str) -> bool:
         """Verifica se usuario tem wizard ativo."""
         key = self.get_session_key(user_id, session_id)
         if key in self.active_wizards:
@@ -223,7 +242,7 @@ class WizardManager:
             return wizard.data.state in [WizardState.IN_PROGRESS, WizardState.WAITING_INPUT]
         return False
 
-    def get_active_wizard(self, user_id: int, session_id: str) -> Optional[BaseWizard]:
+    def get_active_wizard(self, user_id: str, session_id: str) -> BaseWizard | None:
         """Retorna wizard ativo do usuario."""
         key = self.get_session_key(user_id, session_id)
         return self.active_wizards.get(key)
@@ -231,9 +250,9 @@ class WizardManager:
     def start_wizard(
         self,
         wizard_type: str,
-        user_id: int,
+        user_id: str,
         session_id: str,
-        initial_data: Optional[dict] = None,
+        initial_data: dict | None = None,
     ) -> WizardResponse:
         """
         Inicia um novo wizard.
@@ -278,10 +297,10 @@ class WizardManager:
 
     def process_input(
         self,
-        user_id: int,
+        user_id: str,
         session_id: str,
         user_input: str,
-    ) -> Optional[WizardResponse]:
+    ) -> WizardResponse | None:
         """
         Processa entrada do usuario no wizard ativo.
 
@@ -310,9 +329,9 @@ class WizardManager:
 
     async def complete_wizard(
         self,
-        user_id: int,
+        user_id: str,
         session_id: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """
         Completa wizard e processa resultado.
 
@@ -341,9 +360,9 @@ class WizardManager:
 
     def cancel_wizard(
         self,
-        user_id: int,
+        user_id: str,
         session_id: str,
-    ) -> Optional[WizardResponse]:
+    ) -> WizardResponse | None:
         """
         Cancela wizard ativo.
 
@@ -369,9 +388,9 @@ class WizardManager:
 
     def get_wizard_status(
         self,
-        user_id: int,
+        user_id: str,
         session_id: str,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Retorna status do wizard ativo."""
         key = self.get_session_key(user_id, session_id)
         wizard = self.active_wizards.get(key)
@@ -387,7 +406,8 @@ class WizardManager:
             "current_step": wizard.data.current_step,
             "total_steps": wizard.data.total_steps,
             "progress_percent": (wizard.data.current_step / wizard.data.total_steps * 100)
-                if wizard.data.total_steps > 0 else 0,
+            if wizard.data.total_steps > 0
+            else 0,
             "collected_data": wizard.data.collected_data,
             "started_at": wizard.data.started_at.isoformat() if wizard.data.started_at else None,
         }

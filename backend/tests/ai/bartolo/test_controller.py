@@ -14,28 +14,29 @@ Testa:
 - POST /bartolo/wizard/cancel - cancelamento de wizard
 """
 
-import pytest
 import sys
-sys.path.insert(0, '/app')
 
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4, UUID
-from datetime import datetime
+import pytest
+
+sys.path.insert(0, "/app")
+
+from unittest.mock import AsyncMock, MagicMock
+from uuid import uuid4
 
 from modules.ai.bartolo.controllers.bartolo_controller import (
-    bartolo_router,
+    FeedbackRequest,
     SendMessageRequest,
     SendMessageResponse,
-    FeedbackRequest,
-    WizardStartRequest,
     WizardInputRequest,
+    WizardStartRequest,
+    bartolo_router,
 )
 from modules.ai.bartolo.wizards.base_wizard import WizardState
-
 
 # ==========================================================================
 # Testes de schemas
 # ==========================================================================
+
 
 class TestControllerSchemas:
     """Testes para os schemas do controller."""
@@ -134,6 +135,7 @@ class TestControllerSchemas:
 # Testes do Health Check (endpoint mais simples, nao depende de mocks)
 # ==========================================================================
 
+
 class TestHealthEndpoint:
     """Testes para o endpoint /health."""
 
@@ -142,6 +144,7 @@ class TestHealthEndpoint:
         """Testa que health check retorna status correto."""
         # Importa e chama diretamente a funcao do endpoint
         from modules.ai.bartolo.controllers.bartolo_controller import health_check
+
         result = await health_check()
         assert result["status"] == "healthy"
         assert result["name"] == "Bartolo"
@@ -152,6 +155,7 @@ class TestHealthEndpoint:
 # ==========================================================================
 # Testes do Router Configuration
 # ==========================================================================
+
 
 class TestRouterConfig:
     """Testes para configuracao do router."""
@@ -233,6 +237,7 @@ class TestRouterConfig:
 # Testes com Mock do Engine
 # ==========================================================================
 
+
 class TestSendMessageEndpoint:
     """Testes para o endpoint /send com mocks."""
 
@@ -269,9 +274,13 @@ class TestSendMessageEndpoint:
             session_id="sess-1",
         )
 
+        # Mock do User autenticado (bug #6: send_message agora usa current_user via JWT)
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
         result = await send_message(
             request=request,
-            user_id=1,
+            current_user=mock_user,
             engine=mock_engine,
             learning=mock_learning,
             db=mock_db,
@@ -291,17 +300,20 @@ class TestGreetingEndpoint:
         """Testa que greeting retorna saudacao."""
         from modules.ai.bartolo.controllers.bartolo_controller import get_greeting
 
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
         mock_engine = AsyncMock()
         mock_engine.get_greeting = AsyncMock(return_value="Bom dia! Sou o Bartolo.")
 
         result = await get_greeting(
-            user_id=1,
             session_id="sess-1",
+            current_user=mock_user,
             engine=mock_engine,
         )
 
         assert result["greeting"] == "Bom dia! Sou o Bartolo."
-        mock_engine.get_greeting.assert_called_once_with(1, "sess-1")
+        mock_engine.get_greeting.assert_called_once_with(str(mock_user.id), "sess-1")
 
 
 class TestStatsEndpoint:
@@ -333,10 +345,12 @@ class TestModulesEndpoint:
         from modules.ai.bartolo.controllers.bartolo_controller import list_modules
 
         mock_engine = AsyncMock()
-        mock_engine.get_available_modules = AsyncMock(return_value=[
-            {"id": "escalas", "name": "Escalas"},
-            {"id": "cobertura", "name": "Cobertura"},
-        ])
+        mock_engine.get_available_modules = AsyncMock(
+            return_value=[
+                {"id": "escalas", "name": "Escalas"},
+                {"id": "cobertura", "name": "Cobertura"},
+            ]
+        )
 
         result = await list_modules(engine=mock_engine)
 
@@ -350,8 +364,9 @@ class TestModuleInfoEndpoint:
     @pytest.mark.asyncio
     async def test_module_info_not_found(self):
         """Testa que modulo inexistente retorna 404."""
-        from modules.ai.bartolo.controllers.bartolo_controller import get_module_info
         from fastapi import HTTPException
+
+        from modules.ai.bartolo.controllers.bartolo_controller import get_module_info
 
         with pytest.raises(HTTPException) as exc_info:
             await get_module_info("modulo_inexistente_xyz")
@@ -387,7 +402,10 @@ class TestWizardEndpoints:
             session_id="sess-1",
         )
 
-        result = await start_wizard(request=request, user_id=1, engine=mock_engine)
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        result = await start_wizard(request=request, current_user=mock_user, engine=mock_engine)
 
         assert result["step_number"] == 1
         assert result["total_steps"] == 9
@@ -421,7 +439,10 @@ class TestWizardEndpoints:
             user_input="Condominio Teste",
         )
 
-        result = await wizard_input(request=request, user_id=1, engine=mock_engine)
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        result = await wizard_input(request=request, current_user=mock_user, engine=mock_engine)
 
         assert result["step_number"] == 2
         assert result["collected_data"]["cliente"] == "Teste"
@@ -430,8 +451,9 @@ class TestWizardEndpoints:
     @pytest.mark.asyncio
     async def test_wizard_input_no_active_wizard(self):
         """Testa input sem wizard ativo."""
-        from modules.ai.bartolo.controllers.bartolo_controller import wizard_input
         from fastapi import HTTPException
+
+        from modules.ai.bartolo.controllers.bartolo_controller import wizard_input
 
         mock_engine = MagicMock()
         mock_engine.wizard_manager = MagicMock()
@@ -442,8 +464,11 @@ class TestWizardEndpoints:
             user_input="texto",
         )
 
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
         with pytest.raises(HTTPException) as exc_info:
-            await wizard_input(request=request, user_id=1, engine=mock_engine)
+            await wizard_input(request=request, current_user=mock_user, engine=mock_engine)
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
@@ -458,7 +483,10 @@ class TestWizardEndpoints:
         mock_engine.wizard_manager = MagicMock()
         mock_engine.wizard_manager.cancel_wizard = MagicMock(return_value=mock_response)
 
-        result = await cancel_wizard(session_id="sess-1", user_id=1, engine=mock_engine)
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        result = await cancel_wizard(session_id="sess-1", current_user=mock_user, engine=mock_engine)
 
         assert result["success"] is True
         assert "cancelado" in result["message"].lower()
@@ -466,15 +494,19 @@ class TestWizardEndpoints:
     @pytest.mark.asyncio
     async def test_wizard_cancel_no_active(self):
         """Testa cancelamento sem wizard ativo."""
-        from modules.ai.bartolo.controllers.bartolo_controller import cancel_wizard
         from fastapi import HTTPException
+
+        from modules.ai.bartolo.controllers.bartolo_controller import cancel_wizard
 
         mock_engine = MagicMock()
         mock_engine.wizard_manager = MagicMock()
         mock_engine.wizard_manager.cancel_wizard = MagicMock(return_value=None)
 
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
         with pytest.raises(HTTPException) as exc_info:
-            await cancel_wizard(session_id="sess-1", user_id=1, engine=mock_engine)
+            await cancel_wizard(session_id="sess-1", current_user=mock_user, engine=mock_engine)
         assert exc_info.value.status_code == 404
 
     @pytest.mark.asyncio
@@ -486,6 +518,9 @@ class TestWizardEndpoints:
         mock_engine.wizard_manager = MagicMock()
         mock_engine.wizard_manager.get_wizard_status = MagicMock(return_value=None)
 
-        result = await wizard_status(session_id="sess-1", user_id=1, engine=mock_engine)
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        result = await wizard_status(session_id="sess-1", current_user=mock_user, engine=mock_engine)
 
         assert result["active"] is False

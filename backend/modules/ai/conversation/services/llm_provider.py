@@ -3,9 +3,10 @@
 import logging
 import time
 from abc import ABC, abstractmethod
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, AsyncGenerator, Optional
+from typing import Any
 
 from core.config.settings import settings
 
@@ -18,6 +19,7 @@ class LLMModel(str, Enum):
     # OpenAI
     GPT_4 = "gpt-4"
     GPT_4_TURBO = "gpt-4-turbo-preview"
+    GPT_4O_MINI = "gpt-4o-mini"
     GPT_35_TURBO = "gpt-3.5-turbo"
 
     # Anthropic
@@ -54,7 +56,7 @@ class BaseLLMProvider(ABC):
     async def generate(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -66,7 +68,7 @@ class BaseLLMProvider(ABC):
     async def generate_stream(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -78,7 +80,7 @@ class BaseLLMProvider(ABC):
 class OpenAIProvider(BaseLLMProvider):
     """Provider para OpenAI GPT."""
 
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+    def __init__(self, api_key: str | None = None, model: str | None = None):
         """Inicializa provider OpenAI."""
         self.api_key = api_key or settings.OPENAI_API_KEY
         self.model = model or settings.LLM_MODEL if settings.LLM_PROVIDER == "openai" else LLMModel.GPT_4.value
@@ -102,7 +104,7 @@ class OpenAIProvider(BaseLLMProvider):
     async def generate(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -145,7 +147,7 @@ class OpenAIProvider(BaseLLMProvider):
     async def generate_stream(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -179,10 +181,12 @@ class OpenAIProvider(BaseLLMProvider):
 class ClaudeProvider(BaseLLMProvider):
     """Provider para Anthropic Claude."""
 
-    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
+    def __init__(self, api_key: str | None = None, model: str | None = None):
         """Inicializa provider Claude."""
         self.api_key = api_key or settings.ANTHROPIC_API_KEY
-        self.model = model or settings.LLM_MODEL if settings.LLM_PROVIDER == "anthropic" else LLMModel.CLAUDE_3_SONNET.value
+        self.model = (
+            model or settings.LLM_MODEL if settings.LLM_PROVIDER == "anthropic" else LLMModel.CLAUDE_3_SONNET.value
+        )
         self._client = None
 
         if not self.api_key:
@@ -203,7 +207,7 @@ class ClaudeProvider(BaseLLMProvider):
     async def generate(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -241,7 +245,7 @@ class ClaudeProvider(BaseLLMProvider):
     async def generate_stream(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -274,7 +278,6 @@ class LocalFallbackProvider(BaseLLMProvider):
         "help": "Posso ajudar com navegacao, consultas de dados, criacao de registros e muito mais. O que voce precisa?",
         "error": "Desculpe, nao consegui processar sua solicitacao no momento. Tente novamente em alguns instantes.",
         "default": "Entendi sua mensagem. Para uma resposta mais precisa, poderia detalhar sua solicitacao?",
-
         # Modulo Operacional
         "operacional_escalas": "No modulo Operacional, voce pode gerenciar escalas de trabalho. Acesse Menu > Operacional > Escalas para criar, editar e visualizar escalas. Posso ajudar com templates de escalas, alocacoes de funcionarios e gestao de turnos.",
         "operacional_turnos": "Os turnos sao configurados em Operacional > Turnos. Voce pode criar turnos personalizados com horarios, intervalos e regras especificas. Cada turno pode ser vinculado a postos e escalas.",
@@ -284,14 +287,12 @@ class LocalFallbackProvider(BaseLLMProvider):
         "operacional_banco_horas": "O banco de horas e gerenciado em Operacional > Banco de Horas. Acompanhe saldos, lancamentos, compensacoes e relatorios por funcionario.",
         "operacional_substituicoes": "As substituicoes sao gerenciadas em Operacional > Substituicoes. Registre trocas de turno, faltas cobertas e historico de substituicoes.",
         "operacional_rondas": "As rondas de inspecao sao configuradas em Operacional > Rondas. Crie roteiros, checkpoints, QR codes e acompanhe execucao em tempo real.",
-
         # Modulo CRM
         "crm_leads": "No modulo CRM > Leads, voce gerencia prospects e oportunidades de negocio. Registre contatos, interacoes, origem e status de cada lead.",
         "crm_propostas": "As propostas comerciais sao criadas em CRM > Propostas. Monte propostas com produtos/servicos, valores, prazos e envie para aprovacao do cliente.",
         "crm_contratos": "Os contratos sao gerenciados em CRM > Contratos. Vincule propostas aprovadas, configure faturamento, aditivos e renovacoes automaticas.",
         "crm_comissoes": "As comissoes de vendas sao calculadas em CRM > Comissoes. Configure regras por vendedor, produto e acompanhe pagamentos.",
         "crm_pipeline": "O pipeline de vendas e visualizado no Dashboard CRM. Acompanhe funil de vendas, taxas de conversao e metas por vendedor.",
-
         # Modulo Financeiro
         "financeiro_pagar": "As contas a pagar sao gerenciadas em Financeiro > Contas a Pagar. Registre fornecedores, vencimentos, categorias e realize pagamentos.",
         "financeiro_receber": "As contas a receber estao em Financeiro > Contas a Receber. Controle faturas, recebimentos, inadimplencia e cobrancas.",
@@ -299,30 +300,25 @@ class LocalFallbackProvider(BaseLLMProvider):
         "financeiro_bancos": "As contas bancarias sao gerenciadas em Financeiro > Bancos. Cadastre contas, lancamentos, conciliacoes e extratos OFX.",
         "financeiro_compras": "As compras sao gerenciadas em Financeiro > Compras. Crie pedidos, receba mercadorias e integre com contas a pagar.",
         "financeiro_estoque": "O estoque e controlado em Financeiro > Estoque. Gerencie produtos, entradas, saidas, inventarios e relatorios.",
-
         # Modulo RH
         "rh_admissao": "O processo de admissao e feito em RH > Admissoes. Colete documentos, gere ASO, registre funcionario e crie usuario no sistema.",
         "rh_folha": "A folha de pagamento e processada em RH > Folha. Calcule salarios, descontos, impostos e gere arquivos para banco.",
         "rh_ponto": "O ponto eletronico e gerenciado em RH > Ponto. Integrado com REPs, calcula horas extras, faltas e atrasos automaticamente.",
         "rh_ferias": "As ferias sao gerenciadas em RH > Ferias. Controle periodo aquisitivo, concessivo, calcule valores e gere documentos.",
         "rh_treinamentos": "Os treinamentos sao organizados em RH > Treinamentos. Agende cursos, registre presenca e emita certificados.",
-
         # Modulo GED
         "ged_documentos": "O GED gerencia documentos em GED > Documentos. Organize por pastas, tags, compartilhe, versione e assine digitalmente.",
         "ged_pastas": "As pastas do GED sao criadas em GED > Pastas. Defina hierarquia, permissoes e regras de retencao.",
         "ged_assinaturas": "As assinaturas digitais sao feitas em GED > Assinaturas. Assine documentos com certificado digital ICP-Brasil.",
-
         # Dashboard e KPIs
         "dashboard": "O Dashboard principal mostra indicadores em tempo real: receitas, despesas, contratos ativos, funcionarios, ocorrencias e muito mais.",
         "kpis": "Os KPIs sao metricas de performance. Cada modulo tem seus proprios indicadores: ocupacao de postos, inadimplencia, turnover, etc.",
         "relatorios": "Os relatorios estao disponiveis em cada modulo. Gere PDFs, Excel, graficos e agende envios automaticos por email.",
-
         # Ajuda Geral
         "navegacao": "Use o menu lateral para navegar entre modulos. A busca global (Ctrl+K) localiza registros em todo o sistema rapidamente.",
         "permissoes": "As permissoes sao gerenciadas em Configuracoes > Usuarios e Perfis. Defina acesso por modulo, tela e acao.",
         "notificacoes": "As notificacoes aparecem no sino superior direito. Configure alertas em Configuracoes > Notificacoes.",
         "suporte": "Para suporte tecnico, acesse Menu > Ajuda > Suporte ou envie email para suporte@conectapro.com.br.",
-
         # Sistema Geral
         "sistema": "O Conecta PRO e um sistema ERP completo para gestao de empresas de vigilancia e seguranca. Possui modulos: Operacional (escalas, turnos, postos), CRM (leads, propostas, contratos), Financeiro (pagar, receber, fluxo de caixa), RH (admissao, folha, ponto), e GED (documentos). O que gostaria de saber?",
         "cadastrar": "Para cadastros no sistema: Funcionarios em RH > Admissoes ou Operacional > Funcionarios. Clientes em CRM > Leads ou Clients > Condominios. Fornecedores em Financeiro > Fornecedores. Qual cadastro deseja fazer?",
@@ -433,7 +429,7 @@ class LocalFallbackProvider(BaseLLMProvider):
     async def generate(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -462,7 +458,7 @@ class LocalFallbackProvider(BaseLLMProvider):
     async def generate_stream(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,
@@ -488,9 +484,9 @@ class LLMProvider:
 
     def __init__(
         self,
-        primary_provider: Optional[str] = None,
-        primary_model: Optional[str] = None,
-        fallback_enabled: Optional[bool] = None,
+        primary_provider: str | None = None,
+        primary_model: str | None = None,
+        fallback_enabled: bool | None = None,
     ):
         """
         Inicializa o provider usando configuracoes do settings.
@@ -535,7 +531,7 @@ class LLMProvider:
     async def generate(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         use_fallback: bool = True,
@@ -579,7 +575,7 @@ class LLMProvider:
     async def generate_stream(
         self,
         messages: list[dict[str, str]],
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_tokens: int = 2000,
         temperature: float = 0.7,
         **kwargs,

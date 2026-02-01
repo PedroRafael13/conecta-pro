@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -31,9 +31,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
-import { useTimeBankEntries } from '@/hooks/operacional/useTimeBank';
 import {
-  timeBankService,
+  useTimeBankEntries,
+  usePendingEntries,
+  useExpirationAlerts,
+  useTimeBankStats,
+  useApproveTimeBankEntry,
+  useRejectTimeBankEntry,
+} from '@/hooks/operacional/useTimeBank';
+import {
   type TimeBankEntry,
   type TimeBankStatus,
   type TimeBankEntryType,
@@ -50,53 +56,34 @@ export default function BancoHorasPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const { data: entries = [], isLoading, error, refetch } = useTimeBankEntries();
-  const [pendingEntries, setPendingEntries] = useState<TimeBankEntry[]>([]);
-  const [alerts, setAlerts] = useState<TimeBankAlert[]>([]);
-  const [stats, setStats] = useState<TimeBankStats | null>(null);
-  const total = entries.length;
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const totalPages = Math.ceil(total / pageSize);
-
   const [selectedStatus, setSelectedStatus] = useState<TimeBankStatus | ''>('');
   const [selectedType, setSelectedType] = useState<TimeBankEntryType | ''>('');
   const [selectedDate, setSelectedDate] = useState('');
+
+  const { data: entriesData, isLoading, error: entriesError, refetch } = useTimeBankEntries({
+    page,
+    page_size: pageSize,
+    status: selectedStatus || undefined,
+    entry_type: selectedType || undefined,
+    start_date: selectedDate || undefined,
+  });
+  const entries: TimeBankEntry[] = (entriesData as any)?.items ?? (Array.isArray(entriesData) ? entriesData : []);
+  const total = (entriesData as any)?.total ?? entries.length;
+  const totalPages = (entriesData as any)?.total_pages ?? Math.ceil(total / pageSize);
+  const error = entriesError ? 'Erro ao carregar banco de horas' : null;
+
+  const { data: pendingEntries = [] } = usePendingEntries();
+  const { data: alerts = [] } = useExpirationAlerts();
+  const { data: stats = null } = useTimeBankStats();
+  const approveMutation = useApproveTimeBankEntry();
+  const rejectMutation = useRejectTimeBankEntry();
 
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<TimeBankEntry | null>(null);
   const [approving, setApproving] = useState(false);
-
-  const loadData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const [listResponse, pendingResponse, alertsResponse, statsResponse] = await Promise.all([
-        timeBankService.list(page, pageSize, {
-          status: selectedStatus || undefined,
-          entry_type: selectedType || undefined,
-          start_date: selectedDate || undefined,
-        }),
-        timeBankService.getPending(),
-        timeBankService.getAlerts(),
-        timeBankService.getStats(),
-      ]);
-
-      setEntries(listResponse.items);
-      setTotal(listResponse.total);
-      setTotalPages(listResponse.total_pages);
-      setPendingEntries(pendingResponse);
-      setAlerts(alertsResponse);
-      setStats(statsResponse);
-    } catch (err) {
-      setError('Erro ao carregar banco de horas');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, selectedStatus, selectedType, selectedDate]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -104,20 +91,14 @@ export default function BancoHorasPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadData();
-    }
-  }, [isAuthenticated, loadData]);
-
   const handleApprove = async () => {
     if (!selectedEntry) return;
 
     setApproving(true);
     try {
-      await timeBankService.approve(selectedEntry.id);
+      await approveMutation.mutateAsync({ entryId: selectedEntry.id, data: {} });
       setShowApproveModal(false);
-      loadData();
+      refetch();
     } catch (err) {
       console.error('Erro ao aprovar:', err);
     } finally {
@@ -130,8 +111,8 @@ export default function BancoHorasPage() {
     if (!reason) return;
 
     try {
-      await timeBankService.reject(entry.id, { rejection_reason: reason });
-      loadData();
+      await rejectMutation.mutateAsync({ entryId: entry.id, data: { rejection_reason: reason } });
+      refetch();
     } catch (err) {
       console.error('Erro ao rejeitar:', err);
     }
@@ -208,7 +189,7 @@ export default function BancoHorasPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -430,7 +411,7 @@ export default function BancoHorasPage() {
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={loadData} className="ml-auto">
+            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
               Tentar novamente
             </Button>
           </div>

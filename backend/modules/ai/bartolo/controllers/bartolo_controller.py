@@ -5,22 +5,20 @@ Expoe a API REST do Bartolo para integracao com o frontend.
 """
 
 import logging
-from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
+from core.database import get_db
 from core.models import User
-from modules.ai.bartolo.services.bartolo_engine import BartoloEngine, BartoloResponse
-from modules.ai.bartolo.services.learning_service import LearningService, FeedbackType
-from modules.ai.bartolo.wizards.wizard_manager import WizardManager
-from modules.ai.bartolo.config.modules import get_all_modules, MODULE_PROMPTS
-from modules.ai.bartolo.actions import ActionExecutor, ActionConfirmation
+from modules.ai.bartolo.actions import ActionConfirmation, ActionExecutor
+from modules.ai.bartolo.config.modules import MODULE_PROMPTS
+from modules.ai.bartolo.services.bartolo_engine import BartoloEngine
+from modules.ai.bartolo.services.learning_service import FeedbackType, LearningService
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +26,8 @@ logger = logging.getLogger(__name__)
 bartolo_router = APIRouter(prefix="/bartolo", tags=["Bartolo - Assistente Inteligente"])
 
 # Instancias globais (em producao, usar injecao de dependencia)
-_bartolo_engine: Optional[BartoloEngine] = None
-_learning_service: Optional[LearningService] = None
+_bartolo_engine: BartoloEngine | None = None
+_learning_service: LearningService | None = None
 
 
 def get_bartolo_engine() -> BartoloEngine:
@@ -52,48 +50,54 @@ def get_learning_service() -> LearningService:
 # Schemas
 # ==========================================
 
+
 class SendMessageRequest(BaseModel):
     """Request para enviar mensagem."""
+
     message: str = Field(..., min_length=1, max_length=2000, description="Mensagem do usuario")
     session_id: str = Field(..., description="ID da sessao")
-    module: Optional[str] = Field(None, description="Modulo atual")
-    metadata: Optional[dict] = Field(None, description="Metadados adicionais")
+    module: str | None = Field(None, description="Modulo atual")
+    metadata: dict | None = Field(None, description="Metadados adicionais")
 
 
 class SendMessageResponse(BaseModel):
     """Response de mensagem."""
+
     message_id: str
     session_id: str
     response: str
-    response_html: Optional[str] = None
-    intent: Optional[str] = None
+    response_html: str | None = None
+    intent: str | None = None
     confidence: float = 0.0
     suggestions: list = []
     actions: list = []
-    wizard_response: Optional[dict] = None
-    data_results: Optional[dict] = None
-    action_preview: Optional[dict] = None  # NOVO: Preview de ação executiva
+    wizard_response: dict | None = None
+    data_results: dict | None = None
+    action_preview: dict | None = None  # NOVO: Preview de ação executiva
     processing_time_ms: int = 0
     model_used: str = ""
 
 
 class FeedbackRequest(BaseModel):
     """Request de feedback."""
+
     interaction_id: str = Field(..., description="ID da interacao")
     feedback_type: str = Field(..., description="Tipo de feedback: helpful, not_helpful, incorrect, etc")
-    rating: Optional[int] = Field(None, ge=1, le=5, description="Nota de 1 a 5")
-    feedback_text: Optional[str] = Field(None, max_length=500, description="Comentario")
+    rating: int | None = Field(None, ge=1, le=5, description="Nota de 1 a 5")
+    feedback_text: str | None = Field(None, max_length=500, description="Comentario")
 
 
 class WizardStartRequest(BaseModel):
     """Request para iniciar wizard."""
+
     wizard_type: str = Field(..., description="Tipo do wizard")
     session_id: str = Field(..., description="ID da sessao")
-    initial_data: Optional[dict] = Field(None, description="Dados iniciais")
+    initial_data: dict | None = Field(None, description="Dados iniciais")
 
 
 class WizardInputRequest(BaseModel):
     """Request de input no wizard."""
+
     session_id: str = Field(..., description="ID da sessao")
     user_input: str = Field(..., description="Entrada do usuario")
 
@@ -101,6 +105,7 @@ class WizardInputRequest(BaseModel):
 # ==========================================
 # Endpoints - Chat Principal
 # ==========================================
+
 
 @bartolo_router.post("/send", response_model=SendMessageResponse)
 async def send_message(
@@ -161,16 +166,13 @@ async def send_message(
 
     except Exception as e:
         logger.error(f"Erro ao processar mensagem: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao processar mensagem"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao processar mensagem")
 
 
 @bartolo_router.post("/confirm-action", response_model=SendMessageResponse)
 async def confirm_action(
     confirmation: ActionConfirmation,
-    user_id: int = Query(..., description="ID do usuario"),
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -180,6 +182,9 @@ async def confirm_action(
     o usuário pode confirmar ou cancelar através deste endpoint.
     """
     try:
+        # Sobrescreve user_id da confirmação com o usuário autenticado via JWT
+        confirmation.user_id = str(current_user.id)
+
         action_executor = ActionExecutor(db)
         result = await action_executor.execute_action(confirmation)
 
@@ -190,7 +195,7 @@ async def confirm_action(
                 response_text += "**Detalhes:**\n"
                 for key, value in result.details.items():
                     # Formatar key de snake_case para Title Case
-                    key_formatted = key.replace('_', ' ').title()
+                    key_formatted = key.replace("_", " ").title()
                     response_text += f"- **{key_formatted}:** {value}\n"
         else:
             response_text = f"❌ {result.message}\n\n"
@@ -199,7 +204,7 @@ async def confirm_action(
 
         return SendMessageResponse(
             message_id=result.action_id,
-            session_id=confirmation.user_id,
+            session_id=confirmation.action_id,
             response=response_text,
             processing_time_ms=int(result.duration_seconds * 1000) if result.duration_seconds else 0,
             model_used="action_executor",
@@ -207,22 +212,16 @@ async def confirm_action(
 
     except ValueError as e:
         logger.error(f"Erro de validação ao confirmar ação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
         logger.error(f"Erro ao confirmar ação: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Erro ao executar ação"
-        )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Erro ao executar ação")
 
 
 @bartolo_router.post("/send/stream")
 async def send_message_stream(
     request: SendMessageRequest,
-    user_id: int = Query(..., description="ID do usuario"),
+    current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
 ):
     """
@@ -231,9 +230,11 @@ async def send_message_stream(
     Retorna a resposta progressivamente enquanto e gerada.
     Util para respostas longas.
     """
+    user_id_str = str(current_user.id)
+
     async def generate():
         async for chunk in engine.process_message_stream(
-            user_id=user_id,
+            user_id=user_id_str,
             session_id=request.session_id,
             message=request.message,
             module=request.module,
@@ -249,8 +250,8 @@ async def send_message_stream(
 
 @bartolo_router.get("/greeting")
 async def get_greeting(
-    user_id: int = Query(..., description="ID do usuario"),
     session_id: str = Query(..., description="ID da sessao"),
+    current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
 ):
     """
@@ -258,13 +259,15 @@ async def get_greeting(
 
     Considera nome do usuario e hora do dia.
     """
-    greeting = await engine.get_greeting(user_id, session_id)
+    user_id_str = str(current_user.id)
+    greeting = await engine.get_greeting(user_id_str, session_id)
     return {"greeting": greeting}
 
 
 # ==========================================
 # Endpoints - Feedback
 # ==========================================
+
 
 @bartolo_router.post("/feedback")
 async def submit_feedback(
@@ -281,7 +284,7 @@ async def submit_feedback(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Tipo de feedback invalido. Use: {[f.value for f in FeedbackType]}"
+            detail=f"Tipo de feedback invalido. Use: {[f.value for f in FeedbackType]}",
         )
 
     success = await learning.record_feedback(
@@ -292,10 +295,7 @@ async def submit_feedback(
     )
 
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Interacao nao encontrada"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Interacao nao encontrada")
 
     return {"success": True, "message": "Feedback registrado com sucesso"}
 
@@ -303,6 +303,7 @@ async def submit_feedback(
 # ==========================================
 # Endpoints - Wizards
 # ==========================================
+
 
 @bartolo_router.get("/wizards")
 async def list_wizards(
@@ -320,7 +321,7 @@ async def list_wizards(
 @bartolo_router.post("/wizard/start")
 async def start_wizard(
     request: WizardStartRequest,
-    user_id: int = Query(..., description="ID do usuario"),
+    current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
 ):
     """
@@ -330,9 +331,10 @@ async def start_wizard(
     - proposta_comercial: Monta proposta comercial passo a passo
     - admissao_funcionario: Guia processo de admissao
     """
+    user_id_str = str(current_user.id)
     response = engine.wizard_manager.start_wizard(
         wizard_type=request.wizard_type,
-        user_id=user_id,
+        user_id=user_id_str,
         session_id=request.session_id,
         initial_data=request.initial_data,
     )
@@ -354,23 +356,21 @@ async def start_wizard(
 @bartolo_router.post("/wizard/input")
 async def wizard_input(
     request: WizardInputRequest,
-    user_id: int = Query(..., description="ID do usuario"),
+    current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
 ):
     """
     Processa entrada do usuario no wizard ativo.
     """
+    user_id_str = str(current_user.id)
     response = engine.wizard_manager.process_input(
-        user_id=user_id,
+        user_id=user_id_str,
         session_id=request.session_id,
         user_input=request.user_input,
     )
 
     if not response:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhum wizard ativo para esta sessao"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nenhum wizard ativo para esta sessao")
 
     return {
         "wizard_id": str(response.wizard_id),
@@ -391,13 +391,14 @@ async def wizard_input(
 @bartolo_router.get("/wizard/status")
 async def wizard_status(
     session_id: str = Query(..., description="ID da sessao"),
-    user_id: int = Query(..., description="ID do usuario"),
+    current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
 ):
     """
     Retorna status do wizard ativo.
     """
-    status = engine.wizard_manager.get_wizard_status(user_id, session_id)
+    user_id_str = str(current_user.id)
+    status = engine.wizard_manager.get_wizard_status(user_id_str, session_id)
 
     if not status:
         return {"active": False}
@@ -408,19 +409,17 @@ async def wizard_status(
 @bartolo_router.post("/wizard/cancel")
 async def cancel_wizard(
     session_id: str = Query(..., description="ID da sessao"),
-    user_id: int = Query(..., description="ID do usuario"),
+    current_user: User = Depends(get_current_user),
     engine: BartoloEngine = Depends(get_bartolo_engine),
 ):
     """
     Cancela wizard ativo.
     """
-    response = engine.wizard_manager.cancel_wizard(user_id, session_id)
+    user_id_str = str(current_user.id)
+    response = engine.wizard_manager.cancel_wizard(user_id_str, session_id)
 
     if not response:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhum wizard ativo"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nenhum wizard ativo")
 
     return {"success": True, "message": response.message}
 
@@ -428,6 +427,7 @@ async def cancel_wizard(
 # ==========================================
 # Endpoints - Modulos
 # ==========================================
+
 
 @bartolo_router.get("/modules")
 async def list_modules(
@@ -446,10 +446,7 @@ async def get_module_info(module_id: str):
     Retorna informacoes detalhadas de um modulo.
     """
     if module_id not in MODULE_PROMPTS:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Modulo '{module_id}' nao encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Modulo '{module_id}' nao encontrado")
 
     config = MODULE_PROMPTS[module_id]
     return {
@@ -465,6 +462,7 @@ async def get_module_info(module_id: str):
 # ==========================================
 # Endpoints - Estatisticas
 # ==========================================
+
 
 @bartolo_router.get("/stats")
 async def get_stats(
@@ -500,6 +498,7 @@ async def health_check():
 # Endpoints - Aprendizado
 # ==========================================
 
+
 @bartolo_router.get("/learning/stats")
 async def get_learning_stats(
     learning: LearningService = Depends(get_learning_service),
@@ -512,7 +511,7 @@ async def get_learning_stats(
 
 @bartolo_router.get("/learning/patterns")
 async def get_learned_patterns(
-    pattern_type: Optional[str] = Query(None, description="Filtrar por tipo"),
+    pattern_type: str | None = Query(None, description="Filtrar por tipo"),
     min_usage: int = Query(3, description="Uso minimo"),
     min_success_rate: float = Query(0.7, description="Taxa de sucesso minima"),
     learning: LearningService = Depends(get_learning_service),

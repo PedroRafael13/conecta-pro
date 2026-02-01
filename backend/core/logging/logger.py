@@ -4,9 +4,10 @@ Sistema de logging estruturado com sanitização de dados sensíveis.
 
 from __future__ import annotations
 
+import logging
 import re
 import sys
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
@@ -49,7 +50,7 @@ def sanitize_message(message: str) -> str:
     return sanitized
 
 
-def sanitize_record(record: Dict[str, Any]) -> Dict[str, Any]:
+def sanitize_record(record: dict[str, Any]) -> dict[str, Any]:
     """
     Sanitiza um record de log completo.
 
@@ -77,6 +78,21 @@ def sanitizing_filter(record: Record) -> bool:
     if "message" in record:
         record["message"] = sanitize_message(str(record["message"]))
     return True
+
+
+class InterceptHandler(logging.Handler):
+    """Intercepta logs do stdlib logging e redireciona para Loguru."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
 def configure_logging() -> None:
@@ -139,6 +155,14 @@ def configure_logging() -> None:
             retention="90 days",
             compression="gz",
         )
+
+    # Redireciona stdlib logging para Loguru (captura logs do Bartolo e outros módulos)
+    intercept_handler = InterceptHandler()
+    for name in ["modules.ai", "modules.ai.bartolo", "modules.field_service"]:
+        stdlib_logger = logging.getLogger(name)
+        stdlib_logger.handlers = [intercept_handler]
+        stdlib_logger.setLevel(logging.DEBUG)
+        stdlib_logger.propagate = False
 
 
 def get_logger(name: str) -> Any:

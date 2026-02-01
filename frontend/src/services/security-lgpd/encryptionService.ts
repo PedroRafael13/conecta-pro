@@ -72,8 +72,7 @@ export class EncryptionService {
    * Helper específico para CPF
    */
   static async encryptCPF(cpf: string): Promise<string> {
-    // @ts-ignore
-    const response = await this.encryptData(cpf, 'AES-256-GCM');
+    const response = await EncryptionService.encryptData(cpf, 'AES-256-GCM');
     return response.data.data?.encrypted_data as string;
   }
 
@@ -82,8 +81,7 @@ export class EncryptionService {
    * Helper específico para email
    */
   static async encryptEmail(email: string): Promise<string> {
-    // @ts-ignore
-    const response = await this.encryptData(email, 'AES-256-GCM');
+    const response = await EncryptionService.encryptData(email, 'AES-256-GCM');
     return response.data.data?.encrypted_data as string;
   }
 
@@ -92,8 +90,7 @@ export class EncryptionService {
    * Helper específico para telefone
    */
   static async encryptPhone(phone: string): Promise<string> {
-    // @ts-ignore
-    const response = await this.encryptData(phone, 'AES-256-GCM');
+    const response = await EncryptionService.encryptData(phone, 'AES-256-GCM');
     return response.data.data?.encrypted_data as string;
   }
 

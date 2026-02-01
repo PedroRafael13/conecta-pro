@@ -21,6 +21,7 @@ import { Permission } from '@/hooks/usePermission';
 import { useEmployees } from '@/hooks/operacional/useEmployees';
 import { usePosts } from '@/hooks/operacional/usePosts';
 import { getErrorMessage } from '@/lib/api';
+import { customInstance } from '@/lib/api-client';
 import type {
   CoverageReportResponse,
   CostsReportResponse,
@@ -92,20 +93,32 @@ export default function RelatoriosPage() {
 
     try {
       const [coverage, hours, costs] = await Promise.all([
-        reportsService.getCoverage({
-          start_date: startDate,
-          end_date: endDate,
-          post_id: postId || undefined,
+        customInstance<CoverageReportResponse>({
+          url: '/api/v1/operacional/reports/coverage',
+          method: 'GET',
+          params: {
+            start_date: startDate,
+            end_date: endDate,
+            post_id: postId || undefined,
+          },
         }),
-        reportsService.getHours({
-          start_date: startDate,
-          end_date: endDate,
-          employee_id: employeeId || undefined,
+        customInstance<HoursReportResponse>({
+          url: '/api/v1/operacional/reports/hours',
+          method: 'GET',
+          params: {
+            start_date: startDate,
+            end_date: endDate,
+            employee_id: employeeId || undefined,
+          },
         }),
-        reportsService.getCosts({
-          start_date: startDate,
-          end_date: endDate,
-          post_id: postId || undefined,
+        customInstance<CostsReportResponse>({
+          url: '/api/v1/operacional/reports/costs',
+          method: 'GET',
+          params: {
+            start_date: startDate,
+            end_date: endDate,
+            post_id: postId || undefined,
+          },
         }),
       ]);
 

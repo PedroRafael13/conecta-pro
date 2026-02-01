@@ -8,24 +8,30 @@ Testa:
 - AdmissaoWizard: passos, validacoes, alertas
 """
 
-import pytest
 import sys
-sys.path.insert(0, '/app')
 
-from modules.ai.bartolo.wizards.base_wizard import (
-    BaseWizard, WizardStep, WizardData, WizardResponse,
-    WizardState, StepType,
-)
-from modules.ai.bartolo.wizards.wizard_manager import WizardManager, WIZARD_REGISTRY
-from modules.ai.bartolo.wizards.proposta_wizard import (
-    PropostaComercialWizard, PostoTrabalho, CCT_PISOS_2026, ESCALAS, ENCARGOS_SOCIAIS,
-)
+import pytest
+
+sys.path.insert(0, "/app")
+
 from modules.ai.bartolo.wizards.admissao_wizard import AdmissaoWizard
-
+from modules.ai.bartolo.wizards.base_wizard import (
+    WizardData,
+    WizardState,
+)
+from modules.ai.bartolo.wizards.proposta_wizard import (
+    CCT_PISOS_2026,
+    ENCARGOS_SOCIAIS,
+    ESCALAS,
+    PostoTrabalho,
+    PropostaComercialWizard,
+)
+from modules.ai.bartolo.wizards.wizard_manager import WIZARD_REGISTRY, WizardManager
 
 # ==========================================================================
 # WizardManager
 # ==========================================================================
+
 
 class TestWizardManager:
     """Testes para o WizardManager."""
@@ -49,47 +55,58 @@ class TestWizardManager:
         assert "proposta_comercial" in types
         assert "admissao_funcionario" in types
 
-    @pytest.mark.parametrize("intent", [
-        "proposta_comercial",
-        "admissao_funcionario",
-        "admissao",
-        "contratar",
-    ])
+    @pytest.mark.parametrize(
+        "intent",
+        [
+            "proposta_comercial",
+            "admissao_funcionario",
+            "admissao",
+            "contratar",
+        ],
+    )
     def test_can_handle_wizard_direct_match(self, manager, intent):
         """Testa deteccao direta de wizard por nome."""
         assert manager.can_handle_wizard(intent) is True
 
-    @pytest.mark.parametrize("intent", [
-        "proposta",
-        "orcamento",
-        "orcar",
-        "precificar",
-        "custo",
-        "admissao",
-        "admitir",
-        "contratar",
-        "contratacao",
-        "novo funcionario",
-    ])
+    @pytest.mark.parametrize(
+        "intent",
+        [
+            "proposta",
+            "orcamento",
+            "orcar",
+            "precificar",
+            "custo",
+            "admissao",
+            "admitir",
+            "contratar",
+            "contratacao",
+            "novo funcionario",
+        ],
+    )
     def test_can_handle_wizard_keywords(self, manager, intent):
         """Testa deteccao de wizard por keywords."""
         assert manager.can_handle_wizard(intent) is True
 
-    @pytest.mark.parametrize("intent", [
-        "relatorio",
-        "cobertura",
-        "alerta",
-        "bom dia",
-    ])
+    @pytest.mark.parametrize(
+        "intent",
+        [
+            "relatorio",
+            "cobertura",
+            "alerta",
+            "bom dia",
+        ],
+    )
     def test_cannot_handle_unknown_wizard(self, manager, intent):
         """Testa que intencoes irrelevantes nao ativam wizard."""
         assert manager.can_handle_wizard(intent) is False
 
     def test_detect_wizard_type_proposta(self, manager):
-        """Testa deteccao do tipo proposta."""
+        """Testa deteccao do tipo proposta (requer verbo de criacao explicito)."""
         assert manager.detect_wizard_type("proposta_comercial") == "proposta_comercial"
-        assert manager.detect_wizard_type("preciso de uma proposta") == "proposta_comercial"
-        assert manager.detect_wizard_type("fazer orcamento") == "proposta_comercial"
+        assert manager.detect_wizard_type("criar proposta") == "proposta_comercial"
+        assert manager.detect_wizard_type("nova proposta para cliente") == "proposta_comercial"
+        # Frases ambiguas NAO devem disparar wizard (bug #3 fix)
+        assert manager.detect_wizard_type("preciso de uma proposta") is None
 
     def test_detect_wizard_type_admissao(self, manager):
         """Testa deteccao do tipo admissao."""
@@ -210,6 +227,7 @@ class TestWizardManager:
 # ==========================================================================
 # PropostaComercialWizard
 # ==========================================================================
+
 
 class TestPropostaComercialWizard:
     """Testes para PropostaComercialWizard."""
@@ -360,6 +378,7 @@ class TestPropostaComercialWizard:
 # AdmissaoWizard
 # ==========================================================================
 
+
 class TestAdmissaoWizard:
     """Testes para AdmissaoWizard."""
 
@@ -471,6 +490,7 @@ class TestAdmissaoWizard:
 # Fluxo de Navegacao do BaseWizard
 # ==========================================================================
 
+
 class TestWizardNavigation:
     """Testes para navegacao entre passos."""
 
@@ -565,6 +585,7 @@ class TestWizardNavigation:
 # Validacao de Input
 # ==========================================================================
 
+
 class TestWizardValidation:
     """Testes para validacao de input."""
 
@@ -591,10 +612,10 @@ class TestWizardValidation:
         """Testa validacao de campo numerico com texto."""
         wizard.start()
         # Avanca ate o campo salario (passo 5)
-        wizard.process_input("Joao da Silva Santos")     # nome
-        wizard.process_input("12345678901")               # cpf
-        wizard.process_input("15/05/1990")                # data nasc
-        wizard.process_input("1")                         # cargo (Porteiro)
+        wizard.process_input("Joao da Silva Santos")  # nome
+        wizard.process_input("12345678901")  # cpf
+        wizard.process_input("15/05/1990")  # data nasc
+        wizard.process_input("1")  # cargo (Porteiro)
         # Agora no campo salario - tenta texto invalido
         response = wizard.process_input("abc")
         assert response.validation_error is not None

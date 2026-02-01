@@ -209,10 +209,9 @@ export function BartoloChat() {
       setMessages((prev) => [...prev, assistantMessage]);
 
       // Verifica se há action_preview
-      // @ts-ignore - action_preview ainda não está no tipo gerado
-      if (lastResponse.action_preview) {
-        // @ts-ignore
-        setActionPreview(lastResponse.action_preview as ActionPreview);
+      const responseWithPreview = lastResponse as typeof lastResponse & { action_preview?: ActionPreview };
+      if (responseWithPreview.action_preview) {
+        setActionPreview(responseWithPreview.action_preview);
       }
     }
   }, [lastResponse]);

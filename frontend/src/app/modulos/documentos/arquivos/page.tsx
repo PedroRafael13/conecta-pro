@@ -76,6 +76,7 @@ import {
   DOCUMENT_STATUS,
   getFileIcon,
 } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
+import { customInstance } from '@/lib/api-client';
 
 interface UploadFile {
   file: File;
@@ -118,7 +119,11 @@ export default function ArquivosPage() {
       setLoading(true);
 
       // Carregar pastas para o filtro
-      const foldersResponse = await folderService.list({ page_size: 100 });
+      const foldersResponse = await customInstance<{ items: Folder[] }>({
+        url: '/api/v1/ged/folders/',
+        method: 'GET',
+        params: { page_size: 100 },
+      });
       setFolders(foldersResponse.items);
 
       // Carregar documentos
@@ -132,7 +137,11 @@ export default function ArquivosPage() {
       if (filters.status && filters.status !== 'all') params.status = filters.status;
       if (search) params.search = search;
 
-      const response = await documentService.list(params);
+      const response = await customInstance<{ items: Document[]; pages: number }>({
+        url: '/api/v1/ged/documents/',
+        method: 'GET',
+        params,
+      });
       setDocuments(response.items);
       setTotalPages(response.pages);
     } catch (error) {
@@ -259,7 +268,12 @@ export default function ArquivosPage() {
           formData.append('folder_id', selectedFolderId);
         }
 
-        await documentService.upload(formData);
+        await customInstance({
+          url: '/api/v1/ged/documents/upload',
+          method: 'POST',
+          data: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
 
         setUploadFiles(prev => prev.map((f, idx) =>
           idx === i ? { ...f, status: 'success', progress: 100 } : f
@@ -304,8 +318,11 @@ export default function ArquivosPage() {
   // Ações do documento
   const handleView = async (doc: Document) => {
     try {
-      const url = await documentService.getViewUrl(doc.id);
-      window.open(url, '_blank');
+      const viewData = await customInstance<{ url: string }>({
+        url: `/api/v1/ged/documents/${doc.id}/view-url`,
+        method: 'GET',
+      });
+      window.open(viewData.url, '_blank');
     } catch (error) {
       console.error('Erro ao visualizar:', error);
       toast({
@@ -318,7 +335,11 @@ export default function ArquivosPage() {
 
   const handleDownload = async (doc: Document) => {
     try {
-      const blob = await documentService.download(doc.id);
+      const blob = await customInstance<Blob>({
+        url: `/api/v1/ged/documents/${doc.id}/download`,
+        method: 'GET',
+        responseType: 'blob',
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -346,7 +367,10 @@ export default function ArquivosPage() {
   const handleDelete = async () => {
     if (!selectedDocument) return;
     try {
-      await documentService.delete(selectedDocument.id);
+      await customInstance({
+        url: `/api/v1/ged/documents/${selectedDocument.id}`,
+        method: 'DELETE',
+      });
       setDeleteDialogOpen(false);
       toast({
         variant: 'success',

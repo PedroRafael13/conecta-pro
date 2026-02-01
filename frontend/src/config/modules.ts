@@ -188,10 +188,11 @@ export const modules: Module[] = [
     permissions: ['config:read'],
     enabled: true,
     subModules: [
-      { id: 'usuarios', title: 'Usuários', href: '/modulos/configuracoes/usuarios', icon: 'Users', permissions: ['config:usuarios'] },
-      { id: 'permissoes', title: 'Permissões', href: '/modulos/configuracoes/permissoes', icon: 'Lock', permissions: ['config:permissoes'] },
-      { id: 'empresa', title: 'Empresa', href: '/modulos/configuracoes/empresa', icon: 'Building', permissions: ['config:empresa'] },
-      { id: 'auditoria', title: 'Auditoria', href: '/modulos/configuracoes/auditoria', icon: 'Eye', permissions: ['config:auditoria'] },
+      { id: 'dashboard', title: 'Dashboard', href: '/modulos/configuracoes', icon: 'LayoutDashboard', permissions: ['config:read'] },
+      { id: 'tenants', title: 'Tenants', href: '/modulos/configuracoes/tenants', icon: 'Building2', permissions: ['config:tenants'] },
+      { id: 'feature-flags', title: 'Feature Flags', href: '/modulos/configuracoes/feature-flags', icon: 'ToggleRight', permissions: ['config:flags'] },
+      { id: 'sistema', title: 'Sistema', href: '/modulos/configuracoes/configuracoes-sistema', icon: 'Settings', permissions: ['config:system'] },
+      { id: 'templates', title: 'Templates', href: '/modulos/configuracoes/templates-notificacao', icon: 'Mail', permissions: ['config:templates'] },
     ],
   },
 ];

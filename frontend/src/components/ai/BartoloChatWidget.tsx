@@ -95,14 +95,12 @@ export function BartoloChatWidget({
       console.log('[BARTOLO DEBUG] lastResponse:', lastResponse);
 
       // Verifica se há action_preview (ação detectada)
-      // @ts-ignore - action_preview ainda não está no tipo gerado
-      console.log('[BARTOLO DEBUG] action_preview:', lastResponse.action_preview);
+      const responseWithPreview = lastResponse as typeof lastResponse & { action_preview?: ActionPreview };
+      console.log('[BARTOLO DEBUG] action_preview:', responseWithPreview.action_preview);
 
-      // @ts-ignore - action_preview ainda não está no tipo gerado
-      if (lastResponse.action_preview) {
+      if (responseWithPreview.action_preview) {
         console.log('[BARTOLO DEBUG] ACTION PREVIEW DETECTADO! Setando estado...');
-        // @ts-ignore
-        setActionPreview(lastResponse.action_preview as ActionPreview);
+        setActionPreview(responseWithPreview.action_preview);
         console.log('[BARTOLO DEBUG] Estado actionPreview setado');
       } else {
         console.log('[BARTOLO DEBUG] Nenhum action_preview na resposta');

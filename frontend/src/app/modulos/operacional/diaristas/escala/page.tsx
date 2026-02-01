@@ -17,9 +17,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useActiveDiarists } from '@/hooks/operacional/useDiarists';
+import { useActiveDiarists, useCreateBatchSchedules } from '@/hooks/operacional/useDiarists';
 import {
-  diaristsService,
   type Diarist,
   type BatchScheduleItem,
   DIARIST_TYPE_LABELS,
@@ -37,6 +36,7 @@ export default function EscalaDiariaPage() {
   );
 
   const { data: diarists = [], isLoading, error: queryError } = useActiveDiarists();
+  const createBatchMutation = useCreateBatchSchedules();
   const [selected, setSelected] = useState<Map<string, BatchScheduleItem>>(new Map());
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,10 +94,12 @@ export default function EscalaDiariaPage() {
       // TODO: usar condominio_id real do contexto
       const condominioId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
 
-      const result = await diaristsService.createBatchSchedules({
-        condominio_id: condominioId,
-        data: selectedDate,
-        items: Array.from(selected.values()),
+      const result = await createBatchMutation.mutateAsync({
+        data: {
+          condominio_id: condominioId,
+          data: selectedDate,
+          items: Array.from(selected.values()),
+        },
       });
 
       if (result.total_erros > 0) {

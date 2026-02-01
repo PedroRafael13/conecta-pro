@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -31,7 +31,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDiarists } from '@/hooks/operacional/useDiarists';
 import { DiaristFormModal } from '@/components/operacional/diarist-form-modal';
 import {
-  diaristsService,
   type Diarist,
   type DiaristStatus,
   type DiaristType,
@@ -77,28 +76,7 @@ export default function DiaristasPage() {
     total_diarias_mes: number;
   } | null>(null);
 
-  const loadDiarists = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await diaristsService.list(
-        page,
-        pageSize,
-        selectedStatus || undefined,
-        selectedType || undefined,
-        searchTerm || undefined
-      );
-      setDiarists(response.items);
-      setTotal(response.total);
-      setTotalPages(response.pages);
-    } catch (err) {
-      setError('Erro ao carregar diaristas');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, selectedStatus, selectedType, searchTerm]);
+  // Dados agora vêm do hook useDiarists via React Query
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -106,22 +84,15 @@ export default function DiaristasPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadDiarists();
-    }
-  }, [isAuthenticated, loadDiarists]);
-
-  // Debounce search
+  // Debounce search - reset page on filter change
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isAuthenticated) {
         setPage(1);
-        loadDiarists();
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, selectedStatus, selectedType]);
+  }, [searchTerm, selectedStatus, selectedType, isAuthenticated]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -203,7 +174,7 @@ export default function DiaristasPage() {
                   Fechamento
                 </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={loadDiarists} disabled={isLoading}>
+              <Button variant="outline" size="sm" onClick={refetch} disabled={isLoading}>
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Atualizar
               </Button>
@@ -319,7 +290,7 @@ export default function DiaristasPage() {
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
             <XCircle className="w-5 h-5 text-red-500" />
             <p className="text-red-500">{error}</p>
-            <Button variant="outline" size="sm" onClick={loadDiarists} className="ml-auto">
+            <Button variant="outline" size="sm" onClick={refetch} className="ml-auto">
               Tentar novamente
             </Button>
           </div>
@@ -495,7 +466,7 @@ export default function DiaristasPage() {
         isOpen={showFormModal}
         onClose={() => setShowFormModal(false)}
         onSuccess={() => {
-          loadDiarists();
+          refetch();
         }}
       />
     </div>

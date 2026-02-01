@@ -5,11 +5,11 @@ Sistema de Logging Estruturado - Guardian Unified v3.0.0
 Configuração de logs em formato JSON para facilitar busca e análise.
 """
 
-import json
 import logging
 import sys
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
+
 from pythonjsonlogger import jsonlogger
 
 
@@ -20,22 +20,33 @@ class GuardianJSONFormatter(jsonlogger.JsonFormatter):
     Produz logs estruturados em JSON com campos padronizados.
     """
 
-    def add_fields(self, log_record: Dict[str, Any], record: logging.LogRecord, message_dict: Dict[str, Any]):
+    def add_fields(self, log_record: dict[str, Any], record: logging.LogRecord, message_dict: dict[str, Any]):
         """Adiciona campos customizados ao log record."""
         super().add_fields(log_record, record, message_dict)
 
         # Timestamp padronizado
-        log_record['timestamp'] = datetime.utcnow().isoformat()
+        log_record["timestamp"] = datetime.utcnow().isoformat()
 
         # Informações do Guardian
-        log_record['service'] = 'Guardian-Unified'
-        log_record['version'] = '3.0.0'
+        log_record["service"] = "Guardian-Unified"
+        log_record["version"] = "3.0.0"
 
         # Module/Controller info
-        log_record['module'] = getattr(record, 'module', record.name.split('.')[-1] if '.' in record.name else record.name)
+        log_record["module"] = getattr(
+            record, "module", record.name.split(".")[-1] if "." in record.name else record.name
+        )
 
         # Campos específicos se disponíveis
-        for field in ['user_id', 'action', 'resource_id', 'request_id', 'response_time_ms', 'endpoint', 'method', 'status_code']:
+        for field in [
+            "user_id",
+            "action",
+            "resource_id",
+            "request_id",
+            "response_time_ms",
+            "endpoint",
+            "method",
+            "status_code",
+        ]:
             if hasattr(record, field):
                 log_record[field] = getattr(record, field)
 
@@ -45,9 +56,7 @@ def setup_structured_logging():
     Configura logging estruturado para toda a aplicação.
     """
     # Formatter JSON
-    json_formatter = GuardianJSONFormatter(
-        fmt="%(timestamp)s %(level)s %(service)s %(version)s %(module)s %(message)s"
-    )
+    json_formatter = GuardianJSONFormatter(fmt="%(timestamp)s %(level)s %(service)s %(version)s %(module)s %(message)s")
 
     # Handler para stdout (para produção)
     stdout_handler = logging.StreamHandler(sys.stdout)
@@ -72,13 +81,15 @@ def setup_structured_logging():
 
     # Configurar loggers específicos
     loggers = [
-        'uvicorn',
-        'uvicorn.access',
-        'uvicorn.error',
-        'sqlalchemy',
-        'modules.field_service',
-        'api',
-        'core'
+        "uvicorn",
+        "uvicorn.access",
+        "uvicorn.error",
+        "sqlalchemy",
+        "modules.field_service",
+        "modules.ai",
+        "modules.ai.bartolo",
+        "api",
+        "core",
     ]
 
     for logger_name in loggers:
@@ -116,15 +127,24 @@ class GuardianLogger:
         extra = self._build_extra(kwargs)
         self.logger.debug(message, extra=extra)
 
-    def _build_extra(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    def _build_extra(self, kwargs: dict[str, Any]) -> dict[str, Any]:
         """Constrói campos extras padronizados."""
-        extra = {'module': self.module}
+        extra = {"module": self.module}
 
         # Campos conhecidos
         known_fields = [
-            'user_id', 'action', 'resource_id', 'request_id',
-            'response_time_ms', 'endpoint', 'method', 'status_code',
-            'technician_id', 'ticket_id', 'occurrence_id', 'equipment_id'
+            "user_id",
+            "action",
+            "resource_id",
+            "request_id",
+            "response_time_ms",
+            "endpoint",
+            "method",
+            "status_code",
+            "technician_id",
+            "ticket_id",
+            "occurrence_id",
+            "equipment_id",
         ]
 
         for field in known_fields:
@@ -147,7 +167,7 @@ def log_api_request(endpoint: str, method: str, status_code: int, response_time_
         method=method,
         status_code=status_code,
         response_time_ms=response_time_ms,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -163,7 +183,7 @@ def log_database_operation(operation: str, table: str, duration_ms: float, **kwa
         operation=operation,
         table=table,
         duration_ms=duration_ms,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -173,7 +193,7 @@ def log_security_event(event_type: str, severity: str, description: str, **kwarg
     """
     logger = GuardianLogger("security")
 
-    log_method = logger.error if severity in ['high', 'critical'] else logger.warning
+    log_method = logger.error if severity in ["high", "critical"] else logger.warning
 
     log_method(
         f"Security event: {event_type}",
@@ -181,7 +201,7 @@ def log_security_event(event_type: str, severity: str, description: str, **kwarg
         event_type=event_type,
         severity=severity,
         description=description,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -196,7 +216,7 @@ def log_campo_operation(operation: str, technician_id: str = None, **kwargs):
         action="campo_operation",
         operation=operation,
         technician_id=technician_id,
-        **kwargs
+        **kwargs,
     )
 
 

@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { useAuth } from '@/hooks/useAuth';
-import { useAllocations } from '@/hooks/operacional/useAllocations';
+import { useAllocations, useTerminateAllocation, useCreateAllocation } from '@/hooks/operacional/useAllocations';
 import { usePosts } from '@/hooks/operacional/usePosts';
 import { useEmployees } from '@/hooks/operacional/useEmployees';
 import { getErrorMessage } from '@/lib/api';
@@ -47,6 +47,8 @@ export default function AlocacoesPage() {
   const [filters, setFilters] = useState({});
   const { data: posts = [] } = usePosts();
   const { data: employees = [] } = useEmployees();
+  const terminateAllocationMutation = useTerminateAllocation();
+  const createAllocationMutation = useCreateAllocation();
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedAllocation, setSelectedAllocation] = useState<Allocation | null>(null);
@@ -164,7 +166,7 @@ export default function AlocacoesPage() {
     setTerminateError(null);
 
     try {
-      await allocationsService.terminate(selectedAllocation.id, terminateData);
+      await terminateAllocationMutation.mutateAsync({ allocationId: selectedAllocation.id, data: terminateData });
       setShowTerminateModal(false);
       setSelectedAllocation(null);
       refresh();
@@ -209,21 +211,26 @@ export default function AlocacoesPage() {
 
     try {
       // 1. Encerra a alocação atual
-      await allocationsService.terminate(selectedAllocation.id, {
-        end_date: transferData.transfer_date,
-        termination_reason: 'Transferência de posto',
-        notes: transferData.notes || `Transferido para outro posto em ${new Date(transferData.transfer_date).toLocaleDateString('pt-BR')}`,
+      await terminateAllocationMutation.mutateAsync({
+        allocationId: selectedAllocation.id,
+        data: {
+          end_date: transferData.transfer_date,
+          termination_reason: 'Transferência de posto',
+          notes: transferData.notes || `Transferido para outro posto em ${new Date(transferData.transfer_date).toLocaleDateString('pt-BR')}`,
+        },
       });
 
       // 2. Cria nova alocação no novo posto
-      await allocationsService.create({
-        employee_id: selectedAllocation.employee_id,
-        post_id: transferData.new_post_id,
-        start_date: transferData.transfer_date,
-        is_primary: selectedAllocation.is_primary,
-        is_temporary: selectedAllocation.is_temporary,
-        role: selectedAllocation.role || undefined,
-        notes: `Transferido do posto anterior em ${new Date(transferData.transfer_date).toLocaleDateString('pt-BR')}`,
+      await createAllocationMutation.mutateAsync({
+        data: {
+          employee_id: selectedAllocation.employee_id,
+          post_id: transferData.new_post_id,
+          start_date: transferData.transfer_date,
+          is_primary: selectedAllocation.is_primary,
+          is_temporary: selectedAllocation.is_temporary,
+          role: selectedAllocation.role || undefined,
+          notes: `Transferido do posto anterior em ${new Date(transferData.transfer_date).toLocaleDateString('pt-BR')}`,
+        },
       });
 
       setShowTransferModal(false);
