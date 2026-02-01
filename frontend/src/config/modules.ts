@@ -88,8 +88,15 @@ export const modules: Module[] = [
       { id: 'contas-pagar', title: 'Contas a Pagar', href: '/modulos/financeiro/contas-pagar', icon: 'TrendingDown', permissions: ['financial:contas-pagar'] },
       { id: 'contas-receber', title: 'Contas a Receber', href: '/modulos/financeiro/contas-receber', icon: 'TrendingUp', permissions: ['financial:contas-receber'] },
       { id: 'fluxo-caixa', title: 'Fluxo de Caixa', href: '/modulos/financeiro/fluxo-caixa', icon: 'Activity', permissions: ['financial:fluxo'] },
-      { id: 'faturamento', title: 'Faturamento', href: '/modulos/financeiro/faturamento', icon: 'Receipt', permissions: ['financial:faturamento'] },
       { id: 'conciliacao', title: 'Conciliação', href: '/modulos/financeiro/conciliacao', icon: 'CheckCircle2', permissions: ['financial:conciliacao'] },
+      { id: 'fornecedores', title: 'Fornecedores', href: '/modulos/financeiro/fornecedores', icon: 'Truck', permissions: ['financial:fornecedores'] },
+      { id: 'clientes', title: 'Clientes', href: '/modulos/financeiro/clientes', icon: 'Users', permissions: ['financial:clientes'] },
+      { id: 'compras', title: 'Compras', href: '/modulos/financeiro/compras', icon: 'ShoppingCart', permissions: ['financial:compras'] },
+      { id: 'estoque', title: 'Estoque', href: '/modulos/financeiro/estoque', icon: 'Package', permissions: ['financial:estoque'] },
+      { id: 'fiscal', title: 'Fiscal', href: '/modulos/financeiro/fiscal', icon: 'Landmark', permissions: ['financial:fiscal'] },
+      { id: 'contabilidade', title: 'Contabilidade', href: '/modulos/financeiro/contabilidade', icon: 'Calculator', permissions: ['financial:contabilidade'] },
+      { id: 'faturamento', title: 'Faturamento', href: '/modulos/financeiro/faturamento', icon: 'Receipt', permissions: ['financial:faturamento'] },
+      { id: 'custeio', title: 'Custeio ABC', href: '/modulos/financeiro/custeio', icon: 'DollarSign', permissions: ['financial:custeio'] },
     ],
   },
   {
@@ -152,10 +159,32 @@ export const modules: Module[] = [
     permissions: ['integrations:read'],
     enabled: true,
     subModules: [
-      { id: 'intelbras', title: 'Intelbras', href: '/modulos/integracoes/intelbras', icon: 'Camera', permissions: ['integrations:intelbras'] },
-      { id: 'controlid', title: 'Control iD', href: '/modulos/integracoes/controlid', icon: 'Fingerprint', permissions: ['integrations:controlid'] },
-      { id: 'hikvision', title: 'Hikvision', href: '/modulos/integracoes/hikvision', icon: 'Video', permissions: ['integrations:hikvision'] },
+      { id: 'conectores', title: 'Conectores', href: '/modulos/integracoes/conectores', icon: 'Plug', permissions: ['integrations:conectores'] },
+      { id: 'api-keys', title: 'API Keys', href: '/modulos/integracoes/api-keys', icon: 'Key', permissions: ['integrations:api-keys'] },
       { id: 'webhooks', title: 'Webhooks', href: '/modulos/integracoes/webhooks', icon: 'Webhook', permissions: ['integrations:webhooks'] },
+      { id: 'logs', title: 'Logs', href: '/modulos/integracoes/logs', icon: 'FileText', permissions: ['integrations:logs'] },
+      { id: 'sync', title: 'Sincronização', href: '/modulos/integracoes/sync', icon: 'RefreshCw', permissions: ['integrations:sync'] },
+      { id: 'solides', title: 'Solides', href: '/modulos/integracoes/solides', icon: 'Zap', permissions: ['integrations:solides'] },
+    ],
+  },
+
+  // === SEGURANÇA & LGPD ===
+  {
+    id: 'security',
+    title: 'Segurança & LGPD',
+    description: 'Compliance LGPD, auditoria e proteção de dados',
+    icon: 'ShieldCheck',
+    href: '/modulos/seguranca',
+    color: 'red',
+    permissions: ['security:read'],
+    enabled: true,
+    subModules: [
+      { id: 'auditoria', title: 'Auditoria', href: '/modulos/seguranca/auditoria', icon: 'Eye', permissions: ['security:auditoria'] },
+      { id: 'consentimento', title: 'Consentimento', href: '/modulos/seguranca/consentimento', icon: 'CheckCircle2', permissions: ['security:consentimento'] },
+      { id: 'pia-dpia', title: 'PIA/DPIA', href: '/modulos/seguranca/pia-dpia', icon: 'FileText', permissions: ['security:pia'] },
+      { id: 'esquecimento', title: 'Esquecimento', href: '/modulos/seguranca/esquecimento', icon: 'Trash2', permissions: ['security:esquecimento'] },
+      { id: 'mascaramento', title: 'Mascaramento', href: '/modulos/seguranca/mascaramento', icon: 'Eye', permissions: ['security:mascaramento'] },
+      { id: 'criptografia', title: 'Criptografia', href: '/modulos/seguranca/criptografia', icon: 'Lock', permissions: ['security:criptografia'] },
     ],
   },
 
@@ -217,7 +246,7 @@ export const moduleCategories: ModuleCategory[] = [
   {
     id: 'gestao',
     title: 'Gestão',
-    modules: modules.filter(m => ['reports', 'config'].includes(m.id)),
+    modules: modules.filter(m => ['reports', 'config', 'security'].includes(m.id)),
   },
 ];
 

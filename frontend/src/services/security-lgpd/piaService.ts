@@ -9,14 +9,12 @@
  * - Análise de conformidade
  */
 
-import { getLgpdAvaliaçãoDeImpactoPiaDpia } from '@/types/generated/security-lgpd/lgpd-avaliação-de-impacto-pia-dpia/lgpd-avaliação-de-impacto-pia-dpia';
+import { createPIA as createPIAApi, getPIA as getPIAApi, listRiskCategories as listRiskCategoriesApi } from '@/types/generated/security-lgpd/lgpd-avaliação-de-impacto-pia-dpia/lgpd-avaliação-de-impacto-pia-dpia';
 import type {
   PIARequest,
   StandardResponse,
 } from '@/types/generated/security-lgpd/conectaPROLGPDSecurityAPI.schemas';
-import { AxiosResponse } from 'axios';
 
-const piaApi = getLgpdAvaliaçãoDeImpactoPiaDpia();
 
 /**
  * Service para avaliações de impacto PIA/DPIA
@@ -28,8 +26,8 @@ export class PIAService {
    */
   static async createPIA(
     request: PIARequest
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return piaApi.createPIA(request);
+  ): Promise<StandardResponse> {
+    return createPIAApi(request);
   }
 
   /**
@@ -38,15 +36,15 @@ export class PIAService {
    */
   static async getPIA(
     assessmentId: string
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return piaApi.getPIA(assessmentId);
+  ): Promise<StandardResponse> {
+    return getPIAApi(assessmentId);
   }
 
   /**
    * Lista categorias de risco disponíveis
    */
-  static async listRiskCategories(): Promise<AxiosResponse<StandardResponse>> {
-    return piaApi.listRiskCategories();
+  static async listRiskCategories(): Promise<StandardResponse> {
+    return listRiskCategoriesApi();
   }
 
   /**
@@ -56,7 +54,7 @@ export class PIAService {
     projectName: string,
     description: string,
     dataCategories: string[]
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.createPIA({
       project_name: projectName,
       description,
@@ -74,7 +72,7 @@ export class PIAService {
     processingPurposes: string[],
     dataSubjects: string[],
     riskFactors: string[]
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.createPIA({
       project_name: projectName,
       description,

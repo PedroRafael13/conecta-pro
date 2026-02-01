@@ -64,10 +64,10 @@ export {
 // =============================================================================
 export * from '@/types/generated/financial/financial-bank-transactions/financial-bank-transactions';
 export {
-  useListTransactionsApiV1FinancialBankTransactionsTransactionsGet as useBankTransactions,
-  useCreateTransactionApiV1FinancialBankTransactionsTransactionsPost as useCreateBankTransaction,
-  useImportOfxApiV1FinancialBankTransactionsTransactionsImportOfxPost as useImportOFX,
-  getListTransactionsApiV1FinancialBankTransactionsTransactionsGetQueryKey as bankTransactionKeys,
+  useListTransactionsApiV1FinancialBankTransactionsBankTransactionsGet as useBankTransactions,
+  useCreateTransactionApiV1FinancialBankTransactionsBankTransactionsPost as useCreateBankTransaction,
+  useImportOfxFileApiV1FinancialBankTransactionsBankTransactionsImportOfxPost as useImportOFX,
+  getListTransactionsApiV1FinancialBankTransactionsBankTransactionsGetQueryKey as bankTransactionKeys,
 } from '@/types/generated/financial/financial-bank-transactions/financial-bank-transactions';
 
 // =============================================================================
@@ -75,12 +75,12 @@ export {
 // =============================================================================
 export * from '@/types/generated/financial/financial-cashflow/financial-cashflow';
 export {
-  useListEntriesApiV1FinancialCashflowEntriesGet as useCashflowEntries,
-  useGetForecastApiV1FinancialCashflowForecastGet as useCashflowForecast,
-  useGetProjectionApiV1FinancialCashflowProjectionGet as useCashflowProjection,
-  useGetDashboardApiV1FinancialCashflowDashboardGet as useCashflowDashboard,
-  useCreateEntryApiV1FinancialCashflowEntriesPost as useCreateCashflowEntry,
-  getListEntriesApiV1FinancialCashflowEntriesGetQueryKey as cashflowKeys,
+  useListEntriesApiV1FinancialCashflowCashflowEntriesGet as useCashflowEntries,
+  useListForecastsApiV1FinancialCashflowCashflowForecastsGet as useCashflowForecast,
+  useGetProjectionApiV1FinancialCashflowCashflowProjectionGet as useCashflowProjection,
+  useGetDashboardApiV1FinancialCashflowCashflowDashboardGet as useCashflowDashboard,
+  useCreateEntryApiV1FinancialCashflowCashflowEntriesPost as useCreateCashflowEntry,
+  getListEntriesApiV1FinancialCashflowCashflowEntriesGetQueryKey as cashflowKeys,
 } from '@/types/generated/financial/financial-cashflow/financial-cashflow';
 
 // =============================================================================
@@ -88,12 +88,12 @@ export {
 // =============================================================================
 export * from '@/types/generated/financial/financial-purchase/financial-purchase';
 export {
-  useListRequisitionsApiV1FinancialPurchaseRequisitionsGet as usePurchaseRequisitions,
-  useListOrdersApiV1FinancialPurchaseOrdersGet as usePurchaseOrders,
-  useGetDashboardApiV1FinancialPurchaseDashboardGet as usePurchaseDashboard,
-  useCreateRequisitionApiV1FinancialPurchaseRequisitionsPost as useCreatePurchaseRequisition,
-  useCreateOrderApiV1FinancialPurchaseOrdersPost as useCreatePurchaseOrder,
-  getListRequisitionsApiV1FinancialPurchaseRequisitionsGetQueryKey as purchaseKeys,
+  useListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGet as usePurchaseRequisitions,
+  useListOrdersApiV1FinancialPurchasePurchasesOrdersGet as usePurchaseOrders,
+  useGetRequisitionStatsApiV1FinancialPurchasePurchasesRequisitionsStatsGet as usePurchaseDashboard,
+  useCreateRequisitionApiV1FinancialPurchasePurchasesRequisitionsPost as useCreatePurchaseRequisition,
+  useCreateOrderApiV1FinancialPurchasePurchasesOrdersPost as useCreatePurchaseOrder,
+  getListRequisitionsApiV1FinancialPurchasePurchasesRequisitionsGetQueryKey as purchaseKeys,
 } from '@/types/generated/financial/financial-purchase/financial-purchase';
 
 // =============================================================================
@@ -101,13 +101,13 @@ export {
 // =============================================================================
 export * from '@/types/generated/financial/financial-inventory/financial-inventory';
 export {
-  useListWarehousesApiV1FinancialInventoryWarehousesGet as useWarehouses,
-  useListItemsApiV1FinancialInventoryItemsGet as useInventoryItems,
-  useGetItemApiV1FinancialInventoryItemsItemIdGet as useInventoryItem,
-  useGetStockBalanceApiV1FinancialInventoryStockBalanceGet as useStockBalance,
-  useGetDashboardApiV1FinancialInventoryDashboardGet as useInventoryDashboard,
-  useCreateStockMovementApiV1FinancialInventoryStockMovementsPost as useCreateStockMovement,
-  getListItemsApiV1FinancialInventoryItemsGetQueryKey as inventoryKeys,
+  useListWarehousesApiV1FinancialInventoryInventoryWarehousesGet as useWarehouses,
+  useListStockItemsApiV1FinancialInventoryInventoryStockItemsGet as useInventoryItems,
+  useGetStockItemApiV1FinancialInventoryInventoryStockItemsItemIdGet as useInventoryItem,
+  useGetStockStatsApiV1FinancialInventoryInventoryStockItemsStatsGet as useStockBalance,
+  useGetWarehouseStatsApiV1FinancialInventoryInventoryWarehousesStatsGet as useInventoryDashboard,
+  useCreateMovementApiV1FinancialInventoryInventoryMovementsPost as useCreateStockMovement,
+  getListStockItemsApiV1FinancialInventoryInventoryStockItemsGetQueryKey as inventoryKeys,
 } from '@/types/generated/financial/financial-inventory/financial-inventory';
 
 // =============================================================================
@@ -115,12 +115,12 @@ export {
 // =============================================================================
 export * from '@/types/generated/financial/financial-accounting/financial-accounting';
 export {
-  useListAccountsApiV1FinancialAccountingAccountsGet as useAccountingAccounts,
-  useListCostCentersApiV1FinancialAccountingCostCentersGet as useCostCenters,
-  useListJournalEntriesApiV1FinancialAccountingJournalEntriesGet as useJournalEntries,
-  useGetTrialBalanceApiV1FinancialAccountingTrialBalanceGet as useTrialBalance,
-  useCreateJournalEntryApiV1FinancialAccountingJournalEntriesPost as useCreateJournalEntry,
-  getListAccountsApiV1FinancialAccountingAccountsGetQueryKey as accountingKeys,
+  useListAccountsApiV1FinancialAccountingAccountingAccountsGet as useAccountingAccounts,
+  useListCostCentersApiV1FinancialAccountingAccountingCostCentersGet as useCostCenters,
+  useListJournalEntriesApiV1FinancialAccountingAccountingJournalEntriesGet as useJournalEntries,
+  useGetTrialBalanceApiV1FinancialAccountingAccountingTrialBalancesBalanceIdGet as useTrialBalance,
+  useCreateJournalEntryApiV1FinancialAccountingAccountingJournalEntriesPost as useCreateJournalEntry,
+  getListAccountsApiV1FinancialAccountingAccountingAccountsGetQueryKey as accountingKeys,
 } from '@/types/generated/financial/financial-accounting/financial-accounting';
 
 // =============================================================================
@@ -128,13 +128,13 @@ export {
 // =============================================================================
 export * from '@/types/generated/financial/financial-fiscal/financial-fiscal';
 export {
-  useListNfesApiV1FinancialFiscalNfesGet as useNFes,
-  useGetNfeApiV1FinancialFiscalNfesNfeIdGet as useNFe,
-  useListNfsesApiV1FinancialFiscalNfsesGet as useNFSes,
-  useGetDashboardApiV1FinancialFiscalDashboardGet as useFiscalDashboard,
-  useCreateNfeApiV1FinancialFiscalNfesPost as useCreateNFe,
-  useAuthorizeNfeApiV1FinancialFiscalNfesNfeIdAuthorizePost as useAuthorizeNFe,
-  getListNfesApiV1FinancialFiscalNfesGetQueryKey as fiscalKeys,
+  useListarNfesApiV1FinancialFiscalFiscalNfeGet as useNFes,
+  useObterNfeApiV1FinancialFiscalFiscalNfeNfeIdGet as useNFe,
+  useListarNfsesApiV1FinancialFiscalFiscalNfseGet as useNFSes,
+  useObterDashboardFiscalApiV1FinancialFiscalFiscalDashboardGet as useFiscalDashboard,
+  useCriarNfeApiV1FinancialFiscalFiscalNfePost as useCreateNFe,
+  useEmitirNfeApiV1FinancialFiscalFiscalNfeEmitirPost as useAuthorizeNFe,
+  getListarNfesApiV1FinancialFiscalFiscalNfeGetQueryKey as fiscalKeys,
 } from '@/types/generated/financial/financial-fiscal/financial-fiscal';
 
 // =============================================================================
@@ -142,12 +142,10 @@ export {
 // =============================================================================
 export * from '@/types/generated/financial/financial-bi-dashboard/financial-bi-dashboard';
 export {
-  useListDashboardsApiV1FinancialBiDashboardDashboardsGet as useBIDashboards,
-  useGetDashboardApiV1FinancialBiDashboardDashboardsDashboardIdGet as useBIDashboard,
-  useGetFinancialOverviewApiV1FinancialBiDashboardFinancialOverviewGet as useFinancialOverview,
-  useGetRevenueAnalysisApiV1FinancialBiDashboardRevenueAnalysisGet as useRevenueAnalysis,
-  useGetExpenseAnalysisApiV1FinancialBiDashboardExpenseAnalysisGet as useExpenseAnalysis,
-  getListDashboardsApiV1FinancialBiDashboardDashboardsGetQueryKey as biDashboardKeys,
+  useListDashboardsApiV1FinancialBiDashboardBiDashboardsGet as useBIDashboards,
+  useGetDashboardApiV1FinancialBiDashboardBiDashboardsDashboardIdGet as useBIDashboard,
+  useGetDashboardStatsApiV1FinancialBiDashboardBiDashboardsStatsGet as useFinancialOverview,
+  getListDashboardsApiV1FinancialBiDashboardBiDashboardsGetQueryKey as biDashboardKeys,
 } from '@/types/generated/financial/financial-bi-dashboard/financial-bi-dashboard';
 
 // =============================================================================

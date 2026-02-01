@@ -9,16 +9,14 @@
  * - Severidade e rastreabilidade
  */
 
-import { getLgpdAuditoria } from '@/types/generated/security-lgpd/lgpd-auditoria/lgpd-auditoria';
+import { createAuditLog as createAuditLogApi, listAuditLogs as listAuditLogsApi, listActions as listActionsApi, listResourceTypes as listResourceTypesApi } from '@/types/generated/security-lgpd/lgpd-auditoria/lgpd-auditoria';
 import type {
   AuditLogRequest,
   ListAuditLogsParams,
   AuditLogRequestSeverity,
   StandardResponse,
 } from '@/types/generated/security-lgpd/conectaPROLGPDSecurityAPI.schemas';
-import { AxiosResponse } from 'axios';
 
-const auditApi = getLgpdAuditoria();
 
 /**
  * Service para trilha de auditoria LGPD
@@ -30,8 +28,8 @@ export class AuditService {
    */
   static async createAuditLog(
     request: AuditLogRequest
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return auditApi.createAuditLog(request);
+  ): Promise<StandardResponse> {
+    return createAuditLogApi(request);
   }
 
   /**
@@ -39,22 +37,22 @@ export class AuditService {
    */
   static async listAuditLogs(
     params?: ListAuditLogsParams
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return auditApi.listAuditLogs(params);
+  ): Promise<StandardResponse> {
+    return listAuditLogsApi(params);
   }
 
   /**
    * Lista ações de auditoria disponíveis
    */
-  static async listActions(): Promise<AxiosResponse<StandardResponse>> {
-    return auditApi.listActions();
+  static async listActions(): Promise<StandardResponse> {
+    return listActionsApi();
   }
 
   /**
    * Lista tipos de recurso auditados
    */
-  static async listResourceTypes(): Promise<AxiosResponse<StandardResponse>> {
-    return auditApi.listResourceTypes();
+  static async listResourceTypes(): Promise<StandardResponse> {
+    return listResourceTypesApi();
   }
 
   /**
@@ -66,7 +64,7 @@ export class AuditService {
     resourceType: string,
     resourceId: string,
     details?: Record<string, unknown>
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.createAuditLog({
       action: 'ACCESS',
       resource_type: resourceType,
@@ -85,7 +83,7 @@ export class AuditService {
     resourceType: string,
     resourceId: string,
     changes: Record<string, unknown>
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.createAuditLog({
       action: 'UPDATE',
       resource_type: resourceType,
@@ -104,7 +102,7 @@ export class AuditService {
     resourceType: string,
     resourceId: string,
     reason: string
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.createAuditLog({
       action: 'DELETE',
       resource_type: resourceType,
@@ -122,7 +120,7 @@ export class AuditService {
     userId: string,
     dataScope: string,
     recordCount: number
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.createAuditLog({
       action: 'EXPORT',
       resource_type: 'personal_data',
@@ -141,7 +139,7 @@ export class AuditService {
     incidentType: string,
     description: string,
     severity: AuditLogRequestSeverity = 'critical'
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.createAuditLog({
       action: 'SECURITY_INCIDENT',
       resource_type: 'security',
@@ -159,7 +157,7 @@ export class AuditService {
     startDate: Date,
     endDate: Date,
     limit: number = 100
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.listAuditLogs({
       start_date: startDate.toISOString(),
       end_date: endDate.toISOString(),
@@ -173,7 +171,7 @@ export class AuditService {
   static async getLogsByUser(
     userId: string,
     limit: number = 100
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.listAuditLogs({
       user_id: userId,
       limit,
@@ -186,7 +184,7 @@ export class AuditService {
   static async getLogsByResource(
     resourceType: string,
     limit: number = 100
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.listAuditLogs({
       resource_type: resourceType,
       limit,

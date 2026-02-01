@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
-  Shield, ChevronLeft, ChevronRight, Menu, X,
+  Shield, ShieldCheck, ChevronLeft, ChevronRight, Menu, X,
   UserPlus, Target, Building2, Contact, FileText,
   FileSignature, ClipboardList, Calendar, CalendarDays,
   MapPin, UserCheck, AlertTriangle, Route, LogIn,
@@ -12,7 +12,9 @@ import {
   Award, File, Folder, Package, Repeat, Settings,
   Camera, Fingerprint, Video, Webhook, LayoutDashboard,
   ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
-  Clock, Megaphone
+  Clock, Megaphone, ShoppingCart, Calculator, Trash2, Key,
+  RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard,
+  Wallet, Server, Zap, Plug, Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -33,7 +35,9 @@ const iconMap: Record<string, React.ElementType> = {
   Award, File, Folder, Package, Repeat, Settings,
   Camera, Fingerprint, Video, Webhook, LayoutDashboard,
   ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
-  Clock, Megaphone
+  Clock, Megaphone, ShieldCheck, ShoppingCart, Calculator, Trash2, Key,
+  RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard,
+  Wallet, Server, Zap, Plug, Truck
 };
 
 export default function ModulosLayout({

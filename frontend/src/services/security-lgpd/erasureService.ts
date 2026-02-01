@@ -8,15 +8,13 @@
  * - Gestão de escopo de exclusão
  */
 
-import { getLgpdDireitoAoEsquecimento } from '@/types/generated/security-lgpd/lgpd-direito-ao-esquecimento/lgpd-direito-ao-esquecimento';
+import { requestErasure as requestErasureApi, getErasureStatus as getErasureStatusApi } from '@/types/generated/security-lgpd/lgpd-direito-ao-esquecimento/lgpd-direito-ao-esquecimento';
 import type {
   ErasureRequestSchema,
   ErasureRequestSchemaScope,
   StandardResponse,
 } from '@/types/generated/security-lgpd/conectaPROLGPDSecurityAPI.schemas';
-import { AxiosResponse } from 'axios';
 
-const erasureApi = getLgpdDireitoAoEsquecimento();
 
 /**
  * Service para direito ao esquecimento LGPD
@@ -28,8 +26,8 @@ export class ErasureService {
    */
   static async requestErasure(
     request: ErasureRequestSchema
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return erasureApi.requestErasure(request);
+  ): Promise<StandardResponse> {
+    return requestErasureApi(request);
   }
 
   /**
@@ -38,8 +36,8 @@ export class ErasureService {
    */
   static async getErasureStatus(
     requestId: string
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return erasureApi.getErasureStatus(requestId);
+  ): Promise<StandardResponse> {
+    return getErasureStatusApi(requestId);
   }
 
   /**
@@ -50,7 +48,7 @@ export class ErasureService {
     titularId: string,
     titularEmail: string,
     reason: string
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.requestErasure({
       titular_id: titularId,
       titular_email: titularEmail,
@@ -67,7 +65,7 @@ export class ErasureService {
     titularId: string,
     titularEmail: string,
     reason: string
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.requestErasure({
       titular_id: titularId,
       titular_email: titularEmail,
@@ -84,7 +82,7 @@ export class ErasureService {
     titularId: string,
     titularEmail: string,
     reason: string
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     return this.requestErasure({
       titular_id: titularId,
       titular_email: titularEmail,

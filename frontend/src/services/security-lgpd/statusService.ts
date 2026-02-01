@@ -8,14 +8,12 @@
  * - Monitoramento de compliance
  */
 
-import { getLgpdStatus } from '@/types/generated/security-lgpd/lgpd-status/lgpd-status';
+import { getLGPDStatus as getLGPDStatusApi, healthCheck as healthCheckApi } from '@/types/generated/security-lgpd/lgpd-status/lgpd-status';
 import type {
   StandardResponse,
   HealthCheck200,
 } from '@/types/generated/security-lgpd/conectaPROLGPDSecurityAPI.schemas';
-import { AxiosResponse } from 'axios';
 
-const statusApi = getLgpdStatus();
 
 /**
  * Service para status e health check LGPD
@@ -25,16 +23,16 @@ export class StatusService {
    * Obtém status completo do módulo LGPD
    * Retorna status de todos os componentes de segurança
    */
-  static async getLGPDStatus(): Promise<AxiosResponse<StandardResponse>> {
-    return statusApi.getLGPDStatus();
+  static async getLGPDStatus(): Promise<StandardResponse> {
+    return getLGPDStatusApi();
   }
 
   /**
    * Realiza health check do módulo
    * Verifica se o módulo está operacional
    */
-  static async healthCheck(): Promise<AxiosResponse<HealthCheck200>> {
-    return statusApi.healthCheck();
+  static async healthCheck(): Promise<HealthCheck200> {
+    return healthCheckApi();
   }
 
   /**

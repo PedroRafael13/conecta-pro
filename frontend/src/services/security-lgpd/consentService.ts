@@ -10,15 +10,13 @@
  * - Listagem de bases legais
  */
 
-import { getLgpdConsentimento } from '@/types/generated/security-lgpd/lgpd-consentimento/lgpd-consentimento';
+import { registerConsent as registerConsentApi, getConsents as getConsentsApi, revokeConsent as revokeConsentApi, listPurposes as listPurposesApi, listLegalBases as listLegalBasesApi } from '@/types/generated/security-lgpd/lgpd-consentimento/lgpd-consentimento';
 import type {
   ConsentRequest,
   RevokeConsentParams,
   StandardResponse,
 } from '@/types/generated/security-lgpd/conectaPROLGPDSecurityAPI.schemas';
-import { AxiosResponse } from 'axios';
 
-const consentApi = getLgpdConsentimento();
 
 /**
  * Service para gestão de consentimentos LGPD
@@ -30,8 +28,8 @@ export class ConsentService {
    */
   static async registerConsent(
     request: ConsentRequest
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return consentApi.registerConsent(request);
+  ): Promise<StandardResponse> {
+    return registerConsentApi(request);
   }
 
   /**
@@ -40,8 +38,8 @@ export class ConsentService {
    */
   static async getConsents(
     titularId: string
-  ): Promise<AxiosResponse<StandardResponse>> {
-    return consentApi.getConsents(titularId);
+  ): Promise<StandardResponse> {
+    return getConsentsApi(titularId);
   }
 
   /**
@@ -52,24 +50,24 @@ export class ConsentService {
   static async revokeConsent(
     consentId: string,
     reason: string
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     const params: RevokeConsentParams = { reason };
-    return consentApi.revokeConsent(consentId, params);
+    return revokeConsentApi(consentId, params);
   }
 
   /**
    * Lista finalidades de consentimento disponíveis
    */
-  static async listPurposes(): Promise<AxiosResponse<StandardResponse>> {
-    return consentApi.listPurposes();
+  static async listPurposes(): Promise<StandardResponse> {
+    return listPurposesApi();
   }
 
   /**
    * Lista bases legais LGPD disponíveis
    * Art. 7 a 11 da LGPD
    */
-  static async listLegalBases(): Promise<AxiosResponse<StandardResponse>> {
-    return consentApi.listLegalBases();
+  static async listLegalBases(): Promise<StandardResponse> {
+    return listLegalBasesApi();
   }
 
   /**

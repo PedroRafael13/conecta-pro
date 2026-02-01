@@ -8,16 +8,14 @@
  * - Formatos de mascaramento
  */
 
-import { getLgpdMascaramento } from '@/types/generated/security-lgpd/lgpd-mascaramento/lgpd-mascaramento';
+import { maskData as maskDataApi, listMaskingFormats as listMaskingFormatsApi } from '@/types/generated/security-lgpd/lgpd-mascaramento/lgpd-mascaramento';
 import type {
   MaskDataRequest,
   MaskDataRequestCategory,
   MaskDataRequestLevel,
   StandardResponse,
 } from '@/types/generated/security-lgpd/conectaPROLGPDSecurityAPI.schemas';
-import { AxiosResponse } from 'axios';
 
-const maskingApi = getLgpdMascaramento();
 
 /**
  * Service para mascaramento de dados sensíveis
@@ -30,21 +28,21 @@ export class MaskingService {
     data: string,
     category: MaskDataRequestCategory,
     level: MaskDataRequestLevel = 'partial'
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     const request: MaskDataRequest = {
       data,
       category,
       level,
     };
 
-    return maskingApi.maskData(request);
+    return maskDataApi(request);
   }
 
   /**
    * Lista formatos de mascaramento disponíveis
    */
-  static async listMaskingFormats(): Promise<AxiosResponse<StandardResponse>> {
-    return maskingApi.listMaskingFormats();
+  static async listMaskingFormats(): Promise<StandardResponse> {
+    return listMaskingFormatsApi();
   }
 
   /**
@@ -55,7 +53,7 @@ export class MaskingService {
     level: MaskDataRequestLevel = 'partial'
   ): Promise<string> {
     const response = await this.maskData(cpf, 'cpf', level);
-    return response.data.data?.masked_data as string;
+    return (response as any).data?.masked_data as string;
   }
 
   /**
@@ -66,7 +64,7 @@ export class MaskingService {
     level: MaskDataRequestLevel = 'partial'
   ): Promise<string> {
     const response = await this.maskData(email, 'email', level);
-    return response.data.data?.masked_data as string;
+    return (response as any).data?.masked_data as string;
   }
 
   /**
@@ -77,7 +75,7 @@ export class MaskingService {
     level: MaskDataRequestLevel = 'partial'
   ): Promise<string> {
     const response = await this.maskData(phone, 'phone', level);
-    return response.data.data?.masked_data as string;
+    return (response as any).data?.masked_data as string;
   }
 
   /**
@@ -88,7 +86,7 @@ export class MaskingService {
     level: MaskDataRequestLevel = 'partial'
   ): Promise<string> {
     const response = await this.maskData(name, 'name', level);
-    return response.data.data?.masked_data as string;
+    return (response as any).data?.masked_data as string;
   }
 
   /**
@@ -99,7 +97,7 @@ export class MaskingService {
     level: MaskDataRequestLevel = 'partial'
   ): Promise<string> {
     const response = await this.maskData(address, 'address', level);
-    return response.data.data?.masked_data as string;
+    return (response as any).data?.masked_data as string;
   }
 
   /**
@@ -110,7 +108,7 @@ export class MaskingService {
     level: MaskDataRequestLevel = 'partial'
   ): Promise<string> {
     const response = await this.maskData(card, 'credit_card', level);
-    return response.data.data?.masked_data as string;
+    return (response as any).data?.masked_data as string;
   }
 
   /**
@@ -124,7 +122,7 @@ export class MaskingService {
         const response = await this.maskData(item.data, item.category);
         return {
           original: item.data,
-          masked: response.data.data?.masked_data as string,
+          masked: (response as any).data?.masked_data as string,
           category: item.category,
         };
       })

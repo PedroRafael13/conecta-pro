@@ -8,16 +8,14 @@
  * - Gestão de algoritmos
  */
 
-import { getLgpdCriptografia } from '@/types/generated/security-lgpd/lgpd-criptografia/lgpd-criptografia';
+import { encryptData as encryptDataApi, decryptData as decryptDataApi, listAlgorithms as listAlgorithmsApi } from '@/types/generated/security-lgpd/lgpd-criptografia/lgpd-criptografia';
 import type {
   EncryptDataRequest,
   DecryptDataRequest,
   EncryptDataRequestAlgorithm,
   StandardResponse,
 } from '@/types/generated/security-lgpd/conectaPROLGPDSecurityAPI.schemas';
-import { AxiosResponse } from 'axios';
 
-const encryptionApi = getLgpdCriptografia();
 
 /**
  * Service para criptografia de dados sensíveis
@@ -33,14 +31,14 @@ export class EncryptionService {
     data: string,
     algorithm: EncryptDataRequestAlgorithm = 'AES-256-GCM',
     keyId?: string
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     const request: EncryptDataRequest = {
       data,
       algorithm,
       key_id: keyId,
     };
 
-    return encryptionApi.encryptData(request);
+    return encryptDataApi(request);
   }
 
   /**
@@ -51,20 +49,20 @@ export class EncryptionService {
   static async decryptData(
     encryptedData: string,
     keyId?: string
-  ): Promise<AxiosResponse<StandardResponse>> {
+  ): Promise<StandardResponse> {
     const request: DecryptDataRequest = {
       encrypted_data: encryptedData,
       key_id: keyId,
     };
 
-    return encryptionApi.decryptData(request);
+    return decryptDataApi(request);
   }
 
   /**
    * Lista algoritmos de criptografia disponíveis
    */
-  static async listAlgorithms(): Promise<AxiosResponse<StandardResponse>> {
-    return encryptionApi.listAlgorithms();
+  static async listAlgorithms(): Promise<StandardResponse> {
+    return listAlgorithmsApi();
   }
 
   /**
@@ -73,7 +71,7 @@ export class EncryptionService {
    */
   static async encryptCPF(cpf: string): Promise<string> {
     const response = await EncryptionService.encryptData(cpf, 'AES-256-GCM');
-    return response.data.data?.encrypted_data as string;
+    return (response as any).data?.encrypted_data as string;
   }
 
   /**
@@ -82,7 +80,7 @@ export class EncryptionService {
    */
   static async encryptEmail(email: string): Promise<string> {
     const response = await EncryptionService.encryptData(email, 'AES-256-GCM');
-    return response.data.data?.encrypted_data as string;
+    return (response as any).data?.encrypted_data as string;
   }
 
   /**
@@ -91,7 +89,7 @@ export class EncryptionService {
    */
   static async encryptPhone(phone: string): Promise<string> {
     const response = await EncryptionService.encryptData(phone, 'AES-256-GCM');
-    return response.data.data?.encrypted_data as string;
+    return (response as any).data?.encrypted_data as string;
   }
 
   /**
@@ -106,7 +104,7 @@ export class EncryptionService {
         const response = await this.encryptData(item);
         return {
           original: item,
-          encrypted: response.data.data?.encrypted_data as string,
+          encrypted: (response as any).data?.encrypted_data as string,
         };
       })
     );
@@ -126,7 +124,7 @@ export class EncryptionService {
         const response = await this.decryptData(item);
         return {
           encrypted: item,
-          decrypted: response.data.data?.decrypted_data as string,
+          decrypted: (response as any).data?.decrypted_data as string,
         };
       })
     );
