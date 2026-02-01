@@ -131,6 +131,130 @@ jobs:
 
             echo "Deploy produção concluído: ${{ github.ref_name }}"
 
-      - name: Notificar sucesso
+      - name: Notificar deploy sucesso - Discord
+        if: success() && secrets.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          echo "🚀 Deploy v${{ github.ref_name }} em produção realizado com sucesso!"
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "embeds": [{
+              "title": "Deploy Production - Sucesso",
+              "color": 3066993,
+              "fields": [
+                {"name": "Versao", "value": "\`${{ github.ref_name }}\`", "inline": true},
+                {"name": "Ambiente", "value": "production", "inline": true},
+                {"name": "Autor", "value": "${{ github.actor }}", "inline": true},
+                {"name": "Timestamp", "value": "${TIMESTAMP}", "inline": false}
+              ],
+              "footer": {
+                "text": "Conecta PRO Deploy"
+              },
+              "timestamp": "${TIMESTAMP}"
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${DISCORD_WEBHOOK}"
+
+          echo "Notificacao de deploy (sucesso) enviada ao Discord."
+
+      - name: Notificar deploy sucesso - Slack
+        if: success() && secrets.SLACK_WEBHOOK != ''
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "attachments": [{
+              "color": "good",
+              "title": ":rocket: Deploy Production - Sucesso",
+              "fields": [
+                {"title": "Versao", "value": "\`${{ github.ref_name }}\`", "short": true},
+                {"title": "Ambiente", "value": "production", "short": true},
+                {"title": "Autor", "value": "${{ github.actor }}", "short": true},
+                {"title": "Timestamp", "value": "${TIMESTAMP}", "short": true}
+              ],
+              "footer": "Conecta PRO Deploy",
+              "ts": $(date +%s)
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${SLACK_WEBHOOK}"
+
+          echo "Notificacao de deploy (sucesso) enviada ao Slack."
+
+      - name: Notificar deploy falha - Discord
+        if: failure() && secrets.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "embeds": [{
+              "title": "Deploy Production - FALHA",
+              "color": 15158332,
+              "description": "O deploy da versao ${{ github.ref_name }} em production falhou. Verifique os logs do workflow.",
+              "fields": [
+                {"name": "Versao", "value": "\`${{ github.ref_name }}\`", "inline": true},
+                {"name": "Ambiente", "value": "production", "inline": true},
+                {"name": "Autor", "value": "${{ github.actor }}", "inline": true},
+                {"name": "Timestamp", "value": "${TIMESTAMP}", "inline": false},
+                {"name": "Workflow", "value": "[Ver logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})", "inline": false}
+              ],
+              "footer": {
+                "text": "Conecta PRO Deploy"
+              },
+              "timestamp": "${TIMESTAMP}"
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${DISCORD_WEBHOOK}"
+
+          echo "Notificacao de deploy (falha) enviada ao Discord."
+
+      - name: Notificar deploy falha - Slack
+        if: failure() && secrets.SLACK_WEBHOOK != ''
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "attachments": [{
+              "color": "danger",
+              "title": ":rotating_light: Deploy Production - FALHA",
+              "text": "O deploy da versao \`${{ github.ref_name }}\` em production falhou. Verifique os logs do workflow.",
+              "fields": [
+                {"title": "Versao", "value": "\`${{ github.ref_name }}\`", "short": true},
+                {"title": "Ambiente", "value": "production", "short": true},
+                {"title": "Autor", "value": "${{ github.actor }}", "short": true},
+                {"title": "Timestamp", "value": "${TIMESTAMP}", "short": true},
+                {"title": "Workflow", "value": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Ver logs>", "short": false}
+              ],
+              "footer": "Conecta PRO Deploy",
+              "ts": $(date +%s)
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${SLACK_WEBHOOK}"
+
+          echo "Notificacao de deploy (falha) enviada ao Slack."

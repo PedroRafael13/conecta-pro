@@ -313,3 +313,184 @@ jobs:
           name: docker-image
           path: erp-image.tar.gz
           retention-days: 7
+
+  # ===========================================
+  # JOB 8: Notificar Resultado (Discord/Slack)
+  # ===========================================
+  notify:
+    name: Notificar Resultado
+    runs-on: ubuntu-latest
+    needs: [lint, frontend-lint, security, test, frontend-test, owasp-zap, build]
+    if: always()
+
+    steps:
+      - name: Gerar summary com status de cada job
+        id: summary
+        run: |
+          # Coleta o resultado de cada job via contexto needs
+          LINT="${{ needs.lint.result }}"
+          FRONTEND_LINT="${{ needs.frontend-lint.result }}"
+          SECURITY="${{ needs.security.result }}"
+          TEST="${{ needs.test.result }}"
+          FRONTEND_TEST="${{ needs.frontend-test.result }}"
+          OWASP_ZAP="${{ needs.owasp-zap.result }}"
+          BUILD="${{ needs.build.result }}"
+
+          # Determina status geral da pipeline
+          OVERALL="success"
+          for RESULT in "$LINT" "$FRONTEND_LINT" "$SECURITY" "$TEST" "$FRONTEND_TEST" "$OWASP_ZAP" "$BUILD"; do
+            if [ "$RESULT" == "failure" ]; then
+              OVERALL="failure"
+              break
+            fi
+          done
+
+          # Monta texto resumo legível
+          SUMMARY="**CI Pipeline - Conecta PRO**\n"
+          SUMMARY+="**Branch:** \`${{ github.ref_name }}\`\n"
+          SUMMARY+="**Commit:** \`${{ github.sha }}\`\n"
+          SUMMARY+="**Autor:** ${{ github.actor }}\n\n"
+          SUMMARY+="| Job | Status |\n|---|---|\n"
+          SUMMARY+="| Backend Lint | ${LINT} |\n"
+          SUMMARY+="| Frontend Lint | ${FRONTEND_LINT} |\n"
+          SUMMARY+="| Security Scan | ${SECURITY} |\n"
+          SUMMARY+="| Backend Tests | ${TEST} |\n"
+          SUMMARY+="| Frontend Tests | ${FRONTEND_TEST} |\n"
+          SUMMARY+="| OWASP ZAP | ${OWASP_ZAP} |\n"
+          SUMMARY+="| Build Docker | ${BUILD} |\n"
+
+          # Exporta variáveis para os próximos steps
+          echo "overall=${OVERALL}" >> "$GITHUB_OUTPUT"
+          echo "lint=${LINT}" >> "$GITHUB_OUTPUT"
+          echo "frontend_lint=${FRONTEND_LINT}" >> "$GITHUB_OUTPUT"
+          echo "security=${SECURITY}" >> "$GITHUB_OUTPUT"
+          echo "test=${TEST}" >> "$GITHUB_OUTPUT"
+          echo "frontend_test=${FRONTEND_TEST}" >> "$GITHUB_OUTPUT"
+          echo "owasp_zap=${OWASP_ZAP}" >> "$GITHUB_OUTPUT"
+          echo "build=${BUILD}" >> "$GITHUB_OUTPUT"
+
+          # Exibe no log do GitHub Actions
+          echo -e "$SUMMARY"
+
+      - name: Notificar Discord
+        if: ${{ secrets.DISCORD_WEBHOOK != '' }}
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          # Define cor do embed: verde (sucesso) ou vermelho (falha)
+          if [ "${{ steps.summary.outputs.overall }}" == "success" ]; then
+            COLOR=3066993    # Verde (#2ECC71)
+            TITLE="CI Pipeline - Sucesso"
+            EMOJI="white_check_mark"
+          else
+            COLOR=15158332   # Vermelho (#E74C3C)
+            TITLE="CI Pipeline - Falha"
+            EMOJI="x"
+          fi
+
+          # Monta lista de jobs com emoji de status
+          status_emoji() {
+            case "$1" in
+              success)  echo ":white_check_mark:" ;;
+              failure)  echo ":x:" ;;
+              skipped)  echo ":fast_forward:" ;;
+              cancelled) echo ":stop_button:" ;;
+              *)        echo ":grey_question:" ;;
+            esac
+          }
+
+          FIELDS="["
+          FIELDS+="{\"name\":\"Backend Lint\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.lint }}) ${{ steps.summary.outputs.lint }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Frontend Lint\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.frontend_lint }}) ${{ steps.summary.outputs.frontend_lint }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Security Scan\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.security }}) ${{ steps.summary.outputs.security }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Backend Tests\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.test }}) ${{ steps.summary.outputs.test }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Frontend Tests\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.frontend_test }}) ${{ steps.summary.outputs.frontend_test }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"OWASP ZAP\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.owasp_zap }}) ${{ steps.summary.outputs.owasp_zap }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Build Docker\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.build }}) ${{ steps.summary.outputs.build }}\",\"inline\":true}"
+          FIELDS+="]"
+
+          # Payload Discord com embed
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "embeds": [{
+              "title": "${TITLE}",
+              "color": ${COLOR},
+              "fields": ${FIELDS},
+              "footer": {
+                "text": "Conecta PRO CI | Branch: ${{ github.ref_name }} | Commit: ${{ github.sha }}"
+              },
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          # Envia notificação para o Discord
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${DISCORD_WEBHOOK}"
+
+          echo "Notificação Discord enviada com sucesso."
+
+      - name: Notificar Slack
+        if: ${{ secrets.SLACK_WEBHOOK != '' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          # Define emoji e cor para Slack
+          if [ "${{ steps.summary.outputs.overall }}" == "success" ]; then
+            COLOR="good"
+            ICON=":white_check_mark:"
+            STATUS_TEXT="Sucesso"
+          else
+            COLOR="danger"
+            ICON=":x:"
+            STATUS_TEXT="Falha"
+          fi
+
+          # Função para emoji de status no Slack
+          slack_emoji() {
+            case "$1" in
+              success)  echo ":white_check_mark:" ;;
+              failure)  echo ":x:" ;;
+              skipped)  echo ":fast_forward:" ;;
+              cancelled) echo ":no_entry_sign:" ;;
+              *)        echo ":grey_question:" ;;
+            esac
+          }
+
+          # Monta texto de status dos jobs
+          JOBS_TEXT=""
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.lint }}) Backend Lint: *${{ steps.summary.outputs.lint }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.frontend_lint }}) Frontend Lint: *${{ steps.summary.outputs.frontend_lint }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.security }}) Security Scan: *${{ steps.summary.outputs.security }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.test }}) Backend Tests: *${{ steps.summary.outputs.test }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.frontend_test }}) Frontend Tests: *${{ steps.summary.outputs.frontend_test }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.owasp_zap }}) OWASP ZAP: *${{ steps.summary.outputs.owasp_zap }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.build }}) Build Docker: *${{ steps.summary.outputs.build }}*"
+
+          # Payload Slack
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "attachments": [{
+              "color": "${COLOR}",
+              "title": "${ICON} CI Pipeline - ${STATUS_TEXT}",
+              "text": "${JOBS_TEXT}",
+              "fields": [
+                {"title": "Branch", "value": "\`${{ github.ref_name }}\`", "short": true},
+                {"title": "Autor", "value": "${{ github.actor }}", "short": true},
+                {"title": "Commit", "value": "\`${{ github.sha }}\`", "short": false}
+              ],
+              "footer": "Conecta PRO CI",
+              "ts": $(date +%s)
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          # Envia notificação para o Slack
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${SLACK_WEBHOOK}"
+
+          echo "Notificação Slack enviada com sucesso."

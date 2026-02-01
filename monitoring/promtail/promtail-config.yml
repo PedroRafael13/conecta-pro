@@ -1,0 +1,104 @@
+# ==========================================================================
+# Promtail - Coletor de Logs - Conecta PRO
+# ==========================================================================
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    batchwait: 1s
+    batchsize: 1048576  # 1MB
+
+scrape_configs:
+  # ================================================================
+  # Backend FastAPI Logs
+  # ================================================================
+  - job_name: backend
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: backend
+          service: conecta-pro-backend
+          __path__: /var/log/conecta-pro/*.log
+
+    pipeline_stages:
+      # Extrair nível de log (INFO, WARNING, ERROR, etc)
+      - regex:
+          expression: '^\[?(?P<timestamp>\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[^\]]*)\]?\s*\[?\s*(?P<level>\w+)\s*\]?'
+      - labels:
+          level:
+      # Multiline para stack traces Python
+      - multiline:
+          firstline: '^\d{4}-\d{2}-\d{2}|^\[|^Traceback|^[A-Z][a-z]+Error'
+          max_wait_time: 3s
+          max_lines: 128
+
+  # ================================================================
+  # Celery Worker Logs
+  # ================================================================
+  - job_name: celery
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: celery
+          service: conecta-pro-celery
+          __path__: /var/log/conecta-pro/celery/*.log
+
+    pipeline_stages:
+      - regex:
+          expression: '\[(?P<timestamp>[^\]]+)\]\s*\[(?P<level>\w+)/(?P<process>\w+)\]'
+      - labels:
+          level:
+          process:
+      - multiline:
+          firstline: '^\[\d{4}-\d{2}-\d{2}'
+          max_wait_time: 3s
+          max_lines: 128
+
+  # ================================================================
+  # Nginx Access/Error Logs
+  # ================================================================
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: conecta-pro-nginx
+          __path__: /var/log/nginx/*.log
+
+    pipeline_stages:
+      - regex:
+          expression: '^(?P<remote_addr>[\d.]+)\s.*\s"(?P<method>\w+)\s(?P<path>[^\s]+)\s[^"]+"\s(?P<status>\d+)\s(?P<bytes>\d+)'
+      - labels:
+          status:
+          method:
+
+  # ================================================================
+  # Docker Container Logs (via volumes)
+  # ================================================================
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/**/*-json.log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            log: log
+            stream: stream
+            time: time
+      - labels:
+          stream:
+      - output:
+          source: log

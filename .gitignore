@@ -48,6 +48,9 @@ Thumbs.db
 *.log
 logs/
 
+# Reports (runtime generated)
+reports/
+
 # Local config
 .env
 .env.local
