@@ -1,16 +1,22 @@
 /**
  * Hooks para o módulo de Medidas Administrativas
+ * Reescrito para usar hooks Orval (React Query) internamente
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { disciplinaryService } from '@/lib/services/disciplinary';
-import { getErrorMessage } from '@/lib/api';
+import { useState, useCallback, useMemo } from 'react';
+import {
+  useDisciplinaryActions as useOrvalDisciplinaryActions,
+  useDisciplinaryAction as useOrvalDisciplinaryAction,
+  useDisciplinaryActionsByEmployee as useOrvalDisciplinaryActionsByEmployee,
+  usePendingDisciplinaryApprovals as useOrvalPendingApprovals,
+} from '@/hooks/operacional/useDisciplinary';
+import {
+  useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet,
+} from '@/types/generated/operacional/operacional-medidas-administrativas/operacional-medidas-administrativas';
 import type {
   DisciplinaryAction,
   DisciplinaryFilter,
   DisciplinaryStats,
-  DisciplinaryActionStatus,
-  DisciplinaryActionType,
 } from '@/types/disciplinary';
 
 interface UseDisciplinaryOptions {
@@ -32,213 +38,106 @@ interface UseDisciplinaryReturn {
   refresh: () => Promise<void>;
 }
 
-/**
- * Hook para listar medidas administrativas com paginação e filtros
- */
 export function useDisciplinary(options: UseDisciplinaryOptions = {}): UseDisciplinaryReturn {
   const { initialPageSize = 10, autoLoad = true } = options;
 
-  const [actions, setActions] = useState<DisciplinaryAction[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPageState] = useState(1);
   const [pageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<DisciplinaryFilter>({});
+  const [filters, setFiltersState] = useState<DisciplinaryFilter>({});
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const params = useMemo(() => {
+    const p: Record<string, unknown> = {
+      page,
+      page_size: pageSize,
+    };
+    if (filters.search) p.search = filters.search;
+    if (filters.status) p.status = filters.status;
+    if (filters.action_type) p.action_type = filters.action_type;
+    if (filters.employee_id) p.employee_id = filters.employee_id;
+    if (filters.date_from) p.incident_date_from = filters.date_from;
+    if (filters.date_to) p.incident_date_to = filters.date_to;
+    return p;
+  }, [page, pageSize, filters]);
 
-    try {
-      const response = await disciplinaryService.list({
-        ...filters,
-        page,
-        page_size: pageSize,
-      });
+  const { data, isLoading, error, refetch } = useOrvalDisciplinaryActions(params, {
+    query: { enabled: autoLoad },
+  });
 
-      setActions(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setActions([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, page, pageSize]);
+  const setFilters = useCallback((newFilters: DisciplinaryFilter) => {
+    setFiltersState(newFilters);
+    setPageState(1);
+  }, []);
 
-  useEffect(() => {
-    if (autoLoad) {
-      fetchData();
-    }
-  }, [fetchData, autoLoad]);
-
-  const handleSetFilters = useCallback((newFilters: DisciplinaryFilter) => {
-    setFilters(newFilters);
-    setPage(1);
+  const setPage = useCallback((newPage: number) => {
+    setPageState(newPage);
   }, []);
 
   return {
-    actions,
-    total,
+    actions: (data?.items ?? []) as DisciplinaryAction[],
+    total: data?.total ?? 0,
     page,
     pageSize,
-    totalPages,
+    totalPages: data?.total_pages ?? 0,
     isLoading,
-    error,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar medidas') : null,
     filters,
-    setFilters: handleSetFilters,
+    setFilters: setFilters,
     setPage,
-    refresh: fetchData,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para estatísticas de medidas administrativas
- */
 export function useDisciplinaryStats() {
-  const [stats, setStats] = useState<DisciplinaryStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStats = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await disciplinaryService.getStats();
-      setStats(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const { data, isLoading, error, refetch } = useGetDisciplinaryStatsApiV1OperacionalMedidasAdministrativasEstatisticasGet();
 
   return {
-    stats,
+    stats: (data ?? null) as DisciplinaryStats | null,
     isLoading,
-    error,
-    refresh: fetchStats,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar estatísticas') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para detalhes de uma medida
- */
 export function useDisciplinaryDetail(id: string | null) {
-  const [action, setAction] = useState<DisciplinaryAction | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchAction = useCallback(async () => {
-    if (!id) {
-      setAction(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await disciplinaryService.getById(id);
-      setAction(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchAction();
-  }, [fetchAction]);
+  const { data, isLoading, error, refetch } = useOrvalDisciplinaryAction(id ?? '', {
+    query: { enabled: !!id },
+  });
 
   return {
-    action,
+    action: (data ?? null) as DisciplinaryAction | null,
     isLoading,
-    error,
-    refresh: fetchAction,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar medida') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para medidas pendentes de aprovação
- */
 export function usePendingApprovals() {
-  const [actions, setActions] = useState<DisciplinaryAction[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useOrvalPendingApprovals();
 
-  const fetchPending = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await disciplinaryService.listPending();
-      setActions(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPending();
-  }, [fetchPending]);
+  const actions = (data ?? []) as DisciplinaryAction[];
 
   return {
     actions,
     total: actions.length,
     isLoading,
-    error,
-    refresh: fetchPending,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar pendentes') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para medidas de um funcionário
- */
 export function useEmployeeDisciplinary(employeeId: string | null) {
-  const [actions, setActions] = useState<DisciplinaryAction[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useOrvalDisciplinaryActionsByEmployee(
+    employeeId ?? '',
+    { query: { enabled: !!employeeId } }
+  );
 
-  const fetchActions = useCallback(async () => {
-    if (!employeeId) {
-      setActions([]);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await disciplinaryService.listByEmployee(employeeId);
-      setActions(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [employeeId]);
-
-  useEffect(() => {
-    fetchActions();
-  }, [fetchActions]);
+  const actions = (data ?? []) as DisciplinaryAction[];
 
   return {
     actions,
     total: actions.length,
     isLoading,
-    error,
-    refresh: fetchActions,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar medidas do funcionário') : null,
+    refresh: async () => { await refetch(); },
   };
 }

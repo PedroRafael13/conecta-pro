@@ -1,9 +1,24 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { shiftsService } from '@/lib/services/shifts';
-import type { Shift, ShiftFilter } from '@/types/operacional';
-import { getErrorMessage } from '@/lib/api';
+import { customInstance } from '@/lib/api-client';
+import type { Shift, ShiftFilter, ShiftCreate, ShiftUpdate, ShiftCheckIn, ShiftCheckOut, PaginatedResponse } from '@/types/operacional';
+
+const BASE_URL = '/api/v1/operacional/shifts';
+
+function buildParams(page: number, pageSize: number, filters?: ShiftFilter): string {
+  const params = new URLSearchParams();
+  params.append('page', String(page));
+  params.append('page_size', String(pageSize));
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  return params.toString();
+}
 
 interface UseShiftsOptions {
   autoLoad?: boolean;
@@ -49,12 +64,15 @@ export function useShifts(options: UseShiftsOptions = {}): UseShiftsReturn {
     setError(null);
 
     try {
-      const response = await shiftsService.list(page, pageSize, filters);
+      const response = await customInstance<PaginatedResponse<Shift>>({
+        url: `${BASE_URL}/?${buildParams(page, pageSize, filters)}`,
+        method: 'GET',
+      });
       setShifts(response.items);
       setTotal(response.total);
       setTotalPages(response.total_pages);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar turnos');
       setShifts([]);
     } finally {
       setIsLoading(false);
@@ -100,10 +118,17 @@ export function useTodayShifts(postId?: string): UseTodayShiftsReturn {
     setError(null);
 
     try {
-      const response = await shiftsService.listToday(postId);
+      const params = new URLSearchParams();
+      if (postId) params.append('post_id', postId);
+      const qs = params.toString();
+
+      const response = await customInstance<PaginatedResponse<Shift>>({
+        url: `${BASE_URL}/today${qs ? `?${qs}` : ''}`,
+        method: 'GET',
+      });
       setShifts(response.items);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar turnos do dia');
       setShifts([]);
     } finally {
       setIsLoading(false);
@@ -117,31 +142,32 @@ export function useTodayShifts(postId?: string): UseTodayShiftsReturn {
   return { shifts, isLoading, error, refresh: loadToday };
 }
 
-/**
- * Hook para operações com turnos (CRUD)
- */
 interface UseShiftOperationsReturn {
   isLoading: boolean;
   error: string | null;
-  createShift: (data: import('@/types/operacional').ShiftCreate) => Promise<Shift | null>;
-  updateShift: (id: string, data: import('@/types/operacional').ShiftUpdate) => Promise<Shift | null>;
+  createShift: (data: ShiftCreate) => Promise<Shift | null>;
+  updateShift: (id: string, data: ShiftUpdate) => Promise<Shift | null>;
   deleteShift: (id: string) => Promise<boolean>;
-  checkIn: (id: string, data: import('@/types/operacional').ShiftCheckIn) => Promise<Shift | null>;
-  checkOut: (id: string, data: import('@/types/operacional').ShiftCheckOut) => Promise<Shift | null>;
+  checkIn: (id: string, data: ShiftCheckIn) => Promise<Shift | null>;
+  checkOut: (id: string, data: ShiftCheckOut) => Promise<Shift | null>;
 }
 
 export function useShiftOperations(): UseShiftOperationsReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createShift = useCallback(async (data: import('@/types/operacional').ShiftCreate): Promise<Shift | null> => {
+  const createShift = useCallback(async (data: ShiftCreate): Promise<Shift | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const shift = await shiftsService.create(data);
+      const shift = await customInstance<Shift>({
+        url: `${BASE_URL}/`,
+        method: 'POST',
+        data,
+      });
       return shift;
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = err instanceof Error ? err.message : 'Erro ao criar turno';
       setError(message);
       return null;
     } finally {
@@ -149,14 +175,18 @@ export function useShiftOperations(): UseShiftOperationsReturn {
     }
   }, []);
 
-  const updateShift = useCallback(async (id: string, data: import('@/types/operacional').ShiftUpdate): Promise<Shift | null> => {
+  const updateShift = useCallback(async (id: string, data: ShiftUpdate): Promise<Shift | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const shift = await shiftsService.update(id, data);
+      const shift = await customInstance<Shift>({
+        url: `${BASE_URL}/${id}`,
+        method: 'PATCH',
+        data,
+      });
       return shift;
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = err instanceof Error ? err.message : 'Erro ao atualizar turno';
       setError(message);
       return null;
     } finally {
@@ -168,10 +198,13 @@ export function useShiftOperations(): UseShiftOperationsReturn {
     setIsLoading(true);
     setError(null);
     try {
-      await shiftsService.delete(id);
+      await customInstance<void>({
+        url: `${BASE_URL}/${id}`,
+        method: 'DELETE',
+      });
       return true;
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = err instanceof Error ? err.message : 'Erro ao deletar turno';
       setError(message);
       return false;
     } finally {
@@ -179,14 +212,18 @@ export function useShiftOperations(): UseShiftOperationsReturn {
     }
   }, []);
 
-  const checkIn = useCallback(async (id: string, data: import('@/types/operacional').ShiftCheckIn): Promise<Shift | null> => {
+  const checkIn = useCallback(async (id: string, data: ShiftCheckIn): Promise<Shift | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const shift = await shiftsService.checkIn(id, data);
+      const shift = await customInstance<Shift>({
+        url: `${BASE_URL}/${id}/check-in`,
+        method: 'POST',
+        data,
+      });
       return shift;
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = err instanceof Error ? err.message : 'Erro ao registrar entrada';
       setError(message);
       return null;
     } finally {
@@ -194,14 +231,18 @@ export function useShiftOperations(): UseShiftOperationsReturn {
     }
   }, []);
 
-  const checkOut = useCallback(async (id: string, data: import('@/types/operacional').ShiftCheckOut): Promise<Shift | null> => {
+  const checkOut = useCallback(async (id: string, data: ShiftCheckOut): Promise<Shift | null> => {
     setIsLoading(true);
     setError(null);
     try {
-      const shift = await shiftsService.checkOut(id, data);
+      const shift = await customInstance<Shift>({
+        url: `${BASE_URL}/${id}/check-out`,
+        method: 'POST',
+        data,
+      });
       return shift;
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = err instanceof Error ? err.message : 'Erro ao registrar saída';
       setError(message);
       return null;
     } finally {

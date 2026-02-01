@@ -1,28 +1,40 @@
 /**
  * Hooks para o módulo de Notificações e Alertas
- * @author Conecta PRO Team
- * @date 2026-01-28
+ * Migrado para usar customInstance (Orval transport layer)
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  notificationsService,
-  alertsService,
-  type Notification,
-  type NotificationFilter,
-  type NotificationUnreadCount,
-  type Alert,
-  type AlertCreate,
-  type AlertType,
-  type AlertSeverity,
+import { useState, useEffect, useCallback } from 'react';
+import { customInstance } from '@/lib/api-client';
+import type {
+  Notification,
+  NotificationFilter,
+  NotificationUnreadCount,
+  NotificationListResponse,
+  Alert,
+  AlertCreate,
+  AlertType,
+  AlertSeverity,
+  AlertListResponse,
 } from '@/lib/services/notifications';
-import { getErrorMessage } from '@/lib/api';
+
+const NOTIFICATIONS_URL = '/api/v1/operacional/comunicacao/notificacoes';
+const ALERTS_URL = '/api/v1/operacional/comunicacao/alertas';
+
+function buildParams(obj: Record<string, unknown>): string {
+  const params = new URLSearchParams();
+  Object.entries(obj).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, String(value));
+    }
+  });
+  return params.toString();
+}
 
 interface UseNotificationsOptions {
   initialPageSize?: number;
   autoLoad?: boolean;
   initialFilters?: NotificationFilter;
-  pollInterval?: number; // Intervalo de polling em ms (0 = desabilitado)
+  pollInterval?: number;
 }
 
 interface UseNotificationsReturn {
@@ -43,9 +55,6 @@ interface UseNotificationsReturn {
   deleteNotification: (id: string) => Promise<boolean>;
 }
 
-/**
- * Hook para listar notificações com paginação e filtros
- */
 export function useNotifications(options: UseNotificationsOptions = {}): UseNotificationsReturn {
   const { initialPageSize = 20, autoLoad = true, initialFilters = {}, pollInterval = 0 } = options;
 
@@ -63,12 +72,16 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
     setError(null);
 
     try {
-      const response = await notificationsService.list(page, pageSize, filters);
+      const qs = buildParams({ page, page_size: pageSize, ...filters });
+      const response = await customInstance<NotificationListResponse>({
+        url: `${NOTIFICATIONS_URL}?${qs}`,
+        method: 'GET',
+      });
       setNotifications(response.items);
       setTotal(response.total);
       setTotalPages(response.total_pages);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar notificações');
       setNotifications([]);
     } finally {
       setIsLoading(false);
@@ -96,7 +109,10 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
 
   const markAsRead = useCallback(async (id: string): Promise<boolean> => {
     try {
-      await notificationsService.markAsRead(id);
+      await customInstance<Notification>({
+        url: `${NOTIFICATIONS_URL}/${id}/lida`,
+        method: 'POST',
+      });
       setNotifications(prev =>
         prev.map(n => n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n)
       );
@@ -108,7 +124,11 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
 
   const markAllAsRead = useCallback(async (): Promise<boolean> => {
     try {
-      await notificationsService.markAllAsRead();
+      await customInstance<{ success: boolean; count: number }>({
+        url: `${NOTIFICATIONS_URL}/marcar-todas`,
+        method: 'POST',
+        data: {},
+      });
       setNotifications(prev =>
         prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
       );
@@ -120,7 +140,10 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
 
   const deleteNotification = useCallback(async (id: string): Promise<boolean> => {
     try {
-      await notificationsService.delete(id);
+      await customInstance<void>({
+        url: `${NOTIFICATIONS_URL}/${id}`,
+        method: 'DELETE',
+      });
       setNotifications(prev => prev.filter(n => n.id !== id));
       setTotal(prev => prev - 1);
       return true;
@@ -148,9 +171,6 @@ export function useNotifications(options: UseNotificationsOptions = {}): UseNoti
   };
 }
 
-/**
- * Hook para contagem de notificações não lidas
- */
 export function useUnreadCount(pollInterval: number = 30000) {
   const [count, setCount] = useState<NotificationUnreadCount | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -161,10 +181,13 @@ export function useUnreadCount(pollInterval: number = 30000) {
     setError(null);
 
     try {
-      const data = await notificationsService.getUnreadCount();
+      const data = await customInstance<NotificationUnreadCount>({
+        url: `${NOTIFICATIONS_URL}/nao-lidas/count`,
+        method: 'GET',
+      });
       setCount(data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar contagem');
     } finally {
       setIsLoading(false);
     }
@@ -213,9 +236,6 @@ interface UseAlertsReturn {
   createAlert: (data: AlertCreate) => Promise<Alert | null>;
 }
 
-/**
- * Hook para listar alertas ativos
- */
 export function useAlerts(options: UseAlertsOptions = {}): UseAlertsReturn {
   const { autoLoad = true, pollInterval = 30000, filters } = options;
 
@@ -229,11 +249,15 @@ export function useAlerts(options: UseAlertsOptions = {}): UseAlertsReturn {
     setError(null);
 
     try {
-      const response = await alertsService.listActive(filters);
+      const qs = filters ? buildParams(filters as Record<string, unknown>) : '';
+      const response = await customInstance<AlertListResponse>({
+        url: `${ALERTS_URL}${qs ? `?${qs}` : ''}`,
+        method: 'GET',
+      });
       setAlerts(response.items);
       setTotal(response.total);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar alertas');
       setAlerts([]);
     } finally {
       setIsLoading(false);
@@ -256,7 +280,10 @@ export function useAlerts(options: UseAlertsOptions = {}): UseAlertsReturn {
 
   const acknowledge = useCallback(async (id: string): Promise<boolean> => {
     try {
-      await alertsService.acknowledge(id);
+      await customInstance<Alert>({
+        url: `${ALERTS_URL}/${id}/acknowledge`,
+        method: 'POST',
+      });
       setAlerts(prev => prev.filter(a => a.id !== id));
       setTotal(prev => prev - 1);
       return true;
@@ -267,7 +294,11 @@ export function useAlerts(options: UseAlertsOptions = {}): UseAlertsReturn {
 
   const createAlert = useCallback(async (data: AlertCreate): Promise<Alert | null> => {
     try {
-      const alert = await alertsService.create(data);
+      const alert = await customInstance<Alert>({
+        url: ALERTS_URL,
+        method: 'POST',
+        data,
+      });
       setAlerts(prev => [alert, ...prev]);
       setTotal(prev => prev + 1);
       return alert;
@@ -287,9 +318,6 @@ export function useAlerts(options: UseAlertsOptions = {}): UseAlertsReturn {
   };
 }
 
-/**
- * Hook para alertas do usuário atual
- */
 export function useUserAlerts(pollInterval: number = 30000) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -300,10 +328,13 @@ export function useUserAlerts(pollInterval: number = 30000) {
     setError(null);
 
     try {
-      const response = await alertsService.listUserAlerts();
+      const response = await customInstance<AlertListResponse>({
+        url: `${ALERTS_URL}/ativos`,
+        method: 'GET',
+      });
       setAlerts(response.items);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar alertas');
       setAlerts([]);
     } finally {
       setIsLoading(false);
@@ -321,7 +352,10 @@ export function useUserAlerts(pollInterval: number = 30000) {
 
   const acknowledge = useCallback(async (id: string): Promise<boolean> => {
     try {
-      await alertsService.acknowledge(id);
+      await customInstance<Alert>({
+        url: `${ALERTS_URL}/${id}/acknowledge`,
+        method: 'POST',
+      });
       setAlerts(prev => prev.filter(a => a.id !== id));
       return true;
     } catch {

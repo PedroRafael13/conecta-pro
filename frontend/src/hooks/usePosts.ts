@@ -1,9 +1,24 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { postsService } from '@/lib/services/posts';
+import { customInstance } from '@/lib/api-client';
 import type { Post, PostFilter, PostStats, PaginatedResponse } from '@/types/operacional';
-import { getErrorMessage } from '@/lib/api';
+
+const BASE_URL = '/api/v1/operacional/posts';
+
+function buildParams(page: number, pageSize: number, filters?: PostFilter): string {
+  const params = new URLSearchParams();
+  params.append('page', String(page));
+  params.append('page_size', String(pageSize));
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  return params.toString();
+}
 
 interface UsePostsOptions {
   autoLoad?: boolean;
@@ -44,23 +59,19 @@ export function usePosts(options: UsePostsOptions = {}): UsePostsReturn {
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PostFilter>(initialFilters);
 
-  // Controle para evitar requisições repetidas em caso de erro
   const lastRequestRef = useRef<string>('');
   const errorCountRef = useRef<number>(0);
   const lastErrorTimeRef = useRef<number>(0);
 
   const loadPosts = useCallback(async () => {
-    // Cria uma chave única para esta requisição
     const requestKey = JSON.stringify({ page, pageSize, filters });
-
-    // Se é a mesma requisição que falhou recentemente, aguarda backoff
     const now = Date.now();
     if (
       requestKey === lastRequestRef.current &&
       errorCountRef.current > 0 &&
       now - lastErrorTimeRef.current < Math.min(errorCountRef.current * 2000, 30000)
     ) {
-      return; // Evita retry muito rápido
+      return;
     }
 
     setIsLoading(true);
@@ -68,17 +79,18 @@ export function usePosts(options: UsePostsOptions = {}): UsePostsReturn {
     lastRequestRef.current = requestKey;
 
     try {
-      const response = await postsService.list(page, pageSize, filters);
+      const response = await customInstance<PaginatedResponse<Post>>({
+        url: `${BASE_URL}/?${buildParams(page, pageSize, filters)}`,
+        method: 'GET',
+      });
       setPosts(response.items);
       setTotal(response.total);
       setTotalPages(response.total_pages);
-      // Reset error count on success
       errorCountRef.current = 0;
     } catch (err) {
-      const errorMsg = getErrorMessage(err);
+      const errorMsg = err instanceof Error ? err.message : 'Erro ao carregar postos';
       setError(errorMsg);
       setPosts([]);
-      // Incrementa contador de erros para backoff
       errorCountRef.current += 1;
       lastErrorTimeRef.current = now;
       console.error(`[usePosts] Erro ao carregar postos (tentativa ${errorCountRef.current}):`, errorMsg);
@@ -109,7 +121,6 @@ export function usePosts(options: UsePostsOptions = {}): UsePostsReturn {
   };
 }
 
-// Hook para estatísticas de postos
 export function usePostStats() {
   const [stats, setStats] = useState<PostStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -120,10 +131,13 @@ export function usePostStats() {
     setError(null);
 
     try {
-      const data = await postsService.getStats();
+      const data = await customInstance<PostStats>({
+        url: `${BASE_URL}/stats`,
+        method: 'GET',
+      });
       setStats(data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar estatísticas');
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +150,6 @@ export function usePostStats() {
   return { stats, isLoading, error, refresh: loadStats };
 }
 
-// Hook para um posto específico
 export function usePost(id: string | null) {
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -152,10 +165,13 @@ export function usePost(id: string | null) {
     setError(null);
 
     try {
-      const data = await postsService.getById(id);
+      const data = await customInstance<Post>({
+        url: `${BASE_URL}/${id}`,
+        method: 'GET',
+      });
       setPost(data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar posto');
       setPost(null);
     } finally {
       setIsLoading(false);

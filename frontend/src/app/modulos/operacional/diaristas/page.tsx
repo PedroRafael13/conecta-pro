@@ -37,7 +37,7 @@ import {
   type DiaristType,
   DIARIST_TYPE_LABELS,
   DIARIST_STATUS_LABELS,
-} 
+} from '@/lib/services/diarists';
 
 const STATUS_COLORS: Record<DiaristStatus, string> = {
   ativo: 'bg-green-500/10 text-green-500',

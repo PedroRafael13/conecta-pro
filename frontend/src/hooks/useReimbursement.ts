@@ -1,17 +1,29 @@
 /**
- * Hooks customizados para o módulo de Reembolso
+ * Hooks customizados para o modulo de Reembolso
+ *
+ * Wrappers de compatibilidade sobre os hooks Orval de @/hooks/reimbursement/
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { reimbursementService } from '@/lib/services/reimbursement';
-import { getErrorMessage } from '@/lib/api';
+import { useState, useCallback, useMemo } from 'react';
+import {
+  useReimbursementRequests as useReimbursementRequestsOrval,
+  useMyReimbursementRequests,
+  useReimbursementRequest,
+  useReimbursementStats as useReimbursementStatsOrval,
+  useExpenseCategories,
+  usePendingReimbursementApprovals,
+  useReadyForPaymentReimbursements,
+} from '@/hooks/reimbursement';
 import type {
   ReimbursementRequest,
   ReimbursementFilter,
   ReimbursementStats,
   ReimbursementCategory,
-  ReimbursementStatus,
 } from '@/types/reimbursement';
+
+// ==============================================================================
+// useReimbursements
+// ==============================================================================
 
 interface UseReimbursementsOptions {
   initialPageSize?: number;
@@ -33,67 +45,73 @@ interface UseReimbursementsResult {
   refresh: () => void;
 }
 
-/**
- * Hook para listagem de solicitações de reembolso
- */
 export function useReimbursements(
   options: UseReimbursementsOptions = {}
 ): UseReimbursementsResult {
   const { initialPageSize = 20, myOnly = false, autoLoad = true } = options;
 
-  const [requests, setRequests] = useState<ReimbursementRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPageState] = useState(1);
   const [pageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<ReimbursementFilter>({});
+  const [filters, setFiltersState] = useState<ReimbursementFilter>({});
 
-  const fetchRequests = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const queryParams = useMemo(() => ({
+    page,
+    page_size: pageSize,
+    status: filters.status,
+    approval_level: filters.approval_level,
+    requester_id: filters.requester_id,
+    expense_date_start: filters.expense_date_start,
+    expense_date_end: filters.expense_date_end,
+    min_amount: filters.min_amount,
+    max_amount: filters.max_amount,
+    search: filters.search,
+    cost_center: filters.cost_center,
+    project: filters.project,
+  }), [page, pageSize, filters]);
 
-    try {
-      const response = myOnly
-        ? await reimbursementService.listMy(page, pageSize, filters.status)
-        : await reimbursementService.list(page, pageSize, filters);
+  const allQuery = useReimbursementRequestsOrval(
+    myOnly ? undefined : queryParams,
+    { query: { enabled: autoLoad && !myOnly } }
+  );
 
-      setRequests(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, filters, myOnly]);
+  const myQuery = useMyReimbursementRequests(
+    myOnly ? { page, page_size: pageSize, status: filters.status } : undefined,
+    { query: { enabled: autoLoad && myOnly } }
+  );
 
-  useEffect(() => {
-    if (autoLoad) {
-      fetchRequests();
-    }
-  }, [fetchRequests, autoLoad]);
+  const query = myOnly ? myQuery : allQuery;
 
   const handleSetFilters = useCallback((newFilters: ReimbursementFilter) => {
-    setFilters(newFilters);
-    setPage(1); // Reset to first page when filters change
+    setFiltersState(newFilters);
+    setPageState(1);
   }, []);
 
+  const setPage = useCallback((p: number) => {
+    setPageState(p);
+  }, []);
+
+  const refresh = useCallback(() => {
+    query.refetch();
+  }, [query]);
+
   return {
-    requests,
-    total,
+    requests: (query.data as any)?.items ?? [],
+    total: (query.data as any)?.total ?? 0,
     page,
     pageSize,
-    totalPages,
-    isLoading,
-    error,
+    totalPages: (query.data as any)?.total_pages ?? 0,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar reembolsos' : null,
     filters,
     setFilters: handleSetFilters,
     setPage,
-    refresh: fetchRequests,
+    refresh,
   };
 }
+
+// ==============================================================================
+// useReimbursementStats
+// ==============================================================================
 
 interface UseReimbursementStatsOptions {
   myOnly?: boolean;
@@ -107,45 +125,30 @@ interface UseReimbursementStatsResult {
   refresh: () => void;
 }
 
-/**
- * Hook para estatísticas de reembolsos
- */
 export function useReimbursementStats(
   options: UseReimbursementStatsOptions = {}
 ): UseReimbursementStatsResult {
   const { myOnly = false, autoLoad = true } = options;
 
-  const [stats, setStats] = useState<ReimbursementStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useReimbursementStatsOrval(myOnly, {
+    query: { enabled: autoLoad },
+  });
 
-  const fetchStats = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await reimbursementService.getStats(myOnly);
-      setStats(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [myOnly]);
-
-  useEffect(() => {
-    if (autoLoad) {
-      fetchStats();
-    }
-  }, [fetchStats, autoLoad]);
+  const refresh = useCallback(() => {
+    query.refetch();
+  }, [query]);
 
   return {
-    stats,
-    isLoading,
-    error,
-    refresh: fetchStats,
+    stats: (query.data as ReimbursementStats) ?? null,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar estatisticas' : null,
+    refresh,
   };
 }
+
+// ==============================================================================
+// useReimbursementDetail
+// ==============================================================================
 
 interface UseReimbursementDetailResult {
   request: ReimbursementRequest | null;
@@ -154,46 +157,28 @@ interface UseReimbursementDetailResult {
   refresh: () => void;
 }
 
-/**
- * Hook para detalhes de uma solicitação
- */
 export function useReimbursementDetail(
   requestId: string | null
 ): UseReimbursementDetailResult {
-  const [request, setRequest] = useState<ReimbursementRequest | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useReimbursementRequest(requestId ?? '', {
+    query: { enabled: !!requestId },
+  });
 
-  const fetchRequest = useCallback(async () => {
-    if (!requestId) {
-      setRequest(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await reimbursementService.getById(requestId);
-      setRequest(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [requestId]);
-
-  useEffect(() => {
-    fetchRequest();
-  }, [fetchRequest]);
+  const refresh = useCallback(() => {
+    query.refetch();
+  }, [query]);
 
   return {
-    request,
-    isLoading,
-    error,
-    refresh: fetchRequest,
+    request: (query.data as ReimbursementRequest) ?? null,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar solicitacao' : null,
+    refresh,
   };
 }
+
+// ==============================================================================
+// usePendingApprovals
+// ==============================================================================
 
 interface UsePendingApprovalsOptions {
   initialPageSize?: number;
@@ -215,69 +200,51 @@ interface UsePendingApprovalsResult {
   refresh: () => void;
 }
 
-/**
- * Hook para listagem de aprovações pendentes
- */
 export function usePendingApprovals(
   options: UsePendingApprovalsOptions = {}
 ): UsePendingApprovalsResult {
   const { initialPageSize = 20, approvalLevel: initialLevel, autoLoad = true } = options;
 
-  const [requests, setRequests] = useState<ReimbursementRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPageState] = useState(1);
   const [pageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [approvalLevel, setApprovalLevel] = useState<string | undefined>(initialLevel);
+  const [approvalLevel, setApprovalLevelState] = useState<string | undefined>(initialLevel);
 
-  const fetchRequests = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await reimbursementService.listPendingApprovals(
-        page,
-        pageSize,
-        approvalLevel
-      );
-
-      setRequests(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, approvalLevel]);
-
-  useEffect(() => {
-    if (autoLoad) {
-      fetchRequests();
-    }
-  }, [fetchRequests, autoLoad]);
+  const query = usePendingReimbursementApprovals(
+    { page, page_size: pageSize, approval_level: approvalLevel },
+    { query: { enabled: autoLoad } }
+  );
 
   const handleSetApprovalLevel = useCallback((level: string | undefined) => {
-    setApprovalLevel(level);
-    setPage(1);
+    setApprovalLevelState(level);
+    setPageState(1);
   }, []);
 
+  const setPage = useCallback((p: number) => {
+    setPageState(p);
+  }, []);
+
+  const refresh = useCallback(() => {
+    query.refetch();
+  }, [query]);
+
   return {
-    requests,
-    total,
+    requests: (query.data as any)?.items ?? [],
+    total: (query.data as any)?.total ?? 0,
     page,
     pageSize,
-    totalPages,
-    isLoading,
-    error,
+    totalPages: (query.data as any)?.total_pages ?? 0,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar aprovacoes' : null,
     approvalLevel,
     setApprovalLevel: handleSetApprovalLevel,
     setPage,
-    refresh: fetchRequests,
+    refresh,
   };
 }
+
+// ==============================================================================
+// useReimbursementCategories
+// ==============================================================================
 
 interface UseReimbursementCategoriesResult {
   categories: ReimbursementCategory[];
@@ -286,39 +253,24 @@ interface UseReimbursementCategoriesResult {
   refresh: () => void;
 }
 
-/**
- * Hook para listagem de categorias
- */
 export function useReimbursementCategories(): UseReimbursementCategoriesResult {
-  const [categories, setCategories] = useState<ReimbursementCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useExpenseCategories();
 
-  const fetchCategories = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await reimbursementService.listCategories();
-      setCategories(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+  const refresh = useCallback(() => {
+    query.refetch();
+  }, [query]);
 
   return {
-    categories,
-    isLoading,
-    error,
-    refresh: fetchCategories,
+    categories: (query.data as ReimbursementCategory[]) ?? [],
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar categorias' : null,
+    refresh,
   };
 }
+
+// ==============================================================================
+// useReadyForPayment
+// ==============================================================================
 
 interface UseReadyForPaymentOptions {
   initialPageSize?: number;
@@ -337,54 +289,36 @@ interface UseReadyForPaymentResult {
   refresh: () => void;
 }
 
-/**
- * Hook para listagem de reembolsos prontos para pagamento
- */
 export function useReadyForPayment(
   options: UseReadyForPaymentOptions = {}
 ): UseReadyForPaymentResult {
   const { initialPageSize = 20, autoLoad = true } = options;
 
-  const [requests, setRequests] = useState<ReimbursementRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPageState] = useState(1);
   const [pageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchRequests = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const query = useReadyForPaymentReimbursements(
+    { page, page_size: pageSize },
+    { query: { enabled: autoLoad } }
+  );
 
-    try {
-      const response = await reimbursementService.listReadyForPayment(page, pageSize);
+  const setPage = useCallback((p: number) => {
+    setPageState(p);
+  }, []);
 
-      setRequests(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize]);
-
-  useEffect(() => {
-    if (autoLoad) {
-      fetchRequests();
-    }
-  }, [fetchRequests, autoLoad]);
+  const refresh = useCallback(() => {
+    query.refetch();
+  }, [query]);
 
   return {
-    requests,
-    total,
+    requests: (query.data as any)?.items ?? [],
+    total: (query.data as any)?.total ?? 0,
     page,
     pageSize,
-    totalPages,
-    isLoading,
-    error,
+    totalPages: (query.data as any)?.total_pages ?? 0,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar pagamentos' : null,
     setPage,
-    refresh: fetchRequests,
+    refresh,
   };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api, { getErrorMessage } from '@/lib/api';
+import { customInstance } from '@/lib/api-client';
 
 // Tipos baseados no backend real
 export interface Lead {
@@ -48,6 +48,8 @@ export interface LeadsFilters {
   limit?: number;
 }
 
+const BASE_URL = '/api/v1/crm/leads';
+
 // Hook para listar leads
 export function useLeads(filters: LeadsFilters = {}) {
   const { search, status, origem, skip = 0, limit = 50 } = filters;
@@ -62,8 +64,10 @@ export function useLeads(filters: LeadsFilters = {}) {
       params.append('skip', String(skip));
       params.append('limit', String(limit));
 
-      const response = await api.get(`/api/v1/crm/leads?${params}`);
-      return response.data;
+      return customInstance<LeadsResponse>({
+        url: `${BASE_URL}?${params}`,
+        method: 'GET',
+      });
     },
   });
 }
@@ -73,8 +77,10 @@ export function useLead(id: string | null) {
   return useQuery({
     queryKey: ['lead', id],
     queryFn: async (): Promise<Lead> => {
-      const response = await api.get(`/api/v1/crm/leads/${id}`);
-      return response.data;
+      return customInstance<Lead>({
+        url: `${BASE_URL}/${id}`,
+        method: 'GET',
+      });
     },
     enabled: !!id,
   });
@@ -86,14 +92,17 @@ export function useCreateLead() {
 
   return useMutation({
     mutationFn: async (data: LeadCreate): Promise<Lead> => {
-      const response = await api.post('/api/v1/crm/leads', data);
-      return response.data;
+      return customInstance<Lead>({
+        url: BASE_URL,
+        method: 'POST',
+        data,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
     onError: (error) => {
-      console.error('Erro ao criar lead:', getErrorMessage(error));
+      console.error('Erro ao criar lead:', error instanceof Error ? error.message : error);
     },
   });
 }
@@ -104,15 +113,18 @@ export function useUpdateLead() {
 
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: LeadUpdate }): Promise<Lead> => {
-      const response = await api.patch(`/api/v1/crm/leads/${id}`, data);
-      return response.data;
+      return customInstance<Lead>({
+        url: `${BASE_URL}/${id}`,
+        method: 'PATCH',
+        data,
+      });
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       queryClient.invalidateQueries({ queryKey: ['lead', variables.id] });
     },
     onError: (error) => {
-      console.error('Erro ao atualizar lead:', getErrorMessage(error));
+      console.error('Erro ao atualizar lead:', error instanceof Error ? error.message : error);
     },
   });
 }
@@ -123,13 +135,16 @@ export function useDeleteLead() {
 
   return useMutation({
     mutationFn: async (id: string): Promise<void> => {
-      await api.delete(`/api/v1/crm/leads/${id}`);
+      return customInstance<void>({
+        url: `${BASE_URL}/${id}`,
+        method: 'DELETE',
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
     },
     onError: (error) => {
-      console.error('Erro ao deletar lead:', getErrorMessage(error));
+      console.error('Erro ao deletar lead:', error instanceof Error ? error.message : error);
     },
   });
 }
@@ -139,8 +154,10 @@ export function useLeadsStats() {
   return useQuery({
     queryKey: ['leads', 'stats'],
     queryFn: async () => {
-      const response = await api.get('/api/v1/crm/leads/stats');
-      return response.data;
+      return customInstance<Record<string, unknown>>({
+        url: `${BASE_URL}/stats`,
+        method: 'GET',
+      });
     },
   });
 }

@@ -5,29 +5,44 @@
  */
 
 import {
-  useListDiaristsApiV1OperacionalDiaristsGet,
-  useCreateDiaristApiV1OperacionalDiaristsPost,
-  useGetDiaristApiV1OperacionalDiaristsDiaristIdGet,
-  useUpdateDiaristApiV1OperacionalDiaristsDiaristIdPatch,
-  useDeleteDiaristApiV1OperacionalDiaristsDiaristIdDelete,
-  useGetActiveDiaristsApiV1OperacionalDiaristsActiveGet,
-  useGetDiaristsByCondominiumApiV1OperacionalDiaristsCondominiumCondominiumIdGet,
+  useListDiaristsApiV1OperacionalDiaristasGet,
+  useCreateDiaristApiV1OperacionalDiaristasPost,
+  useGetDiaristApiV1OperacionalDiaristasDiaristIdGet,
+  useUpdateDiaristApiV1OperacionalDiaristasDiaristIdPut,
+  useDeleteDiaristApiV1OperacionalDiaristasDiaristIdDelete,
+  useGetAvailableDiaristsApiV1OperacionalDiaristasAvailableGet,
+  useActivateDiaristApiV1OperacionalDiaristasDiaristIdActivatePost,
+  useDeactivateDiaristApiV1OperacionalDiaristasDiaristIdDeactivatePost,
+  useListSchedulesApiV1OperacionalDiaristasSchedulesGet,
+  useCreateScheduleApiV1OperacionalDiaristasSchedulesPost,
+  useCreateBatchSchedulesApiV1OperacionalDiaristasSchedulesBatchPost,
+  useGetTodaySchedulesApiV1OperacionalDiaristasSchedulesTodayGet,
+  useGetGeneralStatisticsApiV1OperacionalDiaristasStatisticsGeneralGet,
+  useGetPayrollReportApiV1OperacionalDiaristasPaymentsPayrollReportGet,
 } from '@/types/generated/operacional/operacional-diaristas/operacional-diaristas';
 
 // List & Read
-export const useDiarists = useListDiaristsApiV1OperacionalDiaristsGet;
-export const useDiarist = useGetDiaristApiV1OperacionalDiaristsDiaristIdGet;
-export const useActiveDiarists = useGetActiveDiaristsApiV1OperacionalDiaristsActiveGet;
-export const useDiaristsByCondominium = useGetDiaristsByCondominiumApiV1OperacionalDiaristsCondominiumCondominiumIdGet;
+export const useDiarists = useListDiaristsApiV1OperacionalDiaristasGet;
+export const useDiarist = useGetDiaristApiV1OperacionalDiaristasDiaristIdGet;
+export const useActiveDiarists = useGetAvailableDiaristsApiV1OperacionalDiaristasAvailableGet;
+export const useDiaristSchedules = useListSchedulesApiV1OperacionalDiaristasSchedulesGet;
+export const useTodaySchedules = useGetTodaySchedulesApiV1OperacionalDiaristasSchedulesTodayGet;
+export const useDiaristStats = useGetGeneralStatisticsApiV1OperacionalDiaristasStatisticsGeneralGet;
+export const usePayrollReport = useGetPayrollReportApiV1OperacionalDiaristasPaymentsPayrollReportGet;
 
 // Mutations
-export const useCreateDiarist = useCreateDiaristApiV1OperacionalDiaristsPost;
-export const useUpdateDiarist = useUpdateDiaristApiV1OperacionalDiaristsDiaristIdPatch;
-export const useDeleteDiarist = useDeleteDiaristApiV1OperacionalDiaristsDiaristIdDelete;
+export const useCreateDiarist = useCreateDiaristApiV1OperacionalDiaristasPost;
+export const useUpdateDiarist = useUpdateDiaristApiV1OperacionalDiaristasDiaristIdPut;
+export const useDeleteDiarist = useDeleteDiaristApiV1OperacionalDiaristasDiaristIdDelete;
+export const useActivateDiarist = useActivateDiaristApiV1OperacionalDiaristasDiaristIdActivatePost;
+export const useDeactivateDiarist = useDeactivateDiaristApiV1OperacionalDiaristasDiaristIdDeactivatePost;
+export const useCreateSchedule = useCreateScheduleApiV1OperacionalDiaristasSchedulesPost;
+export const useCreateBatchSchedules = useCreateBatchSchedulesApiV1OperacionalDiaristasSchedulesBatchPost;
 
 // Re-export types
 export type {
   DiaristCreate,
   DiaristUpdate,
   DiaristResponse,
+  DiaristStatus,
 } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

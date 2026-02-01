@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { allocationsService } from '@/lib/services/allocations';
-import type { Allocation, AllocationFilter } from '@/types/operacional';
-import { getErrorMessage } from '@/lib/api';
+import { useState, useCallback, useMemo } from 'react';
+import { useAllocations as useAllocationsOrval } from '@/hooks/operacional/useAllocations';
+import type { AllocationFilter } from '@/types/operacional';
 
 interface UseAllocationsOptions {
   autoLoad?: boolean;
@@ -13,7 +12,7 @@ interface UseAllocationsOptions {
 }
 
 interface UseAllocationsReturn {
-  allocations: Allocation[];
+  allocations: any[];
   total: number;
   page: number;
   pageSize: number;
@@ -35,37 +34,38 @@ export function useAllocations(options: UseAllocationsOptions = {}): UseAllocati
     initialFilters = {},
   } = options;
 
-  const [allocations, setAllocations] = useState<Allocation[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(initialPage);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<AllocationFilter>(initialFilters);
+  const [filters, setFiltersState] = useState<AllocationFilter>(initialFilters);
 
-  const loadAllocations = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const query = useAllocationsOrval(
+    {
+      page,
+      page_size: pageSize,
+      post_id: filters.post_id ?? undefined,
+      employee_id: filters.employee_id ?? undefined,
+      status: filters.status ?? undefined,
+      is_primary: filters.is_primary ?? undefined,
+      is_temporary: filters.is_temporary ?? undefined,
+      is_current: filters.is_current ?? undefined,
+      start_date_from: filters.start_date_from ?? undefined,
+      start_date_to: filters.start_date_to ?? undefined,
+    },
+    { query: { enabled: autoLoad } }
+  );
 
-    try {
-      const response = await allocationsService.list(page, pageSize, filters);
-      setAllocations(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setAllocations([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize, filters]);
+  const allocations = useMemo(() => query.data?.items ?? [], [query.data]);
+  const total = useMemo(() => query.data?.total ?? 0, [query.data]);
+  const totalPages = useMemo(() => query.data?.total_pages ?? 0, [query.data]);
 
-  useEffect(() => {
-    if (autoLoad) {
-      loadAllocations();
-    }
-  }, [autoLoad, loadAllocations]);
+  const setFilters = useCallback((newFilters: AllocationFilter) => {
+    setFiltersState(newFilters);
+    setPage(1);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
 
   return {
     allocations,
@@ -73,12 +73,12 @@ export function useAllocations(options: UseAllocationsOptions = {}): UseAllocati
     page,
     pageSize,
     totalPages,
-    isLoading,
-    error,
+    isLoading: query.isLoading,
+    error: query.error?.message ?? (query.isError ? 'Erro ao carregar alocacoes' : null),
     filters,
     setFilters,
     setPage,
     setPageSize,
-    refresh: loadAllocations,
+    refresh,
   };
 }

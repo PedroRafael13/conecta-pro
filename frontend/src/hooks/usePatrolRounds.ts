@@ -1,10 +1,25 @@
 /**
  * Hooks para o módulo de Rondas de Inspeção
+ * Reescrito para usar hooks Orval (React Query) internamente
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { patrolRoundsService } from '@/lib/services/patrol-rounds';
-import { getErrorMessage } from '@/lib/api';
+import { useState, useCallback, useMemo } from 'react';
+import {
+  usePatrolRounds as useOrvalPatrolRounds,
+  usePatrolRound as useOrvalPatrolRound,
+  useCreatePatrolRound as useOrvalCreatePatrolRound,
+  useUpdatePatrolRound as useOrvalUpdatePatrolRound,
+  useDeletePatrolRound as useOrvalDeletePatrolRound,
+  useStartPatrolRound as useOrvalStartPatrolRound,
+  usePausePatrolRound as useOrvalPausePatrolRound,
+  useResumePatrolRound as useOrvalResumePatrolRound,
+  useCompletePatrolRound as useOrvalCompletePatrolRound,
+  useCancelPatrolRound as useOrvalCancelPatrolRound,
+  useCreatePatrolCheckpoint as useOrvalCreateCheckpoint,
+} from '@/hooks/operacional/usePatrolRounds';
+import {
+  useGetStatsApiV1OperacionalRondasStatsGet,
+} from '@/types/generated/operacional/operacional-rondas-de-inspecao/operacional-rondas-de-inspecao';
 import type {
   PatrolRound,
   PatrolRoundFilter,
@@ -36,250 +51,186 @@ interface UsePatrolRoundsReturn {
   refresh: () => Promise<void>;
 }
 
-/**
- * Hook para listar rondas com paginação e filtros
- */
 export function usePatrolRounds(
   options: UsePatrolRoundsOptions = {}
 ): UsePatrolRoundsReturn {
   const { initialPageSize = 10, autoLoad = true, initialFilters = {} } = options;
 
-  const [patrolRounds, setPatrolRounds] = useState<PatrolRound[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPageState] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<PatrolRoundFilter>(initialFilters);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await patrolRoundsService.list(page, pageSize, filters);
-      setPatrolRounds(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setPatrolRounds([]);
-    } finally {
-      setIsLoading(false);
+  const params = useMemo(() => {
+    const p: Record<string, unknown> = {
+      page,
+      page_size: pageSize,
+    };
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          p[key] = value;
+        }
+      });
     }
-  }, [filters, page, pageSize]);
+    return p;
+  }, [page, pageSize, filters]);
 
-  useEffect(() => {
-    if (autoLoad) {
-      fetchData();
-    }
-  }, [fetchData, autoLoad]);
+  const { data, isLoading, error, refetch } = useOrvalPatrolRounds(params, {
+    query: { enabled: autoLoad },
+  });
 
   const setFilters = useCallback((newFilters: PatrolRoundFilter) => {
     setFiltersState(newFilters);
-    setPage(1);
+    setPageState(1);
+  }, []);
+
+  const setPage = useCallback((newPage: number) => {
+    setPageState(newPage);
   }, []);
 
   return {
-    patrolRounds,
-    total,
+    patrolRounds: (data?.items ?? []) as PatrolRound[],
+    total: data?.total ?? 0,
     page,
     pageSize,
-    totalPages,
+    totalPages: data?.pages ?? 0,
     isLoading,
-    error,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar rondas') : null,
     filters,
     setFilters,
     setPage,
     setPageSize,
-    refresh: fetchData,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para estatísticas de rondas
- */
 export function usePatrolRoundStats() {
-  const [stats, setStats] = useState<PatrolRoundStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStats = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await patrolRoundsService.getStats();
-      setStats(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const { data, isLoading, error, refetch } = useGetStatsApiV1OperacionalRondasStatsGet();
 
   return {
-    stats,
+    stats: (data ?? null) as PatrolRoundStats | null,
     isLoading,
-    error,
-    refresh: fetchStats,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar estatísticas') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para detalhes de uma ronda
- */
 export function usePatrolRoundDetail(id: string | null) {
-  const [patrolRound, setPatrolRound] = useState<PatrolRound | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchPatrolRound = useCallback(async () => {
-    if (!id) {
-      setPatrolRound(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await patrolRoundsService.getById(id);
-      setPatrolRound(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchPatrolRound();
-  }, [fetchPatrolRound]);
+  const { data, isLoading, error, refetch } = useOrvalPatrolRound(id ?? '', {
+    query: { enabled: !!id },
+  });
 
   return {
-    patrolRound,
+    patrolRound: (data ?? null) as PatrolRound | null,
     isLoading,
-    error,
-    refresh: fetchPatrolRound,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar ronda') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para mutations de rondas (criar, atualizar, deletar)
- */
 export function usePatrolRoundMutations() {
-  const [isLoading, setIsLoading] = useState(false);
+  const createMutation = useOrvalCreatePatrolRound();
+  const updateMutation = useOrvalUpdatePatrolRound();
+  const deleteMutation = useOrvalDeletePatrolRound();
+  const startMutation = useOrvalStartPatrolRound();
+  const pauseMutation = useOrvalPausePatrolRound();
+  const resumeMutation = useOrvalResumePatrolRound();
+  const completeMutation = useOrvalCompletePatrolRound();
+  const cancelMutation = useOrvalCancelPatrolRound();
+  const checkpointMutation = useOrvalCreateCheckpoint();
+
+  const isLoading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    startMutation.isPending ||
+    pauseMutation.isPending ||
+    resumeMutation.isPending ||
+    completeMutation.isPending ||
+    cancelMutation.isPending ||
+    checkpointMutation.isPending;
+
   const [error, setError] = useState<string | null>(null);
 
   const createPatrolRound = useCallback(
     async (data: PatrolRoundCreate): Promise<PatrolRound | null> => {
-      setIsLoading(true);
       setError(null);
-
       try {
-        const result = await patrolRoundsService.create(data);
-        return result;
+        const result = await createMutation.mutateAsync({ data });
+        return result as unknown as PatrolRound;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(err instanceof Error ? err.message : 'Erro ao criar ronda');
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    []
+    [createMutation]
   );
 
   const updatePatrolRound = useCallback(
     async (id: string, data: PatrolRoundUpdate): Promise<PatrolRound | null> => {
-      setIsLoading(true);
       setError(null);
-
       try {
-        const result = await patrolRoundsService.update(id, data);
-        return result;
+        const result = await updateMutation.mutateAsync({ roundId: id, data });
+        return result as unknown as PatrolRound;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(err instanceof Error ? err.message : 'Erro ao atualizar ronda');
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    []
+    [updateMutation]
   );
 
   const deletePatrolRound = useCallback(async (id: string): Promise<boolean> => {
-    setIsLoading(true);
     setError(null);
-
     try {
-      await patrolRoundsService.delete(id);
+      await deleteMutation.mutateAsync({ roundId: id });
       return true;
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao deletar ronda');
       return false;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [deleteMutation]);
 
   const startRound = useCallback(
     async (
       id: string,
       data?: { latitude?: number; longitude?: number }
     ): Promise<PatrolRound | null> => {
-      setIsLoading(true);
       setError(null);
-
       try {
-        const result = await patrolRoundsService.start(id, data);
-        return result;
+        const result = await startMutation.mutateAsync({ roundId: id, data: data ?? null });
+        return result as unknown as PatrolRound;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(err instanceof Error ? err.message : 'Erro ao iniciar ronda');
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    []
+    [startMutation]
   );
 
   const pauseRound = useCallback(async (id: string): Promise<PatrolRound | null> => {
-    setIsLoading(true);
     setError(null);
-
     try {
-      const result = await patrolRoundsService.pause(id);
-      return result;
+      const result = await pauseMutation.mutateAsync({ roundId: id });
+      return result as unknown as PatrolRound;
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao pausar ronda');
       return null;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [pauseMutation]);
 
   const resumeRound = useCallback(
     async (id: string): Promise<PatrolRound | null> => {
-      setIsLoading(true);
       setError(null);
-
       try {
-        const result = await patrolRoundsService.resume(id);
-        return result;
+        const result = await resumeMutation.mutateAsync({ roundId: id });
+        return result as unknown as PatrolRound;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(err instanceof Error ? err.message : 'Erro ao retomar ronda');
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    []
+    [resumeMutation]
   );
 
   const completeRound = useCallback(
@@ -287,38 +238,33 @@ export function usePatrolRoundMutations() {
       id: string,
       data?: { summary?: string; latitude?: number; longitude?: number }
     ): Promise<PatrolRound | null> => {
-      setIsLoading(true);
       setError(null);
-
       try {
-        const result = await patrolRoundsService.complete(id, data);
-        return result;
+        const result = await completeMutation.mutateAsync({ roundId: id, data: data ?? null });
+        return result as unknown as PatrolRound;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(err instanceof Error ? err.message : 'Erro ao concluir ronda');
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    []
+    [completeMutation]
   );
 
   const cancelRound = useCallback(
     async (id: string, reason?: string): Promise<PatrolRound | null> => {
-      setIsLoading(true);
       setError(null);
-
       try {
-        const result = await patrolRoundsService.cancel(id, reason);
-        return result;
+        const result = await cancelMutation.mutateAsync({
+          roundId: id,
+          params: reason ? { reason } : undefined,
+        });
+        return result as unknown as PatrolRound;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(err instanceof Error ? err.message : 'Erro ao cancelar ronda');
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    []
+    [cancelMutation]
   );
 
   const addCheckpoint = useCallback(
@@ -326,20 +272,16 @@ export function usePatrolRoundMutations() {
       roundId: string,
       checkpoint: CheckpointCreate
     ): Promise<PatrolCheckpoint | null> => {
-      setIsLoading(true);
       setError(null);
-
       try {
-        const result = await patrolRoundsService.addCheckpoint(roundId, checkpoint);
-        return result;
+        const result = await checkpointMutation.mutateAsync({ roundId, data: checkpoint });
+        return result as unknown as PatrolCheckpoint;
       } catch (err) {
-        setError(getErrorMessage(err));
+        setError(err instanceof Error ? err.message : 'Erro ao adicionar checkpoint');
         return null;
-      } finally {
-        setIsLoading(false);
       }
     },
-    []
+    [checkpointMutation]
   );
 
   return {

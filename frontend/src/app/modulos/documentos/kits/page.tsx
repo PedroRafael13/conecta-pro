@@ -42,11 +42,11 @@ import {
 } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
 import { useToast } from '@/components/ui/use-toast';
 import {
-  useListDocumentKits,
-  useCreateDocumentKit,
-  useUpdateDocumentKit,
-  useDeleteDocumentKit,
-} from '@/types/generated/document-kits/document-kits';
+  useListKits as useListDocumentKits,
+  useCreateKit as useCreateDocumentKit,
+  useUpdateKit as useUpdateDocumentKit,
+  useDeleteKit as useDeleteDocumentKit,
+} from '@/hooks/document-kits/useDocumentKits';
 
 // Categorias baseadas nos tipos válidos do backend
 const KIT_CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => ({

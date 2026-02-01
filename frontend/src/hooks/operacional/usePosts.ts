@@ -10,19 +10,17 @@ import {
   useGetPostApiV1OperacionalPostsPostIdGet,
   useUpdatePostApiV1OperacionalPostsPostIdPatch,
   useDeletePostApiV1OperacionalPostsPostIdDelete,
-  useGetPostStatsApiV1OperacionalPostsPostIdStatsGet,
-  useGetActivePostsApiV1OperacionalPostsActiveGet,
-  useGetPostsByCondominiumApiV1OperacionalPostsCondominiumCondominiumIdGet,
-  useGetVacantPostsApiV1OperacionalPostsVacantGet,
+  useGetPostStatsApiV1OperacionalPostsStatsGet,
+  useGetPostsByContractApiV1OperacionalPostsContractContractIdGet,
+  useGetPostsByClientApiV1OperacionalPostsClientClientIdGet,
 } from '@/types/generated/operacional/operacional-postos/operacional-postos';
 
 // List & Read
 export const usePosts = useListPostsApiV1OperacionalPostsGet;
 export const usePost = useGetPostApiV1OperacionalPostsPostIdGet;
-export const useActivePosts = useGetActivePostsApiV1OperacionalPostsActiveGet;
-export const usePostsByCondominium = useGetPostsByCondominiumApiV1OperacionalPostsCondominiumCondominiumIdGet;
-export const useVacantPosts = useGetVacantPostsApiV1OperacionalPostsVacantGet;
-export const usePostStats = useGetPostStatsApiV1OperacionalPostsPostIdStatsGet;
+export const usePostStats = useGetPostStatsApiV1OperacionalPostsStatsGet;
+export const usePostsByContract = useGetPostsByContractApiV1OperacionalPostsContractContractIdGet;
+export const usePostsByClient = useGetPostsByClientApiV1OperacionalPostsClientClientIdGet;
 
 // Mutations
 export const useCreatePost = useCreatePostApiV1OperacionalPostsPost;

@@ -57,7 +57,7 @@ import {
   Unlock,
 } from 'lucide-react';
 import Link from 'next/link';
-import {{ Folder, formatFileSize, FOLDER_TYPES }} from '@/types/generated/ged/conectaPROMóduloGED.schemas';
+import { Folder, formatFileSize, FOLDER_TYPES } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
 
 function PastasContent() {
   const searchParams = useSearchParams();

@@ -1,10 +1,21 @@
 /**
  * Hooks para o módulo de Ocorrências Disciplinares
+ * Reescrito para usar hooks Orval (React Query) internamente
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { occurrencesService } from '@/lib/services/occurrences';
-import { getErrorMessage } from '@/lib/api';
+import { useState, useCallback, useMemo } from 'react';
+import {
+  useOccurrences as useOrvalOccurrences,
+  useOccurrence as useOrvalOccurrence,
+  useOccurrencesByPost as useOrvalOccurrencesByPost,
+  useCreateOccurrence as useOrvalCreateOccurrence,
+  useUpdateOccurrence as useOrvalUpdateOccurrence,
+  useDeleteOccurrence as useOrvalDeleteOccurrence,
+  useResolveOccurrence as useOrvalResolveOccurrence,
+} from '@/hooks/operacional/useOccurrences';
+import {
+  useGetOccurrenceStatsApiV1OperacionalOccurrencesStatsGet,
+} from '@/types/generated/operacional/operacional-ocorrencias/operacional-ocorrencias';
 import type {
   Occurrence,
   OccurrenceFilter,
@@ -35,244 +46,155 @@ interface UseOccurrencesReturn {
   refresh: () => Promise<void>;
 }
 
-/**
- * Hook para listar ocorrências com paginação e filtros
- */
 export function useOccurrences(options: UseOccurrencesOptions = {}): UseOccurrencesReturn {
   const { initialPageSize = 10, autoLoad = true, initialFilters = {} } = options;
 
-  const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPageState] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<OccurrenceFilter>(initialFilters);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await occurrencesService.list(page, pageSize, filters);
-      setOccurrences(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setOccurrences([]);
-    } finally {
-      setIsLoading(false);
+  const params = useMemo(() => {
+    const p: Record<string, unknown> = {
+      page,
+      page_size: pageSize,
+    };
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          const paramKey = key === 'status' ? 'status_filter' : key;
+          p[paramKey] = value;
+        }
+      });
     }
-  }, [filters, page, pageSize]);
+    return p;
+  }, [page, pageSize, filters]);
 
-  useEffect(() => {
-    if (autoLoad) {
-      fetchData();
-    }
-  }, [fetchData, autoLoad]);
+  const { data, isLoading, error, refetch } = useOrvalOccurrences(params, {
+    query: { enabled: autoLoad },
+  });
 
   const setFilters = useCallback((newFilters: OccurrenceFilter) => {
     setFiltersState(newFilters);
-    setPage(1);
+    setPageState(1);
+  }, []);
+
+  const setPage = useCallback((newPage: number) => {
+    setPageState(newPage);
   }, []);
 
   return {
-    occurrences,
-    total,
+    occurrences: (data?.items ?? []) as Occurrence[],
+    total: data?.total ?? 0,
     page,
     pageSize,
-    totalPages,
+    totalPages: data?.total_pages ?? 0,
     isLoading,
-    error,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar ocorrências') : null,
     filters,
     setFilters,
     setPage,
     setPageSize,
-    refresh: fetchData,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para estatísticas de ocorrências
- */
 export function useOccurrenceStats() {
-  const [stats, setStats] = useState<OccurrenceStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchStats = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await occurrencesService.getStats();
-      setStats(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const { data, isLoading, error, refetch } = useGetOccurrenceStatsApiV1OperacionalOccurrencesStatsGet();
 
   return {
-    stats,
+    stats: (data ?? null) as OccurrenceStats | null,
     isLoading,
-    error,
-    refresh: fetchStats,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar estatísticas') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para detalhes de uma ocorrência
- */
 export function useOccurrenceDetail(id: string | null) {
-  const [occurrence, setOccurrence] = useState<Occurrence | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchOccurrence = useCallback(async () => {
-    if (!id) {
-      setOccurrence(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await occurrencesService.getById(id);
-      setOccurrence(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchOccurrence();
-  }, [fetchOccurrence]);
+  const { data, isLoading, error, refetch } = useOrvalOccurrence(id ?? '', {
+    query: { enabled: !!id },
+  });
 
   return {
-    occurrence,
+    occurrence: (data ?? null) as Occurrence | null,
     isLoading,
-    error,
-    refresh: fetchOccurrence,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar ocorrência') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para ocorrências de um posto específico
- */
 export function usePostOccurrences(postId: string | null) {
-  const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useOrvalOccurrencesByPost(postId ?? '', {
+    query: { enabled: !!postId },
+  });
 
-  const fetchOccurrences = useCallback(async () => {
-    if (!postId) {
-      setOccurrences([]);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await occurrencesService.listByPost(postId);
-      setOccurrences(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [postId]);
-
-  useEffect(() => {
-    fetchOccurrences();
-  }, [fetchOccurrences]);
+  const occurrences = (data ?? []) as Occurrence[];
 
   return {
     occurrences,
     total: occurrences.length,
     isLoading,
-    error,
-    refresh: fetchOccurrences,
+    error: error ? (error instanceof Error ? error.message : 'Erro ao carregar ocorrências do posto') : null,
+    refresh: async () => { await refetch(); },
   };
 }
 
-/**
- * Hook para mutations de ocorrências (criar, atualizar, resolver)
- */
 export function useOccurrenceMutations() {
-  const [isLoading, setIsLoading] = useState(false);
+  const createMutation = useOrvalCreateOccurrence();
+  const updateMutation = useOrvalUpdateOccurrence();
+  const deleteMutation = useOrvalDeleteOccurrence();
+  const resolveMutation = useOrvalResolveOccurrence();
+
+  const isLoading = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending || resolveMutation.isPending;
+
   const [error, setError] = useState<string | null>(null);
 
   const createOccurrence = useCallback(async (data: OccurrenceCreate): Promise<Occurrence | null> => {
-    setIsLoading(true);
     setError(null);
-
     try {
-      const result = await occurrencesService.create(data);
-      return result;
+      const result = await createMutation.mutateAsync({ data });
+      return result as Occurrence;
     } catch (err) {
-      setError(getErrorMessage(err));
+      const msg = err instanceof Error ? err.message : 'Erro ao criar ocorrência';
+      setError(msg);
       return null;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [createMutation]);
 
   const updateOccurrence = useCallback(async (id: string, data: OccurrenceUpdate): Promise<Occurrence | null> => {
-    setIsLoading(true);
     setError(null);
-
     try {
-      const result = await occurrencesService.update(id, data);
-      return result;
+      const result = await updateMutation.mutateAsync({ occurrenceId: id, data });
+      return result as Occurrence;
     } catch (err) {
-      setError(getErrorMessage(err));
+      const msg = err instanceof Error ? err.message : 'Erro ao atualizar ocorrência';
+      setError(msg);
       return null;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [updateMutation]);
 
   const resolveOccurrence = useCallback(async (id: string, data: OccurrenceResolve): Promise<Occurrence | null> => {
-    setIsLoading(true);
     setError(null);
-
     try {
-      const result = await occurrencesService.resolve(id, data);
-      return result;
+      const result = await resolveMutation.mutateAsync({ occurrenceId: id, data });
+      return result as Occurrence;
     } catch (err) {
-      setError(getErrorMessage(err));
+      const msg = err instanceof Error ? err.message : 'Erro ao resolver ocorrência';
+      setError(msg);
       return null;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [resolveMutation]);
 
   const deleteOccurrence = useCallback(async (id: string): Promise<boolean> => {
-    setIsLoading(true);
     setError(null);
-
     try {
-      await occurrencesService.delete(id);
+      await deleteMutation.mutateAsync({ occurrenceId: id });
       return true;
     } catch (err) {
-      setError(getErrorMessage(err));
+      const msg = err instanceof Error ? err.message : 'Erro ao deletar ocorrência';
+      setError(msg);
       return false;
-    } finally {
-      setIsLoading(false);
     }
-  }, []);
+  }, [deleteMutation]);
 
   return {
     isLoading,

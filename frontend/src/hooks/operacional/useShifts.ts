@@ -10,16 +10,18 @@ import {
   useGetShiftApiV1OperacionalShiftsShiftIdGet,
   useUpdateShiftApiV1OperacionalShiftsShiftIdPatch,
   useDeleteShiftApiV1OperacionalShiftsShiftIdDelete,
-  useGetActiveShiftsApiV1OperacionalShiftsActiveGet,
   useCheckInApiV1OperacionalShiftsShiftIdCheckInPost,
   useCheckOutApiV1OperacionalShiftsShiftIdCheckOutPost,
   useMarkAsMissedApiV1OperacionalShiftsShiftIdMarkMissedPost,
+  useGetTodayShiftsApiV1OperacionalShiftsTodayGet,
+  useGetShiftsByScaleApiV1OperacionalShiftsScaleScaleIdGet,
 } from '@/types/generated/operacional/operacional-turnos/operacional-turnos';
 
 // List & Read
 export const useShifts = useListShiftsApiV1OperacionalShiftsGet;
 export const useShift = useGetShiftApiV1OperacionalShiftsShiftIdGet;
-export const useActiveShifts = useGetActiveShiftsApiV1OperacionalShiftsActiveGet;
+export const useTodayShifts = useGetTodayShiftsApiV1OperacionalShiftsTodayGet;
+export const useShiftsByScale = useGetShiftsByScaleApiV1OperacionalShiftsScaleScaleIdGet;
 
 // Mutations
 export const useCreateShift = useCreateShiftApiV1OperacionalShiftsPost;

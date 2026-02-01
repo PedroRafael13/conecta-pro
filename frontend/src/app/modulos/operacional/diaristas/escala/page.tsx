@@ -23,7 +23,7 @@ import {
   type Diarist,
   type BatchScheduleItem,
   DIARIST_TYPE_LABELS,
-} 
+} from '@/lib/services/diarists';
 
 export default function EscalaDiariaPage() {
   const router = useRouter();

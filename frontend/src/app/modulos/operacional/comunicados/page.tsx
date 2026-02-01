@@ -35,7 +35,7 @@ import {
   ANNOUNCEMENT_STATUS_LABELS,
   ANNOUNCEMENT_PRIORITY_LABELS,
   ANNOUNCEMENT_CATEGORY_LABELS,
-} from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';
+} from '@/lib/services/announcements';
 import { AnnouncementFormModal } from '@/components/operacional/announcement-form-modal';
 import { AnnouncementDetailModal } from '@/components/operacional/announcement-detail-modal';
 

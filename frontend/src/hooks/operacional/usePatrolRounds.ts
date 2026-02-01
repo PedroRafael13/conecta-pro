@@ -5,32 +5,43 @@
  */
 
 import {
-  useListPatrolRoundsApiV1OperacionalPatrolRoundsGet,
-  useCreatePatrolRoundApiV1OperacionalPatrolRoundsPost,
-  useGetPatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdGet,
-  useUpdatePatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdPatch,
-  useDeletePatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdDelete,
-  useGetPatrolRoundsByPostApiV1OperacionalPatrolRoundsPostPostIdGet,
-  useGetPatrolRoundsByEmployeeApiV1OperacionalPatrolRoundsEmployeeEmployeeIdGet,
-  useCompletePatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdCompletePost,
+  useListRoundsApiV1OperacionalRondasGet,
+  useCreateRoundApiV1OperacionalRondasPost,
+  useGetRoundApiV1OperacionalRondasRoundIdGet,
+  useUpdateRoundApiV1OperacionalRondasRoundIdPatch,
+  useDeleteRoundApiV1OperacionalRondasRoundIdDelete,
+  useCompleteRoundApiV1OperacionalRondasRoundIdConcluirPost,
+  useStartRoundApiV1OperacionalRondasRoundIdIniciarPost,
+  usePauseRoundApiV1OperacionalRondasRoundIdPausarPost,
+  useResumeRoundApiV1OperacionalRondasRoundIdRetomarPost,
+  useCancelRoundApiV1OperacionalRondasRoundIdCancelarPost,
+  useCreateCheckpointApiV1OperacionalRondasRoundIdCheckpointsPost,
 } from '@/types/generated/operacional/operacional-rondas-de-inspecao/operacional-rondas-de-inspecao';
 
 // List & Read
-export const usePatrolRounds = useListPatrolRoundsApiV1OperacionalPatrolRoundsGet;
-export const usePatrolRound = useGetPatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdGet;
-export const usePatrolRoundsByPost = useGetPatrolRoundsByPostApiV1OperacionalPatrolRoundsPostPostIdGet;
-export const usePatrolRoundsByEmployee = useGetPatrolRoundsByEmployeeApiV1OperacionalPatrolRoundsEmployeeEmployeeIdGet;
+export const usePatrolRounds = useListRoundsApiV1OperacionalRondasGet;
+export const usePatrolRound = useGetRoundApiV1OperacionalRondasRoundIdGet;
 
 // Mutations
-export const useCreatePatrolRound = useCreatePatrolRoundApiV1OperacionalPatrolRoundsPost;
-export const useUpdatePatrolRound = useUpdatePatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdPatch;
-export const useDeletePatrolRound = useDeletePatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdDelete;
-export const useCompletePatrolRound = useCompletePatrolRoundApiV1OperacionalPatrolRoundsPatrolRoundIdCompletePost;
+export const useCreatePatrolRound = useCreateRoundApiV1OperacionalRondasPost;
+export const useUpdatePatrolRound = useUpdateRoundApiV1OperacionalRondasRoundIdPatch;
+export const useDeletePatrolRound = useDeleteRoundApiV1OperacionalRondasRoundIdDelete;
+export const useCompletePatrolRound = useCompleteRoundApiV1OperacionalRondasRoundIdConcluirPost;
+export const useStartPatrolRound = useStartRoundApiV1OperacionalRondasRoundIdIniciarPost;
+export const usePausePatrolRound = usePauseRoundApiV1OperacionalRondasRoundIdPausarPost;
+export const useResumePatrolRound = useResumeRoundApiV1OperacionalRondasRoundIdRetomarPost;
+export const useCancelPatrolRound = useCancelRoundApiV1OperacionalRondasRoundIdCancelarPost;
+export const useCreatePatrolCheckpoint = useCreateCheckpointApiV1OperacionalRondasRoundIdCheckpointsPost;
 
 // Re-export types
 export type {
-  PatrolRoundCreate,
-  PatrolRoundUpdate,
-  PatrolRoundResponse,
-  PatrolRoundComplete,
+  InspectionRoundCreate,
+  InspectionRoundUpdate,
+  InspectionRoundResponse,
+  InspectionRoundSummary,
+  CheckpointCreate,
+  CheckpointResponse,
+  StartRoundApiV1OperacionalRondasRoundIdIniciarPostBody,
+  CompleteRoundApiV1OperacionalRondasRoundIdConcluirPostBody,
+  CancelRoundApiV1OperacionalRondasRoundIdCancelarPostParams,
 } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

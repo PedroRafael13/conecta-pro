@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from '@/contexts/providers';
 import { Toaster } from '@/components/ui/toaster';
-import { BartoloChat } from '@/components/BartoloChat';
+import { BartoloClientWrapper } from '@/components/BartoloClientWrapper';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -42,7 +42,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <Toaster />
-          <BartoloChat />
+          <BartoloClientWrapper />
         </Providers>
       </body>
     </html>

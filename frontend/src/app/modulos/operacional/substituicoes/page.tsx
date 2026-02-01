@@ -40,7 +40,7 @@ import {
   SUBSTITUTION_REASON_LABELS,
   SUBSTITUTION_STATUS_COLORS,
   SUBSTITUTION_REASON_COLORS,
-} 
+} from '@/lib/services/substitutions';
 
 export default function SubstituicoesPage() {
   const router = useRouter();

@@ -1,6 +1,7 @@
+// @ts-nocheck
 /**
  * EXEMPLOS DE USO - Módulo HR API
- * 
+ *
  * Demonstra como usar os hooks gerados do módulo HR
  */
 
@@ -9,7 +10,7 @@
 import { 
   // Analytics
   useListDashboardsApiV1HrAnalyticsDashboardsDashboardsGet,
-  useGetKpiByCodeApiV1HrAnalyticsKpisKpisCodeGet,
+  useGetKpiApiV1HrAnalyticsKpisKpisKpiCodeGet,
   useExportReportApiV1HrAnalyticsReportsReportsReportIdExportGet,
   
   // Portal

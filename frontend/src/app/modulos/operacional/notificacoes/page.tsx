@@ -32,7 +32,7 @@ import {
   type AlertSeverity,
   NOTIFICATION_TYPE_LABELS,
   ALERT_SEVERITY_LABELS,
-} 
+} from '@/lib/services/notifications';
 
 // Cores dos tipos de notificacao
 const NOTIFICATION_TYPE_COLORS: Record<NotificationType, string> = {

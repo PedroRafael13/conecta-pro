@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { api, getErrorMessage } from '@/lib/api';
+import { customInstance } from '@/lib/api-client';
 
 interface EmployeesByDepartment {
   departamento: string;
@@ -53,23 +53,36 @@ export function useAnalyticsData(): UseAnalyticsDataReturn {
     try {
       // Busca dados de multiplos endpoints em paralelo
       const [postsRes, employeesRes, scalesRes, allocationsRes] = await Promise.allSettled([
-        api.get('/api/v1/operacional/posts/stats'),
-        api.get('/api/v1/operacional/employees', { params: { page: 1, page_size: 1000 } }),
-        api.get('/api/v1/operacional/scales/stats'),
-        api.get('/api/v1/operacional/allocations/stats'),
+        customInstance<Record<string, unknown>>({
+          url: '/api/v1/operacional/posts/stats',
+          method: 'GET',
+        }),
+        customInstance<{ items?: Array<{ departamento?: string }>; total?: number }>({
+          url: '/api/v1/operacional/employees/',
+          method: 'GET',
+          params: { page: 1, page_size: 1000 },
+        }),
+        customInstance<Record<string, unknown>>({
+          url: '/api/v1/operacional/scales/stats',
+          method: 'GET',
+        }),
+        customInstance<Record<string, unknown>>({
+          url: '/api/v1/operacional/allocations/stats',
+          method: 'GET',
+        }),
       ]);
 
       // Processa postos
-      const postsStats = postsRes.status === 'fulfilled' ? postsRes.value.data : null;
+      const postsStats = postsRes.status === 'fulfilled' ? postsRes.value : null;
       const postsByType: PostsByType[] = postsStats?.by_type
-        ? Object.entries(postsStats.by_type).map(([type, total]) => ({
+        ? Object.entries(postsStats.by_type as Record<string, number>).map(([type, total]) => ({
             type: type.replace(/_/g, ' ').charAt(0).toUpperCase() + type.replace(/_/g, ' ').slice(1),
             total: total as number,
           }))
         : [];
 
       // Processa colaboradores
-      const employeesData = employeesRes.status === 'fulfilled' ? employeesRes.value.data : null;
+      const employeesData = employeesRes.status === 'fulfilled' ? employeesRes.value : null;
       const employees = employeesData?.items || [];
 
       // Agrupa por departamento
@@ -84,14 +97,14 @@ export function useAnalyticsData(): UseAnalyticsDataReturn {
         .slice(0, 10);
 
       // Processa escalas
-      const scalesStats = scalesRes.status === 'fulfilled' ? scalesRes.value.data : null;
+      const scalesStats = scalesRes.status === 'fulfilled' ? scalesRes.value : null;
 
       // Processa alocacoes
-      const allocationsStats = allocationsRes.status === 'fulfilled' ? allocationsRes.value.data : null;
+      const allocationsStats = allocationsRes.status === 'fulfilled' ? allocationsRes.value : null;
 
       // Gera tendencia mensal (ultimos 6 meses simulados baseado nos dados reais)
       const months = ['Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-      const baseEscalas = scalesStats?.total || 0;
+      const baseEscalas = (scalesStats?.total as number) || 0;
       const baseColab = employees.length;
 
       const monthlyTrends: MonthlyTrend[] = months.map((month, i) => ({
@@ -102,8 +115,8 @@ export function useAnalyticsData(): UseAnalyticsDataReturn {
       }));
 
       // Calcula taxa de cobertura
-      const totalPosts = postsStats?.total || 0;
-      const filledPosts = postsStats?.filled || 0;
+      const totalPosts = (postsStats?.total as number) || 0;
+      const filledPosts = (postsStats?.filled as number) || 0;
       const coverageRate = totalPosts > 0 ? Math.round((filledPosts / totalPosts) * 100) : 0;
 
       setData({
@@ -113,14 +126,14 @@ export function useAnalyticsData(): UseAnalyticsDataReturn {
         summary: {
           totalEmployees: employees.length,
           totalPosts: totalPosts,
-          totalScales: scalesStats?.total || 0,
-          totalOccurrences: scalesStats?.by_status?.total_shifts || 0,
+          totalScales: (scalesStats?.total as number) || 0,
+          totalOccurrences: ((scalesStats?.by_status as Record<string, number>)?.total_shifts) || 0,
           coverageRate,
-          activeAllocations: allocationsStats?.total_active || postsStats?.total_allocated || 0,
+          activeAllocations: (allocationsStats?.total_active as number) || (postsStats?.total_allocated as number) || 0,
         },
       });
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar analytics');
     } finally {
       setIsLoading(false);
     }

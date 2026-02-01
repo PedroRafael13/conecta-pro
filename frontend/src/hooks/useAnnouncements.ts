@@ -1,19 +1,82 @@
 /**
- * Hooks para o módulo de Comunicados
+ * Hooks para o modulo de Comunicados
  * @author Conecta PRO Team
  * @date 2026-01-28
+ *
+ * Usa customInstance + React Query diretamente (sem Orval gerado para comunicados)
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import {
-  announcementsService,
-  type Announcement,
-  type AnnouncementFilter,
-  type AnnouncementCreate,
-  type AnnouncementUpdate,
-  type AnnouncementReadStats,
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { customInstance } from '@/lib/api-client';
+import type {
+  Announcement,
+  AnnouncementFilter,
+  AnnouncementCreate,
+  AnnouncementUpdate,
+  AnnouncementReadStats,
+  AnnouncementListResponse,
 } from '@/lib/services/announcements';
-import { getErrorMessage } from '@/lib/api';
+
+const BASE_URL = '/api/v1/operacional/comunicacao/comunicados';
+
+const announcementKeys = {
+  all: ['announcements'] as const,
+  lists: () => [...announcementKeys.all, 'list'] as const,
+  list: (params?: object) => [...announcementKeys.lists(), params] as const,
+  unread: (params?: object) => [...announcementKeys.all, 'unread', params] as const,
+  details: () => [...announcementKeys.all, 'detail'] as const,
+  detail: (id: string) => [...announcementKeys.details(), id] as const,
+  readStats: (id: string) => [...announcementKeys.all, 'read-stats', id] as const,
+};
+
+function buildParams(obj: Record<string, unknown>): string {
+  const params = new URLSearchParams();
+  Object.entries(obj).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, String(value));
+    }
+  });
+  return params.toString();
+}
+
+function fetchAnnouncementsList(page: number, pageSize: number, filters?: AnnouncementFilter) {
+  const qs = buildParams({ page, page_size: pageSize, ...filters });
+  return customInstance<AnnouncementListResponse>({ url: `${BASE_URL}?${qs}`, method: 'GET' });
+}
+
+function fetchUnreadAnnouncements(page: number, pageSize: number) {
+  const qs = buildParams({ page, page_size: pageSize });
+  return customInstance<AnnouncementListResponse>({ url: `${BASE_URL}/nao-lidos?${qs}`, method: 'GET' });
+}
+
+function fetchAnnouncementById(id: string) {
+  return customInstance<Announcement>({ url: `${BASE_URL}/${id}`, method: 'GET' });
+}
+
+function fetchReadStats(id: string) {
+  return customInstance<AnnouncementReadStats>({ url: `${BASE_URL}/${id}/leituras`, method: 'GET' });
+}
+
+function createAnnouncementApi(data: AnnouncementCreate) {
+  return customInstance<Announcement>({ url: BASE_URL, method: 'POST', headers: { 'Content-Type': 'application/json' }, data });
+}
+
+function updateAnnouncementApi(id: string, data: AnnouncementUpdate) {
+  return customInstance<Announcement>({ url: `${BASE_URL}/${id}`, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, data });
+}
+
+function publishAnnouncementApi(id: string, scheduleAt?: string) {
+  return customInstance<Announcement>({ url: `${BASE_URL}/${id}/publicar`, method: 'POST', headers: { 'Content-Type': 'application/json' }, data: { schedule_at: scheduleAt } });
+}
+
+function acknowledgeAnnouncementApi(id: string) {
+  return customInstance<{ success: boolean; acknowledged_at: string }>({ url: `${BASE_URL}/${id}/confirmar`, method: 'POST', headers: { 'Content-Type': 'application/json' }, data: {} });
+}
+
+function deleteAnnouncementApi(id: string) {
+  return customInstance<void>({ url: `${BASE_URL}/${id}`, method: 'DELETE' });
+}
 
 interface UseAnnouncementsOptions {
   initialPageSize?: number;
@@ -36,272 +99,226 @@ interface UseAnnouncementsReturn {
   refresh: () => Promise<void>;
 }
 
-/**
- * Hook para listar comunicados com paginação e filtros
- */
 export function useAnnouncements(options: UseAnnouncementsOptions = {}): UseAnnouncementsReturn {
   const { initialPageSize = 10, autoLoad = true, initialFilters = {} } = options;
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPageState] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [filters, setFiltersState] = useState<AnnouncementFilter>(initialFilters);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const response = await announcementsService.list(page, pageSize, filters);
-      setAnnouncements(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setAnnouncements([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters, page, pageSize]);
-
-  useEffect(() => {
-    if (autoLoad) {
-      fetchData();
-    }
-  }, [fetchData, autoLoad]);
+  const query = useQuery({
+    queryKey: announcementKeys.list({ page, pageSize, ...filters }),
+    queryFn: () => fetchAnnouncementsList(page, pageSize, filters),
+    enabled: autoLoad,
+  });
 
   const setFilters = useCallback((newFilters: AnnouncementFilter) => {
     setFiltersState(newFilters);
-    setPage(1);
+    setPageState(1);
   }, []);
 
+  const setPage = useCallback((p: number) => {
+    setPageState(p);
+  }, []);
+
+  const refresh = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
+
   return {
-    announcements,
-    total,
+    announcements: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
     page,
     pageSize,
-    totalPages,
-    isLoading,
-    error,
+    totalPages: query.data?.total_pages ?? 0,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar comunicados' : null,
     filters,
     setFilters,
     setPage,
     setPageSize,
-    refresh: fetchData,
+    refresh,
   };
 }
 
-/**
- * Hook para comunicados não lidos
- */
 export function useUnreadAnnouncements(options: { initialPageSize?: number } = {}) {
   const { initialPageSize = 20 } = options;
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(initialPageSize);
-  const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const query = useQuery({
+    queryKey: announcementKeys.unread({ page, pageSize }),
+    queryFn: () => fetchUnreadAnnouncements(page, pageSize),
+  });
 
-    try {
-      const response = await announcementsService.listUnread(page, pageSize);
-      setAnnouncements(response.items);
-      setTotal(response.total);
-      setTotalPages(response.total_pages);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setAnnouncements([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page, pageSize]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const refresh = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
 
   return {
-    announcements,
-    total,
+    announcements: query.data?.items ?? [],
+    total: query.data?.total ?? 0,
     page,
     pageSize,
-    totalPages,
-    isLoading,
-    error,
+    totalPages: query.data?.total_pages ?? 0,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar comunicados' : null,
     setPage,
-    refresh: fetchData,
+    refresh,
   };
 }
 
-/**
- * Hook para detalhes de um comunicado
- */
 export function useAnnouncementDetail(id: string | null) {
-  const [announcement, setAnnouncement] = useState<Announcement | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: announcementKeys.detail(id ?? ''),
+    queryFn: () => fetchAnnouncementById(id!),
+    enabled: !!id,
+  });
 
-  const fetchAnnouncement = useCallback(async () => {
-    if (!id) {
-      setAnnouncement(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await announcementsService.getById(id);
-      setAnnouncement(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchAnnouncement();
-  }, [fetchAnnouncement]);
+  const refresh = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
 
   return {
-    announcement,
-    isLoading,
-    error,
-    refresh: fetchAnnouncement,
+    announcement: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar comunicado' : null,
+    refresh,
   };
 }
 
-/**
- * Hook para estatísticas de leitura de um comunicado
- */
 export function useAnnouncementReadStats(id: string | null) {
-  const [stats, setStats] = useState<AnnouncementReadStats | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: announcementKeys.readStats(id ?? ''),
+    queryFn: () => fetchReadStats(id!),
+    enabled: !!id,
+  });
 
-  const fetchStats = useCallback(async () => {
-    if (!id) {
-      setStats(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const data = await announcementsService.getReadStats(id);
-      setStats(data);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const refresh = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
 
   return {
-    stats,
-    isLoading,
-    error,
-    refresh: fetchStats,
+    stats: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.error ? (query.error as Error).message || 'Erro ao carregar estatisticas' : null,
+    refresh,
   };
 }
 
-/**
- * Hook para mutations de comunicados (criar, atualizar, publicar, etc.)
- */
 export function useAnnouncementMutations() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const createAnnouncement = useCallback(async (data: AnnouncementCreate): Promise<Announcement | null> => {
-    setIsLoading(true);
-    setError(null);
+  const createMutation = useMutation({
+    mutationFn: (data: AnnouncementCreate) => createAnnouncementApi(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+    },
+  });
 
-    try {
-      const result = await announcementsService.create(data);
-      return result;
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: AnnouncementUpdate }) => updateAnnouncementApi(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: announcementKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+    },
+  });
 
-  const updateAnnouncement = useCallback(async (id: string, data: AnnouncementUpdate): Promise<Announcement | null> => {
-    setIsLoading(true);
-    setError(null);
+  const publishMutation = useMutation({
+    mutationFn: ({ id, scheduleAt }: { id: string; scheduleAt?: string }) => publishAnnouncementApi(id, scheduleAt),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: announcementKeys.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+    },
+  });
 
-    try {
-      const result = await announcementsService.update(id, data);
-      return result;
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const acknowledgeMutation = useMutation({
+    mutationFn: (id: string) => acknowledgeAnnouncementApi(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: announcementKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: announcementKeys.all });
+    },
+  });
 
-  const publishAnnouncement = useCallback(async (id: string, scheduleAt?: string): Promise<Announcement | null> => {
-    setIsLoading(true);
-    setError(null);
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteAnnouncementApi(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: announcementKeys.lists() });
+    },
+  });
 
-    try {
-      const result = await announcementsService.publish(id, scheduleAt);
-      return result;
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const isLoading =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    publishMutation.isPending ||
+    acknowledgeMutation.isPending ||
+    deleteMutation.isPending;
 
-  const acknowledgeAnnouncement = useCallback(async (id: string): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
+  const error =
+    createMutation.error?.message ||
+    updateMutation.error?.message ||
+    publishMutation.error?.message ||
+    acknowledgeMutation.error?.message ||
+    deleteMutation.error?.message ||
+    null;
 
-    try {
-      await announcementsService.acknowledge(id);
-      return true;
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const createAnnouncement = useCallback(
+    async (data: AnnouncementCreate): Promise<Announcement | null> => {
+      try {
+        return await createMutation.mutateAsync(data);
+      } catch {
+        return null;
+      }
+    },
+    [createMutation]
+  );
 
-  const deleteAnnouncement = useCallback(async (id: string): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
+  const updateAnnouncement = useCallback(
+    async (id: string, data: AnnouncementUpdate): Promise<Announcement | null> => {
+      try {
+        return await updateMutation.mutateAsync({ id, data });
+      } catch {
+        return null;
+      }
+    },
+    [updateMutation]
+  );
 
-    try {
-      await announcementsService.delete(id);
-      return true;
-    } catch (err) {
-      setError(getErrorMessage(err));
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const publishAnnouncement = useCallback(
+    async (id: string, scheduleAt?: string): Promise<Announcement | null> => {
+      try {
+        return await publishMutation.mutateAsync({ id, scheduleAt });
+      } catch {
+        return null;
+      }
+    },
+    [publishMutation]
+  );
+
+  const acknowledgeAnnouncement = useCallback(
+    async (id: string): Promise<boolean> => {
+      try {
+        await acknowledgeMutation.mutateAsync(id);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [acknowledgeMutation]
+  );
+
+  const deleteAnnouncement = useCallback(
+    async (id: string): Promise<boolean> => {
+      try {
+        await deleteMutation.mutateAsync(id);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [deleteMutation]
+  );
 
   return {
     isLoading,

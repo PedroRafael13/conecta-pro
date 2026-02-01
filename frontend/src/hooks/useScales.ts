@@ -1,12 +1,25 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { scalesService } from '@/lib/services/scales';
+import { customInstance } from '@/lib/api-client';
 import type { Scale, ScaleFilter, ScaleGenerateRequest, ScaleStats, PaginatedResponse } from '@/types/operacional';
 
-/**
- * Hook para listar escalas com paginação e filtros
- */
+const BASE_URL = '/api/v1/operacional/scales';
+
+function buildParams(page: number, pageSize: number, filters?: ScaleFilter | Record<string, unknown>): string {
+  const params = new URLSearchParams();
+  params.append('page', String(page));
+  params.append('page_size', String(pageSize));
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+  }
+  return params.toString();
+}
+
 export function useScales(
   initialPage: number = 1,
   initialPageSize: number = 20,
@@ -25,7 +38,10 @@ export function useScales(
     setIsLoading(true);
     setError(null);
     try {
-      const response = await scalesService.list(page, pageSize, filters);
+      const response = await customInstance<PaginatedResponse<Scale>>({
+        url: `${BASE_URL}/?${buildParams(page, pageSize, filters)}`,
+        method: 'GET',
+      });
       setScales(response.items);
       setTotal(response.total);
       setTotalPages(response.total_pages);
@@ -67,9 +83,6 @@ export function useScales(
   };
 }
 
-/**
- * Hook para gerenciar escala individual
- */
 export function useScale(id: string | null) {
   const [scale, setScale] = useState<Scale | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,7 +97,10 @@ export function useScale(id: string | null) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await scalesService.getById(id);
+      const data = await customInstance<Scale>({
+        url: `${BASE_URL}/${id}`,
+        method: 'GET',
+      });
       setScale(data);
     } catch (err) {
       console.error('Erro ao buscar escala:', err);
@@ -107,9 +123,6 @@ export function useScale(id: string | null) {
   };
 }
 
-/**
- * Hook para operações de escala (CRUD)
- */
 export function useScaleOperations() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +131,11 @@ export function useScaleOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const scale = await scalesService.generate(data);
+      const scale = await customInstance<Scale>({
+        url: `${BASE_URL}/generate`,
+        method: 'POST',
+        data,
+      });
       return scale;
     } catch (err: unknown) {
       console.error('Erro ao gerar escala:', err);
@@ -134,7 +151,10 @@ export function useScaleOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const scale = await scalesService.submitForApproval(id);
+      const scale = await customInstance<Scale>({
+        url: `${BASE_URL}/${id}/submit`,
+        method: 'POST',
+      });
       return scale;
     } catch (err: unknown) {
       console.error('Erro ao enviar para aprovação:', err);
@@ -150,7 +170,11 @@ export function useScaleOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const scale = await scalesService.approve(id, notes);
+      const scale = await customInstance<Scale>({
+        url: `${BASE_URL}/${id}/approve`,
+        method: 'POST',
+        data: { notes },
+      });
       return scale;
     } catch (err: unknown) {
       console.error('Erro ao aprovar escala:', err);
@@ -169,7 +193,11 @@ export function useScaleOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      const scale = await scalesService.publish(id, notifyEmployees);
+      const scale = await customInstance<Scale>({
+        url: `${BASE_URL}/${id}/publish`,
+        method: 'POST',
+        data: { notify_employees: notifyEmployees },
+      });
       return scale;
     } catch (err: unknown) {
       console.error('Erro ao publicar escala:', err);
@@ -185,7 +213,10 @@ export function useScaleOperations() {
     setIsLoading(true);
     setError(null);
     try {
-      await scalesService.delete(id);
+      await customInstance<void>({
+        url: `${BASE_URL}/${id}`,
+        method: 'DELETE',
+      });
       return true;
     } catch (err: unknown) {
       console.error('Erro ao deletar escala:', err);
@@ -208,9 +239,6 @@ export function useScaleOperations() {
   };
 }
 
-/**
- * Hook para escalas do mês atual
- */
 export function useCurrentMonthScales() {
   const [scales, setScales] = useState<Scale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -220,8 +248,11 @@ export function useCurrentMonthScales() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await scalesService.listCurrentMonth();
-      setScales(data);
+      const response = await customInstance<PaginatedResponse<Scale>>({
+        url: `${BASE_URL}/?${buildParams(1, 100, { is_current_month: true })}`,
+        method: 'GET',
+      });
+      setScales(response.items);
     } catch (err) {
       console.error('Erro ao buscar escalas do mês:', err);
       setError('Erro ao carregar escalas');
@@ -243,9 +274,6 @@ export function useCurrentMonthScales() {
   };
 }
 
-/**
- * Hook para estatísticas de escalas
- */
 export function useScaleStats() {
   const [stats, setStats] = useState<ScaleStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -255,7 +283,10 @@ export function useScaleStats() {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await scalesService.getStats();
+      const data = await customInstance<ScaleStats>({
+        url: `${BASE_URL}/stats`,
+        method: 'GET',
+      });
       setStats(data);
     } catch (err) {
       console.error('Erro ao buscar estatísticas de escalas:', err);

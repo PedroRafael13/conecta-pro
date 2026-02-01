@@ -44,7 +44,7 @@ import {
   TIME_BANK_ENTRY_TYPE_COLORS,
   TIME_BANK_STATUS_COLORS,
   ALERT_SEVERITY_COLORS,
-} 
+} from '@/lib/services/time-bank';
 
 export default function BancoHorasPage() {
   const router = useRouter();

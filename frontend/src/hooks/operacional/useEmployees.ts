@@ -4,38 +4,33 @@
  * Re-exports dos hooks Orval do módulo operacional-funcionarios
  */
 
+import { useMutation } from '@tanstack/react-query';
+import { customInstance } from '@/lib/api-client';
 import {
   useListEmployeesApiV1OperacionalEmployeesGet,
-  useCreateEmployeeApiV1OperacionalEmployeesPost,
-  useGetEmployeeApiV1OperacionalEmployeesEmployeeIdGet,
-  useUpdateEmployeeApiV1OperacionalEmployeesEmployeeIdPatch,
-  useDeleteEmployeeApiV1OperacionalEmployeesEmployeeIdDelete,
-  useGetEmployeeStatsApiV1OperacionalEmployeesEmployeeIdStatsGet,
-  useGetEmployeeHistoryApiV1OperacionalEmployeesEmployeeIdHistoryGet,
-  useGetEmployeeDocumentsApiV1OperacionalEmployeesEmployeeIdDocumentsGet,
-  useGetActiveEmployeesApiV1OperacionalEmployeesActiveGet,
-  useGetEmployeesByPostApiV1OperacionalEmployeesPostPostIdGet,
+  useListEmployeesFromSolidesApiV1OperacionalEmployeesSolidesGet,
 } from '@/types/generated/operacional/operacional-funcionarios/operacional-funcionarios';
+import type { EmployeeResponse } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';
 
 // List & Read
 export const useEmployees = useListEmployeesApiV1OperacionalEmployeesGet;
-export const useEmployee = useGetEmployeeApiV1OperacionalEmployeesEmployeeIdGet;
-export const useActiveEmployees = useGetActiveEmployeesApiV1OperacionalEmployeesActiveGet;
-export const useEmployeesByPost = useGetEmployeesByPostApiV1OperacionalEmployeesPostPostIdGet;
-export const useEmployeeStats = useGetEmployeeStatsApiV1OperacionalEmployeesEmployeeIdStatsGet;
-export const useEmployeeHistory = useGetEmployeeHistoryApiV1OperacionalEmployeesEmployeeIdHistoryGet;
-export const useEmployeeDocuments = useGetEmployeeDocumentsApiV1OperacionalEmployeesEmployeeIdDocumentsGet;
+export const useEmployeesFromSolides = useListEmployeesFromSolidesApiV1OperacionalEmployeesSolidesGet;
 
-// Mutations
-export const useCreateEmployee = useCreateEmployeeApiV1OperacionalEmployeesPost;
-export const useUpdateEmployee = useUpdateEmployeeApiV1OperacionalEmployeesEmployeeIdPatch;
-export const useDeleteEmployee = useDeleteEmployeeApiV1OperacionalEmployeesEmployeeIdDelete;
+// Mutation manual (endpoint não gerado pelo Orval)
+export const useUpdateEmployee = () => {
+  return useMutation({
+    mutationFn: async ({ employeeId, data }: { employeeId: string; data: Record<string, unknown> }) => {
+      return customInstance<EmployeeResponse>({
+        url: `/api/v1/operacional/employees/${employeeId}`,
+        method: 'PATCH',
+        data,
+      });
+    },
+  });
+};
 
 // Re-export types
 export type {
-  EmployeeCreate,
-  EmployeeUpdate,
   EmployeeResponse,
-  EmployeeStats,
-  EmployeeHistory,
+  EmployeeListResponse,
 } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

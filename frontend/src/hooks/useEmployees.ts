@@ -1,9 +1,58 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { employeesService } from '@/lib/services/employees';
-import type { Employee } from '@/types/operacional';
-import { getErrorMessage } from '@/lib/api';
+import { customInstance } from '@/lib/api-client';
+import type { Employee, PaginatedResponse } from '@/types/operacional';
+
+const BASE_URL = '/api/v1/operacional/employees/';
+
+type BackendEmployee = {
+  id: string;
+  nome: string;
+  email?: string | null;
+  matricula?: string | null;
+  cargo?: string | null;
+  departamento?: string | null;
+  status?: string | null;
+};
+
+const mapEmployee = (item: BackendEmployee): Employee => ({
+  id: item.id,
+  full_name: item.nome || undefined,
+  name: item.nome || undefined,
+  email: item.email || undefined,
+  registration: item.matricula || undefined,
+  status: item.status || undefined,
+});
+
+const normalizeEmployeesResponse = (data: unknown): PaginatedResponse<Employee> => {
+  if (Array.isArray(data)) {
+    const items = (data as BackendEmployee[]).map(mapEmployee);
+    return {
+      items,
+      total: items.length,
+      page: 1,
+      page_size: items.length,
+      total_pages: 1,
+    };
+  }
+
+  const payload = data as PaginatedResponse<BackendEmployee>;
+  if (payload && Array.isArray(payload.items)) {
+    return {
+      ...payload,
+      items: payload.items.map(mapEmployee),
+    };
+  }
+
+  return {
+    items: [],
+    total: 0,
+    page: 1,
+    page_size: 0,
+    total_pages: 0,
+  };
+};
 
 interface UseEmployeesOptions {
   autoLoad?: boolean;
@@ -45,12 +94,18 @@ export function useEmployees(options: UseEmployeesOptions = {}): UseEmployeesRet
     setError(null);
 
     try {
-      const response = await employeesService.list(page, pageSize, undefined, initialStatus);
+      const data = await customInstance<unknown>({
+        url: BASE_URL,
+        method: 'GET',
+        params: { page, page_size: pageSize, status: initialStatus },
+      });
+
+      const response = normalizeEmployeesResponse(data);
       setEmployees(response.items || []);
       setTotal(response.total || 0);
       setTotalPages(response.total_pages || 0);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err instanceof Error ? err.message : 'Erro ao carregar funcionários');
       setEmployees([]);
     } finally {
       setIsLoading(false);

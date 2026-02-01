@@ -10,24 +10,24 @@ import {
   useGetOccurrenceApiV1OperacionalOccurrencesOccurrenceIdGet,
   useUpdateOccurrenceApiV1OperacionalOccurrencesOccurrenceIdPatch,
   useDeleteOccurrenceApiV1OperacionalOccurrencesOccurrenceIdDelete,
-  useGetOccurrencesByEmployeeApiV1OperacionalOccurrencesEmployeeEmployeeIdGet,
-  useGetOccurrencesByPostApiV1OperacionalOccurrencesPostPostIdGet,
-  useGetOccurrencesByTypeApiV1OperacionalOccurrencesTypeTypeGet,
   useResolveOccurrenceApiV1OperacionalOccurrencesOccurrenceIdResolvePost,
+  useGetOccurrenceStatsApiV1OperacionalOccurrencesStatsGet,
+  useGetOccurrencesByPostApiV1OperacionalOccurrencesByPostPostIdGet,
+  useAddAttachmentApiV1OperacionalOccurrencesOccurrenceIdAttachmentsPost,
 } from '@/types/generated/operacional/operacional-ocorrencias/operacional-ocorrencias';
 
 // List & Read
 export const useOccurrences = useListOccurrencesApiV1OperacionalOccurrencesGet;
 export const useOccurrence = useGetOccurrenceApiV1OperacionalOccurrencesOccurrenceIdGet;
-export const useOccurrencesByEmployee = useGetOccurrencesByEmployeeApiV1OperacionalOccurrencesEmployeeEmployeeIdGet;
-export const useOccurrencesByPost = useGetOccurrencesByPostApiV1OperacionalOccurrencesPostPostIdGet;
-export const useOccurrencesByType = useGetOccurrencesByTypeApiV1OperacionalOccurrencesTypeTypeGet;
+export const useOccurrenceStats = useGetOccurrenceStatsApiV1OperacionalOccurrencesStatsGet;
+export const useOccurrencesByPost = useGetOccurrencesByPostApiV1OperacionalOccurrencesByPostPostIdGet;
 
 // Mutations
 export const useCreateOccurrence = useCreateOccurrenceApiV1OperacionalOccurrencesPost;
 export const useUpdateOccurrence = useUpdateOccurrenceApiV1OperacionalOccurrencesOccurrenceIdPatch;
 export const useDeleteOccurrence = useDeleteOccurrenceApiV1OperacionalOccurrencesOccurrenceIdDelete;
 export const useResolveOccurrence = useResolveOccurrenceApiV1OperacionalOccurrencesOccurrenceIdResolvePost;
+export const useAddAttachment = useAddAttachmentApiV1OperacionalOccurrencesOccurrenceIdAttachmentsPost;
 
 // Re-export types
 export type {
