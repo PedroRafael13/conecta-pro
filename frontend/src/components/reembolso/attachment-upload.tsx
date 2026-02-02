@@ -1,9 +1,10 @@
 'use client';
 
+import { Upload, Loader2, AlertCircle, FileImage, FileText, X } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/lib/api';
-import { Upload, Loader2, AlertCircle, FileImage, FileText, X } from 'lucide-react';
+;
 
 interface AttachmentUploadProps {
   onUpload: (file: File) => Promise<void>;

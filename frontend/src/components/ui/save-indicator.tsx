@@ -1,5 +1,6 @@
 'use client';
 
+;
 import { Check, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

@@ -45,6 +45,8 @@ class OpenClawActionExecutor(BaseActionExecutor):
         ActionType.OPENCLAW_RUN_COVERAGE,
         ActionType.OPENCLAW_RUN_HEALTH,
         ActionType.OPENCLAW_RUN_FULL_CYCLE,
+        ActionType.OPENCLAW_RUN_E2E,
+        ActionType.OPENCLAW_RUN_E2E_MODULE,
         ActionType.OPENCLAW_DEPLOY_STAGING,
         ActionType.OPENCLAW_DEPLOY_PRODUCTION,
         ActionType.OPENCLAW_DAEMON_START,
@@ -59,6 +61,8 @@ class OpenClawActionExecutor(BaseActionExecutor):
         ActionType.OPENCLAW_RUN_COVERAGE: "coverage",
         ActionType.OPENCLAW_RUN_HEALTH: "health",
         ActionType.OPENCLAW_RUN_FULL_CYCLE: None,  # Roda tudo
+        ActionType.OPENCLAW_RUN_E2E: "e2e",
+        ActionType.OPENCLAW_RUN_E2E_MODULE: "e2e",  # Usa parâmetro adicional
     }
 
     async def create_preview(self, request: ActionRequest) -> ActionPreview:
@@ -97,6 +101,16 @@ class OpenClawActionExecutor(BaseActionExecutor):
                 "title": "Ciclo Completo OpenClaw",
                 "description": "Executar TODOS os checks: testes, lint, security, coverage, health, docker, disk, lighthouse",
                 "warnings": ["Pode levar até 5 minutos"],
+            },
+            ActionType.OPENCLAW_RUN_E2E: {
+                "title": "Testes E2E Completos",
+                "description": "Executar todos os testes E2E (Playwright)",
+                "warnings": ["Pode levar até 5 minutos"],
+            },
+            ActionType.OPENCLAW_RUN_E2E_MODULE: {
+                "title": "Testes E2E por Módulo",
+                "description": f"Executar testes E2E do módulo {params.get('module', 'desconhecido').capitalize()}",
+                "warnings": ["Duração: 1-2 minutos"],
             },
             ActionType.OPENCLAW_DEPLOY_PRODUCTION: {
                 "title": "Deploy para Produção",
@@ -169,6 +183,7 @@ class OpenClawActionExecutor(BaseActionExecutor):
         """Executa ação OpenClaw."""
         started_at = datetime.now(UTC)
         action_type = request.action_type
+        params = request.parameters or {}
 
         try:
             # Deploy e Daemon usam comandos diferentes
@@ -180,6 +195,10 @@ class OpenClawActionExecutor(BaseActionExecutor):
                 return await self._execute_daemon("start", action_id, started_at)
             elif action_type == ActionType.OPENCLAW_DAEMON_STOP:
                 return await self._execute_daemon("stop", action_id, started_at)
+            elif action_type == ActionType.OPENCLAW_RUN_E2E_MODULE:
+                # E2E por módulo
+                module = params.get("module", "")
+                return await self._execute_e2e_module(module, action_id, started_at)
             else:
                 # Quality checks
                 return await self._execute_check(action_type, action_id, started_at)
@@ -279,6 +298,136 @@ class OpenClawActionExecutor(BaseActionExecutor):
                 success=False,
                 message="Relatório não encontrado",
                 error_message=stderr.decode() if stderr else "Unknown error",
+                started_at=started_at,
+                completed_at=datetime.now(UTC),
+                affected_entities=[],
+            )
+
+    async def _execute_e2e_module(self, module: str, action_id: str, started_at: datetime) -> ActionResult:
+        """Executa testes E2E de um módulo específico via npm."""
+        # Lista de módulos válidos do sistema
+        valid_modules = [
+            "ai",
+            "analytics",
+            "audit",
+            "automation",
+            "bidding",
+            "campo",
+            "clients",
+            "config",
+            "core",
+            "crm",
+            "document-kits",
+            "documents",
+            "equipment",
+            "fase5",
+            "financial",
+            "ged",
+            "government",
+            "health",
+            "hr",
+            "integrations",
+            "mobile",
+            "monitoring",
+            "notifications",
+            "operacional",
+            "recruitment",
+            "reimbursement",
+            "reports",
+            "retention",
+            "scheduler",
+            "search",
+            "security",
+            "services",
+        ]
+
+        if not module or module not in valid_modules:
+            return ActionResult(
+                action_id=action_id,
+                action_type=ActionType.OPENCLAW_RUN_E2E_MODULE,
+                status=ActionStatus.FAILED,
+                success=False,
+                message=f"Módulo inválido: {module}. Módulos válidos: {', '.join(valid_modules[:10])}...",
+                error_message="Invalid module",
+                started_at=started_at,
+                completed_at=datetime.now(UTC),
+                affected_entities=[],
+            )
+
+        # Comando via bash inline (container não tem acesso ao filesystem do host)
+        cmd = ["bash", "-c", f"cd /opt/conecta-pro/frontend && npm run test:e2e:{module}"]
+        logger.info(f"[OpenClaw E2E] Executando testes E2E do módulo: {module}")
+
+        result = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+            cwd="/opt/conecta-pro",
+        )
+
+        try:
+            stdout, stderr = await asyncio.wait_for(result.communicate(), timeout=180)
+            output = stdout.decode() + stderr.decode()
+            success = result.returncode == 0
+
+            # Parse resultados do Playwright
+            tests_passed = 0
+            tests_failed = 0
+            import re
+
+            match_passed = re.search(r"(\d+)\s+passed", output, re.IGNORECASE)
+            if match_passed:
+                tests_passed = int(match_passed.group(1))
+            match_failed = re.search(r"(\d+)\s+failed", output, re.IGNORECASE)
+            if match_failed:
+                tests_failed = int(match_failed.group(1))
+
+            if success and tests_passed > 0:
+                message = f"""✅ Testes E2E do módulo **{module.capitalize()}** concluídos!
+
+**Resultados:**
+- ✅ Passaram: {tests_passed}
+- ❌ Falharam: {tests_failed}
+
+Todos os testes do módulo {module} foram executados com sucesso."""
+            elif tests_failed > 0:
+                message = f"""⚠️ Testes E2E do módulo **{module.capitalize()}** com falhas
+
+**Resultados:**
+- ✅ Passaram: {tests_passed}
+- ❌ Falharam: {tests_failed}
+
+Verifique os logs para mais detalhes."""
+            else:
+                message = f"Testes E2E do módulo {module} executados (status: {result.returncode})"
+
+            return ActionResult(
+                action_id=action_id,
+                action_type=ActionType.OPENCLAW_RUN_E2E_MODULE,
+                status=ActionStatus.COMPLETED if success else ActionStatus.FAILED,
+                success=success,
+                message=message,
+                details={
+                    "module": module,
+                    "passed": tests_passed,
+                    "failed": tests_failed,
+                    "output_tail": output[-1000:] if len(output) > 1000 else output,
+                },
+                affected_entities=[],
+                started_at=started_at,
+                completed_at=datetime.now(UTC),
+                duration_seconds=(datetime.now(UTC) - started_at).total_seconds(),
+            )
+
+        except TimeoutError:
+            result.kill()
+            return ActionResult(
+                action_id=action_id,
+                action_type=ActionType.OPENCLAW_RUN_E2E_MODULE,
+                status=ActionStatus.FAILED,
+                success=False,
+                message=f"Timeout: testes E2E do módulo {module} ultrapassaram 3 minutos",
+                error_message="Timeout",
                 started_at=started_at,
                 completed_at=datetime.now(UTC),
                 affected_entities=[],

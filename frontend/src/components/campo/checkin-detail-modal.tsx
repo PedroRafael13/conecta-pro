@@ -1,10 +1,11 @@
 'use client';
 
+import { LogIn, MapPin, Clock, User, FileText } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { LogIn, MapPin, Clock, User, FileText } from 'lucide-react';
+;
 
 interface CheckinDetailModalProps {
   isOpen: boolean;

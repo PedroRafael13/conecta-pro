@@ -1,5 +1,6 @@
 'use client';
 
+import { Package, Search, RefreshCw, Plus, MoreHorizontal, AlertCircle, Eye, Edit, Trash2, Box, MapPin, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,20 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import {
-  Package,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  AlertCircle,
-  Eye,
-  Edit,
-  Trash2,
-  Box,
-  MapPin,
-  Wrench,
-} from 'lucide-react';
+;
 import {
   useEquipmentList,
   useEquipmentStats,

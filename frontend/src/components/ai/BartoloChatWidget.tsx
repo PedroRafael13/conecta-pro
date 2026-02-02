@@ -5,8 +5,9 @@
  * Widget embedded que pode ser usado em páginas específicas
  */
 
-import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, ThumbsUp, ThumbsDown, Loader2, User } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+;
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

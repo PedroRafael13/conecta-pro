@@ -1,16 +1,8 @@
 'use client';
 
+import { Heart, Stethoscope, HardHat, AlertTriangle, FileCheck, ShieldAlert, Package, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Heart,
-  Stethoscope,
-  HardHat,
-  AlertTriangle,
-  FileCheck,
-  ShieldAlert,
-  Package,
-  ArrowRight,
-} from 'lucide-react';
+;
 import { useRouter } from 'next/navigation';
 import { usePCMSOStatistics, useEPIStatistics, usePPRAStatistics } from '@/hooks/health-occupational';
 

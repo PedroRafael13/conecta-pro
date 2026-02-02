@@ -1,22 +1,8 @@
 'use client';
 
+import { DollarSign, TrendingUp, TrendingDown, Activity, ArrowRight, CreditCard, CheckCircle2, Users, ShoppingCart, Package, Landmark, Calculator, Receipt, Wallet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  ArrowRight,
-  CreditCard,
-  CheckCircle2,
-  Users,
-  ShoppingCart,
-  Package,
-  Landmark,
-  Calculator,
-  Receipt,
-  Wallet,
-} from 'lucide-react';
+;
 import { useRouter } from 'next/navigation';
 import { useFinancialOverview } from '@/hooks/financial/useFinancial';
 

@@ -1,23 +1,12 @@
 'use client';
 
+import { Monitor, Activity, Wifi, WifiOff, AlertTriangle, RefreshCw, CheckCircle2, Eye, ArrowLeft, AlertCircle, Clock } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Monitor,
-  Activity,
-  Wifi,
-  WifiOff,
-  AlertTriangle,
-  RefreshCw,
-  CheckCircle2,
-  Eye,
-  ArrowLeft,
-  AlertCircle,
-  Clock,
-} from 'lucide-react';
+;
 import { MonitoramentoDetailModal } from '@/components/campo/monitoramento-detail-modal';
 import { useMonitoringHealth, useMonitoringMetrics, useMonitoringStatus } from '@/hooks/campo/useCampo';
 

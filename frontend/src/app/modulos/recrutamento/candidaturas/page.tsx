@@ -1,11 +1,8 @@
 'use client';
 
+import { FileText, Search, RefreshCw, AlertCircle, ChevronRight, XCircle, Send, TrendingUp, Clock, CheckCircle, Ban } from 'lucide-react';
 import { useState } from 'react';
-import {
-  FileText, Search, RefreshCw, AlertCircle,
-  ChevronRight, XCircle, Send, TrendingUp,
-  Clock, CheckCircle, Ban,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,7 +20,7 @@ import {
   useApplicationStats,
   useAdvanceApplication,
   useRejectApplication,
-  useSendRecruitmentProposal,
+  useSendProposal,
 } from '@/hooks/recruitment';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -49,7 +46,7 @@ export default function CandidaturasPage() {
   // Mutations
   const advanceMutation = useAdvanceApplication();
   const rejectMutation = useRejectApplication();
-  const proposalMutation = useSendRecruitmentProposal();
+  const proposalMutation = useSendProposal();
 
   const applications = (applicationsData as any)?.items || (applicationsData as any) || [];
   const stats = statsData as any;

@@ -1,8 +1,9 @@
 'use client';
 
+import { FileText, Calendar, DollarSign, Building2, Hash } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import { FileText, Calendar, DollarSign, Building2, Hash } from 'lucide-react';
+;
 
 interface NfseData {
   id?: string;

@@ -1,5 +1,6 @@
 'use client';
 
+import { Users, Search, RefreshCw, AlertCircle, User, Mail, Building2, Briefcase, Phone, Calendar, Edit, Eye, MoreHorizontal } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,21 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Users,
-  Search,
-  RefreshCw,
-  AlertCircle,
-  User,
-  Mail,
-  Building2,
-  Briefcase,
-  Phone,
-  Calendar,
-  Edit,
-  Eye,
-  MoreHorizontal,
-} from 'lucide-react';
+;
 import {
   DropdownMenu,
   DropdownMenuContent,

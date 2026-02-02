@@ -1,5 +1,6 @@
 'use client';
 
+import { FileText, Search, RefreshCw, Plus, MoreHorizontal, Eye, AlertCircle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,16 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  FileText,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
+;
 import { usePIA, useCreateSimplePIA, useCreateCompletePIA } from '@/hooks/security-lgpd';
 import { PIAFormModal } from '@/components/seguranca/pia-form-modal';
 import { PIADetailModal } from '@/components/seguranca/pia-detail-modal';

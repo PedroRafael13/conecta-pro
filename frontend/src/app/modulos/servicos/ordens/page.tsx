@@ -1,5 +1,6 @@
 'use client';
 
+import { ClipboardList, Search, RefreshCw, Plus, MoreHorizontal, AlertCircle, Eye, Edit, Play, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,20 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import {
-  ClipboardList,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  AlertCircle,
-  Eye,
-  Edit,
-  Play,
-  CheckCircle,
-  XCircle,
-  Trash2,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 import { OrdemFormModal } from '@/components/servicos/ordem-form-modal';
 import { OrdemDetailModal } from '@/components/servicos/ordem-detail-modal';

@@ -1,5 +1,6 @@
 'use client';
 
+import { FileText, Upload, Search, Download, Eye, MoreVertical, File, Image, FileSpreadsheet, FileIcon, Presentation, Trash2, Edit, FolderInput, X, CheckCircle, AlertCircle, CloudUpload } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,26 +48,7 @@ import {
 } from '@/components/ui/table';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  FileText,
-  Upload,
-  Search,
-  Download,
-  Eye,
-  MoreVertical,
-  File,
-  Image,
-  FileSpreadsheet,
-  FileIcon,
-  Presentation,
-  Trash2,
-  Edit,
-  FolderInput,
-  X,
-  CheckCircle,
-  AlertCircle,
-  CloudUpload,
-} from 'lucide-react';
+;
 import {
   Document,
   Folder,

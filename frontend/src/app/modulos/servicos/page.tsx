@@ -1,16 +1,10 @@
 'use client';
 
+import { FileSignature, ClipboardList, Calendar, RefreshCw, ArrowRight, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  FileSignature,
-  ClipboardList,
-  Calendar,
-  RefreshCw,
-  ArrowRight,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { useContractStats, useContractAlerts } from '@/hooks/contracts';
 
 export default function ServicosPage() {

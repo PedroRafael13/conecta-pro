@@ -564,6 +564,53 @@ class BartoloEngine:
             skill_result = await self._check_skill_command(message, user_id, data_connector=data_connector)
             if skill_result:
                 processing_time = int((time.time() - start_time) * 1000)
+
+                # Verifica se skill retornou action_type (ação executiva)
+                if db and "action_type" in skill_result:
+                    from ..actions.action_schemas import ActionRequest
+                    from ..actions.action_types import ActionCategory, ActionType
+
+                    # Inicializa executor se ainda não foi
+                    if not self.action_executor:
+                        self.action_executor = ActionExecutor(db)
+
+                    try:
+                        # Cria ActionRequest a partir do resultado da skill
+                        action_type_str = skill_result["action_type"]
+                        action_type = ActionType(action_type_str)
+
+                        action_request = ActionRequest(
+                            action_type=action_type,
+                            category=ActionCategory.OPERATIONAL,  # Categoria padrão para skills
+                            user_id=user_id,
+                            session_id=session_id,
+                            parameters=skill_result.get("action_params", {}),
+                            detected_from_message=message,  # Mensagem original
+                            confidence=1.0,  # Confiança máxima para comandos diretos
+                        )
+
+                        # Cria preview da ação
+                        action_preview = await self.action_executor.create_action_preview(action_request)
+
+                        # Formata resposta para o usuário
+                        response_text = self._format_action_preview_response(action_preview)
+
+                        return BartoloResponse(
+                            message_id=message_id,
+                            session_id=session_id,
+                            response=response_text,
+                            action_preview=action_preview,
+                            intent=skill_result.get("intent", "skill_action"),
+                            suggestions=skill_result.get("suggestions", []),
+                            processing_time_ms=processing_time,
+                            model_used="skill_executor",
+                            bartolo_mood="professional",
+                        )
+                    except (ValueError, KeyError) as e:
+                        logger.error(f"Erro ao processar action_type da skill: {e}")
+                        # Continua com resposta normal da skill
+
+                # Resposta normal da skill (sem action)
                 return BartoloResponse(
                     message_id=message_id,
                     session_id=session_id,

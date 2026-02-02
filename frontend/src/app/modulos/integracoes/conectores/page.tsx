@@ -1,5 +1,6 @@
 'use client';
 
+import { Plug, Search, RefreshCw, MoreHorizontal, Eye, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,14 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Plug,
-  Search,
-  RefreshCw,
-  MoreHorizontal,
-  Eye,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { useConnectors, useIntegrationAccounts } from '@/hooks/integrations';
 import { ConnectorDetailModal } from '@/components/integracoes/connector-detail-modal';
 

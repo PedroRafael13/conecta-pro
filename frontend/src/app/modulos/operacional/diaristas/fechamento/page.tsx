@@ -1,18 +1,9 @@
 'use client';
 
+import { ArrowLeft, FileText, DollarSign, Users, Calendar, RefreshCw, CheckCircle, AlertTriangle, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  FileText,
-  DollarSign,
-  Users,
-  Calendar,
-  RefreshCw,
-  CheckCircle,
-  AlertTriangle,
-  CreditCard,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { usePayrollReport, useGeneratePayments } from '@/hooks/operacional/useDiarists';

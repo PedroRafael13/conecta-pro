@@ -1,5 +1,6 @@
 'use client';
 
+import { Settings, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Play, CheckCircle, XCircle, Trash2, AlertCircle, Clock, AlertTriangle, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import { Settings, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Play, CheckCircle, XCircle, Trash2, AlertCircle, Clock, AlertTriangle, Wrench } from 'lucide-react';
+;
 import { useMaintenanceList, useMaintenanceStats, useCreateMaintenance, useUpdateMaintenance, useDeleteMaintenance, useStartMaintenance, useCompleteMaintenance, useCancelMaintenance } from '@/hooks/equipment';
 import { MaintenanceFormModal } from '@/components/equipamentos/maintenance-form-modal';
 import { MaintenanceDetailModal } from '@/components/equipamentos/maintenance-detail-modal';

@@ -1,17 +1,10 @@
 'use client';
 
+import { Calendar, ChevronRight, ChevronLeft, AlertCircle, CheckCircle, Eye, Loader } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import {
-  Calendar,
-  ChevronRight,
-  ChevronLeft,
-  AlertCircle,
-  CheckCircle,
-  Eye,
-  Loader,
-} from 'lucide-react';
+;
 import type { ScaleTemplate, ScaleTemplateApply, Scale, Post } from '@/types/operacional';
 import { SCALE_TYPE_LABELS } from '@/types/operacional';
 

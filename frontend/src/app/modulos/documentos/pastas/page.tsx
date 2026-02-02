@@ -1,5 +1,6 @@
 'use client';
 
+import { FolderOpen, FolderPlus, ChevronRight, Home, Search, FileText, ArrowLeft, MoreVertical, Edit, Trash2, FolderInput, Lock, Unlock } from 'lucide-react';
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,21 +42,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  FolderOpen,
-  FolderPlus,
-  ChevronRight,
-  Home,
-  Search,
-  FileText,
-  ArrowLeft,
-  MoreVertical,
-  Edit,
-  Trash2,
-  FolderInput,
-  Lock,
-  Unlock,
-} from 'lucide-react';
+;
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { useFolders, useFolder, useCreateFolder, useUpdateFolder, useDeleteFolder } from '@/hooks/ged/useGedFolders';

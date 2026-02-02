@@ -1,5 +1,6 @@
 'use client';
 
+;
 import { Calendar, User, MapPin, DollarSign, FileText } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';

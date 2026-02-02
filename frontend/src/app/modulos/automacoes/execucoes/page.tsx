@@ -1,5 +1,6 @@
 'use client';
 
+import { History, RefreshCw, AlertCircle, CheckCircle2, XCircle, PlayCircle, Loader2, Ban, Activity, BarChart3 } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,18 +27,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  History,
-  RefreshCw,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  PlayCircle,
-  Loader2,
-  Ban,
-  Activity,
-  BarChart3,
-} from 'lucide-react';
+;
 import {
   useWorkflowList,
   useExecutionList,

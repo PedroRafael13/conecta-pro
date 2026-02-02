@@ -4,41 +4,58 @@
  * Re-exports dos hooks Orval do módulo recruitment
  */
 
+import { useQuery } from '@tanstack/react-query';
 import {
-  useListApplicationsApiV1RecruitmentApplicationsGet,
+  getListApplicationsApiV1RecruitmentApplicationsGetQueryOptions,
+  getGetApplicationApiV1RecruitmentApplicationsApplicationIdGetQueryOptions,
+  getListByCandidateApiV1RecruitmentApplicationsCandidateCandidateIdGetQueryOptions,
+  getListByPositionApiV1RecruitmentApplicationsPositionPositionIdGetQueryOptions,
+  getListActiveApiV1RecruitmentApplicationsActiveGetQueryOptions,
+  getGetApplicationStatsApiV1RecruitmentApplicationsStatsGetQueryOptions,
   useCreateApplicationApiV1RecruitmentApplicationsPost,
-  useGetApplicationApiV1RecruitmentApplicationsApplicationIdGet,
-  useUpdateApplicationApiV1RecruitmentApplicationsApplicationIdPatch,
+  useUpdateApplicationApiV1RecruitmentApplicationsApplicationIdPut,
   useDeleteApplicationApiV1RecruitmentApplicationsApplicationIdDelete,
-  useListByCandidateApiV1RecruitmentApplicationsCandidateCandidateIdGet,
-  useListByPositionApiV1RecruitmentApplicationsPositionPositionIdGet,
-  useListActiveApiV1RecruitmentApplicationsActiveGet,
-  useGetApplicationStatsApiV1RecruitmentApplicationsStatsGet,
-  useAdvanceApplicationApiV1RecruitmentApplicationsApplicationIdAdvancePost,
+  useAdvanceStageApiV1RecruitmentApplicationsApplicationIdAdvancePost,
   useRejectApplicationApiV1RecruitmentApplicationsApplicationIdRejectPost,
-  useSendProposalApiV1RecruitmentApplicationsApplicationIdSendProposalPost,
+  useSendProposalApiV1RecruitmentApplicationsApplicationIdProposalPost,
   useAcceptProposalApiV1RecruitmentApplicationsApplicationIdAcceptProposalPost,
-  useHireApplicationApiV1RecruitmentApplicationsApplicationIdHirePost,
   useBulkActionApiV1RecruitmentApplicationsBulkActionPost,
 } from '@/types/generated/recruitment/recruitment-recrutamento-e-selecao/recruitment-recrutamento-e-selecao';
+import type {
+  ListApplicationsApiV1RecruitmentApplicationsGetParams,
+  ListByCandidateApiV1RecruitmentApplicationsCandidateCandidateIdGetParams,
+  ListByPositionApiV1RecruitmentApplicationsPositionPositionIdGetParams,
+  ListActiveApiV1RecruitmentApplicationsActiveGetParams,
+  GetApplicationStatsApiV1RecruitmentApplicationsStatsGetParams,
+} from '@/types/generated/recruitment/conectaPROMóduloRECRUITMENT.schemas';
 
 // List & Read
-export const useApplications = useListApplicationsApiV1RecruitmentApplicationsGet;
-export const useApplication = useGetApplicationApiV1RecruitmentApplicationsApplicationIdGet;
-export const useApplicationsByCandidate = useListByCandidateApiV1RecruitmentApplicationsCandidateCandidateIdGet;
-export const useApplicationsByPosition = useListByPositionApiV1RecruitmentApplicationsPositionPositionIdGet;
-export const useActiveApplications = useListActiveApiV1RecruitmentApplicationsActiveGet;
-export const useApplicationStats = useGetApplicationStatsApiV1RecruitmentApplicationsStatsGet;
+export const useApplications = (params?: ListApplicationsApiV1RecruitmentApplicationsGetParams) =>
+  useQuery(getListApplicationsApiV1RecruitmentApplicationsGetQueryOptions(params));
+
+export const useApplication = (applicationId: string) =>
+  useQuery(getGetApplicationApiV1RecruitmentApplicationsApplicationIdGetQueryOptions(applicationId));
+
+export const useApplicationsByCandidate = (candidateId: string, params?: ListByCandidateApiV1RecruitmentApplicationsCandidateCandidateIdGetParams) =>
+  useQuery(getListByCandidateApiV1RecruitmentApplicationsCandidateCandidateIdGetQueryOptions(candidateId, params));
+
+export const useApplicationsByPosition = (positionId: string, params?: ListByPositionApiV1RecruitmentApplicationsPositionPositionIdGetParams) =>
+  useQuery(getListByPositionApiV1RecruitmentApplicationsPositionPositionIdGetQueryOptions(positionId, params));
+
+export const useActiveApplications = (params?: ListActiveApiV1RecruitmentApplicationsActiveGetParams) =>
+  useQuery(getListActiveApiV1RecruitmentApplicationsActiveGetQueryOptions(params));
+
+export const useApplicationStats = (params?: GetApplicationStatsApiV1RecruitmentApplicationsStatsGetParams) =>
+  useQuery(getGetApplicationStatsApiV1RecruitmentApplicationsStatsGetQueryOptions(params));
 
 // Mutations
 export const useCreateApplication = useCreateApplicationApiV1RecruitmentApplicationsPost;
-export const useUpdateApplication = useUpdateApplicationApiV1RecruitmentApplicationsApplicationIdPatch;
+export const useUpdateApplication = useUpdateApplicationApiV1RecruitmentApplicationsApplicationIdPut;
 export const useDeleteApplication = useDeleteApplicationApiV1RecruitmentApplicationsApplicationIdDelete;
-export const useAdvanceApplication = useAdvanceApplicationApiV1RecruitmentApplicationsApplicationIdAdvancePost;
+export const useAdvanceApplication = useAdvanceStageApiV1RecruitmentApplicationsApplicationIdAdvancePost;
 export const useRejectApplication = useRejectApplicationApiV1RecruitmentApplicationsApplicationIdRejectPost;
-export const useSendProposal = useSendProposalApiV1RecruitmentApplicationsApplicationIdSendProposalPost;
+export const useSendProposal = useSendProposalApiV1RecruitmentApplicationsApplicationIdProposalPost;
 export const useAcceptProposal = useAcceptProposalApiV1RecruitmentApplicationsApplicationIdAcceptProposalPost;
-export const useHireApplication = useHireApplicationApiV1RecruitmentApplicationsApplicationIdHirePost;
 export const useBulkAction = useBulkActionApiV1RecruitmentApplicationsBulkActionPost;
 
 // Re-export types

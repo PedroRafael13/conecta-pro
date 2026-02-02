@@ -1,12 +1,13 @@
 'use client';
 
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, AlertTriangle } from 'lucide-react';
+;
 
 interface ErasureRequestModalProps {
   isOpen: boolean;

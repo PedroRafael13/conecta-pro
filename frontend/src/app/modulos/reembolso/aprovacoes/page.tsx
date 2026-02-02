@@ -1,23 +1,10 @@
 'use client';
 
+import { Receipt, Search, ArrowLeft, ChevronLeft, ChevronRight, AlertCircle, CheckCircle, Clock, RefreshCw, DollarSign, Eye, XCircle, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Receipt,
-  Search,
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
-  CheckCircle,
-  Clock,
-  RefreshCw,
-  DollarSign,
-  Eye,
-  XCircle,
-  RotateCcw,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';

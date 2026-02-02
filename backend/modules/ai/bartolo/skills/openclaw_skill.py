@@ -18,14 +18,52 @@ class OpenClawSkill(BaseSkill):
 
     name = "openclaw"
     description = "Agente de qualidade e DevOps - testes, lint, security, deploy"
+
+    # Módulos do sistema para testes E2E
+    MODULES = [
+        "ai",
+        "analytics",
+        "audit",
+        "automation",
+        "bidding",
+        "campo",
+        "clients",
+        "config",
+        "core",
+        "crm",
+        "document-kits",
+        "documents",
+        "equipment",
+        "fase5",
+        "financial",
+        "ged",
+        "government",
+        "health",
+        "hr",
+        "integrations",
+        "mobile",
+        "monitoring",
+        "notifications",
+        "operacional",
+        "recruitment",
+        "reimbursement",
+        "reports",
+        "retention",
+        "scheduler",
+        "search",
+        "security",
+        "services",
+    ]
+
     commands = [
         "",  # help/default
         "status",
         "report",
         "historico",
-        "analyze",  # NEW: AI analysis
+        "analyze",
         "testes",
         "testes-front",
+        "e2e",  # E2E completo
         "lint",
         "security",
         "coverage",
@@ -34,21 +72,28 @@ class OpenClawSkill(BaseSkill):
         "deploy",
         "config",
         "daemon",
-    ]
+    ] + [f"e2e-{mod}" for mod in MODULES]  # Adiciona e2e-{modulo} para cada módulo
 
     async def execute(self, command: str, args: list[str], context: dict[str, Any]) -> dict[str, Any]:
         """Executa comando da skill OpenClaw"""
 
         if not command or command == "help":
-            return self._show_help()
+            return await self._show_help()
+
+        # Detecta comandos e2e-{módulo} dinamicamente
+        if command.startswith("e2e-"):
+            module = command[4:]  # Remove "e2e-" prefix
+            if module in self.MODULES:
+                return await self._e2e_module(module, args, context)
 
         handlers = {
             "status": self._status,
             "report": self._report,
             "historico": self._historico,
-            "analyze": self._analyze,  # NEW: AI analysis
+            "analyze": self._analyze,
             "testes": self._testes,
             "testes-front": self._testes_front,
+            "e2e": self._e2e,
             "lint": self._lint,
             "security": self._security,
             "coverage": self._coverage,
@@ -77,6 +122,10 @@ Comandos disponíveis:
 **🔍 Quality Checks:**
 - `/openclaw testes` - Executar testes backend (pytest)
 - `/openclaw testes-front` - Executar testes frontend (vitest)
+- `/openclaw e2e` - Executar testes E2E completos (Playwright)
+- `/openclaw e2e-{módulo}` - Testes E2E por módulo
+  - Exemplos: `e2e-operacional`, `e2e-financial`, `e2e-crm`
+  - **32 módulos disponíveis:** ai, analytics, audit, automation, bidding, campo, clients, config, core, crm, document-kits, documents, equipment, fase5, financial, ged, government, health, hr, integrations, mobile, monitoring, notifications, operacional, recruitment, reimbursement, reports, retention, scheduler, search, security, services
 - `/openclaw lint` - Verificar qualidade (ruff + eslint)
 - `/openclaw security` - Scan de segurança (bandit)
 - `/openclaw coverage` - Verificar cobertura (meta: 60%)
@@ -296,6 +345,62 @@ Comandos disponíveis:
         return {
             "response": "⚠️ Testes frontend ainda não integrados ao OpenClaw. Use `npm run test` manualmente.",
             "intent": "openclaw_testes_front",
+        }
+
+    async def _e2e(self, args: list[str], context: dict) -> dict[str, Any]:
+        """Redireciona para action OPENCLAW_RUN_E2E"""
+        return {
+            "response": "Para executar testes E2E (Playwright), confirme a ação sugerida abaixo. Pode levar até 5 minutos.",
+            "intent": "openclaw_e2e",
+            "action_type": "openclaw_run_e2e",
+            "suggestions": ["Confirmar", "Cancelar"],
+        }
+
+    async def _e2e_module(self, module: str, args: list[str], context: dict) -> dict[str, Any]:
+        """Testes E2E de um módulo específico"""
+        module_names = {
+            "ai": "IA",
+            "analytics": "Analytics",
+            "audit": "Auditoria",
+            "automation": "Automação",
+            "bidding": "Licitações",
+            "campo": "Campo",
+            "clients": "Clientes",
+            "config": "Configuração",
+            "core": "Core",
+            "crm": "CRM",
+            "document-kits": "Kits de Documentos",
+            "documents": "Documentos",
+            "equipment": "Equipamentos",
+            "fase5": "Fase 5",
+            "financial": "Financeiro",
+            "ged": "GED",
+            "government": "Integrações Governamentais",
+            "health": "Saúde Ocupacional",
+            "hr": "RH",
+            "integrations": "Integrações",
+            "mobile": "Mobile",
+            "monitoring": "Monitoramento",
+            "notifications": "Notificações",
+            "operacional": "Operacional",
+            "recruitment": "Recrutamento",
+            "reimbursement": "Reembolso",
+            "reports": "Relatórios",
+            "retention": "Retenção",
+            "scheduler": "Agendador",
+            "search": "Busca",
+            "security": "Segurança LGPD",
+            "services": "Serviços",
+        }
+
+        friendly_name = module_names.get(module, module.title())
+
+        return {
+            "response": f"Executar testes E2E do módulo **{friendly_name}**?\n\n⏱️ Duração estimada: 1-3 min\n\n**Nota:** Testes ainda não implementados serão pulados.",
+            "intent": f"openclaw_e2e_{module}",
+            "action_type": "openclaw_run_e2e_module",
+            "action_params": {"module": module},
+            "suggestions": ["SIM", "NÃO"],
         }
 
     async def _lint(self, args: list[str], context: dict) -> dict[str, Any]:

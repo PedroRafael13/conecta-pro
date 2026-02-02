@@ -1,5 +1,6 @@
 'use client';
 
+import { Repeat, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, FileSignature, Truck, XCircle, Trash2, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,20 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import {
-  Repeat,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  FileSignature,
-  Truck,
-  XCircle,
-  Trash2,
-  AlertCircle,
-} from 'lucide-react';
+;
 import {
   useComodatoList,
   useComodatoStats,

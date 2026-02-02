@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Loader2, CheckCircle, XCircle, RotateCcw, FileText, DollarSign, Calendar, User } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -9,17 +10,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
   APPROVAL_LEVEL_LABELS,
 } from '@/types/reimbursement';
-import {
-  AlertCircle,
-  Loader2,
-  CheckCircle,
-  XCircle,
-  RotateCcw,
-  FileText,
-  DollarSign,
-  Calendar,
-  User,
-} from 'lucide-react';
+;
 
 interface ReimbursementApprovalModalProps {
   request: ReimbursementRequest | null;

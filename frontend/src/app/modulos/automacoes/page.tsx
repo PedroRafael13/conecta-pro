@@ -1,16 +1,8 @@
 'use client';
 
+import { Zap, GitBranch, History, ArrowRight, Loader2, PlayCircle, CheckCircle2, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Zap,
-  GitBranch,
-  History,
-  ArrowRight,
-  Loader2,
-  PlayCircle,
-  CheckCircle2,
-  Activity,
-} from 'lucide-react';
+;
 import { useRouter } from 'next/navigation';
 import { useWorkflowList } from '@/hooks/workflows';
 import type { WorkflowResponse } from '@/hooks/workflows';

@@ -1,11 +1,9 @@
 'use client';
 
+import { Award, Calendar, Building2, Hash, CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import {
-  Award, Calendar, Building2, Hash,
-  CheckCircle, Clock, AlertCircle, XCircle,
-} from 'lucide-react';
+;
 
 interface CertidaoData {
   id?: string;

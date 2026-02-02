@@ -120,6 +120,23 @@ export const modules: Module[] = [
 
   // === ADMINISTRATIVO ===
   {
+    id: 'licitacoes',
+    title: 'Licitações',
+    description: 'Gestão de licitações públicas, editais, propostas e contratos',
+    icon: 'FileText',
+    href: '/modulos/licitacoes',
+    color: 'purple',
+    permissions: ['bidding:read'],
+    enabled: true,
+    subModules: [
+      { id: 'editais', title: 'Editais', href: '/modulos/licitacoes/editais', icon: 'FileSearch', permissions: ['bidding:tenders:read'] },
+      { id: 'propostas', title: 'Propostas', href: '/modulos/licitacoes/propostas', icon: 'FileCheck', permissions: ['bidding:proposals:read'] },
+      { id: 'contratos', title: 'Contratos', href: '/modulos/licitacoes/contratos', icon: 'FileSignature', permissions: ['bidding:contracts:read'] },
+      { id: 'certidoes', title: 'Certidões', href: '/modulos/licitacoes/certidoes', icon: 'Award', permissions: ['bidding:certificates:read'] },
+      { id: 'documentos', title: 'Documentos', href: '/modulos/licitacoes/documentos', icon: 'FolderOpen', permissions: ['bidding:documents:read'] },
+    ],
+  },
+  {
     id: 'ged',
     title: 'Documentos',
     description: 'Gestão eletrônica de documentos',
@@ -241,7 +258,7 @@ export const moduleCategories: ModuleCategory[] = [
   {
     id: 'administrativo',
     title: 'Administrativo',
-    modules: modules.filter(m => ['ged', 'equipment', 'integrations'].includes(m.id)),
+    modules: modules.filter(m => ['licitacoes', 'ged', 'equipment', 'integrations'].includes(m.id)),
   },
   {
     id: 'gestao',

@@ -1,10 +1,11 @@
 'use client';
 
+import { Monitor, MapPin, Clock, User, FileText, Activity } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Monitor, MapPin, Clock, User, FileText, Activity } from 'lucide-react';
+;
 
 interface MonitoramentoDetailModalProps {
   isOpen: boolean;

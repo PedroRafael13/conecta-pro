@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertTriangle, User, MapPin, Calendar, FileText, Eye, Edit2, CheckCircle, Clock, AlertCircle, XCircle, CheckSquare, Users } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,21 +12,7 @@ import {
   type OccurrenceStatus,
   type OccurrenceSeverity,
 } from '@/types/operacional';
-import {
-  AlertTriangle,
-  User,
-  MapPin,
-  Calendar,
-  FileText,
-  Eye,
-  Edit2,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  XCircle,
-  CheckSquare,
-  Users,
-} from 'lucide-react';
+;
 
 interface OccurrenceDetailModalProps {
   isOpen: boolean;

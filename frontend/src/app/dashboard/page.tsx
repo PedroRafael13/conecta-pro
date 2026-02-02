@@ -1,13 +1,10 @@
 'use client';
 
+import { Users, Briefcase, Shield, Smartphone, DollarSign, Landmark, FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search, LogOut, User, ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import {
-  Users, Briefcase, Shield, Smartphone, DollarSign, Landmark,
-  FolderOpen, Wrench, Plug, BarChart3, Settings, Bell, Search,
-  LogOut, User, ChevronRight
-} from 'lucide-react';
+;
 import { ModuleCard } from '@/components/ui/module-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,5 +1,6 @@
 'use client';
 
+import { Clock, Download, Archive, CheckCircle2, XCircle, FileText, User, Calendar, ArrowUpDown, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -11,18 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import {
-  Clock,
-  Download,
-  Archive,
-  CheckCircle2,
-  XCircle,
-  FileText,
-  User,
-  Calendar,
-  ArrowUpDown,
-  Eye,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 
 interface DocumentVersionHistoryProps {

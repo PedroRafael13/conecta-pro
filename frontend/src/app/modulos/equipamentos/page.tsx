@@ -1,7 +1,8 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wrench, Package, Repeat, Settings, AlertTriangle, Box, ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+;
 import { useRouter } from 'next/navigation';
 import { useEquipmentStats, useEquipmentNeedingMaintenance } from '@/hooks/equipment';
 

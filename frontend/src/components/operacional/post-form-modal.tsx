@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Loader2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { SaveIndicator } from '@/components/ui/save-indicator';
 import { getErrorMessage } from '@/lib/api';
 import type { Post, PostCreate, PostUpdate, PostType, ShiftType } from '@/types/operacional';
 import { POST_TYPE_LABELS, SHIFT_TYPE_LABELS } from '@/types/operacional';
-import { AlertCircle, Loader2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+;
 import { useAutoSave } from '@/hooks/useAutoSave';
 
 interface PostFormModalProps {

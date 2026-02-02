@@ -1,5 +1,6 @@
 'use client';
 
+import { Shield, User, MapPin, Calendar, Clock, CheckSquare, AlertCircle, XCircle, Play, Pause, FileText, List } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,20 +12,7 @@ import {
   type PatrolRoundStatus,
   type CheckpointStatus,
 } from '@/types/operacional';
-import {
-  Shield,
-  User,
-  MapPin,
-  Calendar,
-  Clock,
-  CheckSquare,
-  AlertCircle,
-  XCircle,
-  Play,
-  Pause,
-  FileText,
-  List,
-} from 'lucide-react';
+;
 
 interface PatrolRoundDetailModalProps {
   isOpen: boolean;

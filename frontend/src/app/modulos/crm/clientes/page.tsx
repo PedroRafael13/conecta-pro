@@ -1,5 +1,6 @@
 'use client';
 
+import { Building2, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, AlertCircle, Users, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,19 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import {
-  Building2,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
-  AlertCircle,
-  Users,
-  CheckCircle2,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 import { ClienteFormModal } from '@/components/crm/cliente-form-modal';
 import { ClienteDetailModal } from '@/components/crm/cliente-detail-modal';

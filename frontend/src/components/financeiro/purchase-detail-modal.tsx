@@ -1,9 +1,10 @@
 'use client';
 
+import { ShoppingCart, ClipboardList, FileText } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, ClipboardList, FileText } from 'lucide-react';
+;
 
 interface PurchaseDetailModalProps {
   isOpen: boolean;

@@ -5,6 +5,7 @@
  * Exibe preview da ação e solicita confirmação do usuário
  */
 
+import { AlertTriangle, CheckCircle2, Info, Shield } from 'lucide-react';
 import { useState } from 'react';
 import {
   Dialog,
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle2, Info, Shield } from 'lucide-react';
+;
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export interface ActionPreview {

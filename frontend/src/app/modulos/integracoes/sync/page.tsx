@@ -1,5 +1,6 @@
 'use client';
 
+import { RefreshCw, Search, Play, XCircle, Clock, CheckCircle, AlertCircle, MoreHorizontal, Loader2, ChevronLeft, ChevronRight, ListOrdered, History } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,21 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  RefreshCw,
-  Search,
-  Play,
-  XCircle,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  MoreHorizontal,
-  Loader2,
-  ChevronLeft,
-  ChevronRight,
-  ListOrdered,
-  History,
-} from 'lucide-react';
+;
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,7 +74,7 @@ const QUEUE_STATUS_ICONS: Record<string, React.ReactNode> = {
   cancelled: <XCircle className="w-3 h-3" />,
 };
 
-const PAGE_SIZE = 20;
+;
 
 export default function SyncPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('queue');

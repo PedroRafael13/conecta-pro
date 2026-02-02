@@ -1,11 +1,12 @@
 'use client';
 
+import { AlertCircle, Loader2, User, Phone, MapPin, Briefcase, DollarSign, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getErrorMessage } from '@/lib/api';
-import { AlertCircle, Loader2, User, Phone, MapPin, Briefcase, DollarSign, CheckCircle } from 'lucide-react';
+;
 
 interface DiaristFormData {
   nome: string;

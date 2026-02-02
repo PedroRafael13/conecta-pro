@@ -6,8 +6,9 @@
 
 'use client';
 
-import { useNotifications } from '../hooks/useNotifications';
 import { CheckCheck, X } from 'lucide-react';
+import { useNotifications } from '../hooks/useNotifications';
+;
 import { useRouter } from 'next/navigation';
 
 interface NotificationCenterProps {

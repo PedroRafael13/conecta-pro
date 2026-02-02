@@ -5,7 +5,6 @@ Repository para operações de banco de dados com Allocation.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import List, Optional
 from uuid import uuid4
 
 from sqlalchemy import and_, func, select, update
@@ -13,9 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
 from modules.operacional.models.allocation import Allocation, AllocationStatus
-from modules.operacional.models.post import Post
 from modules.operacional.models.employee import Employee
+from modules.operacional.models.post import Post
 from modules.operacional.schemas.allocation import (
+    AllocationBulkUpdateItem,
     AllocationCreate,
     AllocationFilter,
     AllocationUpdate,
@@ -43,11 +43,7 @@ class AllocationRepository:
         result = await self.db.execute(count_query)
         count = result.scalar_one()
 
-        update_stmt = (
-            update(Post)
-            .where(Post.id == post_id)
-            .values(current_headcount=count)
-        )
+        update_stmt = update(Post).where(Post.id == post_id).values(current_headcount=count)
         await self.db.execute(update_stmt)
         logger.debug(f"Post {post_id} current_headcount atualizado para {count}")
 
@@ -56,9 +52,9 @@ class AllocationRepository:
         employee_id: str,
         post_id: str,
         start_date: date,
-        end_date: Optional[date] = None,
-        exclude_allocation_id: Optional[str] = None,
-    ) -> Optional[Allocation]:
+        end_date: date | None = None,
+        exclude_allocation_id: str | None = None,
+    ) -> Allocation | None:
         """
         Verifica se já existe alocação ativa para o funcionário no posto e período.
 
@@ -111,7 +107,7 @@ class AllocationRepository:
 
         return None
 
-    async def create(self, data: AllocationCreate, created_by: Optional[str] = None) -> Allocation:
+    async def create(self, data: AllocationCreate, created_by: str | None = None) -> Allocation:
         """
         Cria uma nova alocação.
 
@@ -169,7 +165,7 @@ class AllocationRepository:
         logger.info(f"Allocation criada: {allocation.id}")
         return allocation
 
-    async def get_by_id(self, allocation_id: str) -> Optional[Allocation]:
+    async def get_by_id(self, allocation_id: str) -> Allocation | None:
         """
         Busca alocação por ID.
 
@@ -187,7 +183,7 @@ class AllocationRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_current_by_employee(self, employee_id: str) -> List[Allocation]:
+    async def get_current_by_employee(self, employee_id: str) -> list[Allocation]:
         """
         Busca alocações atuais de um funcionário.
 
@@ -211,7 +207,7 @@ class AllocationRepository:
         # Filtrar por end_date (pode ser null)
         return [a for a in allocations if a.end_date is None or a.end_date >= today]
 
-    async def get_by_post(self, post_id: str) -> List[Allocation]:
+    async def get_by_post(self, post_id: str) -> list[Allocation]:
         """
         Busca alocações de um posto.
 
@@ -232,7 +228,7 @@ class AllocationRepository:
 
     async def list(
         self,
-        filters: Optional[AllocationFilter] = None,
+        filters: AllocationFilter | None = None,
         page: int = 1,
         page_size: int = 20,
         include_names: bool = True,
@@ -276,7 +272,7 @@ class AllocationRepository:
         enriched = await self._enrich_allocations(allocations)
         return enriched, total
 
-    async def _enrich_allocations(self, allocations: List[Allocation]) -> List[dict]:
+    async def _enrich_allocations(self, allocations: list[Allocation]) -> list[dict]:
         """
         Enriquece alocações com dados de funcionário e posto.
 
@@ -296,9 +292,7 @@ class AllocationRepository:
         # Buscar funcionários
         employees_map = {}
         if employee_ids:
-            emp_result = await self.db.execute(
-                select(Employee).where(Employee.id.in_(employee_ids))
-            )
+            emp_result = await self.db.execute(select(Employee).where(Employee.id.in_(employee_ids)))
             for emp in emp_result.scalars().all():
                 employees_map[str(emp.id)] = {
                     "name": emp.nome,
@@ -309,9 +303,7 @@ class AllocationRepository:
         # Buscar postos
         posts_map = {}
         if post_ids:
-            post_result = await self.db.execute(
-                select(Post).where(Post.id.in_(post_ids))
-            )
+            post_result = await self.db.execute(select(Post).where(Post.id.in_(post_ids)))
             for post in post_result.scalars().all():
                 posts_map[str(post.id)] = {
                     "name": post.name,
@@ -388,7 +380,7 @@ class AllocationRepository:
 
         return query
 
-    async def update(self, allocation_id: str, data: AllocationUpdate) -> Optional[Allocation]:
+    async def update(self, allocation_id: str, data: AllocationUpdate) -> Allocation | None:
         """
         Atualiza uma alocação.
 
@@ -410,11 +402,11 @@ class AllocationRepository:
         update_data = data.model_dump(exclude_unset=True)
 
         # Se está alterando datas ou posto/funcionário, validar conflitos
-        if any(field in update_data for field in ['start_date', 'end_date', 'post_id', 'employee_id']):
-            new_employee_id = update_data.get('employee_id', allocation.employee_id)
-            new_post_id = update_data.get('post_id', allocation.post_id)
-            new_start_date = update_data.get('start_date', allocation.start_date)
-            new_end_date = update_data.get('end_date', allocation.end_date)
+        if any(field in update_data for field in ["start_date", "end_date", "post_id", "employee_id"]):
+            new_employee_id = update_data.get("employee_id", allocation.employee_id)
+            new_post_id = update_data.get("post_id", allocation.post_id)
+            new_start_date = update_data.get("start_date", allocation.start_date)
+            new_end_date = update_data.get("end_date", allocation.end_date)
 
             conflicting = await self.check_active_allocation(
                 employee_id=new_employee_id,
@@ -456,8 +448,8 @@ class AllocationRepository:
         allocation_id: str,
         end_date: date,
         reason: str,
-        notes: Optional[str] = None,
-    ) -> Optional[Allocation]:
+        notes: str | None = None,
+    ) -> Allocation | None:
         """
         Encerra uma alocação.
 
@@ -519,7 +511,9 @@ class AllocationRepository:
         return True
 
     async def get_available_employees(
-        self, shift_date: date, post_id: Optional[str] = None  # pylint: disable=unused-argument
+        self,
+        shift_date: date,
+        post_id: str | None = None,  # pylint: disable=unused-argument
     ) -> list[str]:
         """
         Lista funcionários disponíveis em uma data.
@@ -547,3 +541,136 @@ class AllocationRepository:
                 available.append(allocation.employee_id)
 
         return list(set(available))
+
+    async def bulk_delete(self, allocation_ids: list[str]) -> dict:
+        """
+        Deleta múltiplas alocações em lote (soft delete).
+
+        Args:
+            allocation_ids: Lista de IDs de alocações para deletar
+
+        Returns:
+            Dict com:
+                - success_count: quantidade de sucessos
+                - error_count: quantidade de erros
+                - errors: lista de erros [{"id": allocation_id, "error": mensagem}]
+        """
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        for allocation_id in allocation_ids:
+            try:
+                deleted = await self.delete(allocation_id)
+                if deleted:
+                    success_count += 1
+                else:
+                    error_count += 1
+                    errors.append(
+                        {
+                            "id": allocation_id,
+                            "error": "Alocação não encontrada",
+                        }
+                    )
+            except Exception as e:  # pylint: disable=broad-except
+                error_count += 1
+                errors.append(
+                    {
+                        "id": allocation_id,
+                        "error": str(e),
+                    }
+                )
+                logger.error(
+                    "Erro ao deletar alocação em bulk",
+                    action="bulk_delete_allocation",
+                    allocation_id=allocation_id,
+                    error=str(e),
+                )
+
+        logger.info(
+            "Bulk delete finalizado",
+            action="bulk_delete_allocations",
+            total=len(allocation_ids),
+            success=success_count,
+            errors=error_count,
+        )
+
+        return {
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors,
+        }
+
+    async def bulk_update(self, items: list[AllocationBulkUpdateItem]) -> dict:
+        """
+        Atualiza múltiplas alocações em lote.
+
+        Args:
+            items: Lista de itens com allocation_id e dados para atualização
+
+        Returns:
+            Dict com:
+                - success_count: quantidade de sucessos
+                - error_count: quantidade de erros
+                - errors: lista de erros [{"id": allocation_id, "error": mensagem}]
+        """
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        for item in items:
+            try:
+                allocation = await self.update(item.allocation_id, item.data)
+                if allocation:
+                    success_count += 1
+                else:
+                    error_count += 1
+                    errors.append(
+                        {
+                            "id": item.allocation_id,
+                            "error": "Alocação não encontrada",
+                        }
+                    )
+            except ValueError as e:
+                # Conflito de alocação
+                error_count += 1
+                errors.append(
+                    {
+                        "id": item.allocation_id,
+                        "error": str(e),
+                    }
+                )
+                logger.warning(
+                    "Conflito ao atualizar alocação em bulk",
+                    action="bulk_update_allocation",
+                    allocation_id=item.allocation_id,
+                    error=str(e),
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                error_count += 1
+                errors.append(
+                    {
+                        "id": item.allocation_id,
+                        "error": str(e),
+                    }
+                )
+                logger.error(
+                    "Erro ao atualizar alocação em bulk",
+                    action="bulk_update_allocation",
+                    allocation_id=item.allocation_id,
+                    error=str(e),
+                )
+
+        logger.info(
+            "Bulk update finalizado",
+            action="bulk_update_allocations",
+            total=len(items),
+            success=success_count,
+            errors=error_count,
+        )
+
+        return {
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors,
+        }

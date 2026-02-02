@@ -1,5 +1,6 @@
 'use client';
 
+import { LayoutDashboard, TrendingUp, AlertTriangle, Lightbulb, RefreshCw, Activity, ArrowLeft, AlertCircle, TrendingDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,17 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  LayoutDashboard,
-  TrendingUp,
-  AlertTriangle,
-  Lightbulb,
-  RefreshCw,
-  Activity,
-  ArrowLeft,
-  AlertCircle,
-  TrendingDown,
-} from 'lucide-react';
+;
 import {
   useExecutiveDashboard,
   useActiveAlerts,

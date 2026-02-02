@@ -1,10 +1,11 @@
 'use client';
 
+import { Calendar, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calendar, AlertCircle } from 'lucide-react';
+;
 import type { Scale, ScaleTemplateCreate } from '@/types/operacional';
 import { SCALE_TYPE_LABELS } from '@/types/operacional';
 

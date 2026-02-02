@@ -1,5 +1,6 @@
 'use client';
 
+;
 import { Construction, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from './button';

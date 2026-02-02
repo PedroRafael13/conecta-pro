@@ -1,5 +1,6 @@
 'use client';
 
+import { TrendingUp, Users, Target, AlertTriangle, RefreshCw, Activity, Star, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,17 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  TrendingUp,
-  Users,
-  Target,
-  AlertTriangle,
-  RefreshCw,
-  Activity,
-  Star,
-  ArrowLeft,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { useTopLeads, useChurnAnalytics } from '@/hooks/analytics';
 
 export default function ComercialRelatorioPage() {

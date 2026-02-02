@@ -90,6 +90,8 @@ class ActionType(str, Enum):
     OPENCLAW_RUN_COVERAGE = "openclaw_run_coverage"
     OPENCLAW_RUN_HEALTH = "openclaw_run_health"
     OPENCLAW_RUN_FULL_CYCLE = "openclaw_run_full_cycle"
+    OPENCLAW_RUN_E2E = "openclaw_run_e2e"
+    OPENCLAW_RUN_E2E_MODULE = "openclaw_run_e2e_module"
 
     # OpenClaw - Deploy
     OPENCLAW_DEPLOY_STAGING = "openclaw_deploy_staging"

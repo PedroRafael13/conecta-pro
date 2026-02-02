@@ -1,12 +1,10 @@
 'use client';
 
+import { Users, Briefcase, UserPlus, FileText, Calendar, RefreshCw, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Users, Briefcase, UserPlus, FileText, Calendar,
-  RefreshCw, ArrowRight,
-} from 'lucide-react';
+;
 import {
   usePositionStats,
   useCandidateStats,

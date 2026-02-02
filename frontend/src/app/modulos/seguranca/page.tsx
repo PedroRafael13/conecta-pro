@@ -1,19 +1,9 @@
 'use client';
 
+import { ShieldCheck, Eye, CheckCircle2, FileText, Trash2, Lock, ArrowRight, Shield, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  ShieldCheck,
-  Eye,
-  CheckCircle2,
-  FileText,
-  Trash2,
-  Lock,
-  ArrowRight,
-  Shield,
-  AlertTriangle,
-  Loader2,
-} from 'lucide-react';
+;
 import { useRouter } from 'next/navigation';
 import { useLGPDStatus, useHealthCheck } from '@/hooks/security-lgpd';
 

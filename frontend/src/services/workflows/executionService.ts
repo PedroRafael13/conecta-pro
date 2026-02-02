@@ -9,15 +9,15 @@
  * - Histórico de execução
  */
 
-import { getAutomationWorkflows } from '@/types/generated/workflows/automation-workflows/automation-workflows';
+import {
+  listExecutionsApiV1WorkflowsWorkflowIdExecutionsGet,
+  cancelExecutionApiV1WorkflowsExecutionsExecutionIdCancelPost,
+} from '@/types/generated/workflows/automation-workflows/automation-workflows';
 import type {
   ExecutionResponse,
   ExecutionStatus,
   ListExecutionsApiV1WorkflowsWorkflowIdExecutionsGetParams,
 } from '@/types/generated/workflows/conectaPROWorkflowsAPI.schemas';
-import { AxiosResponse } from 'axios';
-
-const workflowApi = getAutomationWorkflows();
 
 /**
  * Service para gestão de execuções de workflows
@@ -29,11 +29,8 @@ export class ExecutionService {
   static async listExecutions(
     workflowId: string,
     params?: ListExecutionsApiV1WorkflowsWorkflowIdExecutionsGetParams
-  ): Promise<AxiosResponse<ExecutionResponse[]>> {
-    return workflowApi.listExecutionsApiV1WorkflowsWorkflowIdExecutionsGet(
-      workflowId,
-      params
-    );
+  ): Promise<Awaited<ReturnType<typeof listExecutionsApiV1WorkflowsWorkflowIdExecutionsGet>>> {
+    return listExecutionsApiV1WorkflowsWorkflowIdExecutionsGet(workflowId, params);
   }
 
   /**
@@ -41,10 +38,8 @@ export class ExecutionService {
    */
   static async cancelExecution(
     executionId: string
-  ): Promise<AxiosResponse<unknown>> {
-    return workflowApi.cancelExecutionApiV1WorkflowsExecutionsExecutionIdCancelPost(
-      executionId
-    );
+  ): Promise<Awaited<ReturnType<typeof cancelExecutionApiV1WorkflowsExecutionsExecutionIdCancelPost>>> {
+    return cancelExecutionApiV1WorkflowsExecutionsExecutionIdCancelPost(executionId);
   }
 
   // ==================== HELPERS ====================

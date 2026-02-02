@@ -1,5 +1,6 @@
 'use client';
 
+import { Package, Plus, Search, FileText, Copy, Edit, Trash2, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,18 +22,6 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Package,
-  Plus,
-  Search,
-  FileText,
-  Copy,
-  Edit,
-  Trash2,
-  ChevronRight,
-  CheckCircle,
-  AlertCircle,
-} from 'lucide-react';
 import Link from 'next/link';
 import {
   type DocumentKit,
@@ -49,7 +38,7 @@ import {
 } from '@/hooks/document-kits/useDocumentKits';
 
 // Categorias baseadas nos tipos válidos do backend
-const KIT_CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => ({
+const CATEGORIES = Object.entries(KIT_TYPE_LABELS).map(([value, label]) => ({
   value,
   label,
 }));

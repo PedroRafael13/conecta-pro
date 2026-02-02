@@ -1,0 +1,219 @@
+name: Performance Check
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - 'next.config.ts'
+      - 'tailwind.config.ts'
+  workflow_dispatch:
+
+jobs:
+  bundle-size:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Download baseline
+        continue-on-error: true
+        run: |
+          if [ -f scripts/bundle-baseline.json ]; then
+            echo "Baseline encontrado no repositório"
+          else
+            echo "Nenhum baseline encontrado"
+          fi
+
+      - name: Compare bundle size
+        run: npm run perf:compare
+        continue-on-error: true
+
+      - name: Upload bundle stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats
+          path: .next/analyze/
+          retention-days: 30
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        continue-on-error: true
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const buildDir = '.next';
+            const staticDir = path.join(buildDir, 'static');
+
+            function getDirSize(dir) {
+              let size = 0;
+              if (!fs.existsSync(dir)) return 0;
+
+              const files = fs.readdirSync(dir);
+              for (const file of files) {
+                const filePath = path.join(dir, file);
+                const stats = fs.statSync(filePath);
+                if (stats.isDirectory()) {
+                  size += getDirSize(filePath);
+                } else {
+                  size += stats.size;
+                }
+              }
+              return size;
+            }
+
+            function formatBytes(bytes) {
+              if (bytes === 0) return '0 Bytes';
+              const k = 1024;
+              const sizes = ['Bytes', 'KB', 'MB'];
+              const i = Math.floor(Math.log(bytes) / Math.log(k));
+              return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            const total = getDirSize(buildDir);
+            const chunks = getDirSize(path.join(staticDir, 'chunks'));
+            const css = getDirSize(path.join(staticDir, 'css'));
+
+            const comment = `## 📦 Bundle Size Report
+
+            | Category | Size |
+            |----------|------|
+            | Total Build | ${formatBytes(total)} |
+            | JS Chunks | ${formatBytes(chunks)} |
+            | CSS | ${formatBytes(css)} |
+
+            > 💡 Compare with baseline to identify regressions
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Run Lighthouse CI
+        run: npm run lighthouse
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+        continue-on-error: true
+
+      - name: Generate Report
+        run: npm run lighthouse:report
+        continue-on-error: true
+
+      - name: Upload Lighthouse Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+          retention-days: 30
+
+      - name: Comment PR with Lighthouse scores
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        continue-on-error: true
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const summaryPath = '.lighthouseci/summary.json';
+
+            if (!fs.existsSync(summaryPath)) {
+              console.log('Summary not found');
+              return;
+            }
+
+            const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+
+            function formatScore(score) {
+              const percent = Math.round(score * 100);
+              const emoji = percent >= 90 ? '🟢' : percent >= 50 ? '🟡' : '🔴';
+              return `${emoji} ${percent}%`;
+            }
+
+            const comment = `## ⚡ Lighthouse Performance Report
+
+            | Category | Score |
+            |----------|-------|
+            | Performance | ${formatScore(summary.scores.performance)} |
+            | Accessibility | ${formatScore(summary.scores.accessibility)} |
+            | Best Practices | ${formatScore(summary.scores.bestPractices)} |
+            | SEO | ${formatScore(summary.scores.seo)} |
+
+            ### Core Web Vitals
+
+            | Metric | Value |
+            |--------|-------|
+            | FCP | ${Math.round(summary.metrics.fcp)}ms |
+            | LCP | ${Math.round(summary.metrics.lcp)}ms |
+            | TBT | ${Math.round(summary.metrics.tbt)}ms |
+            | CLS | ${summary.metrics.cls.toFixed(3)} |
+
+            ${summary.issues.length > 0 ? '### ⚠️ Issues\n' + summary.issues.map(i => `- ${i}`).join('\n') : ''}
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  performance-summary:
+    name: Performance Summary
+    runs-on: ubuntu-latest
+    needs: [bundle-size, lighthouse]
+    if: always()
+
+    steps:
+      - name: Summary
+        run: |
+          echo "✅ Performance checks completed"
+          echo "Check artifacts for detailed reports"

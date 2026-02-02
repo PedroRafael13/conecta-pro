@@ -1,5 +1,6 @@
 'use client';
 
+;
 import { Clock, User, MapPin, AlertCircle, CheckCircle, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Shift, ShiftStatus } from '@/types/operacional';

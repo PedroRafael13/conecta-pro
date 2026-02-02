@@ -1,20 +1,10 @@
 'use client';
 
+import { Landmark, FileText, Users, Database, FileSpreadsheet, FileCode, Award, RefreshCw, ArrowRight, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Landmark,
-  FileText,
-  Users,
-  Database,
-  FileSpreadsheet,
-  FileCode,
-  Award,
-  RefreshCw,
-  ArrowRight,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { useObterDashboardMonitoramento, useHealthCheck } from '@/hooks/government';
 
 export default function FiscalDashboardPage() {

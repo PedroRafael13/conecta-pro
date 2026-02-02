@@ -1,4 +1,4 @@
-import { LucideIcon } from 'lucide-react';
+;
 
 // Definição de um módulo do sistema
 export interface Module {

@@ -1,18 +1,10 @@
 'use client';
 
+import { LayoutDashboard, ClipboardCheck, PieChart, TrendingUp, RefreshCw, ArrowRight, BarChart3, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  LayoutDashboard,
-  ClipboardCheck,
-  PieChart,
-  TrendingUp,
-  RefreshCw,
-  ArrowRight,
-  BarChart3,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { useDashboardHealth } from '@/hooks/analytics';
 
 const reportModules = [

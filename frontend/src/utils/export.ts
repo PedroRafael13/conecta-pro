@@ -4,8 +4,6 @@
  */
 
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 // Type para jspdf-autotable (já que @types não está disponível)
 declare module 'jspdf' {
@@ -59,15 +57,21 @@ export const exportToExcel = (data: any[], filename: string): void => {
  * @param filename Nome do arquivo (sem extensão)
  * @param title Título do documento (opcional)
  */
-export const exportToPDF = (
+export const exportToPDF = async (
   data: any[],
   filename: string,
   title?: string
-): void => {
+): Promise<void> => {
   try {
     if (!data || data.length === 0) {
       throw new Error('Nenhum dado disponível para exportação');
     }
+
+    // Lazy load jsPDF e autoTable
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable')
+    ]);
 
     // Criar documento PDF
     const doc = new jsPDF({

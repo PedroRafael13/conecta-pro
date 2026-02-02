@@ -1,11 +1,9 @@
 'use client';
 
+import { FileCode, Calendar, Hash, CheckCircle, Clock, AlertCircle, DollarSign } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import {
-  FileCode, Calendar, Hash, CheckCircle,
-  Clock, AlertCircle, DollarSign,
-} from 'lucide-react';
+;
 
 interface ReinfData {
   id?: string;

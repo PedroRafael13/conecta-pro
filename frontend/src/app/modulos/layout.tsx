@@ -1,21 +1,9 @@
 'use client';
 
+import { Shield, ShieldCheck, ChevronLeft, ChevronRight, Menu, X, UserPlus, Target, Building2, Contact, FileText, FileSignature, ClipboardList, Calendar, CalendarDays, MapPin, UserCheck, AlertTriangle, Route, LogIn, Monitor, Bell, TrendingDown, TrendingUp, Activity, Receipt, CheckCircle2, FileSpreadsheet, FileCode, Award, File, Folder, Package, Repeat, Settings, Camera, Fingerprint, Video, Webhook, LayoutDashboard, ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database, Clock, Megaphone, ShoppingCart, Calculator, Trash2, Key, RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard, Wallet, Server, Zap, Plug, Truck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import {
-  Shield, ShieldCheck, ChevronLeft, ChevronRight, Menu, X,
-  UserPlus, Target, Building2, Contact, FileText,
-  FileSignature, ClipboardList, Calendar, CalendarDays,
-  MapPin, UserCheck, AlertTriangle, Route, LogIn,
-  Monitor, Bell, TrendingDown, TrendingUp, Activity,
-  Receipt, CheckCircle2, FileSpreadsheet, FileCode,
-  Award, File, Folder, Package, Repeat, Settings,
-  Camera, Fingerprint, Video, Webhook, LayoutDashboard,
-  ClipboardCheck, PieChart, Users, Lock, Building, Eye, Database,
-  Clock, Megaphone, ShoppingCart, Calculator, Trash2, Key,
-  RefreshCw, ToggleRight, Landmark, DollarSign, CreditCard,
-  Wallet, Server, Zap, Plug, Truck
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { getModuleByPath, modules } from '@/config/modules';

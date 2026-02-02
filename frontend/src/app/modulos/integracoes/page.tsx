@@ -1,16 +1,8 @@
 'use client';
 
+import { Plug, Key, Webhook, FileText, RefreshCw, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Plug,
-  Key,
-  Webhook,
-  FileText,
-  RefreshCw,
-  ArrowRight,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
+;
 import { useRouter } from 'next/navigation';
 import {
   useIntegrationDashboard,

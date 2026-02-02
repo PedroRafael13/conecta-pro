@@ -3,7 +3,6 @@ Controller (endpoints) para Shift.
 """
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +14,8 @@ from modules.operacional.models.shift import ShiftStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.shift_repository import ShiftRepository
 from modules.operacional.schemas.shift import (
+    ShiftBulkOperationResult,
+    ShiftBulkUpdate,
     ShiftCheckIn,
     ShiftCheckOut,
     ShiftCreate,
@@ -58,17 +59,17 @@ async def list_shifts(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(50, ge=1, le=200, description="Itens por página"),
-    scale_id: Optional[str] = None,
-    employee_id: Optional[str] = None,
-    post_id: Optional[str] = None,
-    status_filter: Optional[ShiftStatus] = Query(None, alias="status"),
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    is_holiday: Optional[bool] = None,
-    is_night_shift: Optional[bool] = None,
-    is_off_day: Optional[bool] = None,
-    is_filled: Optional[bool] = None,
-    needs_substitution: Optional[bool] = None,
+    scale_id: str | None = None,
+    employee_id: str | None = None,
+    post_id: str | None = None,
+    status_filter: ShiftStatus | None = Query(None, alias="status"),
+    start_date: date | None = None,
+    end_date: date | None = None,
+    is_holiday: bool | None = None,
+    is_night_shift: bool | None = None,
+    is_off_day: bool | None = None,
+    is_filled: bool | None = None,
+    needs_substitution: bool | None = None,
 ) -> ShiftListResponse:
     """
     Lista turnos com filtros e paginação.
@@ -108,7 +109,7 @@ async def list_shifts(  # pylint: disable=too-many-locals
 async def get_today_shifts(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    post_id: Optional[str] = None,
+    post_id: str | None = None,
 ) -> ShiftListResponse:
     """
     Lista turnos do dia atual.
@@ -272,7 +273,7 @@ async def mark_as_missed(
     shift_id: str,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    reason: Optional[str] = Query(None, description="Motivo da falta"),
+    reason: str | None = Query(None, description="Motivo da falta"),
 ) -> ShiftResponse:
     """
     Marca turno como falta.
@@ -313,3 +314,37 @@ async def delete_shift(
         )
 
     logger.info(f"Shift deletado por {current_user.email}: {shift_id}")
+
+
+@router.patch(
+    "/bulk",
+    response_model=ShiftBulkOperationResult,
+    dependencies=[require_operacional_permission(Permission.SHIFTS_CREATE)],
+)
+async def bulk_update_shifts(
+    data: ShiftBulkUpdate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> ShiftBulkOperationResult:
+    """
+    Atualiza múltiplos turnos em lote.
+
+    Útil para atribuir funcionários a múltiplos turnos de uma vez,
+    alterar status em massa, ou outras operações em lote.
+
+    Retorna contagem de sucessos e erros.
+    """
+    repo = ShiftRepository(db)
+    result = await repo.bulk_update(data.items)
+
+    logger.info(
+        "Bulk update de turnos",
+        action="bulk_update_shifts",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        requested_count=len(data.items),
+        success_count=result["success_count"],
+        error_count=result["error_count"],
+    )
+
+    return ShiftBulkOperationResult(**result)

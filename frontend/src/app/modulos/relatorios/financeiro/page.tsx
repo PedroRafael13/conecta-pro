@@ -1,5 +1,6 @@
 'use client';
 
+import { PieChart, DollarSign, TrendingUp, AlertTriangle, RefreshCw, Activity, ShieldAlert, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,17 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  PieChart,
-  DollarSign,
-  TrendingUp,
-  AlertTriangle,
-  RefreshCw,
-  Activity,
-  ShieldAlert,
-  ArrowLeft,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { useForecastAccuracy, useFraudAnalytics } from '@/hooks/analytics';
 import { formatCurrency, formatDate } from '@/lib/utils';
 

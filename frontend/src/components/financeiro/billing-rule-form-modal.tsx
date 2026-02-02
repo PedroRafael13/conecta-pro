@@ -1,11 +1,12 @@
 'use client';
 
+import { Receipt } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Receipt } from 'lucide-react';
+;
 
 interface BillingRuleFormModalProps {
   isOpen: boolean;

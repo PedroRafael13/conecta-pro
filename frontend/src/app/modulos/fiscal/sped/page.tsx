@@ -1,10 +1,7 @@
 'use client';
 
+import { RefreshCw, AlertCircle, Database, Eye, FileText, Download, CheckSquare, Loader2, Plus } from 'lucide-react';
 import { useState } from 'react';
-import {
-  RefreshCw, AlertCircle, Database, Eye, FileText,
-  Download, CheckSquare, Loader2, Plus,
-} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

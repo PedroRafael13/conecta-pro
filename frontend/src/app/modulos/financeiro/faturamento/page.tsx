@@ -1,5 +1,6 @@
 'use client';
 
+import { Receipt, Search, RefreshCw, Plus, MoreHorizontal, Eye, Edit, Trash2, ArrowLeft, DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -9,20 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import {
-  Receipt,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
-  ArrowLeft,
-  DollarSign,
-  Clock,
-  CheckCircle,
-} from 'lucide-react';
+;
 import { BillingRuleFormModal } from '@/components/financeiro/billing-rule-form-modal';
 import {
   useBillingRules,

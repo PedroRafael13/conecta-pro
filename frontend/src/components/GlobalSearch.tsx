@@ -1,8 +1,9 @@
 'use client';
 
+import { Search, X, Loader2, User, MapPin, Calendar, FileText, Users } from 'lucide-react';
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X, Loader2, User, MapPin, Calendar, FileText, Users } from 'lucide-react';
+;
 import { useGlobalSearch } from '@/hooks/search/useGlobalSearch';
 import type { SearchResult } from '@/types/generated/search/models';
 import { useDebounce } from '@/hooks/useDebounce';

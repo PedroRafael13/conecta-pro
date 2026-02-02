@@ -1,11 +1,12 @@
 'use client';
 
+import { ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShoppingCart } from 'lucide-react';
+;
 
 interface PurchaseFormModalProps {
   isOpen: boolean;

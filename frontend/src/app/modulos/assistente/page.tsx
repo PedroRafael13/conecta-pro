@@ -5,8 +5,9 @@
  * Interface completa de chat com estatísticas e insights
  */
 
-import { useState } from 'react';
 import { MessageSquare, Brain, TrendingUp, Book, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+;
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';

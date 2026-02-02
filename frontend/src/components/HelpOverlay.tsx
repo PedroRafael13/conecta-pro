@@ -1,5 +1,6 @@
 'use client';
 
+;
 import { X } from 'lucide-react';
 import type { KeyboardShortcut } from '@/hooks/useKeyboardShortcuts';
 

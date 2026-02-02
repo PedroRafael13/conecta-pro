@@ -1,5 +1,6 @@
 'use client';
 
+import { X, Plus, Tag, Hash, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -20,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Plus, Tag as TagIcon, Hash, Search } from 'lucide-react';
+;
 import { toast } from 'sonner';
 
 interface DocumentTagManagerProps {

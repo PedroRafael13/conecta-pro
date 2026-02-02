@@ -1,5 +1,6 @@
 'use client';
 
+import { Share2, Link, Mail, User, Calendar, Download, Eye, Lock, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import {
   Dialog,
@@ -20,18 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Share2,
-  Link as LinkIcon,
-  Mail,
-  User,
-  Calendar,
-  Download,
-  Eye,
-  Lock,
-  Copy,
-  Check,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 
 interface DocumentShareDialogProps {

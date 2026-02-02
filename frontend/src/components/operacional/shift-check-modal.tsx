@@ -1,11 +1,12 @@
 'use client';
 
+import { AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Shift } from '@/types/operacional';
-import { AlertCircle } from 'lucide-react';
+;
 
 interface ShiftCheckModalProps {
   isOpen: boolean;

@@ -1,5 +1,6 @@
 'use client';
 
+import { PenTool, User, Mail, Phone, FileText, Calendar, Plus, X, Check, AlertCircle, Send } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import {
   Dialog,
@@ -21,19 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import {
-  PenTool,
-  User,
-  Mail,
-  Phone,
-  FileText,
-  Calendar,
-  Plus,
-  X,
-  Check,
-  AlertCircle,
-  Send,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 
 interface DocumentSignatureDialogProps {

@@ -3,7 +3,7 @@ Schemas Pydantic para Shift (Turno de Trabalho).
 """
 
 from datetime import date, datetime, time
-from typing import List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
@@ -14,14 +14,14 @@ class ShiftBase(BaseModel):
     """Schema base para Shift."""
 
     scale_id: str = Field(..., description="ID da escala")
-    employee_id: Optional[str] = Field(None, description="ID do funcionário")
+    employee_id: str | None = Field(None, description="ID do funcionário")
     post_id: str = Field(..., description="ID do posto")
     shift_date: date = Field(..., description="Data do turno")
     planned_start_time: time = Field(..., description="Hora de início planejada")
     planned_end_time: time = Field(..., description="Hora de fim planejada")
     planned_break_minutes: int = Field(default=60, ge=0, description="Intervalo em minutos")
     is_off_day: bool = Field(default=False, description="É dia de folga")
-    notes: Optional[str] = Field(None, description="Observações")
+    notes: str | None = Field(None, description="Observações")
 
 
 class ShiftCreate(ShiftBase):
@@ -32,7 +32,7 @@ class ShiftCreate(ShiftBase):
     is_overtime: bool = Field(default=False, description="É hora extra")
     planned_hours: float = Field(default=0.0, ge=0, description="Horas planejadas")
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_time_range(self):
         """Valida que horário de início é antes do fim."""
         if self.planned_start_time and self.planned_end_time:
@@ -54,24 +54,24 @@ class ShiftCreate(ShiftBase):
 class ShiftUpdate(BaseModel):
     """Schema para atualização parcial de Shift."""
 
-    employee_id: Optional[str] = None
-    planned_start_time: Optional[time] = None
-    planned_end_time: Optional[time] = None
-    planned_break_minutes: Optional[int] = Field(None, ge=0)
-    actual_start_time: Optional[datetime] = None
-    actual_end_time: Optional[datetime] = None
-    actual_break_minutes: Optional[int] = Field(None, ge=0)
-    status: Optional[ShiftStatus] = None
-    is_off_day: Optional[bool] = None
-    is_overtime: Optional[bool] = None
-    needs_substitution: Optional[bool] = None
-    actual_hours: Optional[float] = Field(None, ge=0)
-    overtime_hours: Optional[float] = Field(None, ge=0)
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
-    is_night_shift: Optional[bool] = None
+    employee_id: str | None = None
+    planned_start_time: time | None = None
+    planned_end_time: time | None = None
+    planned_break_minutes: int | None = Field(None, ge=0)
+    actual_start_time: datetime | None = None
+    actual_end_time: datetime | None = None
+    actual_break_minutes: int | None = Field(None, ge=0)
+    status: ShiftStatus | None = None
+    is_off_day: bool | None = None
+    is_overtime: bool | None = None
+    needs_substitution: bool | None = None
+    actual_hours: float | None = Field(None, ge=0)
+    overtime_hours: float | None = Field(None, ge=0)
+    notes: str | None = None
+    is_active: bool | None = None
+    is_night_shift: bool | None = None
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def validate_time_range(self):
         """Valida horários planejados e reais."""
         # Validar horários planejados
@@ -102,15 +102,15 @@ class ShiftResponse(BaseModel):
 
     id: str
     scale_id: str
-    employee_id: Optional[str]
+    employee_id: str | None
     post_id: str
     shift_date: date
     planned_start_time: time
     planned_end_time: time
     planned_break_minutes: int
-    actual_start_time: Optional[datetime]
-    actual_end_time: Optional[datetime]
-    actual_break_minutes: Optional[int]
+    actual_start_time: datetime | None
+    actual_end_time: datetime | None
+    actual_break_minutes: int | None
     status: str
     is_holiday: bool
     is_night_shift: bool
@@ -126,7 +126,7 @@ class ShiftResponse(BaseModel):
     night_bonus: float
     holiday_bonus: float
     total_pay: float
-    notes: Optional[str]
+    notes: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -160,7 +160,7 @@ class ShiftResponse(BaseModel):
 class ShiftListResponse(BaseModel):
     """Schema para listagem paginada de Shifts."""
 
-    items: List[ShiftResponse]
+    items: list[ShiftResponse]
     total: int
     page: int
     page_size: int
@@ -170,17 +170,17 @@ class ShiftListResponse(BaseModel):
 class ShiftFilter(BaseModel):
     """Schema para filtros de busca de Shifts."""
 
-    scale_id: Optional[str] = None
-    employee_id: Optional[str] = None
-    post_id: Optional[str] = None
-    status: Optional[ShiftStatus] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    is_holiday: Optional[bool] = None
-    is_night_shift: Optional[bool] = None
-    is_off_day: Optional[bool] = None
-    is_filled: Optional[bool] = None
-    needs_substitution: Optional[bool] = None
+    scale_id: str | None = None
+    employee_id: str | None = None
+    post_id: str | None = None
+    status: ShiftStatus | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    is_holiday: bool | None = None
+    is_night_shift: bool | None = None
+    is_off_day: bool | None = None
+    is_filled: bool | None = None
+    needs_substitution: bool | None = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "ShiftFilter":
@@ -194,14 +194,14 @@ class ShiftFilter(BaseModel):
 class ShiftBulkCreate(BaseModel):
     """Schema para criação em lote de Shifts."""
 
-    shifts: List[ShiftCreate] = Field(..., min_length=1, description="Lista de turnos")
+    shifts: list[ShiftCreate] = Field(..., min_length=1, description="Lista de turnos")
 
 
 class ShiftCheckIn(BaseModel):
     """Schema para registro de entrada."""
 
     actual_start_time: datetime = Field(..., description="Hora real de entrada")
-    notes: Optional[str] = Field(None, description="Observações")
+    notes: str | None = Field(None, description="Observações")
 
 
 class ShiftCheckOut(BaseModel):
@@ -209,4 +209,33 @@ class ShiftCheckOut(BaseModel):
 
     actual_end_time: datetime = Field(..., description="Hora real de saída")
     actual_break_minutes: int = Field(default=0, ge=0, description="Intervalo em minutos")
-    notes: Optional[str] = Field(None, description="Observações")
+    notes: str | None = Field(None, description="Observações")
+
+
+class ShiftBulkUpdateItem(BaseModel):
+    """Item individual para atualização em lote de shifts."""
+
+    shift_id: str = Field(..., description="ID do turno")
+    data: ShiftUpdate = Field(..., description="Dados para atualização")
+
+
+class ShiftBulkUpdate(BaseModel):
+    """Schema para atualização em lote de shifts."""
+
+    items: list[ShiftBulkUpdateItem] = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Lista de turnos para atualizar (máximo 100)",
+    )
+
+
+class ShiftBulkOperationResult(BaseModel):
+    """Resultado de operação em lote de shifts."""
+
+    success_count: int = Field(..., description="Quantidade de sucessos")
+    error_count: int = Field(..., description="Quantidade de erros")
+    errors: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Lista de erros (ID + mensagem)",
+    )

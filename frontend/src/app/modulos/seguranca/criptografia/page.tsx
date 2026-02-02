@@ -1,5 +1,6 @@
 'use client';
 
+import { Lock, Unlock, Copy, RefreshCw, Shield, Loader2, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Lock, Unlock, Copy, RefreshCw, Shield, Loader2, CheckCircle2 } from 'lucide-react';
+;
 import { useEncryptData, useDecryptData, useAlgorithms } from '@/hooks/security-lgpd';
 
 const defaultAlgorithms = [

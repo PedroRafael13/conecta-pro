@@ -1,5 +1,6 @@
 'use client';
 
+import { Key, Search, RefreshCw, Plus, MoreHorizontal, XCircle, Trash2, AlertCircle, Copy, CheckCircle, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,19 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import {
-  Key,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  XCircle,
-  Trash2,
-  AlertCircle,
-  Copy,
-  CheckCircle,
-  Clock,
-} from 'lucide-react';
+;
 import { useAPIKeys, useCreateAPIKey, useRevokeAPIKey } from '@/hooks/integrations';
 import { APIKeyFormModal } from '@/components/integracoes/api-key-form-modal';
 

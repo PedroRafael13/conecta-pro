@@ -1,10 +1,11 @@
 'use client';
 
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, Loader2 } from 'lucide-react';
+;
 
 interface BankAccountFormModalProps {
   isOpen: boolean;

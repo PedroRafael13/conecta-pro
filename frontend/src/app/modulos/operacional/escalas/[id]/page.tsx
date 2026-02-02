@@ -1,20 +1,10 @@
 'use client';
 
+import { ArrowLeft, Calendar, Clock, MapPin, Shield, Users, AlertCircle, CheckCircle, RefreshCw, User } from 'lucide-react';
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  MapPin,
-  Shield,
-  Users,
-  AlertCircle,
-  CheckCircle,
-  RefreshCw,
-  User,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useScale, useScaleOperations } from '@/hooks/useScales';

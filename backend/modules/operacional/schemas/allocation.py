@@ -3,7 +3,7 @@ Schemas Pydantic para Allocation (Alocação Funcionário-Posto).
 """
 
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -16,11 +16,11 @@ class AllocationBase(BaseModel):
     post_id: str = Field(..., description="ID do posto")
     employee_id: str = Field(..., description="ID do funcionário")
     start_date: date = Field(..., description="Data de início")
-    end_date: Optional[date] = Field(None, description="Data de fim (null = indeterminado)")
+    end_date: date | None = Field(None, description="Data de fim (null = indeterminado)")
     is_primary: bool = Field(default=True, description="É alocação principal")
     is_temporary: bool = Field(default=False, description="É temporária")
-    role: Optional[str] = Field(None, max_length=100, description="Função")
-    notes: Optional[str] = Field(None, description="Observações")
+    role: str | None = Field(None, max_length=100, description="Função")
+    notes: str | None = Field(None, description="Observações")
 
     @model_validator(mode="after")
     def validate_dates(self) -> "AllocationBase":
@@ -36,24 +36,24 @@ class AllocationCreate(AllocationBase):
     hourly_rate: float = Field(default=0.0, ge=0, description="Valor hora")
     monthly_salary: float = Field(default=0.0, ge=0, description="Salário mensal")
     additional_benefits: float = Field(default=0.0, ge=0, description="Benefícios")
-    qualifications: Optional[Dict[str, Any]] = Field(None, description="Qualificações")
+    qualifications: dict[str, Any] | None = Field(None, description="Qualificações")
 
 
 class AllocationUpdate(BaseModel):
     """Schema para atualização parcial de Allocation."""
 
-    status: Optional[AllocationStatus] = None
-    end_date: Optional[date] = None
-    is_primary: Optional[bool] = None
-    is_temporary: Optional[bool] = None
-    hourly_rate: Optional[float] = Field(None, ge=0)
-    monthly_salary: Optional[float] = Field(None, ge=0)
-    additional_benefits: Optional[float] = Field(None, ge=0)
-    role: Optional[str] = Field(None, max_length=100)
-    qualifications: Optional[Dict[str, Any]] = None
-    notes: Optional[str] = None
-    termination_reason: Optional[str] = Field(None, max_length=255)
-    is_active: Optional[bool] = None
+    status: AllocationStatus | None = None
+    end_date: date | None = None
+    is_primary: bool | None = None
+    is_temporary: bool | None = None
+    hourly_rate: float | None = Field(None, ge=0)
+    monthly_salary: float | None = Field(None, ge=0)
+    additional_benefits: float | None = Field(None, ge=0)
+    role: str | None = Field(None, max_length=100)
+    qualifications: dict[str, Any] | None = None
+    notes: str | None = None
+    termination_reason: str | None = Field(None, max_length=255)
+    is_active: bool | None = None
 
 
 class AllocationResponse(BaseModel):
@@ -66,16 +66,16 @@ class AllocationResponse(BaseModel):
     employee_id: str
     status: str
     start_date: date
-    end_date: Optional[date]
+    end_date: date | None
     is_primary: bool
     is_temporary: bool
     hourly_rate: float
     monthly_salary: float
     additional_benefits: float
-    role: Optional[str]
-    qualifications: Optional[Dict[str, Any]]
-    notes: Optional[str]
-    termination_reason: Optional[str]
+    role: str | None
+    qualifications: dict[str, Any] | None
+    notes: str | None
+    termination_reason: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -86,19 +86,19 @@ class AllocationResponse(BaseModel):
     total_monthly_cost: float
 
     # Dados denormalizados do funcionário
-    employee_name: Optional[str] = None
-    employee_matricula: Optional[str] = None
-    employee_cargo: Optional[str] = None
+    employee_name: str | None = None
+    employee_matricula: str | None = None
+    employee_cargo: str | None = None
 
     # Dados denormalizados do posto
-    post_name: Optional[str] = None
-    post_code: Optional[str] = None
+    post_name: str | None = None
+    post_code: str | None = None
 
 
 class AllocationListResponse(BaseModel):
     """Schema para listagem paginada de Allocations."""
 
-    items: List[AllocationResponse]
+    items: list[AllocationResponse]
     total: int
     page: int
     page_size: int
@@ -108,14 +108,14 @@ class AllocationListResponse(BaseModel):
 class AllocationFilter(BaseModel):
     """Schema para filtros de busca de Allocations."""
 
-    post_id: Optional[str] = None
-    employee_id: Optional[str] = None
-    status: Optional[AllocationStatus] = None
-    is_primary: Optional[bool] = None
-    is_temporary: Optional[bool] = None
-    is_current: Optional[bool] = None
-    start_date_from: Optional[date] = None
-    start_date_to: Optional[date] = None
+    post_id: str | None = None
+    employee_id: str | None = None
+    status: AllocationStatus | None = None
+    is_primary: bool | None = None
+    is_temporary: bool | None = None
+    is_current: bool | None = None
+    start_date_from: date | None = None
+    start_date_to: date | None = None
 
 
 class AllocationTerminate(BaseModel):
@@ -123,4 +123,44 @@ class AllocationTerminate(BaseModel):
 
     end_date: date = Field(..., description="Data de encerramento")
     termination_reason: str = Field(..., max_length=255, description="Motivo")
-    notes: Optional[str] = Field(None, description="Observações")
+    notes: str | None = Field(None, description="Observações")
+
+
+class AllocationBulkDelete(BaseModel):
+    """Schema para deleção em lote de alocações."""
+
+    allocation_ids: list[str] = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Lista de IDs para deletar (máximo 100)",
+    )
+
+
+class AllocationBulkUpdateItem(BaseModel):
+    """Item individual para atualização em lote."""
+
+    allocation_id: str = Field(..., description="ID da alocação")
+    data: AllocationUpdate = Field(..., description="Dados para atualização")
+
+
+class AllocationBulkUpdate(BaseModel):
+    """Schema para atualização em lote de alocações."""
+
+    items: list[AllocationBulkUpdateItem] = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        description="Lista de alocações para atualizar (máximo 100)",
+    )
+
+
+class AllocationBulkOperationResult(BaseModel):
+    """Resultado de operação em lote."""
+
+    success_count: int = Field(..., description="Quantidade de sucessos")
+    error_count: int = Field(..., description="Quantidade de erros")
+    errors: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="Lista de erros (ID + mensagem)",
+    )

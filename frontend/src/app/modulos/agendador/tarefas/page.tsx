@@ -1,5 +1,6 @@
 'use client';
 
+import { ListTodo, Plus, Play, Pause, Pencil, Trash2, Zap, Loader2, ArrowLeft, CheckCircle, XCircle, Clock, Activity } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,21 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  ListTodo,
-  Plus,
-  Play,
-  Pause,
-  Pencil,
-  Trash2,
-  Zap,
-  Loader2,
-  ArrowLeft,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Activity,
-} from 'lucide-react';
+;
 import { useRouter } from 'next/navigation';
 import {
   useTasks,

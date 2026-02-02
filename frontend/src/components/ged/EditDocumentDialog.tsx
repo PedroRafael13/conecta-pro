@@ -1,5 +1,6 @@
 'use client';
 
+import { FileText, Calendar, Lock, CheckCircle, FileSignature, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -21,14 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  FileText,
-  Calendar,
-  Lock,
-  CheckCircle,
-  FileSignature,
-  Settings,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 
 const CONFIDENTIALITY_LEVELS: {

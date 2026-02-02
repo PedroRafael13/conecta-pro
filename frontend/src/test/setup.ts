@@ -1,4 +1,10 @@
 import '@testing-library/jest-dom';
+import { server } from './mocks/server';
+
+// Configurar MSW Server
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
 // Mock do Next.js router
 vi.mock('next/navigation', () => ({

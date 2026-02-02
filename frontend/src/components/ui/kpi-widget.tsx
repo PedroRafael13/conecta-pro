@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
 import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
+import React from 'react';
+;
 import { Sparkline } from './sparkline';
 
 interface KPIWidgetProps {

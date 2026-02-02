@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Info } from 'lucide-react';
+import { useMemo, useState } from 'react';
+;
 import { Button } from '@/components/ui/button';
 import type { Shift } from '@/types/operacional';
 

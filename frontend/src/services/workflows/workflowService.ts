@@ -10,7 +10,15 @@
  * - Métricas e analytics
  */
 
-import { getAutomationWorkflows } from '@/types/generated/workflows/automation-workflows/automation-workflows';
+import {
+  listWorkflowsApiV1WorkflowsGet,
+  createWorkflowApiV1WorkflowsPost,
+  getWorkflowApiV1WorkflowsWorkflowIdGet,
+  updateWorkflowApiV1WorkflowsWorkflowIdPatch,
+  deleteWorkflowApiV1WorkflowsWorkflowIdDelete,
+  activateWorkflowApiV1WorkflowsWorkflowIdActivatePost,
+  deactivateWorkflowApiV1WorkflowsWorkflowIdDeactivatePost,
+} from '@/types/generated/workflows/automation-workflows/automation-workflows';
 import type {
   WorkflowCreate,
   WorkflowUpdate,
@@ -19,9 +27,6 @@ import type {
   WorkflowStatus,
   ListWorkflowsApiV1WorkflowsGetParams,
 } from '@/types/generated/workflows/conectaPROWorkflowsAPI.schemas';
-import { AxiosResponse } from 'axios';
-
-const workflowApi = getAutomationWorkflows();
 
 /**
  * Service para gestão de workflows
@@ -32,8 +37,8 @@ export class WorkflowService {
    */
   static async listWorkflows(
     params: ListWorkflowsApiV1WorkflowsGetParams
-  ): Promise<AxiosResponse<WorkflowResponse[]>> {
-    return workflowApi.listWorkflowsApiV1WorkflowsGet(params);
+  ): Promise<Awaited<ReturnType<typeof listWorkflowsApiV1WorkflowsGet>>> {
+    return listWorkflowsApiV1WorkflowsGet(params);
   }
 
   /**
@@ -41,8 +46,8 @@ export class WorkflowService {
    */
   static async createWorkflow(
     data: WorkflowCreate
-  ): Promise<AxiosResponse<WorkflowResponse>> {
-    return workflowApi.createWorkflowApiV1WorkflowsPost(data);
+  ): Promise<Awaited<ReturnType<typeof createWorkflowApiV1WorkflowsPost>>> {
+    return createWorkflowApiV1WorkflowsPost(data);
   }
 
   /**
@@ -50,8 +55,8 @@ export class WorkflowService {
    */
   static async getWorkflow(
     workflowId: string
-  ): Promise<AxiosResponse<WorkflowResponse>> {
-    return workflowApi.getWorkflowApiV1WorkflowsWorkflowIdGet(workflowId);
+  ): Promise<Awaited<ReturnType<typeof getWorkflowApiV1WorkflowsWorkflowIdGet>>> {
+    return getWorkflowApiV1WorkflowsWorkflowIdGet(workflowId);
   }
 
   /**
@@ -60,18 +65,15 @@ export class WorkflowService {
   static async updateWorkflow(
     workflowId: string,
     data: WorkflowUpdate
-  ): Promise<AxiosResponse<WorkflowResponse>> {
-    return workflowApi.updateWorkflowApiV1WorkflowsWorkflowIdPatch(
-      workflowId,
-      data
-    );
+  ): Promise<Awaited<ReturnType<typeof updateWorkflowApiV1WorkflowsWorkflowIdPatch>>> {
+    return updateWorkflowApiV1WorkflowsWorkflowIdPatch(workflowId, data);
   }
 
   /**
    * Remove workflow
    */
-  static async deleteWorkflow(workflowId: string): Promise<AxiosResponse<void>> {
-    return workflowApi.deleteWorkflowApiV1WorkflowsWorkflowIdDelete(workflowId);
+  static async deleteWorkflow(workflowId: string): Promise<Awaited<ReturnType<typeof deleteWorkflowApiV1WorkflowsWorkflowIdDelete>>> {
+    return deleteWorkflowApiV1WorkflowsWorkflowIdDelete(workflowId);
   }
 
   /**
@@ -79,10 +81,8 @@ export class WorkflowService {
    */
   static async activateWorkflow(
     workflowId: string
-  ): Promise<AxiosResponse<WorkflowResponse>> {
-    return workflowApi.activateWorkflowApiV1WorkflowsWorkflowIdActivatePost(
-      workflowId
-    );
+  ): Promise<Awaited<ReturnType<typeof activateWorkflowApiV1WorkflowsWorkflowIdActivatePost>>> {
+    return activateWorkflowApiV1WorkflowsWorkflowIdActivatePost(workflowId);
   }
 
   /**
@@ -90,10 +90,8 @@ export class WorkflowService {
    */
   static async deactivateWorkflow(
     workflowId: string
-  ): Promise<AxiosResponse<WorkflowResponse>> {
-    return workflowApi.deactivateWorkflowApiV1WorkflowsWorkflowIdDeactivatePost(
-      workflowId
-    );
+  ): Promise<Awaited<ReturnType<typeof deactivateWorkflowApiV1WorkflowsWorkflowIdDeactivatePost>>> {
+    return deactivateWorkflowApiV1WorkflowsWorkflowIdDeactivatePost(workflowId);
   }
 
   // ==================== HELPERS ====================

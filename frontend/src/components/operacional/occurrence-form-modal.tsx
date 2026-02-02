@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Loader2, Save, User, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import {
   type OccurrenceCategory,
   type OccurrenceCreate,
 } from '@/types/operacional';
-import { AlertCircle, Loader2, Save, User, MapPin } from 'lucide-react';
+;
 import { usePosts } from '@/hooks/usePosts';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAutoSave } from '@/hooks/useAutoSave';

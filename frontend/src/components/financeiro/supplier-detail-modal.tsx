@@ -1,9 +1,10 @@
 'use client';
 
+import { Users, Mail, Phone, MapPin, Tag, FileText, Star } from 'lucide-react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Users, Mail, Phone, MapPin, Tag, FileText, Star } from 'lucide-react';
+;
 
 interface SupplierDetailModalProps {
   isOpen: boolean;

@@ -1,11 +1,12 @@
 'use client';
 
+import { Package } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package } from 'lucide-react';
+;
 
 interface InventoryFormModalProps {
   isOpen: boolean;

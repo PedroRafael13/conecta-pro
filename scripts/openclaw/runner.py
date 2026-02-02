@@ -497,6 +497,250 @@ class OpenClawRunner:
                 details=details
             )
 
+    def check_e2e_tests(self) -> CheckResult:
+        """Roda testes E2E com Playwright no frontend."""
+        name = "E2E Tests (Playwright)"
+
+        if not self._is_check_enabled("e2e_tests"):
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Check desabilitado na configuracao"
+            )
+
+        if not self.frontend_dir.exists():
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Diretorio frontend nao encontrado"
+            )
+
+        # Verificar se Playwright esta instalado
+        package_json = self.frontend_dir / "package.json"
+        has_playwright = False
+        if package_json.exists():
+            try:
+                with open(package_json, "r") as f:
+                    pkg = json.load(f)
+                deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
+                has_playwright = "@playwright/test" in deps
+            except (json.JSONDecodeError, IOError):
+                pass
+
+        if not has_playwright:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Playwright nao encontrado em package.json"
+            )
+
+        # Comando para rodar testes E2E
+        cmd = "npx playwright test --reporter=json 2>&1"
+        timeout = self._get_check_timeout("e2e_tests", 300)  # 5 minutos timeout
+        code, stdout, stderr, duration = self._run_command(cmd, cwd=self.frontend_dir, timeout=timeout)
+
+        output = stdout + stderr
+        details = {"returncode": code, "output_tail": output[-2000:] if len(output) > 2000 else output}
+
+        if code == -1:
+            return CheckResult(
+                name=name, status=CheckStatus.ERROR, duration_seconds=duration,
+                message=f"Timeout apos {timeout}s", details=details
+            )
+        if code == -2:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=duration,
+                message="Node/npx nao encontrado", details=details
+            )
+
+        # Parsear resultado do Playwright
+        tests_passed = 0
+        tests_failed = 0
+        tests_skipped = 0
+        try:
+            # Playwright JSON reporter output
+            json_start = output.find("{")
+            if json_start >= 0:
+                json_str = output[json_start:]
+                # Encontrar fim do JSON
+                brace_count = 0
+                json_end = 0
+                for i, c in enumerate(json_str):
+                    if c == "{":
+                        brace_count += 1
+                    elif c == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            json_end = i + 1
+                            break
+                if json_end > 0:
+                    parsed = json.loads(json_str[:json_end])
+                    # Playwright reporter format
+                    for suite in parsed.get("suites", []):
+                        for spec in suite.get("specs", []):
+                            for test in spec.get("tests", []):
+                                for result in test.get("results", []):
+                                    status = result.get("status", "")
+                                    if status == "passed":
+                                        tests_passed += 1
+                                    elif status == "failed":
+                                        tests_failed += 1
+                                    elif status == "skipped":
+                                        tests_skipped += 1
+        except (json.JSONDecodeError, KeyError, TypeError):
+            # Fallback: tentar contar por texto
+            if "passed" in output.lower():
+                import re
+                match = re.search(r"(\d+)\s+passed", output, re.IGNORECASE)
+                if match:
+                    tests_passed = int(match.group(1))
+                match = re.search(r"(\d+)\s+failed", output, re.IGNORECASE)
+                if match:
+                    tests_failed = int(match.group(1))
+
+        details["passed"] = tests_passed
+        details["failed"] = tests_failed
+        details["skipped"] = tests_skipped
+        total_tests = tests_passed + tests_failed + tests_skipped
+
+        if code == 0 and tests_passed > 0:
+            return CheckResult(
+                name=name, status=CheckStatus.PASS, duration_seconds=duration,
+                message=f"{tests_passed} testes E2E passaram", details=details
+            )
+        elif tests_failed > 0:
+            return CheckResult(
+                name=name, status=CheckStatus.FAIL, duration_seconds=duration,
+                message=f"{tests_failed} falhas de {total_tests} testes E2E",
+                details=details
+            )
+        elif total_tests == 0:
+            return CheckResult(
+                name=name, status=CheckStatus.WARN, duration_seconds=duration,
+                message="Nenhum teste E2E encontrado", details=details
+            )
+        else:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=duration,
+                message="Testes E2E nao executados", details=details
+            )
+
+    def check_e2e_module(self, module_name: str) -> CheckResult:
+        """Roda testes E2E de um módulo específico.
+
+        Args:
+            module_name: Nome do módulo (escalas, postos, turnos)
+        """
+        name = f"E2E Tests - {module_name.capitalize()}"
+
+        if not self._is_check_enabled("e2e_tests"):
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Check desabilitado na configuracao"
+            )
+
+        if not self.frontend_dir.exists():
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Diretorio frontend nao encontrado"
+            )
+
+        # Verificar se existem arquivos de teste para o módulo
+        test_pattern = self.frontend_dir / f"e2e/{module_name}-*.spec.ts"
+        import glob
+        test_files = glob.glob(str(test_pattern))
+
+        if not test_files:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message=f"Nenhum arquivo de teste encontrado: {module_name}-*.spec.ts"
+            )
+
+        # Comando para rodar testes do módulo específico usando npm script
+        cmd = f"cd {self.frontend_dir} && npm run test:e2e:{module_name} 2>&1"
+        timeout = self._get_check_timeout("e2e_tests", 180)  # 3 minutos timeout por módulo
+        code, stdout, stderr, duration = self._run_command(cmd, timeout=timeout)
+
+        output = stdout + stderr
+        details = {"returncode": code, "module": module_name, "output_tail": output[-2000:] if len(output) > 2000 else output}
+
+        if code == -1:
+            return CheckResult(
+                name=name, status=CheckStatus.ERROR, duration_seconds=duration,
+                message=f"Timeout apos {timeout}s", details=details
+            )
+        if code == -2:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=duration,
+                message="Node/npx nao encontrado", details=details
+            )
+
+        # Parsear resultado do Playwright
+        tests_passed = 0
+        tests_failed = 0
+        tests_skipped = 0
+        try:
+            json_start = output.find("{")
+            if json_start >= 0:
+                json_str = output[json_start:]
+                brace_count = 0
+                json_end = 0
+                for i, c in enumerate(json_str):
+                    if c == "{":
+                        brace_count += 1
+                    elif c == "}":
+                        brace_count -= 1
+                        if brace_count == 0:
+                            json_end = i + 1
+                            break
+                if json_end > 0:
+                    parsed = json.loads(json_str[:json_end])
+                    for suite in parsed.get("suites", []):
+                        for spec in suite.get("specs", []):
+                            for test in spec.get("tests", []):
+                                for result in test.get("results", []):
+                                    status = result.get("status", "")
+                                    if status == "passed":
+                                        tests_passed += 1
+                                    elif status == "failed":
+                                        tests_failed += 1
+                                    elif status == "skipped":
+                                        tests_skipped += 1
+        except (json.JSONDecodeError, KeyError, TypeError):
+            # Fallback: contar por texto
+            if "passed" in output.lower():
+                import re
+                match = re.search(r"(\d+)\s+passed", output, re.IGNORECASE)
+                if match:
+                    tests_passed = int(match.group(1))
+                match = re.search(r"(\d+)\s+failed", output, re.IGNORECASE)
+                if match:
+                    tests_failed = int(match.group(1))
+
+        details["passed"] = tests_passed
+        details["failed"] = tests_failed
+        details["skipped"] = tests_skipped
+        total_tests = tests_passed + tests_failed + tests_skipped
+
+        if code == 0 and tests_passed > 0:
+            return CheckResult(
+                name=name, status=CheckStatus.PASS, duration_seconds=duration,
+                message=f"{tests_passed} testes passaram no módulo {module_name}", details=details
+            )
+        elif tests_failed > 0:
+            return CheckResult(
+                name=name, status=CheckStatus.FAIL, duration_seconds=duration,
+                message=f"{tests_failed} falhas de {total_tests} testes no módulo {module_name}",
+                details=details
+            )
+        elif total_tests == 0:
+            return CheckResult(
+                name=name, status=CheckStatus.WARN, duration_seconds=duration,
+                message=f"Nenhum teste encontrado no módulo {module_name}", details=details
+            )
+        else:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=duration,
+                message=f"Testes do módulo {module_name} nao executados", details=details
+            )
+
     # ========================================================================
     # CHECKS - Linting
     # ========================================================================
@@ -1414,6 +1658,7 @@ class OpenClawRunner:
 
         checks_map: Dict[str, List[Callable[[], CheckResult]]] = {
             "tests": [self.check_backend_tests, self.check_frontend_tests],
+            "e2e": [self.check_e2e_tests],
             "lint": [self.check_backend_lint, self.check_frontend_lint],
             "security": [self.check_security_bandit, self.check_secret_scanning],
             "audit": [self.check_dependency_audit_frontend, self.check_dependency_audit_backend],
@@ -1526,6 +1771,9 @@ class OpenClawRunner:
             "tests": [
                 {"name": "Backend Tests", "func": self.check_backend_tests, "timeout": 120},
                 {"name": "Frontend Tests", "func": self.check_frontend_tests, "timeout": 120},
+            ],
+            "e2e": [
+                {"name": "E2E Tests", "func": self.check_e2e_tests, "timeout": 300},
             ],
             "lint": [
                 {"name": "Backend Lint", "func": self.check_backend_lint, "timeout": 60},
@@ -2313,8 +2561,14 @@ Exemplos:
     )
     parser.add_argument(
         "--only",
-        choices=["tests", "lint", "security", "audit", "coverage", "health", "performance"],
+        choices=["tests", "e2e", "lint", "security", "audit", "coverage", "health", "performance"],
         help="Executar apenas um grupo especifico de checks",
+    )
+    parser.add_argument(
+        "--e2e-module",
+        type=str,
+        default=None,
+        help="Executar testes E2E de um módulo específico (ex: operacional, financial, crm)",
     )
     parser.add_argument(
         "--daemon",
@@ -2412,8 +2666,29 @@ Exemplos:
     else:
         print(BANNER)
 
+        # Se --only=e2e e --e2e-module especificado, rodar apenas esse módulo
+        if args.only == "e2e" and args.e2e_module:
+            print(f"\n🎯 Executando testes E2E do módulo: {args.e2e_module}\n")
+            result = runner.check_e2e_module(args.e2e_module)
+
+            # Criar relatório com apenas esse check
+            now = datetime.now()
+            report = CycleReport(
+                cycle_id=f"e2e_{args.e2e_module}_{now.strftime('%Y%m%d_%H%M%S')}",
+                started_at=now.isoformat(),
+                finished_at=now.isoformat(),
+                duration_seconds=result.duration_seconds,
+                overall_status=result.status,
+                summary={
+                    "total_checks": 1,
+                    "status_counts": {result.status.value: 1},
+                    "overall_status": result.status.value,
+                },
+            )
+            report.add_check(result)
+            runner._save_report(report)
         # Escolher execução paralela ou sequencial
-        if args.parallel:
+        elif args.parallel:
             report = runner.run_cycle_parallel(only=args.only)
         else:
             report = runner.run_cycle(only=args.only)

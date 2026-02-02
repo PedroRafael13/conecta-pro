@@ -1,19 +1,7 @@
 'use client';
 
-import {
-  MapPin,
-  Clock,
-  Users,
-  Phone,
-  Mail,
-  Shield,
-  Car,
-  Calendar,
-  DollarSign,
-  FileText,
-  AlertCircle,
-  CheckCircle,
-} from 'lucide-react';
+;
+import { MapPin, Clock, Users, Phone, Mail, Shield, Car, Calendar, DollarSign, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import type { Post, PostType, PostStatus, ShiftType } from '@/types/operacional';

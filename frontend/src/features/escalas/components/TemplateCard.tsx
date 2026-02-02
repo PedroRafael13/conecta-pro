@@ -1,16 +1,8 @@
 'use client';
 
+import { Calendar, Users, TrendingUp, MoreVertical, Edit, Trash2, Play, Clock } from 'lucide-react';
 import { useState } from 'react';
-import {
-  Calendar,
-  Users,
-  TrendingUp,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Play,
-  Clock,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import type { ScaleTemplate } from '@/types/operacional';
 import { SCALE_TYPE_LABELS } from '@/types/operacional';

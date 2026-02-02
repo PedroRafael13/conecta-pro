@@ -108,6 +108,8 @@ class ActionExecutor:
         ActionType.OPENCLAW_RUN_COVERAGE: OpenClawActionExecutor,
         ActionType.OPENCLAW_RUN_HEALTH: OpenClawActionExecutor,
         ActionType.OPENCLAW_RUN_FULL_CYCLE: OpenClawActionExecutor,
+        ActionType.OPENCLAW_RUN_E2E: OpenClawActionExecutor,
+        ActionType.OPENCLAW_RUN_E2E_MODULE: OpenClawActionExecutor,
         ActionType.OPENCLAW_DEPLOY_STAGING: OpenClawActionExecutor,
         ActionType.OPENCLAW_DEPLOY_PRODUCTION: OpenClawActionExecutor,
         ActionType.OPENCLAW_DAEMON_START: OpenClawActionExecutor,

@@ -1,12 +1,10 @@
 'use client';
 
+import { Users, UserPlus, Target, Building2, FileText, RefreshCw, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Users, UserPlus, Target, Building2, FileText,
-  RefreshCw, ArrowRight,
-} from 'lucide-react';
+;
 import { useCRMDashboardKpis } from '@/hooks/crm';
 import { formatCurrency } from '@/lib/utils';
 

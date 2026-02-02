@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Loader2, Save, Send, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import {
   type DisciplinaryActionType,
   type ReasonCategory,
 } from '@/types/disciplinary';
-import { AlertCircle, Loader2, Save, Send, User } from 'lucide-react';
+;
 
 interface DisciplinaryFormModalProps {
   isOpen: boolean;

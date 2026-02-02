@@ -1,17 +1,10 @@
 'use client';
 
+import { User, Mail, Target, Scale, Calendar, Clock, Shield } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  User,
-  Mail,
-  Target,
-  Scale,
-  Calendar,
-  Clock,
-  Shield,
-} from 'lucide-react';
+;
 
 interface ConsentDetailModalProps {
   isOpen: boolean;

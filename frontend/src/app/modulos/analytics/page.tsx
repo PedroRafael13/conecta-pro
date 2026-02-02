@@ -1,19 +1,10 @@
 'use client';
 
+import { BarChart3, PieChart as PieChartIcon, TrendingUp, Users, MapPin, Calendar, Activity, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  BarChart3,
-  PieChart as PieChartIcon,
-  TrendingUp,
-  Users,
-  MapPin,
-  Calendar,
-  Activity,
-  ArrowLeft,
-  RefreshCw,
-} from 'lucide-react';
+;
 import {
   BarChart,
   Bar,

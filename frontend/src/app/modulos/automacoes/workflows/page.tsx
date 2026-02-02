@@ -1,5 +1,6 @@
 'use client';
 
+import { GitBranch, Plus, RefreshCw, MoreHorizontal, Edit, Trash2, PlayCircle, PauseCircle, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,17 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  GitBranch,
-  Plus,
-  RefreshCw,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  PlayCircle,
-  PauseCircle,
-  AlertCircle,
-} from 'lucide-react';
+;
 import {
   useWorkflowList,
   useCreateWorkflow,

@@ -1,9 +1,10 @@
 'use client';
 
+import { Landmark, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Landmark, FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+;
 
 interface NFeDetailModalProps {
   isOpen: boolean;

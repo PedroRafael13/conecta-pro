@@ -1,17 +1,8 @@
 'use client';
 
+import { Calendar, Plus, Edit2, Trash2, User, Clock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
-import {
-  Calendar,
-  Plus,
-  Edit2,
-  Trash2,
-  User,
-  Clock,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';

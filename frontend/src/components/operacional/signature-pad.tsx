@@ -1,8 +1,9 @@
 'use client';
 
+import { Eraser, Download, Check, RotateCcw } from 'lucide-react';
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Eraser, Download, Check, RotateCcw } from 'lucide-react';
+;
 
 interface SignaturePadProps {
   onSign: (signatureData: string, location?: { latitude: number; longitude: number }) => void;

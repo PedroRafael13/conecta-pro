@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Card,
@@ -19,32 +20,20 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Loader2,
-  Play,
-  Code,
-  Shield,
-  Activity,
-  Zap,
-  RefreshCw,
-  ChevronLeft,
-} from 'lucide-react';
+import { CheckCircle, XCircle, AlertTriangle, Loader2, Play, Code, Shield, Activity, Zap, RefreshCw, ChevronLeft } from 'lucide-react';
 import { BartoloChatWidget } from '@/components/ai/BartoloChatWidget';
 import { toast } from 'sonner';
 import Link from 'next/link';
+
+// Lazy load Recharts components
+const LineChart = dynamic(() => import('recharts').then(mod => ({ default: mod.LineChart })), { ssr: false });
+const Line = dynamic(() => import('recharts').then(mod => ({ default: mod.Line })), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(mod => ({ default: mod.XAxis })), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(mod => ({ default: mod.YAxis })), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(mod => ({ default: mod.CartesianGrid })), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(mod => ({ default: mod.Tooltip })), { ssr: false });
+const Legend = dynamic(() => import('recharts').then(mod => ({ default: mod.Legend })), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then(mod => ({ default: mod.ResponsiveContainer })), { ssr: false });
 
 // Types
 interface OpenClawReport {

@@ -1,10 +1,11 @@
 'use client';
 
+import { Bell, Calendar, Users, FileText, Tag } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Bell, Calendar, Users, FileText, Tag } from 'lucide-react';
+;
 
 interface ComunicadoDetailModalProps {
   isOpen: boolean;

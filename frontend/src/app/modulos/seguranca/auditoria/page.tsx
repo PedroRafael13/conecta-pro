@@ -1,5 +1,6 @@
 'use client';
 
+import { Eye, Search, RefreshCw, MoreHorizontal, AlertCircle, Shield, FileText, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,18 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Eye,
-  Search,
-  RefreshCw,
-  MoreHorizontal,
-  AlertCircle,
-  Shield,
-  FileText,
-  User,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+;
 import { useLGPDAuditLogs, useAuditActions, useResourceTypes } from '@/hooks/security-lgpd';
 import { AuditDetailModal } from '@/components/seguranca/audit-detail-modal';
 
@@ -67,7 +57,7 @@ const RESOURCE_LABELS: Record<string, string> = {
   document: 'Documento',
 };
 
-const PAGE_SIZE = 15;
+;
 
 export default function AuditoriaLGPDPage() {
   const [searchTerm, setSearchTerm] = useState('');

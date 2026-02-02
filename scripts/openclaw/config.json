@@ -10,6 +10,10 @@
       "enabled": true,
       "timeout": 120
     },
+    "e2e_tests": {
+      "enabled": true,
+      "timeout": 300
+    },
     "backend_lint": {
       "enabled": true,
       "timeout": 60

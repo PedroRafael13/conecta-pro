@@ -1,10 +1,11 @@
 'use client';
 
+import { AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle } from 'lucide-react';
+;
 import type { ScaleTemplate, ScaleTemplateUpdate } from '@/types/operacional';
 
 interface EditTemplateDialogProps {

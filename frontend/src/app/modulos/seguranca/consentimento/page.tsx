@@ -1,5 +1,6 @@
 'use client';
 
+import { CheckCircle2, Search, RefreshCw, Plus, MoreHorizontal, Eye, XCircle, AlertCircle, ChevronLeft, ChevronRight, Clock, ShieldOff } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,20 +29,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-import {
-  CheckCircle2,
-  Search,
-  RefreshCw,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  XCircle,
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  ShieldOff,
-} from 'lucide-react';
+;
 import { useConsents, useRegisterConsent, useRevokeConsent } from '@/hooks/security-lgpd';
 import { ConsentFormModal } from '@/components/seguranca/consent-form-modal';
 import { ConsentDetailModal } from '@/components/seguranca/consent-detail-modal';
@@ -77,7 +65,7 @@ const STATUS_LABELS: Record<string, string> = {
   expired: 'Expirado',
 };
 
-const PAGE_SIZE = 15;
+;
 
 export default function ConsentimentoPage() {
   const [searchTerm, setSearchTerm] = useState('');

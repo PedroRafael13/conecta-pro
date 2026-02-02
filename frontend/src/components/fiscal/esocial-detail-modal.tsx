@@ -1,11 +1,9 @@
 'use client';
 
+import { Users, Calendar, FileText, Hash, CheckCircle, Clock, AlertCircle, XCircle } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-import {
-  Users, Calendar, FileText, Hash, CheckCircle,
-  Clock, AlertCircle, XCircle,
-} from 'lucide-react';
+;
 
 interface EventoData {
   id?: string;

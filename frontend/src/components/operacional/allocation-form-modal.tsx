@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { RestoreAlert } from '@/components/ui/restore-alert';
 import { SaveIndicator } from '@/components/ui/save-indicator';
 import { getErrorMessage } from '@/lib/api';
 import type { AllocationCreate, Employee, Post } from '@/types/operacional';
-import { AlertCircle, Loader2 } from 'lucide-react';
+;
 import { useAutoSave } from '@/hooks/useAutoSave';
 
 interface AllocationFormModalProps {

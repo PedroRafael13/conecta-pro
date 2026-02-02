@@ -237,6 +237,13 @@ from .endpoints.auth import router as auth_router
 router = APIRouter(prefix="/api/v1")
 
 # ===================================================================
+# HEALTH CHECK - Monitoramento
+# ===================================================================
+from core.controllers.health_controller import router as health_router
+
+router.include_router(health_router)
+
+# ===================================================================
 # ROUTERS EXISTENTES
 # ===================================================================
 router.include_router(auth_router)

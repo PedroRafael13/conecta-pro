@@ -1,9 +1,10 @@
 'use client';
 
+import { Mail, Lock, AlertCircle, ArrowRight, Shield, FileText, Wallet, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Mail, Lock, AlertCircle, ArrowRight, Shield, FileText, Wallet, Smartphone } from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';

@@ -1,0 +1,6 @@
+# Ignorar relatórios gerados
+*.json
+!.gitkeep
+
+# Manter estrutura de diretório
+!.gitignore

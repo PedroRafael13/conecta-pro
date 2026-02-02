@@ -1,9 +1,10 @@
 'use client';
 
+import { Calendar, User, Package, FileText } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, User, Package, FileText } from 'lucide-react';
+;
 import { cn } from '@/lib/utils';
 
 interface ComodatoDetailModalProps {

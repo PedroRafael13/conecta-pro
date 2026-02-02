@@ -3,7 +3,6 @@ Controller (endpoints) para Allocation (Alocação Funcionário-Posto).
 """
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +14,9 @@ from modules.operacional.models.allocation import AllocationStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.allocation_repository import AllocationRepository
 from modules.operacional.schemas.allocation import (
+    AllocationBulkDelete,
+    AllocationBulkOperationResult,
+    AllocationBulkUpdate,
     AllocationCreate,
     AllocationFilter,
     AllocationListResponse,
@@ -45,10 +47,7 @@ async def create_allocation(
     repo = AllocationRepository(db)
     allocation = await repo.create(data)
 
-    logger.info(
-        f"Allocation criada por {current_user.email}: "
-        f"funcionário {data.employee_id} -> posto {data.post_id}"
-    )
+    logger.info(f"Allocation criada por {current_user.email}: funcionário {data.employee_id} -> posto {data.post_id}")
     return AllocationResponse.model_validate(allocation)
 
 
@@ -62,14 +61,14 @@ async def list_allocations(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    post_id: Optional[str] = None,
-    employee_id: Optional[str] = None,
-    status_filter: Optional[AllocationStatus] = Query(None, alias="status"),
-    is_primary: Optional[bool] = None,
-    is_temporary: Optional[bool] = None,
-    is_current: Optional[bool] = None,
-    start_date_from: Optional[date] = None,
-    start_date_to: Optional[date] = None,
+    post_id: str | None = None,
+    employee_id: str | None = None,
+    status_filter: AllocationStatus | None = Query(None, alias="status"),
+    is_primary: bool | None = None,
+    is_temporary: bool | None = None,
+    is_current: bool | None = None,
+    start_date_from: date | None = None,
+    start_date_to: date | None = None,
 ) -> AllocationListResponse:
     """
     Lista alocações com filtros e paginação.
@@ -107,7 +106,7 @@ async def list_allocations(  # pylint: disable=too-many-locals
 async def get_current_allocations(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    post_id: Optional[str] = None,
+    post_id: str | None = None,
 ) -> list[AllocationResponse]:
     """
     Lista alocações vigentes (ativas no momento).
@@ -303,3 +302,65 @@ async def delete_allocation(
         )
 
     logger.info(f"Allocation deletada por {current_user.email}: {allocation_id}")
+
+
+@router.delete(
+    "/bulk",
+    response_model=AllocationBulkOperationResult,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
+)
+async def bulk_delete_allocations(
+    data: AllocationBulkDelete,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> AllocationBulkOperationResult:
+    """
+    Deleta múltiplas alocações em lote (soft delete).
+
+    Retorna contagem de sucessos e erros.
+    """
+    repo = AllocationRepository(db)
+    result = await repo.bulk_delete(data.allocation_ids)
+
+    logger.info(
+        "Bulk delete de alocações",
+        action="bulk_delete_allocations",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        requested_count=len(data.allocation_ids),
+        success_count=result["success_count"],
+        error_count=result["error_count"],
+    )
+
+    return AllocationBulkOperationResult(**result)
+
+
+@router.patch(
+    "/bulk",
+    response_model=AllocationBulkOperationResult,
+    dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
+)
+async def bulk_update_allocations(
+    data: AllocationBulkUpdate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> AllocationBulkOperationResult:
+    """
+    Atualiza múltiplas alocações em lote.
+
+    Retorna contagem de sucessos e erros.
+    """
+    repo = AllocationRepository(db)
+    result = await repo.bulk_update(data.items)
+
+    logger.info(
+        "Bulk update de alocações",
+        action="bulk_update_allocations",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        requested_count=len(data.items),
+        success_count=result["success_count"],
+        error_count=result["error_count"],
+    )
+
+    return AllocationBulkOperationResult(**result)

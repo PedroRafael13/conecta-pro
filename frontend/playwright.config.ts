@@ -11,7 +11,7 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:3001',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 15000,
@@ -29,6 +29,14 @@ export default defineConfig({
         storageState: 'e2e/.auth/user.json',
       },
       dependencies: ['setup'],
+    },
+    {
+      name: 'chromium-no-auth',
+      testMatch: /operacional-.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // Sem storageState - usa mocks internos
+      },
     },
   ],
   /* Web server para rodar durante os testes */

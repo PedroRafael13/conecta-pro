@@ -2,16 +2,21 @@
 Repository para operações de banco de dados com Shift.
 """
 
+import builtins
 from datetime import date, datetime
-from typing import List, Optional
 from uuid import uuid4
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
 from modules.operacional.models.shift import Shift, ShiftStatus
-from modules.operacional.schemas.shift import ShiftCreate, ShiftFilter, ShiftUpdate
+from modules.operacional.schemas.shift import (
+    ShiftBulkUpdateItem,
+    ShiftCreate,
+    ShiftFilter,
+    ShiftUpdate,
+)
 
 
 class ShiftRepository:
@@ -58,7 +63,7 @@ class ShiftRepository:
         logger.debug(f"Shift criado: {shift.id}")
         return shift
 
-    async def create_bulk(self, shifts_data: List[ShiftCreate]) -> List[Shift]:
+    async def create_bulk(self, shifts_data: list[ShiftCreate]) -> list[Shift]:
         """
         Cria múltiplos turnos.
 
@@ -101,7 +106,7 @@ class ShiftRepository:
         logger.info(f"Criados {len(shifts)} turnos em lote")
         return shifts
 
-    async def get_by_id(self, shift_id: str) -> Optional[Shift]:
+    async def get_by_id(self, shift_id: str) -> Shift | None:
         """
         Busca turno por ID.
 
@@ -111,14 +116,12 @@ class ShiftRepository:
         Returns:
             Shift ou None
         """
-        result = await self.db.execute(
-            select(Shift).where(Shift.id == shift_id, Shift.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Shift).where(Shift.id == shift_id, Shift.is_active.is_(True)))
         return result.scalar_one_or_none()
 
     async def list(
         self,
-        filters: Optional[ShiftFilter] = None,
+        filters: ShiftFilter | None = None,
         page: int = 1,
         page_size: int = 50,
     ) -> tuple[list[Shift], int]:
@@ -195,7 +198,7 @@ class ShiftRepository:
 
         return query
 
-    async def update(self, shift_id: str, data: ShiftUpdate) -> Optional[Shift]:
+    async def update(self, shift_id: str, data: ShiftUpdate) -> Shift | None:
         """
         Atualiza um turno.
 
@@ -249,7 +252,7 @@ class ShiftRepository:
         logger.debug(f"Shift deletado (soft): {shift.id}")
         return True
 
-    async def get_by_scale(self, scale_id: str) -> List[Shift]:
+    async def get_by_scale(self, scale_id: str) -> builtins.list[Shift]:
         """
         Lista turnos de uma escala.
 
@@ -269,7 +272,7 @@ class ShiftRepository:
         )
         return list(result.scalars().all())
 
-    async def get_by_employee_and_date(self, employee_id: str, shift_date: date) -> List[Shift]:
+    async def get_by_employee_and_date(self, employee_id: str, shift_date: date) -> builtins.list[Shift]:
         """
         Busca turnos de um funcionário em uma data.
 
@@ -289,9 +292,7 @@ class ShiftRepository:
         )
         return list(result.scalars().all())
 
-    async def check_in(
-        self, shift_id: str, actual_start_time, notes: Optional[str] = None
-    ) -> Optional[Shift]:
+    async def check_in(self, shift_id: str, actual_start_time, notes: str | None = None) -> Shift | None:
         """
         Registra entrada no turno.
 
@@ -324,8 +325,8 @@ class ShiftRepository:
         shift_id: str,
         actual_end_time,
         actual_break_minutes: int = 0,
-        notes: Optional[str] = None,
-    ) -> Optional[Shift]:
+        notes: str | None = None,
+    ) -> Shift | None:
         """
         Registra saída do turno.
 
@@ -376,7 +377,7 @@ class ShiftRepository:
         logger.info(f"Check-out registrado: {shift.id}")
         return shift
 
-    async def mark_as_missed(self, shift_id: str, reason: Optional[str] = None) -> Optional[Shift]:
+    async def mark_as_missed(self, shift_id: str, reason: str | None = None) -> Shift | None:
         """
         Marca turno como falta.
 
@@ -402,3 +403,77 @@ class ShiftRepository:
 
         logger.info(f"Turno marcado como falta: {shift.id}")
         return shift
+
+    async def bulk_update(self, items: builtins.list[ShiftBulkUpdateItem]) -> dict:
+        """
+        Atualiza múltiplos turnos em lote.
+
+        Args:
+            items: Lista de itens com shift_id e dados para atualização
+
+        Returns:
+            Dict com:
+                - success_count: quantidade de sucessos
+                - error_count: quantidade de erros
+                - errors: lista de erros [{"id": shift_id, "error": mensagem}]
+        """
+        success_count = 0
+        error_count = 0
+        errors = []
+
+        for item in items:
+            try:
+                shift = await self.update(item.shift_id, item.data)
+                if shift:
+                    success_count += 1
+                else:
+                    error_count += 1
+                    errors.append(
+                        {
+                            "id": item.shift_id,
+                            "error": "Turno não encontrado",
+                        }
+                    )
+            except ValueError as e:
+                # Erro de validação (horários, etc)
+                error_count += 1
+                errors.append(
+                    {
+                        "id": item.shift_id,
+                        "error": str(e),
+                    }
+                )
+                logger.warning(
+                    "Erro de validação ao atualizar turno em bulk",
+                    action="bulk_update_shift",
+                    shift_id=item.shift_id,
+                    error=str(e),
+                )
+            except Exception as e:  # pylint: disable=broad-except
+                error_count += 1
+                errors.append(
+                    {
+                        "id": item.shift_id,
+                        "error": str(e),
+                    }
+                )
+                logger.error(
+                    "Erro ao atualizar turno em bulk",
+                    action="bulk_update_shift",
+                    shift_id=item.shift_id,
+                    error=str(e),
+                )
+
+        logger.info(
+            "Bulk update de turnos finalizado",
+            action="bulk_update_shifts",
+            total=len(items),
+            success=success_count,
+            errors=error_count,
+        )
+
+        return {
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors,
+        }

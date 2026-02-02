@@ -1,5 +1,6 @@
 'use client';
 
+import { HardHat, Package, Truck, AlertCircle, BarChart3, Plus, RefreshCw, Search, Edit, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,18 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  HardHat,
-  Package,
-  Truck,
-  AlertCircle,
-  BarChart3,
-  Plus,
-  RefreshCw,
-  Search,
-  Edit,
-  Eye,
-} from 'lucide-react';
+;
 import {
   useEPIStatistics,
   useEPIList,

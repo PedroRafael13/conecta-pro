@@ -1,30 +1,10 @@
 'use client';
 
+import { Users, Search, Plus, Eye, Edit2, ArrowLeft, ChevronLeft, ChevronRight, RefreshCw, Star, Calendar, DollarSign, Clock, CheckCircle, XCircle, Filter, Sparkles, TrendingUp, Phone, Mail } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Users,
-  Search,
-  Plus,
-  Eye,
-  Edit2,
-  ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-  Star,
-  Calendar,
-  DollarSign,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Filter,
-  Sparkles,
-  TrendingUp,
-  Phone,
-  Mail,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';

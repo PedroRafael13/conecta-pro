@@ -1,20 +1,10 @@
 'use client';
 
+import { Users, ArrowLeft, Calendar, Check, CheckCircle, XCircle, Clock, DollarSign, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Users,
-  ArrowLeft,
-  Calendar,
-  Check,
-  CheckCircle,
-  XCircle,
-  Clock,
-  DollarSign,
-  RefreshCw,
-  AlertTriangle,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveDiarists, useCreateBatchSchedules } from '@/hooks/operacional/useDiarists';

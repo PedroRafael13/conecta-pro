@@ -1,18 +1,10 @@
 'use client';
 
+import { LogIn, Monitor, Bell, RefreshCw, ArrowRight, Users, AlertTriangle, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  LogIn,
-  Monitor,
-  Bell,
-  RefreshCw,
-  ArrowRight,
-  Users,
-  AlertTriangle,
-  MapPin,
-} from 'lucide-react';
+;
 import { useCampoDashboard, useMonitoringHealth } from '@/hooks/campo/useCampo';
 
 export default function CampoPage() {

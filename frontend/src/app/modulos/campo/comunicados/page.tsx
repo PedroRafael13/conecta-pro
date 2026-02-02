@@ -1,5 +1,6 @@
 'use client';
 
+import { Bell, Megaphone, Search, Plus, Eye, Edit, Trash2, AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,18 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Bell,
-  Megaphone,
-  Search,
-  Plus,
-  Eye,
-  Edit,
-  Trash2,
-  AlertCircle,
-  ArrowLeft,
-  RefreshCw,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 import { ComunicadoFormModal } from '@/components/campo/comunicado-form-modal';
 import { ComunicadoDetailModal } from '@/components/campo/comunicado-detail-modal';

@@ -1,9 +1,10 @@
 'use client';
 
+import { Wrench, Calendar, User, FileText } from 'lucide-react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Wrench, Calendar, User, FileText } from 'lucide-react';
+;
 
 // Status badges
 const STATUS_CONFIG: Record<string, { className: string; label: string }> = {

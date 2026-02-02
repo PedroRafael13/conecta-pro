@@ -1,10 +1,8 @@
 'use client';
 
+import { Briefcase, Plus, Search, RefreshCw, MoreHorizontal, Edit2, Trash2, Globe, XCircle, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
-import {
-  Briefcase, Plus, Search, RefreshCw, MoreHorizontal,
-  Edit2, Trash2, Globe, XCircle, AlertCircle,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';

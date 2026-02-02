@@ -1,7 +1,8 @@
 'use client';
 
+import { ChevronRight, ChevronDown, Folder, FolderOpen, Lock, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronDown, Folder as FolderIcon, FolderOpen, Lock, Settings } from 'lucide-react';
+;
 import { cn } from '@/lib/utils';
 
 interface FolderTreeProps {

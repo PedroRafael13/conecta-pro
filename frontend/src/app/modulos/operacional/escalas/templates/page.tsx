@@ -1,9 +1,10 @@
 'use client';
 
+import { ArrowLeft, Calendar, Shield } from 'lucide-react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, Shield } from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { TemplateManager } from '@/features/escalas/components/TemplateManager';
 import { useAuth } from '@/hooks/useAuth';

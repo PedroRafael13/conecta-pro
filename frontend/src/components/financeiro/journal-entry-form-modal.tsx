@@ -1,10 +1,11 @@
 'use client';
 
+import { Calculator } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Calculator } from 'lucide-react';
+;
 
 interface JournalEntryFormModalProps {
   isOpen: boolean;

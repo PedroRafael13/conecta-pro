@@ -1,30 +1,10 @@
 'use client';
 
+import { Shield, MapPin, Calendar, Users, Clock, ChevronRight, ArrowLeft, Search, Plus, AlertCircle, CheckCircle, UserCheck, FileWarning, Navigation, TrendingUp, TrendingDown, Activity, FileText, CalendarCheck, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  Shield,
-  MapPin,
-  Calendar,
-  Users,
-  Clock,
-  ChevronRight,
-  ArrowLeft,
-  Search,
-  Plus,
-  AlertCircle,
-  CheckCircle,
-  UserCheck,
-  FileWarning,
-  Navigation,
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  FileText,
-  CalendarCheck,
-  AlertTriangle,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';

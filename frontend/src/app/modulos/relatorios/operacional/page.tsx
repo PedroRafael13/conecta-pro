@@ -1,5 +1,6 @@
 'use client';
 
+import { ClipboardCheck, Shield, AlertTriangle, CheckCircle2, RefreshCw, Activity, Users, MapPin, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,18 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  ClipboardCheck,
-  Shield,
-  AlertTriangle,
-  CheckCircle2,
-  RefreshCw,
-  Activity,
-  Users,
-  MapPin,
-  ArrowLeft,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { useExecutiveSummary, useMonitoringDashboard } from '@/hooks/analytics';
 import { formatDate } from '@/lib/utils';
 

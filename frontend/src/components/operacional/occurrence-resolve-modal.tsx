@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,7 @@ import {
   OCCURRENCE_SEVERITY_LABELS,
   type Occurrence,
 } from '@/types/operacional';
-import {
-  AlertCircle,
-  Loader2,
-  CheckCircle,
-  AlertTriangle,
-} from 'lucide-react';
+;
 
 interface OccurrenceResolveModalProps {
   isOpen: boolean;

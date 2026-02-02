@@ -1,5 +1,6 @@
 'use client';
 
+import { Settings, Building2, ToggleRight, Mail, RefreshCw, Users, Zap, AlertCircle, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,17 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Settings,
-  Building2,
-  ToggleRight,
-  Mail,
-  RefreshCw,
-  Users,
-  Zap,
-  AlertCircle,
-  ArrowRight,
-} from 'lucide-react';
+;
 import Link from 'next/link';
 import { useConfigDashboard } from '@/hooks/useConfig';
 

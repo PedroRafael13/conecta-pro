@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertCircle, Loader2, Edit2, Send, XCircle, FileText, DollarSign, Calendar, Building2, User, Clock, CheckCircle, Paperclip, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -11,22 +12,7 @@ import {
   STATUS_COLORS,
   APPROVAL_LEVEL_LABELS,
 } from '@/types/reimbursement';
-import {
-  AlertCircle,
-  Loader2,
-  Edit2,
-  Send,
-  XCircle,
-  FileText,
-  DollarSign,
-  Calendar,
-  Building2,
-  User,
-  Clock,
-  CheckCircle,
-  Paperclip,
-  Download,
-} from 'lucide-react';
+;
 import { AttachmentUpload } from './attachment-upload';
 
 interface ReimbursementDetailModalProps {

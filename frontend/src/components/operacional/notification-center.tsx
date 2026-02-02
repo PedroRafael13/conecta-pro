@@ -1,19 +1,9 @@
 'use client';
 
+import { Bell, X, CheckCircle, CheckCheck, Trash2, Clock, AlertTriangle, ChevronRight, Settings, Eye } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  Bell,
-  X,
-  CheckCircle,
-  CheckCheck,
-  Trash2,
-  Clock,
-  AlertTriangle,
-  ChevronRight,
-  Settings,
-  Eye,
-} from 'lucide-react';
+;
 import { Button } from '@/components/ui/button';
 import { useNotifications, useUnreadCount, useUserAlerts } from '@/hooks/useNotifications';
 

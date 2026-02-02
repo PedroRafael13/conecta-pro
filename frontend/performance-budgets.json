@@ -1,0 +1,101 @@
+{
+  "budgets": [
+    {
+      "path": "/_app",
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 200
+        },
+        {
+          "resourceType": "stylesheet",
+          "budget": 50
+        },
+        {
+          "resourceType": "total",
+          "budget": 300
+        }
+      ],
+      "resourceCounts": [
+        {
+          "resourceType": "third-party",
+          "budget": 10
+        }
+      ]
+    },
+    {
+      "path": "/dashboard",
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 350
+        },
+        {
+          "resourceType": "stylesheet",
+          "budget": 70
+        },
+        {
+          "resourceType": "total",
+          "budget": 500
+        }
+      ]
+    },
+    {
+      "path": "/crm/**",
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 300
+        },
+        {
+          "resourceType": "total",
+          "budget": 400
+        }
+      ]
+    },
+    {
+      "path": "/financeiro/**",
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 300
+        },
+        {
+          "resourceType": "total",
+          "budget": 400
+        }
+      ]
+    },
+    {
+      "path": "/**/*.chunk.js",
+      "resourceSizes": [
+        {
+          "resourceType": "script",
+          "budget": 150
+        }
+      ]
+    }
+  ],
+  "timings": [
+    {
+      "metric": "first-contentful-paint",
+      "budget": 2000
+    },
+    {
+      "metric": "largest-contentful-paint",
+      "budget": 3000
+    },
+    {
+      "metric": "interactive",
+      "budget": 4000
+    },
+    {
+      "metric": "cumulative-layout-shift",
+      "budget": 0.1
+    },
+    {
+      "metric": "total-blocking-time",
+      "budget": 300
+    }
+  ]
+}

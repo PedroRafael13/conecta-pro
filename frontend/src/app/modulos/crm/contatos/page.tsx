@@ -1,5 +1,6 @@
 'use client';
 
+import { Contact, Search, Plus, MoreHorizontal, Eye, Edit, Phone, Mail, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,17 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Contact,
-  Search,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Phone,
-  Mail,
-  AlertCircle,
-} from 'lucide-react';
+;
 import { toast } from 'sonner';
 
 interface ContatoLocal {

@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
 import { Calendar, Users, Settings, AlertCircle } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+;
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,5 +1,6 @@
 'use client';
 
+import { LogIn, Search, RefreshCw, Clock, MapPin, Eye, AlertCircle, Users, ArrowLeft } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,17 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  LogIn,
-  Search,
-  RefreshCw,
-  Clock,
-  MapPin,
-  Eye,
-  AlertCircle,
-  Users,
-  ArrowLeft,
-} from 'lucide-react';
+;
 import { CheckinDetailModal } from '@/components/campo/checkin-detail-modal';
 import { useCampoDashboard } from '@/hooks/campo/useCampo';
 
