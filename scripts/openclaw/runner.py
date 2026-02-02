@@ -123,7 +123,7 @@ class CycleReport:
             self.overall_status = CheckStatus.ERROR
 
     def compute_summary(self):
-        """Calcula resumo estatistico do ciclo."""
+        """Calcula resumo estatistico do ciclo e health score."""
         status_counts = {"pass": 0, "fail": 0, "warn": 0, "skip": 0, "error": 0}
         for check in self.checks:
             status_val = check.get("status", "error")
@@ -132,11 +132,39 @@ class CycleReport:
                 status_val = status_val.value
             if status_val in status_counts:
                 status_counts[status_val] += 1
+
+        # Calcular health score (0-100)
+        health_score = self._calculate_health_score(status_counts)
+
         self.summary = {
             "total_checks": len(self.checks),
             "status_counts": status_counts,
             "overall_status": self.overall_status.value,
+            "health_score": health_score,
         }
+
+    def _calculate_health_score(self, status_counts: dict) -> int:
+        """
+        Calcula health score 0-100 baseado nos resultados.
+
+        Pontuação:
+        - Começa com 100
+        - -15 por cada fail
+        - -10 por cada error
+        - -5 por cada warn
+        - -2 por cada skip
+
+        Returns:
+            Score entre 0 e 100
+        """
+        score = 100
+        score -= status_counts.get("fail", 0) * 15
+        score -= status_counts.get("error", 0) * 10
+        score -= status_counts.get("warn", 0) * 5
+        score -= status_counts.get("skip", 0) * 2
+
+        # Garantir limites
+        return max(0, min(100, score))
 
 
 # ============================================================================
@@ -1302,6 +1330,17 @@ class OpenClawRunner:
 
         self.logger.info(f"  Status geral: {color}{overall}{reset}")
         self.logger.info(f"  Duracao total: {report.duration_seconds:.1f}s")
+
+        # Health Score com cor
+        health_score = summary.get("health_score", 0)
+        if health_score >= 80:
+            health_color = "\033[92m"  # Verde
+        elif health_score >= 60:
+            health_color = "\033[93m"  # Amarelo
+        else:
+            health_color = "\033[91m"  # Vermelho
+        self.logger.info(f"  Health Score: {health_color}{health_score}/100{reset}")
+
         self.logger.info(
             f"  Checks: {counts.get('pass', 0)} pass | "
             f"{counts.get('fail', 0)} fail | "
