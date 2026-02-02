@@ -135,7 +135,7 @@ export default function ContasReceberPage() {
       await createReceivable({ data });
       setFormModalOpen(false);
       setSelectedReceivable(null);
-      refetch();
+      // refetch() removido - mutations já invalidam queries automaticamente
     } catch (err) {
       console.error('Erro ao salvar conta a receber:', err);
     }
@@ -145,14 +145,14 @@ export default function ContasReceberPage() {
     // Cancel the receivable (soft delete via status change)
     setDeleteModalOpen(false);
     setSelectedReceivable(null);
-    refetch();
+    // refetch() removido - mutations já invalidam queries automaticamente
   };
 
   const handleReceive = async () => {
     // Register the reception
     setReceiveModalOpen(false);
     setSelectedReceivable(null);
-    refetch();
+    // refetch() removido - mutations já invalidam queries automaticamente
   };
 
   const stats = {
