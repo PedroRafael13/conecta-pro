@@ -148,7 +148,7 @@ export default function OpenClawPage() {
       error: { bg: 'bg-red-800/10', text: 'text-red-800' },
     };
 
-    const icons: Record<string, JSX.Element> = {
+    const icons: Record<string, React.ReactElement> = {
       pass: <CheckCircle className="w-4 h-4" />,
       fail: <XCircle className="w-4 h-4" />,
       warn: <AlertTriangle className="w-4 h-4" />,
