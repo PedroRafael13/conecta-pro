@@ -2085,6 +2085,165 @@ class OpenClawRunner:
             return {"error": str(e)}
 
     # ========================================================================
+    # REPORTING - FASE 4
+    # ========================================================================
+
+    def generate_html_dashboard(self, report: CycleReport) -> Optional[Path]:
+        """
+        Gera dashboard HTML para um relatório.
+
+        Args:
+            report: Relatório do ciclo
+
+        Returns:
+            Path do arquivo HTML gerado
+        """
+        try:
+            import sys
+            from pathlib import Path
+
+            reporting_dir = Path(__file__).parent / "reporting"
+            if str(reporting_dir.parent) not in sys.path:
+                sys.path.insert(0, str(reporting_dir.parent))
+
+            from reporting.html_reporter import HTMLReporter
+
+            html_dir = self.reports_dir / "html"
+            reporter = HTMLReporter(reports_dir=self.reports_dir, output_dir=html_dir)
+
+            # Converter CycleReport para dict
+            report_dict = {
+                "cycle_id": report.cycle_id,
+                "started_at": report.started_at,
+                "finished_at": report.finished_at,
+                "duration_seconds": report.duration_seconds,
+                "overall_status": report.overall_status.value if hasattr(report.overall_status, 'value') else report.overall_status,
+                "health_score": getattr(report, 'health_score', 0),
+                "checks": [
+                    {
+                        "name": c.name,
+                        "status": c.status.value if hasattr(c.status, 'value') else c.status,
+                        "duration_seconds": c.duration_seconds,
+                        "message": c.message,
+                        "details": c.details,
+                    }
+                    for c in report.checks
+                ],
+                "summary": getattr(report, 'summary', {}),
+            }
+
+            html_file = reporter.generate_dashboard(report_dict)
+            self.logger.info(f"Dashboard HTML gerado: {html_file}")
+            return html_file
+
+        except ImportError as e:
+            self.logger.error(f"Módulo reporting não disponível: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Erro ao gerar dashboard HTML: {e}", exc_info=True)
+            return None
+
+    def generate_html_historical(self, days: int = 30) -> Optional[Path]:
+        """
+        Gera dashboard HTML com histórico.
+
+        Args:
+            days: Número de dias para incluir
+
+        Returns:
+            Path do arquivo HTML gerado
+        """
+        try:
+            import sys
+            from pathlib import Path
+
+            reporting_dir = Path(__file__).parent / "reporting"
+            if str(reporting_dir.parent) not in sys.path:
+                sys.path.insert(0, str(reporting_dir.parent))
+
+            from reporting.html_reporter import HTMLReporter
+
+            html_dir = self.reports_dir / "html"
+            reporter = HTMLReporter(reports_dir=self.reports_dir, output_dir=html_dir)
+
+            html_file = reporter.generate_historical_dashboard(days=days)
+            self.logger.info(f"Dashboard HTML histórico gerado: {html_file}")
+            print(f"\n✅ Dashboard HTML disponível em: {html_file}\n")
+            return html_file
+
+        except ImportError as e:
+            self.logger.error(f"Módulo reporting não disponível: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Erro ao gerar dashboard histórico: {e}", exc_info=True)
+            return None
+
+    def export_report(self, report: CycleReport, format: str = "csv") -> Optional[Path]:
+        """
+        Exporta relatório para formato especificado.
+
+        Args:
+            report: Relatório do ciclo
+            format: Formato (csv, md)
+
+        Returns:
+            Path do arquivo gerado
+        """
+        try:
+            import sys
+            from pathlib import Path
+
+            reporting_dir = Path(__file__).parent / "reporting"
+            if str(reporting_dir.parent) not in sys.path:
+                sys.path.insert(0, str(reporting_dir.parent))
+
+            from reporting.export_utils import ExportUtils
+
+            exports_dir = self.reports_dir / "exports"
+            exports_dir.mkdir(parents=True, exist_ok=True)
+
+            # Converter CycleReport para dict
+            report_dict = {
+                "cycle_id": report.cycle_id,
+                "started_at": report.started_at,
+                "overall_status": report.overall_status.value if hasattr(report.overall_status, 'value') else report.overall_status,
+                "health_score": getattr(report, 'health_score', 0),
+                "duration_seconds": report.duration_seconds,
+                "checks": [
+                    {
+                        "name": c.name,
+                        "status": c.status.value if hasattr(c.status, 'value') else c.status,
+                        "duration_seconds": c.duration_seconds,
+                        "message": c.message,
+                        "timestamp": getattr(c, 'timestamp', ''),
+                    }
+                    for c in report.checks
+                ],
+                "summary": getattr(report, 'summary', {}),
+            }
+
+            cycle_id = report.cycle_id
+            if format == "csv":
+                output_file = exports_dir / f"report_{cycle_id}.csv"
+                ExportUtils.export_to_csv(report_dict, output_file)
+            elif format == "md":
+                output_file = exports_dir / f"report_{cycle_id}.md"
+                ExportUtils.export_to_markdown(report_dict, output_file)
+            else:
+                self.logger.error(f"Formato desconhecido: {format}")
+                return None
+
+            self.logger.info(f"Relatório exportado para {format.upper()}: {output_file}")
+            return output_file
+
+        except ImportError as e:
+            self.logger.error(f"Módulo reporting não disponível: {e}")
+            return None
+        except Exception as e:
+            self.logger.error(f"Erro ao exportar relatório: {e}", exc_info=True)
+            return None
+
+    # ========================================================================
     # MODO DAEMON
     # ========================================================================
 
@@ -2204,6 +2363,26 @@ Exemplos:
         action="store_true",
         help="Modo dry-run: simula acoes sem executar (com --auto-heal)",
     )
+    parser.add_argument(
+        "--generate-html",
+        action="store_true",
+        help="Gerar dashboard HTML apos o ciclo",
+    )
+    parser.add_argument(
+        "--html-historical",
+        action="store_true",
+        help="Gerar dashboard HTML historico (ultimos 30 dias)",
+    )
+    parser.add_argument(
+        "--export-csv",
+        action="store_true",
+        help="Exportar relatorio para CSV",
+    )
+    parser.add_argument(
+        "--export-md",
+        action="store_true",
+        help="Exportar relatorio para Markdown",
+    )
 
     args = parser.parse_args()
 
@@ -2225,6 +2404,9 @@ Exemplos:
     elif args.analyze_trends:
         # FASE 3: Análise de tendências
         runner.analyze_trends(days=30)
+    elif args.html_historical:
+        # FASE 4: Dashboard HTML histórico
+        runner.generate_html_historical(days=30)
     elif args.daemon:
         runner.run_daemon(interval=interval)
     else:
@@ -2239,6 +2421,16 @@ Exemplos:
         # FASE 3: Auto-healing se habilitado
         if args.auto_heal:
             runner.run_auto_heal(report, dry_run=args.dry_run)
+
+        # FASE 4: Geração de relatórios
+        if args.generate_html:
+            runner.generate_html_dashboard(report)
+
+        if args.export_csv:
+            runner.export_report(report, format="csv")
+
+        if args.export_md:
+            runner.export_report(report, format="md")
 
         # Exit code baseado no status
         if report.overall_status == CheckStatus.FAIL:

@@ -18,14 +18,23 @@ logger = logging.getLogger(__name__)
 class NotificationService:
     """Serviço de notificações (Discord, Email, Slack, etc)."""
 
-    def __init__(self, discord_webhook_url: str | None = None):
+    def __init__(
+        self,
+        discord_webhook_url: str | None = None,
+        slack_webhook_url: str | None = None,
+        teams_webhook_url: str | None = None,
+    ):
         """
         Initialize notification service.
 
         Args:
             discord_webhook_url: Discord webhook URL for notifications
+            slack_webhook_url: Slack webhook URL for notifications
+            teams_webhook_url: Microsoft Teams webhook URL for notifications
         """
         self.discord_webhook = discord_webhook_url
+        self.slack_webhook = slack_webhook_url
+        self.teams_webhook = teams_webhook_url
 
     async def send_discord(self, report: dict) -> bool:
         """
@@ -187,3 +196,155 @@ class NotificationService:
             return True
 
         return False
+
+    async def send_slack(self, report: dict) -> bool:
+        """
+        Envia notificação para Slack via webhook.
+
+        Args:
+            report: Relatório OpenClaw completo
+
+        Returns:
+            True se enviado com sucesso, False caso contrário
+        """
+        if not self.slack_webhook:
+            logger.warning("Slack webhook não configurado")
+            return False
+
+        # Monta payload Slack
+        payload = self._build_slack_payload(report)
+
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(self.slack_webhook, json=payload, timeout=aiohttp.ClientTimeout(total=10)) as resp,
+            ):
+                if resp.status == 200:
+                    logger.info("Notificação Slack enviada com sucesso")
+                    return True
+                else:
+                    logger.warning(f"Slack webhook retornou status {resp.status}")
+                    return False
+        except aiohttp.ClientError as e:
+            logger.error(f"Erro ao conectar ao Slack: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Erro ao enviar notificação Slack: {e}")
+            return False
+
+    def _build_slack_payload(self, report: dict) -> dict:
+        """
+        Constrói payload Slack com formatação.
+
+        Args:
+            report: Relatório OpenClaw
+
+        Returns:
+            Slack payload dict
+        """
+        status = report.get("overall_status", "unknown")
+        health_score = report.get("health_score")
+        duration = report.get("duration_seconds", 0)
+        summary = report.get("summary", {})
+        counts = summary.get("status_counts", {})
+
+        # Emojis
+        emojis = {"pass": ":white_check_mark:", "fail": ":x:", "warn": ":warning:", "error": ":red_circle:"}
+        status_emoji = emojis.get(status, ":question:")
+
+        # Color sidebar
+        colors = {"pass": "good", "fail": "danger", "warn": "warning", "error": "danger"}
+        color = colors.get(status, "#808080")
+
+        # Monta attachment
+        attachment = {
+            "color": color,
+            "title": f"{status_emoji} OpenClaw Quality Monitor - {status.upper()}",
+            "text": f"Health Score: {health_score}/100 | Duração: {duration:.1f}s",
+            "fields": [
+                {"title": "Pass", "value": str(counts.get("pass", 0)), "short": True},
+                {"title": "Fail", "value": str(counts.get("fail", 0)), "short": True},
+                {"title": "Warn", "value": str(counts.get("warn", 0)), "short": True},
+                {"title": "Error", "value": str(counts.get("error", 0)), "short": True},
+            ],
+            "footer": "OpenClaw Quality Monitor",
+            "ts": int(datetime.utcnow().timestamp()),
+        }
+
+        return {"attachments": [attachment]}
+
+    async def send_teams(self, report: dict) -> bool:
+        """
+        Envia notificação para Microsoft Teams via webhook.
+
+        Args:
+            report: Relatório OpenClaw completo
+
+        Returns:
+            True se enviado com sucesso, False caso contrário
+        """
+        if not self.teams_webhook:
+            logger.warning("Teams webhook não configurado")
+            return False
+
+        # Monta payload Teams (Adaptive Card)
+        payload = self._build_teams_payload(report)
+
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(self.teams_webhook, json=payload, timeout=aiohttp.ClientTimeout(total=10)) as resp,
+            ):
+                if resp.status == 200:
+                    logger.info("Notificação Teams enviada com sucesso")
+                    return True
+                else:
+                    logger.warning(f"Teams webhook retornou status {resp.status}")
+                    return False
+        except aiohttp.ClientError as e:
+            logger.error(f"Erro ao conectar ao Teams: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Erro ao enviar notificação Teams: {e}")
+            return False
+
+    def _build_teams_payload(self, report: dict) -> dict:
+        """
+        Constrói payload Microsoft Teams com Adaptive Card.
+
+        Args:
+            report: Relatório OpenClaw
+
+        Returns:
+            Teams payload dict
+        """
+        status = report.get("overall_status", "unknown")
+        health_score = report.get("health_score")
+        duration = report.get("duration_seconds", 0)
+        summary = report.get("summary", {})
+        counts = summary.get("status_counts", {})
+
+        # Cores
+        colors = {"pass": "Good", "fail": "Attention", "warn": "Warning", "error": "Attention"}
+        theme_color = colors.get(status, "Default")
+
+        return {
+            "@type": "MessageCard",
+            "@context": "https://schema.org/extensions",
+            "summary": f"OpenClaw Quality Report - {status.upper()}",
+            "themeColor": theme_color,
+            "title": f"OpenClaw Quality Monitor - {status.upper()}",
+            "sections": [
+                {
+                    "activityTitle": "Quality Check Results",
+                    "facts": [
+                        {"name": "Health Score", "value": f"{health_score}/100"},
+                        {"name": "Duration", "value": f"{duration:.1f}s"},
+                        {"name": "Pass", "value": str(counts.get("pass", 0))},
+                        {"name": "Fail", "value": str(counts.get("fail", 0))},
+                        {"name": "Warn", "value": str(counts.get("warn", 0))},
+                        {"name": "Error", "value": str(counts.get("error", 0))},
+                    ],
+                }
+            ],
+        }
