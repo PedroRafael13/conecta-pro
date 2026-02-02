@@ -27,12 +27,20 @@ export default function PostosPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const {
-    data: posts = [],
+    data: postsData,
     isLoading,
     error,
     refetch: refresh,
   } = usePosts();
-  const total = posts.length;
+
+  // Garantir que posts é sempre um array
+  // API retorna { items: [...], total: N, page: N }
+  const posts = Array.isArray(postsData)
+    ? postsData
+    : postsData?.items && Array.isArray(postsData.items)
+    ? postsData.items
+    : [];
+  const total = postsData?.total || posts.length;
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const totalPages = Math.ceil(total / pageSize);
