@@ -87,7 +87,13 @@ async def create_announcement(
         created_by=str(current_user.id),
     )
 
-    logger.info(f"Comunicado criado por {current_user.email}: {announcement.id}")
+    logger.info(
+        "Comunicado criado com sucesso",
+        action="create_announcement",
+        announcement_id=str(announcement.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return AnnouncementResponse.model_validate(announcement)
 
 

@@ -292,7 +292,13 @@ async def update_entry(
             detail="Entrada não encontrada ou não pode ser editada",
         )
 
-    logger.info(f"Entrada do banco atualizada por {current_user.email}: {entry.id}")
+    logger.info(
+        "Entrada do banco atualizada",
+        action="update_time_bank_entry",
+        entry_id=str(entry.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return TimeBankResponse.model_validate(entry)
 
 
@@ -319,7 +325,13 @@ async def approve_entry(
             detail="Entrada não encontrada ou já processada",
         )
 
-    logger.info(f"Entrada aprovada por {current_user.email}: {entry.id}")
+    logger.info(
+        "Entrada do banco aprovada",
+        action="approve_time_bank_entry",
+        entry_id=str(entry.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return TimeBankResponse.model_validate(entry)
 
 
@@ -346,7 +358,13 @@ async def reject_entry(
             detail="Entrada não encontrada ou já processada",
         )
 
-    logger.info(f"Entrada rejeitada por {current_user.email}: {entry.id}")
+    logger.info(
+        "Entrada do banco rejeitada",
+        action="reject_time_bank_entry",
+        entry_id=str(entry.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return TimeBankResponse.model_validate(entry)
 
 
@@ -496,4 +514,10 @@ async def delete_entry(
             detail="Entrada não encontrada ou não pode ser deletada",
         )
 
-    logger.info(f"Entrada do banco deletada por {current_user.email}: {entry_id}")
+    logger.info(
+        "Entrada do banco deletada",
+        action="delete_time_bank_entry",
+        entry_id=entry_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )

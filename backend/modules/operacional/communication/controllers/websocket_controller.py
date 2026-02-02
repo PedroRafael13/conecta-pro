@@ -171,7 +171,11 @@ class ConnectionManager:
             # Remove conexao
             del self.active_connections[connection_id]
 
-        logger.info(f"WebSocket desconectado: {connection_id}")
+        logger.info(
+            "WebSocket desconectado",
+            action="websocket_disconnect",
+            connection_id=connection_id,
+        )
 
     async def _send_to_connection(
         self,

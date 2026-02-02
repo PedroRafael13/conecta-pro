@@ -49,8 +49,13 @@ async def create_substitution(
     substitution = await repo.create(data, requested_by=current_user.id)
 
     logger.info(
-        f"Substituição criada por {current_user.email}: "
-        f"funcionário {data.original_employee_id} em {data.substitution_date}"
+        "Substituição criada com sucesso",
+        action="create_substitution",
+        substitution_id=str(substitution.id),
+        original_employee_id=str(data.original_employee_id),
+        substitution_date=str(data.substitution_date),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
     )
     return SubstitutionResponse.model_validate(substitution)
 
@@ -150,7 +155,13 @@ async def suggest_substitutes(
     # PENDENTE: Buscar dados do turno e funcionários disponíveis do banco
     # Por enquanto, retorna lista vazia com log
 
-    logger.info(f"Solicitação de sugestões para turno {data.shift_id} " f"por {current_user.email}")
+    logger.info(
+        "Solicitação de sugestões de substitutos",
+        action="suggest_substitutes",
+        shift_id=str(data.shift_id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
 
     # Exemplo de como usar o serviço (quando tiver os dados):
     # shift = await shift_repo.get_by_id(data.shift_id)
@@ -235,7 +246,13 @@ async def update_substitution(
             detail="Substituição não encontrada",
         )
 
-    logger.info(f"Substituição atualizada por {current_user.email}: {substitution.id}")
+    logger.info(
+        "Substituição atualizada com sucesso",
+        action="update_substitution",
+        substitution_id=str(substitution.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return SubstitutionResponse.model_validate(substitution)
 
 
@@ -297,7 +314,13 @@ async def reject_substitution(
             detail="Substituição não encontrada ou já processada",
         )
 
-    logger.info(f"Substituição rejeitada por {current_user.email}: {substitution.id}")
+    logger.info(
+        "Substituição rejeitada",
+        action="reject_substitution",
+        substitution_id=str(substitution.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return SubstitutionResponse.model_validate(substitution)
 
 
@@ -329,7 +352,13 @@ async def complete_substitution(
             detail="Substituição não encontrada ou não confirmada",
         )
 
-    logger.info(f"Substituição concluída por {current_user.email}: {substitution.id}")
+    logger.info(
+        "Substituição concluída com sucesso",
+        action="complete_substitution",
+        substitution_id=str(substitution.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return SubstitutionResponse.model_validate(substitution)
 
 
@@ -357,4 +386,10 @@ async def delete_substitution(
             detail="Substituição não encontrada ou não pode ser deletada",
         )
 
-    logger.info(f"Substituição deletada por {current_user.email}: {substitution_id}")
+    logger.info(
+        "Substituição deletada com sucesso",
+        action="delete_substitution",
+        substitution_id=substitution_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
