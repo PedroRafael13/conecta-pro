@@ -1245,6 +1245,138 @@ class OpenClawRunner:
 
         return report
 
+    def run_cycle_parallel(self, only: Optional[str] = None) -> CycleReport:
+        """
+        Executa um ciclo completo de verificacao em PARALELO.
+
+        Usa ParallelExecutor para executar checks simultaneamente,
+        reduzindo drasticamente o tempo total de execução.
+
+        Args:
+            only: Grupo específico de checks ("tests", "lint", etc)
+
+        Returns:
+            CycleReport com resultados de todos os checks
+        """
+        if not PARALLEL_AVAILABLE:
+            self.logger.warning("ParallelExecutor não disponível, usando execução sequencial")
+            return self.run_cycle(only=only)
+
+        cycle_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        start_time = datetime.now(timezone.utc)
+        report = CycleReport(cycle_id=cycle_id, started_at=start_time.isoformat())
+
+        self.logger.info("=" * 62)
+        self.logger.info(f"  OpenClaw - Ciclo {cycle_id} (PARALELO)")
+        self.logger.info(f"  Inicio: {start_time.strftime('%Y-%m-%d %H:%M:%S')} UTC")
+        self.logger.info("=" * 62)
+
+        # Mapa de checks com timeouts configurados
+        checks_map = {
+            "tests": [
+                {"name": "Backend Tests", "func": self.check_backend_tests, "timeout": 120},
+                {"name": "Frontend Tests", "func": self.check_frontend_tests, "timeout": 120},
+            ],
+            "lint": [
+                {"name": "Backend Lint", "func": self.check_backend_lint, "timeout": 60},
+                {"name": "Frontend Lint", "func": self.check_frontend_lint, "timeout": 60},
+            ],
+            "security": [
+                {"name": "Security Bandit", "func": self.check_security_bandit, "timeout": 60},
+            ],
+            "coverage": [
+                {"name": "Coverage", "func": self.check_coverage, "timeout": 120},
+            ],
+            "health": [
+                {"name": "Health Check", "func": self.check_health, "timeout": 30},
+                {"name": "Docker Status", "func": self.check_docker_status, "timeout": 30},
+                {"name": "Disk Space", "func": self.check_disk_space, "timeout": 10},
+            ],
+            "performance": [
+                {"name": "Lighthouse", "func": self.check_performance_lighthouse, "timeout": 120},
+            ],
+        }
+
+        # Selecionar checks a executar
+        if only:
+            if only not in checks_map:
+                self.logger.error(f"Grupo de checks desconhecido: '{only}'")
+                self.logger.info(f"Opcoes validas: {', '.join(checks_map.keys())}")
+                return report
+            checks_to_run = checks_map[only]
+            self.logger.info(f"  Modo: apenas '{only}' ({len(checks_to_run)} check(s))")
+        else:
+            checks_to_run = [check for checks in checks_map.values() for check in checks]
+            self.logger.info(f"  Modo: ciclo completo ({len(checks_to_run)} checks)")
+
+        self.logger.info(f"  Execução: PARALELA (max 3 simultâneos)")
+        self.logger.info("-" * 62)
+
+        # Executar checks em paralelo
+        executor = ParallelExecutor(max_concurrent=3)
+
+        try:
+            # Criar event loop e executar
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            parallel_results = loop.run_until_complete(executor.run_all(checks_to_run))
+            loop.close()
+
+            # Processar resultados
+            for result in parallel_results:
+                # Converter ParallelExecutor.CheckResult para runner.CheckResult
+                check_result = CheckResult(
+                    name=result.name,
+                    status=CheckStatus(result.status) if result.status in [s.value for s in CheckStatus] else CheckStatus.ERROR,
+                    duration_seconds=result.duration,
+                    message=result.message,
+                    details=result.details,
+                )
+                report.add_check(check_result)
+
+                # Log com cores
+                status_str = check_result.status.value.upper()
+                color_map = {
+                    "PASS": "\033[92m",
+                    "FAIL": "\033[91m",
+                    "WARN": "\033[93m",
+                    "SKIP": "\033[90m",
+                    "ERROR": "\033[91m",
+                }
+                reset = "\033[0m"
+                color = color_map.get(status_str, "")
+                self.logger.info(
+                    f"    {color}{status_str:5s}{reset} | {check_result.name} "
+                    f"({check_result.duration_seconds:.1f}s) - {check_result.message}"
+                )
+
+        except Exception as e:
+            self.logger.error(f"Erro na execução paralela: {e}")
+            # Fallback para execução sequencial
+            self.logger.warning("Caindo para execução sequencial devido a erro")
+            return self.run_cycle(only=only)
+
+        # Finalizar relatório
+        end_time = datetime.now(timezone.utc)
+        report.finished_at = end_time.isoformat()
+        report.duration_seconds = (end_time - start_time).total_seconds()
+        report.compute_summary()
+
+        # Salvar e exibir
+        self._save_report(report)
+        self._print_summary(report)
+
+        # Salvar última referência para notificações
+        self.last_report = report
+
+        # Notificações
+        self._send_notifications(report)
+
+        # Limpeza de relatórios antigos
+        self._cleanup_old_reports()
+
+        return report
+
     # ========================================================================
     # RELATORIOS
     # ========================================================================
@@ -1675,7 +1807,13 @@ Exemplos:
         runner.run_daemon(interval=interval)
     else:
         print(BANNER)
-        report = runner.run_cycle(only=args.only)
+
+        # Escolher execução paralela ou sequencial
+        if args.parallel:
+            report = runner.run_cycle_parallel(only=args.only)
+        else:
+            report = runner.run_cycle(only=args.only)
+
         # Exit code baseado no status
         if report.overall_status == CheckStatus.FAIL:
             sys.exit(1)

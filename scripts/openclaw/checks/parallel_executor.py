@@ -82,6 +82,15 @@ class ParallelExecutor:
                         message=result.get("message", ""),
                         details=result.get("details", {}),
                     )
+                elif hasattr(result, 'status') and hasattr(result, 'message'):
+                    # Resultado é um CheckResult do runner (dataclass)
+                    return CheckResult(
+                        name=result.name if hasattr(result, 'name') else name,
+                        status=result.status.value if hasattr(result.status, 'value') else result.status,
+                        duration=duration,
+                        message=result.message,
+                        details=result.details if hasattr(result, 'details') else {},
+                    )
                 else:
                     # Resultado simples (bool ou string)
                     status = "pass" if result else "fail"
