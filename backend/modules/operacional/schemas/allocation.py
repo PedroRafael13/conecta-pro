@@ -33,21 +33,66 @@ class AllocationBase(BaseModel):
         except (ValueError, AttributeError):
             raise ValueError(f"ID inválido: {v}. Deve ser um UUID válido.")
 
+    @field_validator("start_date")
+    @classmethod
+    def validate_start_date(cls, v: date) -> date:
+        """Valida data de início."""
+        from datetime import date as date_type
+        from datetime import timedelta
+
+        today = date_type.today()
+        max_past = today - timedelta(days=730)  # Máximo 2 anos no passado
+        max_future = today + timedelta(days=365)  # Máximo 1 ano no futuro
+
+        if v < max_past:
+            raise ValueError(
+                f"Data de início muito antiga. Máximo permitido: {max_past.isoformat()}. "
+                "Para alocações históricas, contate o administrador."
+            )
+        if v > max_future:
+            raise ValueError(f"Data de início muito futura. Máximo permitido: {max_future.isoformat()}")
+
+        return v
+
     @model_validator(mode="after")
     def validate_dates(self) -> "AllocationBase":
         """Valida range de datas."""
         if self.end_date and self.start_date > self.end_date:
             raise ValueError("start_date deve ser anterior a end_date")
+
+        # Validar duração máxima
+        if self.end_date:
+            from datetime import timedelta
+
+            duration = self.end_date - self.start_date
+            if duration > timedelta(days=1825):  # 5 anos
+                raise ValueError("Duração da alocação não pode exceder 5 anos")
+
         return self
 
 
 class AllocationCreate(AllocationBase):
     """Schema para criação de Allocation."""
 
-    hourly_rate: float = Field(default=0.0, ge=0, description="Valor hora")
-    monthly_salary: float = Field(default=0.0, ge=0, description="Salário mensal")
-    additional_benefits: float = Field(default=0.0, ge=0, description="Benefícios")
+    hourly_rate: float = Field(default=0.0, ge=0, le=500, description="Valor hora (máx R$ 500)")
+    monthly_salary: float = Field(default=0.0, ge=0, le=50000, description="Salário mensal (máx R$ 50k)")
+    additional_benefits: float = Field(default=0.0, ge=0, le=20000, description="Benefícios (máx R$ 20k)")
     qualifications: dict[str, Any] | None = Field(None, description="Qualificações")
+
+    @model_validator(mode="after")
+    def validate_compensation(self) -> "AllocationCreate":
+        """Valida valores de compensação."""
+        # Se informar hourly_rate e monthly_salary, deve ser consistente
+        if self.hourly_rate > 0 and self.monthly_salary > 0:
+            # 220 horas/mês é padrão
+            expected_monthly = self.hourly_rate * 220
+            if abs(self.monthly_salary - expected_monthly) > expected_monthly * 0.2:  # 20% tolerância
+                raise ValueError(
+                    f"Valores inconsistentes: hourly_rate (R$ {self.hourly_rate:.2f}) e "
+                    f"monthly_salary (R$ {self.monthly_salary:.2f}) não batem. "
+                    f"Esperado aproximadamente R$ {expected_monthly:.2f} mensal."
+                )
+        return self
 
 
 class AllocationUpdate(BaseModel):

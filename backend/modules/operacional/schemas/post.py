@@ -61,6 +61,46 @@ class PostBase(BaseModel):
                 raise ValueError("CEP deve ter 8 dígitos")
         return v
 
+    @field_validator("night_shift_bonus_percent", "hazard_pay_percent")
+    @classmethod
+    def validate_percent(cls, v: float) -> float:
+        """Valida percentuais."""
+        if v < 0:
+            raise ValueError("Percentual não pode ser negativo")
+        if v > 100:
+            raise ValueError("Percentual não pode ser maior que 100%")
+        return v
+
+    @field_validator("hourly_rate")
+    @classmethod
+    def validate_hourly_rate(cls, v: float) -> float:
+        """Valida valor hora."""
+        if v < 0:
+            raise ValueError("Valor hora não pode ser negativo")
+        if v > 1000:  # R$ 1000/hora é um limite razoável
+            raise ValueError("Valor hora muito alto. Máximo permitido: R$ 1000/hora")
+        return v
+
+    @field_validator("monthly_cost")
+    @classmethod
+    def validate_monthly_cost(cls, v: float) -> float:
+        """Valida custo mensal."""
+        if v < 0:
+            raise ValueError("Custo mensal não pode ser negativo")
+        if v > 100000:  # R$ 100k/mês é um limite razoável para um posto
+            raise ValueError("Custo mensal muito alto. Máximo permitido: R$ 100.000/mês")
+        return v
+
+    @field_validator("required_headcount")
+    @classmethod
+    def validate_headcount(cls, v: int) -> int:
+        """Valida quantidade necessária."""
+        if v < 1:
+            raise ValueError("Quantidade necessária deve ser no mínimo 1")
+        if v > 50:  # 50 pessoas é um limite razoável para um posto
+            raise ValueError("Quantidade muito alta. Máximo permitido: 50 funcionários por posto")
+        return v
+
 
 class PostCreate(PostBase):
     """
