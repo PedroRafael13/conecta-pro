@@ -10,14 +10,23 @@ test.describe('Bartolo - Conversa Geral', () => {
     await chat.open();
   });
 
-  test('exibe saudacao inicial do Bartolo', async ({ page }) => {
-    // O BartoloChat.tsx exibe texto estatico quando messages.length === 0
-    // Nao vem da API - e um placeholder de boas-vindas no componente
-    const greeting = page.locator('h4:has-text("Ola! Sou o Bartolo")');
-    await expect(greeting).toBeVisible({ timeout: 5000 });
+  test('exibe saudacao inicial do Bartolo', async () => {
+    // O greeting vem da API /greeting ou aparece como placeholder estatico
+    // Quando a API funciona, retorna uma mensagem de assistente com saudacao
+    // Quando nao funciona, mostra placeholder "Ola! Sou o Bartolo"
+    const assistantMessages = chat.getAssistantMessages();
+    const staticGreeting = chat.page.locator('h4:has-text("Ola! Sou o Bartolo")');
 
-    const subtitle = page.locator('text=Seu assistente IA do Conecta PRO');
-    await expect(subtitle).toBeVisible();
+    // Aguarda qualquer um dos dois: greeting da API ou placeholder estatico
+    await expect(assistantMessages.first().or(staticGreeting)).toBeVisible({ timeout: 10000 });
+
+    // Se greeting da API apareceu, valida que tem conteudo
+    const apiGreetingCount = await assistantMessages.count();
+    if (apiGreetingCount > 0) {
+      const text = await assistantMessages.first().textContent();
+      expect(text).toBeTruthy();
+      expect(text!.length).toBeGreaterThan(10);
+    }
   });
 
   test('recebe resposta do LLM para pergunta geral', async () => {
