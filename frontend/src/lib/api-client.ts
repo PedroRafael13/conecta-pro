@@ -14,24 +14,29 @@ export const customInstance = async <T>(
   config: AxiosRequestConfig,
 ): Promise<T> => {
   try {
-    // Remove barra final das URLs para evitar redirect 307
-    if (config.url && config.url.endsWith('/') && !config.url.endsWith('://')) {
-      config.url = config.url.slice(0, -1);
-      console.log('[API Client] Removed trailing slash from URL');
-    }
-
-    // Adiciona condominio_id automaticamente para endpoints do módulo Financial
-    if (config.url && config.url.includes('/financial/')) {
-      // Log para debug
-      console.log('[API Client] Financial endpoint detected:', config.url);
-
-      // Adiciona condominio_id como query parameter se não existir
-      if (!config.params) {
-        config.params = {};
+    if (config.url) {
+      // Remove barra final das URLs para evitar redirect 307
+      if (config.url.endsWith('/') && !config.url.endsWith('://')) {
+        config.url = config.url.slice(0, -1);
+        console.log('[API Client] Removed trailing slash from URL');
       }
-      if (!config.params.condominio_id) {
-        config.params.condominio_id = DEFAULT_CONDOMINIO_ID;
-        console.log('[API Client] Added condominio_id:', DEFAULT_CONDOMINIO_ID);
+
+      // Remove duplicações de path (ex: /suppliers/suppliers -> /suppliers)
+      // Padrão: /resource/resource/ ou /resource/resource
+      config.url = config.url.replace(/\/([^\/]+)\/\1(?:\/|$)/, '/$1');
+
+      // Adiciona condominio_id automaticamente para endpoints do módulo Financial
+      if (config.url.includes('/financial/')) {
+        console.log('[API Client] Financial endpoint:', config.url);
+
+        // Adiciona condominio_id como query parameter se não existir
+        if (!config.params) {
+          config.params = {};
+        }
+        if (!config.params.condominio_id) {
+          config.params.condominio_id = DEFAULT_CONDOMINIO_ID;
+          console.log('[API Client] Added condominio_id:', DEFAULT_CONDOMINIO_ID);
+        }
       }
     }
 
