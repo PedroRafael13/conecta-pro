@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
+from ..services.openclaw_analyzer import OpenClawAnalyzer
 from .base_skill import BaseSkill
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class OpenClawSkill(BaseSkill):
         "status",
         "report",
         "historico",
+        "analyze",  # NEW: AI analysis
         "testes",
         "testes-front",
         "lint",
@@ -44,6 +46,7 @@ class OpenClawSkill(BaseSkill):
             "status": self._status,
             "report": self._report,
             "historico": self._historico,
+            "analyze": self._analyze,  # NEW: AI analysis
             "testes": self._testes,
             "testes-front": self._testes_front,
             "lint": self._lint,
@@ -69,6 +72,7 @@ Comandos disponíveis:
 - `/openclaw status` - Status geral do sistema
 - `/openclaw report` - Último relatório detalhado
 - `/openclaw historico [N]` - Últimos N ciclos (padrão: 10)
+- `/openclaw analyze` - 🤖 Análise IA das falhas (NOVO!)
 
 **🔍 Quality Checks:**
 - `/openclaw testes` - Executar testes backend (pytest)
@@ -233,6 +237,50 @@ Comandos disponíveis:
             "data": {"total": len(reports)},
             "suggestions": ["/openclaw report"],
         }
+
+    async def _analyze(self, args: list[str], context: dict) -> dict[str, Any]:
+        """🤖 Analisa falhas com IA e sugere correções."""
+
+        latest_json = OPENCLAW_REPORTS_DIR / "latest.json"
+
+        if not latest_json.exists():
+            return {
+                "response": "⚠️ Nenhum relatório encontrado para analisar.\n\nExecute `/openclaw ciclo` primeiro para gerar um relatório.",
+                "intent": "openclaw_analyze",
+                "suggestions": ["/openclaw ciclo", "/openclaw status"],
+            }
+
+        try:
+            report = json.loads(latest_json.read_text())
+
+            # Verifica se há problemas
+            problems = [c for c in report["checks"] if c["status"] in ["fail", "error", "warn"]]
+
+            if not problems:
+                return {
+                    "response": "✅ Nenhuma falha para analisar!\n\nTodos os checks passaram. Sistema está saudável.",
+                    "intent": "openclaw_analyze",
+                    "suggestions": ["/openclaw status"],
+                }
+
+            # Analisa com IA
+            analyzer = OpenClawAnalyzer()
+            analysis = await analyzer.analyze_failures(report)
+
+            return {
+                "response": analysis,
+                "intent": "openclaw_analyze",
+                "data": {"problems_count": len(problems), "cycle_id": report["cycle_id"]},
+                "suggestions": ["/openclaw status", "/openclaw report"],
+            }
+
+        except Exception as e:
+            logger.error(f"Erro ao analisar: {e}")
+            return {
+                "response": f"❌ Erro ao analisar relatório: {str(e)}\n\nTente novamente em alguns minutos.",
+                "intent": "openclaw_analyze",
+                "error": str(e),
+            }
 
     async def _testes(self, args: list[str], context: dict) -> dict[str, Any]:
         """Redireciona para action OPENCLAW_RUN_TESTS"""
