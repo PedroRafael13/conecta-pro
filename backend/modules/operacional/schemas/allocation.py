@@ -4,8 +4,9 @@ Schemas Pydantic para Allocation (Alocação Funcionário-Posto).
 
 from datetime import date, datetime
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from modules.operacional.models.allocation import AllocationStatus
 
@@ -21,6 +22,16 @@ class AllocationBase(BaseModel):
     is_temporary: bool = Field(default=False, description="É temporária")
     role: str | None = Field(None, max_length=100, description="Função")
     notes: str | None = Field(None, description="Observações")
+
+    @field_validator("post_id", "employee_id")
+    @classmethod
+    def validate_uuid(cls, v: str) -> str:
+        """Valida se ID é um UUID válido."""
+        try:
+            UUID(v)
+            return v
+        except (ValueError, AttributeError):
+            raise ValueError(f"ID inválido: {v}. Deve ser um UUID válido.")
 
     @model_validator(mode="after")
     def validate_dates(self) -> "AllocationBase":

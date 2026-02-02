@@ -4,8 +4,9 @@ Schemas Pydantic para Shift (Turno de Trabalho).
 
 from datetime import date, datetime, time
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
 from modules.operacional.models.shift import ShiftStatus
 
@@ -23,6 +24,28 @@ class ShiftBase(BaseModel):
     is_off_day: bool = Field(default=False, description="É dia de folga")
     notes: str | None = Field(None, description="Observações")
 
+    @field_validator("scale_id", "post_id")
+    @classmethod
+    def validate_required_uuid(cls, v: str) -> str:
+        """Valida se ID obrigatório é um UUID válido."""
+        try:
+            UUID(v)
+            return v
+        except (ValueError, AttributeError):
+            raise ValueError(f"ID inválido: {v}. Deve ser um UUID válido.")
+
+    @field_validator("employee_id")
+    @classmethod
+    def validate_optional_uuid(cls, v: str | None) -> str | None:
+        """Valida se ID opcional é um UUID válido quando fornecido."""
+        if v is None:
+            return v
+        try:
+            UUID(v)
+            return v
+        except (ValueError, AttributeError):
+            raise ValueError(f"ID inválido: {v}. Deve ser um UUID válido.")
+
 
 class ShiftCreate(ShiftBase):
     """Schema para criação de Shift."""
@@ -31,6 +54,24 @@ class ShiftCreate(ShiftBase):
     is_night_shift: bool = Field(default=False, description="É turno noturno")
     is_overtime: bool = Field(default=False, description="É hora extra")
     planned_hours: float = Field(default=0.0, ge=0, description="Horas planejadas")
+
+    @field_validator("shift_date")
+    @classmethod
+    def validate_shift_date(cls, v: date) -> date:
+        """Valida data do turno."""
+        from datetime import date as date_type
+        from datetime import timedelta
+
+        today = date_type.today()
+        max_past = today - timedelta(days=90)  # Máximo 90 dias no passado
+        max_future = today + timedelta(days=365)  # Máximo 1 ano no futuro
+
+        if v < max_past:
+            raise ValueError(f"Data do turno muito antiga. Máximo permitido: {max_past.isoformat()}")
+        if v > max_future:
+            raise ValueError(f"Data do turno muito futura. Máximo permitido: {max_future.isoformat()}")
+
+        return v
 
     @model_validator(mode="after")
     def validate_time_range(self):
