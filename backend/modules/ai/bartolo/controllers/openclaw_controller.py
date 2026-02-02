@@ -20,7 +20,7 @@ from core.models import User
 logger = logging.getLogger(__name__)
 
 # Router
-openclaw_router = APIRouter(prefix="/openclaw", tags=["OpenClaw - Code Quality"])
+openclaw_router = APIRouter(tags=["OpenClaw - Code Quality"])
 
 # Configurações
 OPENCLAW_RUNNER = "/opt/conecta-pro/scripts/openclaw/runner.py"
