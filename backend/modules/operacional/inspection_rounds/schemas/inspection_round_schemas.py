@@ -326,6 +326,41 @@ class ApplyDisciplinaryRequest(BaseModel):
     witness_2_cpf: Optional[str] = None
 
 
+class RegisterOccurrenceResponse(BaseModel):
+    """Response para registro de ocorrência durante ronda."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    success: bool = Field(..., description="Se o registro foi bem-sucedido")
+    occurrence_id: UUID = Field(..., description="ID da ocorrência criada")
+    checkpoint_id: Optional[UUID] = Field(None, description="ID do checkpoint atualizado")
+    message: str = Field(default="Ocorrência registrada com sucesso")
+
+    # Dados da ocorrência criada
+    occurrence_type: Optional[str] = None
+    severity: Optional[str] = None
+    status: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class ApplyDisciplinaryResponse(BaseModel):
+    """Response para aplicação de medida disciplinar durante ronda."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    success: bool = Field(..., description="Se a aplicação foi bem-sucedida")
+    disciplinary_action_id: UUID = Field(..., description="ID da medida disciplinar criada")
+    occurrence_id: Optional[UUID] = Field(None, description="ID da ocorrência vinculada")
+    checkpoint_id: Optional[UUID] = Field(None, description="ID do checkpoint vinculado")
+    message: str = Field(default="Medida disciplinar aplicada com sucesso")
+
+    # Dados da medida criada
+    action_type: Optional[str] = None
+    status: Optional[str] = None
+    employee_name: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
 # =============================================================================
 # DASHBOARD SCHEMAS
 # =============================================================================

@@ -4,14 +4,15 @@ Repository para operações de banco de dados com Scale.
 
 import calendar
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, List, Dict, Any
 from uuid import uuid4
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import logger
 from modules.operacional.models.scale import Scale, ScaleStatus
+from modules.operacional.models.shift import Shift, ShiftStatus
 from modules.operacional.schemas.scale import ScaleCreate, ScaleFilter, ScaleUpdate
 
 
@@ -24,6 +25,80 @@ class ScaleRepository:
     async def _generate_code(self, post_id: str, month: int, year: int) -> str:
         """Gera código único para a escala."""
         return f"ESC-{year}-{month:02d}-{post_id[:8].upper()}"
+
+    async def check_employee_availability(
+        self,
+        employee_id: str,
+        start_date: date,
+        end_date: date,
+    ) -> List[Dict[str, Any]]:
+        """
+        Verifica se funcionário tem conflitos de turno no período.
+
+        Args:
+            employee_id: ID do funcionário
+            start_date: Data inicial do período
+            end_date: Data final do período
+
+        Returns:
+            Lista de conflitos encontrados (vazia se não houver conflitos)
+            Cada conflito contém: date, scale_id, shift_id, status
+
+        Example:
+            ```python
+            conflicts = await repo.check_employee_availability(
+                employee_id="uuid",
+                start_date=date(2026, 2, 1),
+                end_date=date(2026, 2, 28)
+            )
+            if conflicts:
+                print(f"Funcionário tem {len(conflicts)} conflitos")
+            ```
+        """
+        # Buscar turnos agendados do funcionário no período
+        query = select(Shift).where(
+            and_(
+                Shift.employee_id == employee_id,
+                Shift.shift_date >= start_date,
+                Shift.shift_date <= end_date,
+                Shift.is_active.is_(True),
+                # Considerar apenas turnos que não foram cancelados ou folgas
+                Shift.status.not_in([
+                    ShiftStatus.CANCELLED.value,
+                    ShiftStatus.OFF_DAY.value,
+                ])
+            )
+        )
+
+        result = await self.db.execute(query)
+        existing_shifts = list(result.scalars().all())
+
+        if not existing_shifts:
+            return []
+
+        # Montar lista de conflitos
+        conflicts = []
+        for shift in existing_shifts:
+            conflicts.append({
+                "date": shift.shift_date,
+                "scale_id": shift.scale_id,
+                "shift_id": shift.id,
+                "post_id": shift.post_id,
+                "status": shift.status,
+                "start_time": shift.start_time,
+                "end_time": shift.end_time,
+            })
+
+        logger.warning(
+            "Conflitos de turno detectados",
+            action="check_employee_availability",
+            employee_id=employee_id,
+            start_date=str(start_date),
+            end_date=str(end_date),
+            conflicts_count=len(conflicts),
+        )
+
+        return conflicts
 
     async def create(self, data: ScaleCreate, created_by: Optional[str] = None) -> Scale:
         """

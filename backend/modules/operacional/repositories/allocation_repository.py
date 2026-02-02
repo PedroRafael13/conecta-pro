@@ -51,6 +51,66 @@ class AllocationRepository:
         await self.db.execute(update_stmt)
         logger.debug(f"Post {post_id} current_headcount atualizado para {count}")
 
+    async def check_active_allocation(
+        self,
+        employee_id: str,
+        post_id: str,
+        start_date: date,
+        end_date: Optional[date] = None,
+        exclude_allocation_id: Optional[str] = None,
+    ) -> Optional[Allocation]:
+        """
+        Verifica se já existe alocação ativa para o funcionário no posto e período.
+
+        Args:
+            employee_id: ID do funcionário
+            post_id: ID do posto
+            start_date: Data de início da nova alocação
+            end_date: Data de fim da nova alocação (opcional)
+            exclude_allocation_id: ID de alocação a excluir da verificação (para updates)
+
+        Returns:
+            Allocation conflitante ou None se não houver conflito
+
+        Raises:
+            ValueError: Se detectar conflito de alocação
+        """
+        query = select(Allocation).where(
+            Allocation.employee_id == employee_id,
+            Allocation.post_id == post_id,
+            Allocation.status == AllocationStatus.ACTIVE.value,
+            Allocation.is_active.is_(True),
+        )
+
+        # Excluir alocação atual em caso de update
+        if exclude_allocation_id:
+            query = query.where(Allocation.id != exclude_allocation_id)
+
+        result = await self.db.execute(query)
+        existing_allocations = list(result.scalars().all())
+
+        # Verificar sobreposição de datas
+        for alloc in existing_allocations:
+            # Alocação existente sem data fim (indefinida)
+            if alloc.end_date is None:
+                # Nova alocação começa antes ou durante a existente
+                if start_date >= alloc.start_date:
+                    return alloc
+
+            # Nova alocação sem data fim
+            elif end_date is None:
+                # Sobrepõe se a nova começa antes do fim da existente
+                if start_date <= alloc.end_date:
+                    return alloc
+
+            # Ambas com data fim - verificar sobreposição
+            else:
+                # Sobreposição: nova começa antes do fim da existente E termina depois do início da existente
+                if start_date <= alloc.end_date and end_date >= alloc.start_date:
+                    return alloc
+
+        return None
+
     async def create(self, data: AllocationCreate, created_by: Optional[str] = None) -> Allocation:
         """
         Cria uma nova alocação.
@@ -61,7 +121,25 @@ class AllocationRepository:
 
         Returns:
             Allocation criada
+
+        Raises:
+            ValueError: Se já existir alocação ativa para o funcionário no posto
         """
+        # Validar se já existe alocação ativa
+        conflicting = await self.check_active_allocation(
+            employee_id=data.employee_id,
+            post_id=data.post_id,
+            start_date=data.start_date,
+            end_date=data.end_date,
+        )
+
+        if conflicting:
+            raise ValueError(
+                f"Funcionário já possui alocação ativa neste posto "
+                f"(alocação {conflicting.id}, início: {conflicting.start_date}, "
+                f"fim: {conflicting.end_date or 'indefinido'})"
+            )
+
         allocation = Allocation(
             id=str(uuid4()),
             post_id=data.post_id,
@@ -320,6 +398,9 @@ class AllocationRepository:
 
         Returns:
             Allocation atualizada ou None
+
+        Raises:
+            ValueError: Se houver conflito de alocação
         """
         allocation = await self.get_by_id(allocation_id)
         if not allocation:
@@ -327,6 +408,28 @@ class AllocationRepository:
 
         old_post_id = allocation.post_id
         update_data = data.model_dump(exclude_unset=True)
+
+        # Se está alterando datas ou posto/funcionário, validar conflitos
+        if any(field in update_data for field in ['start_date', 'end_date', 'post_id', 'employee_id']):
+            new_employee_id = update_data.get('employee_id', allocation.employee_id)
+            new_post_id = update_data.get('post_id', allocation.post_id)
+            new_start_date = update_data.get('start_date', allocation.start_date)
+            new_end_date = update_data.get('end_date', allocation.end_date)
+
+            conflicting = await self.check_active_allocation(
+                employee_id=new_employee_id,
+                post_id=new_post_id,
+                start_date=new_start_date,
+                end_date=new_end_date,
+                exclude_allocation_id=allocation_id,
+            )
+
+            if conflicting:
+                raise ValueError(
+                    f"Funcionário já possui alocação ativa neste posto "
+                    f"(alocação {conflicting.id}, início: {conflicting.start_date}, "
+                    f"fim: {conflicting.end_date or 'indefinido'})"
+                )
 
         for field, value in update_data.items():
             if field == "status" and value:
