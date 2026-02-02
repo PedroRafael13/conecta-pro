@@ -51,12 +51,14 @@ export const rolePermissions: Record<UserRole, string[]> = {
     'financial:write',
     'operacional:*',
     'reports:*',
+    'bidding:*', // Licitações - acesso completo
   ],
   supervisor: [
     'crm:read',
     'operacional:*',
     'campo:*',
     'reports:read',
+    'bidding:read', // Licitações - leitura
   ],
   operacional: [
     'campo:read',
@@ -67,6 +69,7 @@ export const rolePermissions: Record<UserRole, string[]> = {
     'financial:*',
     'government:*',
     'reports:financial',
+    'bidding:*', // Licitações - acesso completo
   ],
   rh: [
     'users:*',
@@ -77,6 +80,7 @@ export const rolePermissions: Record<UserRole, string[]> = {
     'crm:*',
     'services:*',
     'reports:comercial',
+    'bidding:read', // Licitações - leitura
   ],
   cliente: [
     'portal:*',
