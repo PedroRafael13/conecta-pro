@@ -13,10 +13,11 @@ describe('LoadingState', () => {
     expect(screen.getByText('Buscando dados...')).toBeInTheDocument();
   });
 
-  it('renderiza sem mensagem quando message é undefined', () => {
+  it('renderiza mensagem padrão quando message é undefined', () => {
     render(<LoadingState message={undefined} />);
     const loadingText = screen.queryByText('Carregando...');
-    expect(loadingText).not.toBeInTheDocument();
+    // undefined usa valor padrão do componente
+    expect(loadingText).toBeInTheDocument();
   });
 
   it('aplica classe customizada', () => {
@@ -46,7 +47,7 @@ describe('LoadingState', () => {
   it('spinner possui animação', () => {
     const { container } = render(<LoadingState />);
     const spinner = container.querySelector('svg');
-    expect(spinner?.className).toContain('animate-spin');
+    expect(spinner?.classList.contains('animate-spin')).toBe(true);
   });
 });
 
@@ -97,34 +98,34 @@ describe('LoadingSpinner', () => {
   it('aplica classe customizada', () => {
     const { container } = render(<LoadingSpinner className="custom-spinner" />);
     const spinner = container.querySelector('svg');
-    expect(spinner?.className).toContain('custom-spinner');
+    expect(spinner?.classList.contains('custom-spinner')).toBe(true);
   });
 
   it('respeita tamanho sm', () => {
     const { container } = render(<LoadingSpinner size="sm" />);
     const spinner = container.querySelector('svg');
-    expect(spinner?.className).toContain('h-4');
-    expect(spinner?.className).toContain('w-4');
+    expect(spinner?.classList.contains('h-4')).toBe(true);
+    expect(spinner?.classList.contains('w-4')).toBe(true);
   });
 
   it('respeita tamanho md', () => {
     const { container } = render(<LoadingSpinner size="md" />);
     const spinner = container.querySelector('svg');
-    expect(spinner?.className).toContain('h-8');
-    expect(spinner?.className).toContain('w-8');
+    expect(spinner?.classList.contains('h-8')).toBe(true);
+    expect(spinner?.classList.contains('w-8')).toBe(true);
   });
 
   it('respeita tamanho lg', () => {
     const { container } = render(<LoadingSpinner size="lg" />);
     const spinner = container.querySelector('svg');
-    expect(spinner?.className).toContain('h-12');
-    expect(spinner?.className).toContain('w-12');
+    expect(spinner?.classList.contains('h-12')).toBe(true);
+    expect(spinner?.classList.contains('w-12')).toBe(true);
   });
 
   it('sempre possui animação de spin', () => {
     const { container } = render(<LoadingSpinner />);
     const spinner = container.querySelector('svg');
-    expect(spinner?.className).toContain('animate-spin');
+    expect(spinner?.classList.contains('animate-spin')).toBe(true);
   });
 });
 
