@@ -28,7 +28,7 @@ from modules.reimbursement.schemas import (
     ReimbursementReturnRequest,
     ReimbursementSubmitRequest,
 )
-from modules.reimbursement.services import ApprovalService, ReimbursementService
+from modules.reimbursement.services import ApprovalService, ReimbursementService, FileValidator
 
 logger = logging.getLogger(__name__)
 
@@ -83,16 +83,12 @@ async def create_reimbursement(
 
     # Se admin sem condomínio, usa o primeiro condomínio disponível
     if condominio_id is None:
-        from sqlalchemy import text
-        # Tenta tabela condominios primeiro, depois tenants
-        result = await db.execute(text("SELECT id FROM condominios WHERE ativo = true LIMIT 1"))
-        row = result.fetchone()
-        if not row:
-            result = await db.execute(text("SELECT id FROM tenants LIMIT 1"))
-            row = result.fetchone()
-        if row:
-            condominio_id = row[0]
-        else:
+        from modules.reimbursement.repositories import CondominioRepository
+
+        cond_repo = CondominioRepository(db)
+        condominio_id = await cond_repo.get_first_active_condominio()
+
+        if not condominio_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Nenhum condomínio disponível para criar reembolso",
@@ -426,28 +422,19 @@ async def upload_attachment(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload de comprovante/anexo."""
-    # Valida tamanho (máx 10MB)
-    max_size = 10 * 1024 * 1024
-    content = await file.read()
-    if len(content) > max_size:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Arquivo muito grande (máximo 10MB)",
-        )
+    # Validar arquivo usando service
+    validator = FileValidator(
+        max_size=10 * 1024 * 1024,  # 10MB
+        allowed_types=[
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp",
+            "application/pdf",
+        ]
+    )
 
-    # Valida tipo
-    allowed_types = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "image/webp",
-        "application/pdf",
-    ]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Tipo de arquivo não permitido: {file.content_type}",
-        )
+    content = await validator.validate_file(file)
 
     service = ReimbursementService(db)
 

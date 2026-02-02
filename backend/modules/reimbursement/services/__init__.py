@@ -2,5 +2,6 @@
 
 from .reimbursement_service import ReimbursementService
 from .approval_service import ApprovalService
+from .file_validator import FileValidator, FileValidationError
 
-__all__ = ["ReimbursementService", "ApprovalService"]
+__all__ = ["ReimbursementService", "ApprovalService", "FileValidator", "FileValidationError"]
