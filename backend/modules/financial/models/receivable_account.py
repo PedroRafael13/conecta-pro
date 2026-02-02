@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -143,7 +143,8 @@ class ReceivableAccount(Base):
     is_recurring = Column(Boolean, default=False)
     recurrence_type = Column(String(20), nullable=True)
     recurrence_end_date = Column(Date, nullable=True)
-    parent_id = Column(
+    parent_account_id = Column(
+        "parent_account_id",  # Nome real da coluna no banco
         UUID(as_uuid=True),
         ForeignKey("receivable_accounts.id"),
         nullable=True,
@@ -203,10 +204,8 @@ class ReceivableAccount(Base):
 
     # Relacionamentos
     customer: Optional["Customer"] = relationship("Customer", back_populates="receivable_accounts")
-    category: Optional["ReceivableCategory"] = relationship(
-        "ReceivableCategory", back_populates="receivable_accounts"
-    )
-    installments: List["ReceivableInstallment"] = relationship(
+    category: Optional["ReceivableCategory"] = relationship("ReceivableCategory", back_populates="receivable_accounts")
+    installments: list["ReceivableInstallment"] = relationship(
         "ReceivableInstallment",
         back_populates="receivable_account",
         cascade="all, delete-orphan",
@@ -354,7 +353,7 @@ class ReceivableAccount(Base):
         number: str,
         barcode: str,
         digitable_line: str,
-        url: Optional[str] = None,
+        url: str | None = None,
     ) -> None:
         """Registra geracao de boleto."""
         self.boleto_generated = True

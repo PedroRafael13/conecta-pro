@@ -4,7 +4,7 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -143,7 +143,8 @@ class PayableAccount(Base):
     is_recurring = Column(Boolean, default=False)
     recurrence_type = Column(String(20), nullable=True)
     recurrence_end_date = Column(Date, nullable=True)
-    parent_id = Column(
+    parent_recurrence_id = Column(
+        "parent_recurrence_id",  # Nome real da coluna no banco
         UUID(as_uuid=True),
         ForeignKey("payable_accounts.id"),
         nullable=True,
@@ -200,10 +201,8 @@ class PayableAccount(Base):
 
     # Relacionamentos
     supplier: Optional["Supplier"] = relationship("Supplier", back_populates="payable_accounts")
-    category: Optional["PayableCategory"] = relationship(
-        "PayableCategory", back_populates="payable_accounts"
-    )
-    installments: List["PayableInstallment"] = relationship(
+    category: Optional["PayableCategory"] = relationship("PayableCategory", back_populates="payable_accounts")
+    installments: list["PayableInstallment"] = relationship(
         "PayableInstallment",
         back_populates="payable_account",
         cascade="all, delete-orphan",
@@ -315,7 +314,7 @@ class PayableAccount(Base):
         self.scheduled_at = datetime.utcnow()
         self.status = PayableStatus.AGENDADA.value
 
-    def approve(self, user_id: uuid.UUID, notes: Optional[str] = None) -> None:
+    def approve(self, user_id: uuid.UUID, notes: str | None = None) -> None:
         """Aprova para pagamento."""
         self.approval_status = "approved"
         self.approved_by = user_id
