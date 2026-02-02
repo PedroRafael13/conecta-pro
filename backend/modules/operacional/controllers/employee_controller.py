@@ -5,10 +5,9 @@ Integração com Solides DP (Tangerino) para dados em tempo real.
 
 import logging
 import os
-from typing import List, Optional, Dict, Any
+from typing import Optional, Dict, Any
 
-from fastapi import APIRouter, Depends, Query, HTTPException
-from pydantic import BaseModel, ConfigDict
+from fastapi import APIRouter, Depends, Query, HTTPException, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,43 +15,18 @@ from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from modules.operacional.models.employee import Employee
 from modules.operacional.permissions import Permission, require_operacional_permission
+from modules.operacional.schemas.employee import (
+    EmployeeCreate,
+    EmployeeUpdate,
+    EmployeeResponse,
+    EmployeeListResponse,
+    SolidesEmployeeResponse,
+    SolidesEmployeeListResponse,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/employees", tags=["Operations - Employees"])
-
-
-class EmployeeResponse(BaseModel):
-    """Schema de resposta para funcionario."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    nome: str
-    email: Optional[str] = None
-    matricula: Optional[str] = None
-    cargo: Optional[str] = None
-    departamento: Optional[str] = None
-    status: Optional[str] = None
-
-
-class EmployeeListResponse(BaseModel):
-    """Schema para listagem paginada."""
-
-    items: List[EmployeeResponse]
-    total: int
-    page: int
-    page_size: int
-    total_pages: int
-
-
-class EmployeeUpdateRequest(BaseModel):
-    """Schema para atualização de funcionário."""
-
-    cargo: Optional[str] = None
-    departamento: Optional[str] = None
-    telefone: Optional[str] = None
-    status: Optional[str] = None
 
 
 @router.get(
@@ -123,6 +97,122 @@ async def list_employees(
     )
 
 
+@router.post(
+    "/",
+    response_model=EmployeeResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[require_operacional_permission(Permission.EMPLOYEES_CREATE)],
+)
+async def create_employee(
+    data: EmployeeCreate,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> EmployeeResponse:
+    """
+    Cria um novo funcionário no sistema.
+
+    Valida:
+    - Email único
+    - CPF único (se fornecido)
+    - Matrícula única
+    """
+    import uuid
+    from datetime import datetime
+
+    # Validar email único
+    email_result = await db.execute(
+        select(Employee).where(
+            Employee.email == data.email,
+            Employee.is_active.is_(True)
+        )
+    )
+    if email_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email já cadastrado para outro funcionário"
+        )
+
+    # Validar CPF único (se fornecido)
+    if data.cpf:
+        cpf_result = await db.execute(
+            select(Employee).where(
+                Employee.cpf == data.cpf,
+                Employee.is_active.is_(True)
+            )
+        )
+        if cpf_result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="CPF já cadastrado para outro funcionário"
+            )
+
+    # Validar matrícula única
+    matricula_result = await db.execute(
+        select(Employee).where(
+            Employee.matricula == data.matricula,
+            Employee.is_active.is_(True)
+        )
+    )
+    if matricula_result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Matrícula já cadastrada para outro funcionário"
+        )
+
+    # Criar funcionário
+    employee = Employee(
+        id=uuid.uuid4(),
+        nome=data.nome,
+        email=data.email,
+        matricula=data.matricula,
+        cpf=data.cpf,
+        cargo=data.cargo,
+        departamento=data.departamento,
+        telefone=data.telefone,
+        status=data.status or "Ativo",
+        is_active=True,
+        created_by=current_user.id,
+        created_at=datetime.utcnow(),
+    )
+
+    # Campos opcionais
+    if data.data_admissao:
+        try:
+            from datetime import date
+            employee.data_admissao = date.fromisoformat(data.data_admissao)
+        except ValueError:
+            pass
+
+    if data.pis:
+        employee.pis = data.pis
+
+    db.add(employee)
+    await db.commit()
+    await db.refresh(employee)
+
+    logger.info(
+        "Funcionário criado com sucesso",
+        action="create_employee",
+        employee_id=str(employee.id),
+        employee_nome=employee.nome,
+        employee_email=employee.email,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
+
+    return EmployeeResponse(
+        id=str(employee.id),
+        nome=employee.nome,
+        email=employee.email,
+        matricula=employee.matricula,
+        cargo=employee.cargo,
+        departamento=employee.departamento,
+        status=employee.status,
+        cpf=employee.cpf,
+        telefone=employee.telefone,
+    )
+
+
 @router.patch(
     "/{employee_id}",
     response_model=EmployeeResponse,
@@ -130,7 +220,7 @@ async def list_employees(
 )
 async def update_employee(
     employee_id: str,
-    data: EmployeeUpdateRequest,
+    data: EmployeeUpdate,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> EmployeeResponse:
@@ -173,30 +263,6 @@ async def update_employee(
 
 
 # ==================== INTEGRAÇÃO SOLIDES DP ====================
-
-
-class SolidesEmployeeResponse(BaseModel):
-    """Schema de resposta para funcionario do Solides."""
-
-    id: str
-    nome: str
-    email: Optional[str] = None
-    matricula: Optional[str] = None
-    cargo: Optional[str] = None
-    departamento: Optional[str] = None
-    status: Optional[str] = None
-    cpf: Optional[str] = None
-    telefone: Optional[str] = None
-    data_admissao: Optional[str] = None
-    pis: Optional[str] = None
-
-
-class SolidesEmployeeListResponse(BaseModel):
-    """Schema para listagem de funcionarios do Solides."""
-
-    items: List[SolidesEmployeeResponse]
-    total: int
-    source: str = "solides"
 
 
 async def _get_solides_connector():

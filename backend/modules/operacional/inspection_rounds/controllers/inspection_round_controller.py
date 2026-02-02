@@ -11,7 +11,7 @@ from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
 from ..services import (
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def get_inspection_service(db: Session = Depends(get_db)) -> InspectionRoundService:
+def get_inspection_service(db: AsyncSession = Depends(get_db)) -> InspectionRoundService:
     """Dependency para obter InspectionRoundService."""
     return InspectionRoundService(db)
 

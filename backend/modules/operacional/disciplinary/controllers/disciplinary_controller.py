@@ -90,13 +90,28 @@ from modules.operacional.disciplinary.services.signature_service import (
 router = APIRouter(tags=["Operacional - Medidas Administrativas"])
 
 
-# Helper para obter tenant_id de forma segura (compatibilidade)
-DEFAULT_TENANT_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+def get_tenant_id(user: CurrentActiveUser) -> str:
+    """
+    Obtem tenant_id do usuario de forma segura.
 
+    Raises:
+        HTTPException: Se usuario nao possui tenant_id valido
+    """
+    tenant_id = getattr(user, 'tenant_id', None) or getattr(user, 'condominio_id', None)
 
-def get_tenant_id(user) -> str:
-    """Obtem tenant_id do usuario ou usa padrao."""
-    return getattr(user, 'tenant_id', None) or getattr(user, 'condominio_id', None) or DEFAULT_TENANT_ID
+    if not tenant_id:
+        logger.error(
+            "Usuario sem tenant_id tentou acessar recurso",
+            action="get_tenant_id",
+            user_id=str(user.id),
+            user_email=user.email,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuário não está associado a nenhum condomínio/tenant. Contate o administrador.",
+        )
+
+    return str(tenant_id)
 
 
 # =============================================================================
@@ -350,9 +365,9 @@ async def delete_disciplinary_action(
 )
 async def submit_for_approval(
     action_id: str,
+    request: SubmitForApprovalRequest,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    request: Optional[SubmitForApprovalRequest] = None,
 ) -> DisciplinaryActionResponse:
     """Submete medida para aprovacao."""
     try:
@@ -361,7 +376,7 @@ async def submit_for_approval(
             action_id=action_id,
             tenant_id=get_tenant_id(current_user),
             submitted_by=current_user.id,
-            notes=request.notes if request else None,
+            notes=request.notes,
         )
 
         return DisciplinaryActionResponse.model_validate(action)

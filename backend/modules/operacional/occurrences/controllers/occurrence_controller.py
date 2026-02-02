@@ -2,6 +2,7 @@
 Controller (endpoints) para Occurrence.
 """
 
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -32,11 +33,37 @@ from modules.operacional.occurrences.schemas import (
 router = APIRouter(prefix="/occurrences", tags=["Operations - Occurrences"])
 
 
+def parse_date_filter(date_str: str | None) -> datetime | None:
+    """
+    Faz parse seguro de data em formato ISO.
+
+    Args:
+        date_str: String de data no formato ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)
+
+    Returns:
+        datetime object ou None se date_str for None
+
+    Raises:
+        HTTPException: Se formato de data for inválido
+    """
+    if not date_str:
+        return None
+
+    try:
+        from datetime import datetime
+        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    except (ValueError, AttributeError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Formato de data inválido: {date_str}. Use formato ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)"
+        )
+
+
 @router.post(
     "/",
     response_model=OccurrenceResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[require_operacional_permission(Permission.POSTS_CREATE)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_CREATE)],
 )
 async def create_occurrence(
     data: OccurrenceCreate,
@@ -61,7 +88,7 @@ async def create_occurrence(
 @router.get(
     "/",
     response_model=OccurrenceListResponse,
-    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_VIEW)],
 )
 async def list_occurrences(
     current_user: CurrentActiveUser,
@@ -83,8 +110,6 @@ async def list_occurrences(
     """
     Lista ocorrências com filtros e paginação.
     """
-    from datetime import datetime
-
     repo = OccurrenceRepository(db)
 
     filters = OccurrenceFilter(
@@ -96,8 +121,8 @@ async def list_occurrences(
         inspector_id=inspector_id,
         post_id=post_id,
         patrol_round_id=patrol_round_id,
-        date_from=datetime.fromisoformat(date_from) if date_from else None,
-        date_to=datetime.fromisoformat(date_to) if date_to else None,
+        date_from=parse_date_filter(date_from),
+        date_to=parse_date_filter(date_to),
         search=search,
     )
 
@@ -116,7 +141,7 @@ async def list_occurrences(
 @router.get(
     "/stats",
     response_model=OccurrenceStats,
-    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_VIEW)],
 )
 async def get_occurrence_stats(
     current_user: CurrentActiveUser,
@@ -132,7 +157,7 @@ async def get_occurrence_stats(
 @router.get(
     "/by-post/{post_id}",
     response_model=list[OccurrenceResponse],
-    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_VIEW)],
 )
 async def get_occurrences_by_post(
     post_id: str,
@@ -151,7 +176,7 @@ async def get_occurrences_by_post(
 @router.get(
     "/{occurrence_id}",
     response_model=OccurrenceResponse,
-    dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_VIEW)],
 )
 async def get_occurrence(
     occurrence_id: str,
@@ -176,7 +201,7 @@ async def get_occurrence(
 @router.patch(
     "/{occurrence_id}",
     response_model=OccurrenceResponse,
-    dependencies=[require_operacional_permission(Permission.POSTS_EDIT)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_EDIT)],
 )
 async def update_occurrence(
     occurrence_id: str,
@@ -205,7 +230,7 @@ async def update_occurrence(
 @router.post(
     "/{occurrence_id}/resolve",
     response_model=OccurrenceResponse,
-    dependencies=[require_operacional_permission(Permission.POSTS_EDIT)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_RESOLVE)],
 )
 async def resolve_occurrence(
     occurrence_id: str,
@@ -234,7 +259,7 @@ async def resolve_occurrence(
 @router.post(
     "/{occurrence_id}/attachments",
     response_model=OccurrenceResponse,
-    dependencies=[require_operacional_permission(Permission.POSTS_EDIT)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_EDIT)],
 )
 async def add_attachment(
     occurrence_id: str,
@@ -266,7 +291,7 @@ async def add_attachment(
 @router.delete(
     "/{occurrence_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    dependencies=[require_operacional_permission(Permission.POSTS_DELETE)],
+    dependencies=[require_operacional_permission(Permission.OCCURRENCES_DELETE)],
 )
 async def delete_occurrence(
     occurrence_id: str,

@@ -80,6 +80,50 @@ class Permission(str, Enum):
     EMPLOYEES_VIEW = "employees:view"
     EMPLOYEES_EDIT = "employees:edit"
     EMPLOYEES_CREATE = "employees:create"
+    EMPLOYEES_DELETE = "employees:delete"
+
+    # Ocorrencias
+    OCCURRENCES_CREATE = "occurrences:create"
+    OCCURRENCES_VIEW = "occurrences:view"
+    OCCURRENCES_EDIT = "occurrences:edit"
+    OCCURRENCES_DELETE = "occurrences:delete"
+    OCCURRENCES_RESOLVE = "occurrences:resolve"
+
+    # Rondas de Inspecao
+    INSPECTION_ROUNDS_CREATE = "inspection_rounds:create"
+    INSPECTION_ROUNDS_VIEW = "inspection_rounds:view"
+    INSPECTION_ROUNDS_START = "inspection_rounds:start"
+    INSPECTION_ROUNDS_COMPLETE = "inspection_rounds:complete"
+    INSPECTION_ROUNDS_REGISTER_OCCURRENCE = "inspection_rounds:register_occurrence"
+
+    # Disciplinar
+    DISCIPLINARY_CREATE = "disciplinary:create"
+    DISCIPLINARY_VIEW = "disciplinary:view"
+    DISCIPLINARY_EDIT = "disciplinary:edit"
+    DISCIPLINARY_DELETE = "disciplinary:delete"
+    DISCIPLINARY_SUBMIT_APPROVAL = "disciplinary:submit_approval"
+    DISCIPLINARY_APPROVE = "disciplinary:approve"
+    DISCIPLINARY_REJECT = "disciplinary:reject"
+
+    # Comunicacao - Comunicados
+    ANNOUNCEMENTS_CREATE = "announcements:create"
+    ANNOUNCEMENTS_VIEW = "announcements:view"
+    ANNOUNCEMENTS_EDIT = "announcements:edit"
+    ANNOUNCEMENTS_DELETE = "announcements:delete"
+    ANNOUNCEMENTS_PUBLISH = "announcements:publish"
+
+    # Comunicacao - Notificacoes
+    NOTIFICATIONS_CREATE = "notifications:create"
+    NOTIFICATIONS_VIEW = "notifications:view"
+    NOTIFICATIONS_VIEW_ALL = "notifications:view_all"
+    NOTIFICATIONS_MARK_READ = "notifications:mark_read"
+
+    # Reembolsos (mantido aqui por compatibilidade - sera movido para financeiro)
+    REIMBURSEMENTS_CREATE = "reimbursements:create"
+    REIMBURSEMENTS_VIEW = "reimbursements:view"
+    REIMBURSEMENTS_EDIT = "reimbursements:edit"
+    REIMBURSEMENTS_APPROVE = "reimbursements:approve"
+    REIMBURSEMENTS_REJECT = "reimbursements:reject"
 
 
 # Mapeamento Role -> Permissoes
@@ -113,6 +157,38 @@ ROLE_PERMISSIONS: dict[OperacionalRole, list[Permission]] = {
         Permission.EMPLOYEES_VIEW,
         Permission.EMPLOYEES_EDIT,
         Permission.EMPLOYEES_CREATE,
+        Permission.EMPLOYEES_DELETE,
+        Permission.OCCURRENCES_CREATE,
+        Permission.OCCURRENCES_VIEW,
+        Permission.OCCURRENCES_EDIT,
+        Permission.OCCURRENCES_DELETE,
+        Permission.OCCURRENCES_RESOLVE,
+        Permission.INSPECTION_ROUNDS_CREATE,
+        Permission.INSPECTION_ROUNDS_VIEW,
+        Permission.INSPECTION_ROUNDS_START,
+        Permission.INSPECTION_ROUNDS_COMPLETE,
+        Permission.INSPECTION_ROUNDS_REGISTER_OCCURRENCE,
+        Permission.DISCIPLINARY_CREATE,
+        Permission.DISCIPLINARY_VIEW,
+        Permission.DISCIPLINARY_EDIT,
+        Permission.DISCIPLINARY_DELETE,
+        Permission.DISCIPLINARY_SUBMIT_APPROVAL,
+        Permission.DISCIPLINARY_APPROVE,
+        Permission.DISCIPLINARY_REJECT,
+        Permission.ANNOUNCEMENTS_CREATE,
+        Permission.ANNOUNCEMENTS_VIEW,
+        Permission.ANNOUNCEMENTS_EDIT,
+        Permission.ANNOUNCEMENTS_DELETE,
+        Permission.ANNOUNCEMENTS_PUBLISH,
+        Permission.NOTIFICATIONS_CREATE,
+        Permission.NOTIFICATIONS_VIEW,
+        Permission.NOTIFICATIONS_VIEW_ALL,
+        Permission.NOTIFICATIONS_MARK_READ,
+        Permission.REIMBURSEMENTS_CREATE,
+        Permission.REIMBURSEMENTS_VIEW,
+        Permission.REIMBURSEMENTS_EDIT,
+        Permission.REIMBURSEMENTS_APPROVE,
+        Permission.REIMBURSEMENTS_REJECT,
     ],
     OperacionalRole.SUPERVISOR: [
         Permission.POSTS_VIEW,
@@ -138,6 +214,30 @@ ROLE_PERMISSIONS: dict[OperacionalRole, list[Permission]] = {
         Permission.REPORTS_VIEW,
         Permission.EMPLOYEES_VIEW,
         Permission.EMPLOYEES_EDIT,
+        Permission.OCCURRENCES_CREATE,
+        Permission.OCCURRENCES_VIEW,
+        Permission.OCCURRENCES_EDIT,
+        Permission.OCCURRENCES_RESOLVE,
+        Permission.INSPECTION_ROUNDS_CREATE,
+        Permission.INSPECTION_ROUNDS_VIEW,
+        Permission.INSPECTION_ROUNDS_START,
+        Permission.INSPECTION_ROUNDS_COMPLETE,
+        Permission.INSPECTION_ROUNDS_REGISTER_OCCURRENCE,
+        Permission.DISCIPLINARY_CREATE,
+        Permission.DISCIPLINARY_VIEW,
+        Permission.DISCIPLINARY_EDIT,
+        Permission.DISCIPLINARY_SUBMIT_APPROVAL,
+        Permission.ANNOUNCEMENTS_CREATE,
+        Permission.ANNOUNCEMENTS_VIEW,
+        Permission.ANNOUNCEMENTS_EDIT,
+        Permission.ANNOUNCEMENTS_PUBLISH,
+        Permission.NOTIFICATIONS_CREATE,
+        Permission.NOTIFICATIONS_VIEW,
+        Permission.NOTIFICATIONS_VIEW_ALL,
+        Permission.NOTIFICATIONS_MARK_READ,
+        Permission.REIMBURSEMENTS_CREATE,
+        Permission.REIMBURSEMENTS_VIEW,
+        Permission.REIMBURSEMENTS_EDIT,
     ],
     OperacionalRole.INSPETOR: [
         Permission.POSTS_VIEW,
@@ -154,6 +254,18 @@ ROLE_PERMISSIONS: dict[OperacionalRole, list[Permission]] = {
         Permission.TIMEBANK_VIEW_OWN,
         Permission.REPORTS_VIEW,
         Permission.EMPLOYEES_VIEW,
+        Permission.OCCURRENCES_CREATE,
+        Permission.OCCURRENCES_VIEW,
+        Permission.OCCURRENCES_EDIT,
+        Permission.INSPECTION_ROUNDS_CREATE,
+        Permission.INSPECTION_ROUNDS_VIEW,
+        Permission.INSPECTION_ROUNDS_START,
+        Permission.INSPECTION_ROUNDS_COMPLETE,
+        Permission.INSPECTION_ROUNDS_REGISTER_OCCURRENCE,
+        Permission.DISCIPLINARY_VIEW,
+        Permission.ANNOUNCEMENTS_VIEW,
+        Permission.NOTIFICATIONS_VIEW,
+        Permission.NOTIFICATIONS_MARK_READ,
     ],
     OperacionalRole.LIDER: [
         Permission.POSTS_VIEW,
@@ -166,12 +278,24 @@ ROLE_PERMISSIONS: dict[OperacionalRole, list[Permission]] = {
         Permission.SUBSTITUTIONS_CREATE,
         Permission.TIMEBANK_VIEW_OWN,
         Permission.EMPLOYEES_VIEW,
+        Permission.OCCURRENCES_CREATE,
+        Permission.OCCURRENCES_VIEW,
+        Permission.INSPECTION_ROUNDS_VIEW,
+        Permission.DISCIPLINARY_VIEW,
+        Permission.ANNOUNCEMENTS_VIEW,
+        Permission.NOTIFICATIONS_VIEW,
+        Permission.NOTIFICATIONS_MARK_READ,
     ],
     OperacionalRole.AGENTE: [
         Permission.SCALES_VIEW_OWN,
         Permission.SHIFTS_CHECKIN,
         Permission.SHIFTS_VIEW_OWN,
         Permission.TIMEBANK_VIEW_OWN,
+        Permission.OCCURRENCES_CREATE,
+        Permission.OCCURRENCES_VIEW,
+        Permission.ANNOUNCEMENTS_VIEW,
+        Permission.NOTIFICATIONS_VIEW,
+        Permission.NOTIFICATIONS_MARK_READ,
     ],
 }
 
