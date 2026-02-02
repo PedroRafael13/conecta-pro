@@ -5,7 +5,20 @@
 import { test, expect } from './fixtures';
 
 test.describe('Contabilidade', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context }) => {
+    // Configurar token e autenticação antes de navegar
+    await page.addInitScript(() => {
+      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBjb25lY3RhcGx1cy5jb20uYnIiLCJleHAiOjk5OTk5OTk5OTl9.mock';
+      localStorage.setItem('access_token', mockToken);
+      localStorage.setItem('user', JSON.stringify({
+        id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        email: 'admin@conectaplus.com.br',
+        name: 'Admin',
+        role: 'admin',
+        is_active: true,
+      }));
+    });
+
     await page.goto('/modulos/financeiro/contabilidade', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
   });

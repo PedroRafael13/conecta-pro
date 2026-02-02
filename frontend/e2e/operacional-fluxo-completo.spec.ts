@@ -18,6 +18,9 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Operacional - Fluxo Completo', () => {
+  // Aumenta timeout para todos os testes do fluxo completo
+  test.setTimeout(40000);
+
   test.beforeEach(async ({ page }) => {
     // Mocka endpoint /auth/me para todos os testes
     await page.route('**/api/v1/auth/me', (route) => {

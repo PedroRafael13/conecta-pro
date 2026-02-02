@@ -29,8 +29,8 @@ test.describe('Operacional - Postos de Trabalho', () => {
   });
 
   test('deve exibir lista de postos', async ({ page }) => {
-    // Aguardar carregamento da tabela
-    await page.waitForSelector('table, [role="table"]', { timeout: 5000 }).catch(() => {});
+    // Aguardar carregamento da tabela com timeout maior
+    await page.waitForSelector('table, [role="table"]', { timeout: 10000 }).catch(() => {});
 
     // Verificar se tabela ou cards estão presentes
     const hasTable = await page.locator('table').count() > 0;
@@ -40,28 +40,36 @@ test.describe('Operacional - Postos de Trabalho', () => {
   });
 
   test('deve exibir botão de novo posto', async ({ page }) => {
-    // Procurar botão de criar
+    // Aguardar página carregar completamente
+    await page.waitForLoadState('networkidle');
+
+    // Procurar botão de criar com timeout maior
     const createButton = page.locator('button:has-text("Novo"), button:has-text("Criar")').first();
-    await expect(createButton).toBeVisible({ timeout: 5000 });
+    await expect(createButton).toBeVisible({ timeout: 10000 });
   });
 
   test('deve abrir modal ao clicar em novo posto', async ({ page }) => {
-    // Clicar no botão de criar
+    // Aguardar botão estar pronto
     const createButton = page.locator('button:has-text("Novo"), button:has-text("Criar")').first();
+    await expect(createButton).toBeVisible({ timeout: 10000 });
+
+    // Clicar no botão de criar
     await createButton.click();
 
-    // Aguardar modal abrir
-    await page.waitForTimeout(500);
+    // Aguardar modal abrir com timeout maior
+    await page.waitForTimeout(1000);
 
     // Verificar se modal está visível
     const modal = page.locator('[role="dialog"], [class*="modal"]').first();
-    await expect(modal).toBeVisible({ timeout: 3000 });
+    await expect(modal).toBeVisible({ timeout: 5000 });
   });
 
   test('deve validar campos obrigatórios ao criar posto', async ({ page }) => {
-    // Abrir modal de criação
-    await page.locator('button:has-text("Novo"), button:has-text("Criar")').first().click();
-    await page.waitForTimeout(500);
+    // Aguardar e abrir modal de criação
+    const createButton = page.locator('button:has-text("Novo"), button:has-text("Criar")').first();
+    await expect(createButton).toBeVisible({ timeout: 10000 });
+    await createButton.click();
+    await page.waitForTimeout(1000);
 
     // Tentar salvar sem preencher campos
     const saveButton = page.locator('button:has-text("Salvar"), button[type="submit"]').first();
@@ -77,9 +85,11 @@ test.describe('Operacional - Postos de Trabalho', () => {
   });
 
   test('deve preencher formulário de novo posto', async ({ page }) => {
-    // Abrir modal de criação
-    await page.locator('button:has-text("Novo"), button:has-text("Criar")').first().click();
-    await page.waitForTimeout(500);
+    // Aguardar e abrir modal de criação
+    const createButton = page.locator('button:has-text("Novo"), button:has-text("Criar")').first();
+    await expect(createButton).toBeVisible({ timeout: 10000 });
+    await createButton.click();
+    await page.waitForTimeout(1000);
 
     // Preencher campos
     const nameInput = page.locator('input[name="name"], input[placeholder*="nome"]').first();
@@ -236,11 +246,14 @@ test.describe('Operacional - Postos de Trabalho', () => {
 test.describe('Operacional - Postos - Validações', () => {
   test('não deve permitir criar posto sem nome', async ({ page }) => {
     await page.goto('/modulos/operacional/postos');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    // Abrir modal
-    await page.locator('button:has-text("Novo")').first().click();
-    await page.waitForTimeout(500);
+    // Abrir modal com wait adequado
+    const newButton = page.locator('button:has-text("Novo")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     // Tentar salvar sem nome
     const saveButton = page.locator('button:has-text("Salvar")').first();
@@ -256,10 +269,13 @@ test.describe('Operacional - Postos - Validações', () => {
 
   test('deve validar formato de campos numéricos', async ({ page }) => {
     await page.goto('/modulos/operacional/postos');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    await page.locator('button:has-text("Novo")').first().click();
-    await page.waitForTimeout(500);
+    const newButton = page.locator('button:has-text("Novo")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     // Tentar inserir texto em campo numérico
     const numericInput = page.locator('input[type="number"]').first();

@@ -14,11 +14,12 @@ export const test = base.extend({
           contentType: 'application/json',
           body: JSON.stringify({
             id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
-            email: 'admin@conectapro.com.br',
+            email: 'admin@conectaplus.com.br',
             name: 'Admin',
             role: 'admin',
             is_active: true,
-            permissions: [],
+            permissions: ['*'],
+            tenant_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
           }),
         });
       } else {

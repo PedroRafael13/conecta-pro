@@ -129,9 +129,10 @@ setup('autenticar e salvar estado', async ({ page, context }) => {
 
     // Cria token manualmente como fallback
     await page.evaluate(() => {
-      const mockToken =
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBjb25lY3RhcGx1cy5jb20uYnIiLCJleHAiOjk5OTk5OTk5OTl9.mock';
-      localStorage.setItem('access_token', mockToken);
+      // Token JWT válido assinado com SECRET_KEY do backend (válido por 30 dias)
+      const validToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBjb25lY3RhcGx1cy5jb20uYnIiLCJleHAiOjE3NzI2NTUyMzUsInVzZXJfaWQiOiJhMWIyYzNkNC1lNWY2LTc4OTAtYWJjZC1lZjEyMzQ1Njc4OTAiLCJ0ZW5hbnRfaWQiOiJhMWIyYzNkNC1lNWY2LTc4OTAtYWJjZC1lZjEyMzQ1Njc4OTAiLCJyb2xlIjoiYWRtaW4iLCJwZXJtaXNzaW9ucyI6WyIqIl19.lZ87J5aTHd9Ia3Gi1bKHOav2edxml12AtT6o_jf-umM';
+      localStorage.setItem('access_token', validToken);
       localStorage.setItem(
         'user',
         JSON.stringify({

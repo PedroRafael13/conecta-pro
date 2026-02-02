@@ -6,6 +6,33 @@ import { test, expect } from './fixtures';
 
 test.describe('Custeio ABC', () => {
   test.beforeEach(async ({ page }) => {
+    // Mock explícito de /auth/me ANTES de qualquer navegação
+    await page.route('**/api/v1/auth/**', (route) => {
+      if (route.request().url().includes('/auth/me') && route.request().method() === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            email: 'admin@conectaplus.com.br',
+            name: 'Admin',
+            role: 'admin',
+            is_active: true,
+            permissions: ['*'],
+            tenant_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    // Configurar token no localStorage
+    await page.addInitScript(() => {
+      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBjb25lY3RhcGx1cy5jb20uYnIiLCJleHAiOjk5OTk5OTk5OTl9.mock';
+      localStorage.setItem('access_token', mockToken);
+    });
+
     await page.goto('/modulos/financeiro/custeio', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
   });

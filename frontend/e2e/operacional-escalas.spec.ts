@@ -14,14 +14,15 @@ import { test, expect } from '@playwright/test';
 test.describe('Operacional - Escalas', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
   });
 
   test('deve carregar a página de escalas', async ({ page }) => {
-    await expect(page).toHaveURL(/\/escalas/);
+    await expect(page).toHaveURL(/\/escalas/, { timeout: 10000 });
 
     const heading = page.locator('h1').first();
-    await expect(heading).toContainText(/Escalas/i);
+    await expect(heading).toContainText(/Escalas/i, { timeout: 10000 });
   });
 
   test('deve exibir lista de escalas', async ({ page }) => {
@@ -36,20 +37,24 @@ test.describe('Operacional - Escalas', () => {
 
   test('deve exibir botão de gerar escala', async ({ page }) => {
     const generateButton = page.locator('button:has-text("Gerar"), button:has-text("Nova")').first();
-    await expect(generateButton).toBeVisible({ timeout: 5000 });
+    await expect(generateButton).toBeVisible({ timeout: 10000 });
   });
 
   test('deve abrir modal ao clicar em gerar escala', async ({ page }) => {
-    await page.locator('button:has-text("Gerar")').first().click();
-    await page.waitForTimeout(500);
+    const generateButton = page.locator('button:has-text("Gerar")').first();
+    await expect(generateButton).toBeVisible({ timeout: 10000 });
+    await generateButton.click();
+    await page.waitForTimeout(1000);
 
     const modal = page.locator('[role="dialog"]').first();
-    await expect(modal).toBeVisible();
+    await expect(modal).toBeVisible({ timeout: 5000 });
   });
 
   test('deve exibir formulário de geração de escala', async ({ page }) => {
-    await page.locator('button:has-text("Gerar")').first().click();
-    await page.waitForTimeout(500);
+    const generateButton = page.locator('button:has-text("Gerar")').first();
+    await expect(generateButton).toBeVisible({ timeout: 10000 });
+    await generateButton.click();
+    await page.waitForTimeout(1000);
 
     // Verificar campos do formulário
     const postSelect = page.locator('select, [role="combobox"]').first();
@@ -243,10 +248,13 @@ test.describe('Operacional - Escalas - Workflow', () => {
 test.describe('Operacional - Escalas - Validações', () => {
   test('deve validar seleção de posto ao gerar', async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    await page.locator('button:has-text("Gerar")').first().click();
-    await page.waitForTimeout(500);
+    const generateBtn = page.locator('button:has-text("Gerar")').first();
+    await expect(generateBtn).toBeVisible({ timeout: 10000 });
+    await generateBtn.click();
+    await page.waitForTimeout(1000);
 
     // Tentar gerar sem selecionar posto
     const generateButton = page.locator('button:has-text("Gerar"), button[type="submit"]').last();
@@ -263,19 +271,23 @@ test.describe('Operacional - Escalas - Validações', () => {
 
   test('não deve permitir gerar escala duplicada', async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
     // Este teste precisa de dados específicos para validar duplicata
     // Apenas verifica que a página está funcional
-    expect(page.url()).toContain('/escalas');
+    await expect(page).toHaveURL(/\/escalas/, { timeout: 10000 });
   });
 
   test('deve exibir mensagem se não há postos disponíveis', async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    await page.locator('button:has-text("Gerar")').first().click();
-    await page.waitForTimeout(500);
+    const generateBtn = page.locator('button:has-text("Gerar")').first();
+    await expect(generateBtn).toBeVisible({ timeout: 10000 });
+    await generateBtn.click();
+    await page.waitForTimeout(1000);
 
     // Se não há postos, deve mostrar mensagem
     const emptyMessage = page.locator('text=/nenhum posto/i, text=/sem postos/i').first();

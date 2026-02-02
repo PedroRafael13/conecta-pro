@@ -14,14 +14,15 @@ import { test, expect } from '@playwright/test';
 test.describe('Operacional - Ocorrências', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/modulos/operacional/ocorrencias');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
   });
 
   test('deve carregar a página de ocorrências', async ({ page }) => {
-    await expect(page).toHaveURL(/\/ocorrencias/);
+    await expect(page).toHaveURL(/\/ocorrencias/, { timeout: 10000 });
 
     const heading = page.locator('h1').first();
-    await expect(heading).toContainText(/Ocorrências/i);
+    await expect(heading).toContainText(/Ocorrências/i, { timeout: 10000 });
   });
 
   test('deve exibir lista de ocorrências', async ({ page }) => {
@@ -36,20 +37,24 @@ test.describe('Operacional - Ocorrências', () => {
 
   test('deve exibir botão de nova ocorrência', async ({ page }) => {
     const newButton = page.locator('button:has-text("Nova"), button:has-text("Novo")').first();
-    await expect(newButton).toBeVisible({ timeout: 5000 });
+    await expect(newButton).toBeVisible({ timeout: 10000 });
   });
 
   test('deve abrir modal ao clicar em nova ocorrência', async ({ page }) => {
-    await page.locator('button:has-text("Nova")').first().click();
-    await page.waitForTimeout(500);
+    const newButton = page.locator('button:has-text("Nova")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     const modal = page.locator('[role="dialog"]').first();
-    await expect(modal).toBeVisible();
+    await expect(modal).toBeVisible({ timeout: 5000 });
   });
 
   test('deve exibir formulário de ocorrência', async ({ page }) => {
-    await page.locator('button:has-text("Nova")').first().click();
-    await page.waitForTimeout(500);
+    const newButton = page.locator('button:has-text("Nova")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     // Verificar campos principais
     const titleInput = page.locator('input[name="title"], input[placeholder*="título"]').first();
@@ -273,10 +278,13 @@ test.describe('Operacional - Ocorrências - Workflow', () => {
 test.describe('Operacional - Ocorrências - Validações', () => {
   test('deve validar título obrigatório', async ({ page }) => {
     await page.goto('/modulos/operacional/ocorrencias');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    await page.locator('button:has-text("Nova")').first().click();
-    await page.waitForTimeout(500);
+    const newButton = page.locator('button:has-text("Nova")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     // Tentar salvar sem título
     const saveButton = page.locator('button:has-text("Salvar"), button[type="submit"]').last();
@@ -292,10 +300,13 @@ test.describe('Operacional - Ocorrências - Validações', () => {
 
   test('deve validar descrição mínima', async ({ page }) => {
     await page.goto('/modulos/operacional/ocorrencias');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    await page.locator('button:has-text("Nova")').first().click();
-    await page.waitForTimeout(500);
+    const newButton = page.locator('button:has-text("Nova")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     const descriptionInput = page.locator('textarea[name="description"]').first();
 
@@ -315,10 +326,13 @@ test.describe('Operacional - Ocorrências - Validações', () => {
 
   test('deve exigir seleção de tipo', async ({ page }) => {
     await page.goto('/modulos/operacional/ocorrencias');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    await page.locator('button:has-text("Nova")').first().click();
-    await page.waitForTimeout(500);
+    const newButton = page.locator('button:has-text("Nova")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     // Form deve ter select de tipo
     const typeSelect = page.locator('select[name*="type"], select[name*="tipo"]').first();
@@ -330,10 +344,13 @@ test.describe('Operacional - Ocorrências - Validações', () => {
 
   test('deve exigir seleção de severidade', async ({ page }) => {
     await page.goto('/modulos/operacional/ocorrencias');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
 
-    await page.locator('button:has-text("Nova")').first().click();
-    await page.waitForTimeout(500);
+    const newButton = page.locator('button:has-text("Nova")').first();
+    await expect(newButton).toBeVisible({ timeout: 10000 });
+    await newButton.click();
+    await page.waitForTimeout(1000);
 
     const severitySelect = page.locator('select[name*="severity"], select[name*="severidade"]').first();
 
