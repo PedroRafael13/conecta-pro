@@ -371,20 +371,22 @@ export function BartoloChat() {
         onClick={toggleChat}
         className={cn(
           'fixed bottom-6 right-6 z-50 group',
-          'w-14 h-14 rounded-full',
-          'bg-gradient-to-br from-amber-600 to-amber-700',
-          'hover:from-amber-500 hover:to-amber-600',
-          'shadow-lg shadow-amber-600/25',
+          'w-16 h-16 rounded-full',
+          'bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600',
+          'hover:from-amber-400 hover:via-amber-500 hover:to-orange-500',
+          'shadow-2xl shadow-amber-500/40',
+          'hover:shadow-amber-400/50',
           'flex items-center justify-center',
           'transition-all duration-300 ease-out',
           'hover:scale-110 active:scale-95',
+          'ring-4 ring-amber-400/20 hover:ring-amber-300/30',
           isOpen && 'scale-0 opacity-0 pointer-events-none'
         )}
         aria-label="Abrir chat com Bartolo"
       >
-        <DachshundIcon className="w-8 h-8" animate />
+        <DachshundIcon className="w-9 h-9" animate />
         {hasNewMessage && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full animate-pulse border-2 border-white" />
         )}
       </button>
 
@@ -392,62 +394,70 @@ export function BartoloChat() {
       <div
         className={cn(
           'fixed bottom-6 right-6 z-50',
-          'transition-all duration-300 ease-out',
+          'transition-all duration-500 ease-out',
           isOpen
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-4 pointer-events-none',
-          isMinimized ? 'w-72' : 'w-96'
+            ? 'opacity-100 translate-y-0 scale-100'
+            : 'opacity-0 translate-y-8 scale-95 pointer-events-none',
+          isMinimized ? 'w-80' : 'w-[26rem]'
         )}
       >
         <div
           className={cn(
-            'bg-slate-900 rounded-2xl shadow-2xl',
-            'border border-slate-700/50',
+            'bg-gradient-to-br from-slate-900/95 via-slate-900/98 to-slate-950/95',
+            'backdrop-blur-xl rounded-3xl shadow-2xl',
+            'border border-amber-500/20 hover:border-amber-400/30',
+            'transition-all duration-300',
             'overflow-hidden',
             'flex flex-col',
-            isMinimized ? 'h-14' : 'h-[32rem]'
+            isMinimized ? 'h-16' : 'h-[36rem]'
           )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-700 to-amber-600">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <DachshundIcon className="w-5 h-5" />
+          <div className="relative flex items-center justify-between px-5 py-4 bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)] pointer-events-none" />
+
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-10 h-10 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30 shadow-lg">
+                <DachshundIcon className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-white">Bartolo</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-white tracking-tight">Bartolo</h3>
+                  <span className="w-2 h-2 rounded-full bg-green-400 shadow-lg shadow-green-400/50 animate-pulse" />
+                </div>
                 {!isMinimized && (
-                  <p className="text-xs text-amber-100/80">
-                    Assistente Conecta PRO
+                  <p className="text-xs text-white/90 font-medium">
+                    Assistente IA • Online
                   </p>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 relative z-10">
               <button
                 onClick={resetChat}
-                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                className="p-2 rounded-xl hover:bg-white/20 active:bg-white/30 transition-all duration-200 group"
                 title="Reiniciar conversa"
               >
-                <RotateCcw className="w-4 h-4 text-white/80" />
+                <RotateCcw className="w-4 h-4 text-white group-hover:rotate-180 transition-transform duration-500" />
               </button>
               <button
                 onClick={toggleMinimize}
-                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                className="p-2 rounded-xl hover:bg-white/20 active:bg-white/30 transition-all duration-200 group"
                 title={isMinimized ? 'Expandir' : 'Minimizar'}
               >
                 {isMinimized ? (
-                  <Maximize2 className="w-4 h-4 text-white/80" />
+                  <Maximize2 className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
                 ) : (
-                  <Minimize2 className="w-4 h-4 text-white/80" />
+                  <Minimize2 className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
                 )}
               </button>
               <button
                 onClick={toggleChat}
-                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                className="p-2 rounded-xl hover:bg-white/20 active:bg-white/30 transition-all duration-200 group"
                 title="Fechar"
               >
-                <X className="w-4 h-4 text-white/80" />
+                <X className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-300" />
               </button>
             </div>
           </div>
@@ -456,39 +466,41 @@ export function BartoloChat() {
           {!isMinimized && (
             <>
               {/* Area de Mensagens */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin scrollbar-thumb-amber-500/20 scrollbar-track-transparent">
                 {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center">
-                    <div className="w-20 h-20 rounded-full bg-amber-500/10 flex items-center justify-center mb-4">
-                      <DachshundIcon className="w-12 h-12" />
+                  <div className="flex flex-col items-center justify-center h-full text-center animate-in fade-in duration-500">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/10 flex items-center justify-center mb-5 ring-4 ring-amber-500/10 shadow-xl">
+                      <DachshundIcon className="w-14 h-14 animate-in zoom-in duration-700" />
                     </div>
-                    <h4 className="text-sm font-medium text-slate-200 mb-1">
-                      Ola! Sou o Bartolo
+                    <h4 className="text-base font-bold text-slate-100 mb-2 bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
+                      Olá! Sou o Bartolo
                     </h4>
-                    <p className="text-xs text-slate-400 max-w-[200px]">
-                      Seu assistente IA do Conecta PRO. Como posso ajudar?
+                    <p className="text-sm text-slate-400 max-w-[240px] leading-relaxed">
+                      Seu assistente IA do Conecta PRO. Como posso ajudar você hoje?
                     </p>
                   </div>
                 ) : (
-                  messages.map((msg) => (
+                  messages.map((msg, idx) => (
                     <div
                       key={msg.id}
                       className={cn(
-                        'flex gap-2',
+                        'flex gap-2.5 animate-in fade-in slide-in-from-bottom-4',
                         msg.role === 'user' ? 'justify-end' : 'justify-start'
                       )}
+                      style={{ animationDelay: `${idx * 50}ms` }}
                     >
                       {msg.role === 'assistant' && (
-                        <div className="w-7 h-7 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
-                          <DachshundIcon className="w-4 h-4" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/20 flex-shrink-0 flex items-center justify-center ring-2 ring-amber-500/20 shadow-lg">
+                          <DachshundIcon className="w-5 h-5" />
                         </div>
                       )}
                       <div
                         className={cn(
-                          'max-w-[80%] rounded-2xl px-4 py-2.5',
+                          'max-w-[82%] rounded-2xl px-4 py-3 shadow-lg',
+                          'transition-all duration-200 hover:shadow-xl',
                           msg.role === 'user'
-                            ? 'bg-amber-600 text-white rounded-br-md'
-                            : 'bg-slate-800 text-slate-200 rounded-bl-md'
+                            ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-br-sm'
+                            : 'bg-slate-800/80 backdrop-blur-sm text-slate-100 rounded-bl-sm border border-slate-700/50'
                         )}
                       >
                         {msg.contentHtml ? (
@@ -502,12 +514,12 @@ export function BartoloChat() {
 
                         {/* Acoes */}
                         {msg.actions && msg.actions.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
+                          <div className="mt-3 flex flex-wrap gap-2">
                             {msg.actions.map((action, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => handleActionClick(action)}
-                                className="text-xs px-2 py-1 rounded-full bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+                                className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 hover:from-amber-500/30 hover:to-orange-500/30 hover:text-amber-200 transition-all duration-200 border border-amber-500/30 hover:border-amber-400/50 shadow-sm hover:shadow-amber-500/20 font-medium"
                               >
                                 {action.label}
                               </button>
@@ -517,27 +529,27 @@ export function BartoloChat() {
 
                         {/* Feedback (so para mensagens do assistente) */}
                         {msg.role === 'assistant' && (
-                          <div className="mt-2 flex gap-1 opacity-0 hover:opacity-100 transition-opacity">
+                          <div className="mt-2.5 flex gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => handleFeedback(msg.id, true)}
-                              className="p-1 rounded hover:bg-slate-700/50"
-                              title="Util"
+                              className="p-1.5 rounded-lg hover:bg-green-500/20 active:bg-green-500/30 transition-all group"
+                              title="Útil"
                             >
-                              <ThumbsUp className="w-3 h-3 text-slate-500" />
+                              <ThumbsUp className="w-3.5 h-3.5 text-slate-500 group-hover:text-green-400 transition-colors" />
                             </button>
                             <button
                               onClick={() => handleFeedback(msg.id, false)}
-                              className="p-1 rounded hover:bg-slate-700/50"
-                              title="Nao ajudou"
+                              className="p-1.5 rounded-lg hover:bg-red-500/20 active:bg-red-500/30 transition-all group"
+                              title="Não ajudou"
                             >
-                              <ThumbsDown className="w-3 h-3 text-slate-500" />
+                              <ThumbsDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-red-400 transition-colors" />
                             </button>
                           </div>
                         )}
                       </div>
                       {msg.role === 'user' && (
-                        <div className="w-7 h-7 rounded-full bg-slate-700 flex-shrink-0 flex items-center justify-center">
-                          <User className="w-4 h-4 text-slate-400" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex-shrink-0 flex items-center justify-center ring-2 ring-slate-600/50 shadow-lg">
+                          <User className="w-4 h-4 text-slate-300" />
                         </div>
                       )}
                     </div>
@@ -546,15 +558,15 @@ export function BartoloChat() {
 
                 {/* Indicador de digitando */}
                 {isSending && (
-                  <div className="flex gap-2 items-start">
-                    <div className="w-7 h-7 rounded-full bg-amber-500/20 flex-shrink-0 flex items-center justify-center">
-                      <DachshundIcon className="w-4 h-4" />
+                  <div className="flex gap-2.5 items-start animate-in fade-in slide-in-from-bottom-4">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/20 flex-shrink-0 flex items-center justify-center ring-2 ring-amber-500/20 shadow-lg animate-pulse">
+                      <DachshundIcon className="w-5 h-5" />
                     </div>
-                    <div className="bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                        <span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                        <span className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" />
+                    <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700/50 rounded-2xl rounded-bl-sm px-5 py-3.5 shadow-lg">
+                      <div className="flex gap-1.5">
+                        <span className="w-2.5 h-2.5 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full animate-bounce [animation-delay:-0.3s] shadow-lg shadow-amber-400/50" />
+                        <span className="w-2.5 h-2.5 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full animate-bounce [animation-delay:-0.15s] shadow-lg shadow-amber-400/50" />
+                        <span className="w-2.5 h-2.5 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full animate-bounce shadow-lg shadow-amber-400/50" />
                       </div>
                     </div>
                   </div>
@@ -565,14 +577,17 @@ export function BartoloChat() {
 
               {/* Sugestoes Rapidas */}
               {messages.length === 0 && moduleSuggestions.length > 0 && (
-                <div className="px-4 pb-2">
-                  <p className="text-xs text-slate-500 mb-2">Sugestoes:</p>
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="px-5 pb-3 animate-in fade-in slide-in-from-bottom-4 delay-300">
+                  <p className="text-xs font-semibold text-amber-400/80 mb-2.5 flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-amber-400 animate-pulse" />
+                    Sugestões rápidas
+                  </p>
+                  <div className="flex flex-wrap gap-2">
                     {moduleSuggestions.slice(0, 4).map((suggestion, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="text-xs px-3 py-1.5 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-amber-400 transition-colors border border-slate-700/50"
+                        className="text-xs px-3.5 py-2 rounded-xl bg-slate-800/60 backdrop-blur-sm text-slate-300 hover:bg-gradient-to-r hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-300 transition-all duration-200 border border-slate-700/50 hover:border-amber-500/40 shadow-sm hover:shadow-lg hover:shadow-amber-500/10 font-medium"
                       >
                         {suggestion}
                       </button>
@@ -582,8 +597,8 @@ export function BartoloChat() {
               )}
 
               {/* Input */}
-              <form onSubmit={handleSubmit} className="p-3 border-t border-slate-700/50">
-                <div className="flex gap-2">
+              <form onSubmit={handleSubmit} className="p-4 border-t border-slate-700/30 bg-slate-900/50 backdrop-blur-sm">
+                <div className="flex gap-2.5">
                   <input
                     ref={inputRef}
                     type="text"
@@ -592,10 +607,11 @@ export function BartoloChat() {
                     placeholder="Digite sua mensagem..."
                     disabled={isSending}
                     className={cn(
-                      'flex-1 bg-slate-800 rounded-xl px-4 py-2.5',
-                      'text-sm text-slate-200 placeholder:text-slate-500',
+                      'flex-1 bg-slate-800/80 backdrop-blur-sm rounded-2xl px-4 py-3',
+                      'text-sm text-slate-100 placeholder:text-slate-500',
                       'border border-slate-700/50',
-                      'focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50',
+                      'focus:outline-none focus:ring-2 focus:ring-amber-500/60 focus:border-amber-500/60 focus:bg-slate-800',
+                      'transition-all duration-200',
                       'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
                   />
@@ -603,11 +619,14 @@ export function BartoloChat() {
                     type="submit"
                     disabled={!inputValue.trim() || isSending}
                     className={cn(
-                      'w-10 h-10 rounded-xl',
-                      'bg-amber-600 hover:bg-amber-500',
+                      'w-11 h-11 rounded-2xl',
+                      'bg-gradient-to-br from-amber-500 to-amber-600',
+                      'hover:from-amber-400 hover:to-amber-500',
+                      'shadow-lg shadow-amber-500/25 hover:shadow-amber-400/40',
                       'flex items-center justify-center',
-                      'transition-colors',
-                      'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-amber-600'
+                      'transition-all duration-200',
+                      'hover:scale-105 active:scale-95',
+                      'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none'
                     )}
                   >
                     {isSending ? (
