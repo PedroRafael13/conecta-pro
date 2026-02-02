@@ -58,7 +58,7 @@ class OpenClawAnalyzer:
 
         problems_text = "\n\n".join(
             [
-                f"**{i + 1}. {p['check']}** (Status: {p['status'].upper()})\n"
+                f"**{i + 1}. {p['name']}** (Status: {p['status'].upper()})\n"
                 f"   • Duração: {p['duration_seconds']:.1f}s\n"
                 f"   • Mensagem: {p['message']}\n"
                 f"   • Details: {json.dumps(p.get('details', {}), indent=2)}"
