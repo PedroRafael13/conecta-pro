@@ -44,9 +44,9 @@ class NotificationPriority(str, Enum):
     CRITICAL = "critical"
 
 
-class PushNotification(Base):
+class MobilePushNotification(Base):
     """
-    Log de notificações push enviadas.
+    Log de notificações push enviadas (módulo mobile).
 
     Armazena histórico de todas as notificações enviadas,
     incluindo status de entrega e leitura.
@@ -179,7 +179,7 @@ class PushNotification(Base):
     device_token_ref = relationship("DeviceToken")
 
     def __repr__(self) -> str:
-        return f"<PushNotification {self.id} status={self.status}>"
+        return f"<MobilePushNotification {self.id} status={self.status}>"
 
     def mark_as_sent(self, external_id: str | None = None) -> None:
         """Marca como enviada."""

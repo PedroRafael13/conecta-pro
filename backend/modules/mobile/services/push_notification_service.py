@@ -1,27 +1,24 @@
 """Serviço de notificações push."""
 
-import json
 import logging
 import uuid
 from datetime import datetime, timedelta
-from typing import Any, Optional
 
-from sqlalchemy import select, update, func
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.mobile.models.device_token import DeviceToken
 from modules.mobile.models.push_notification import (
-    PushNotification,
+    MobilePushNotification,
+    NotificationPriority,
     NotificationStatus,
     NotificationType,
-    NotificationPriority,
 )
 from modules.mobile.schemas.notification_schemas import (
-    PushNotificationCreate,
-    NotificationPreferences,
-    NotificationStats,
     BroadcastNotificationRequest,
     BroadcastNotificationResponse,
+    NotificationStats,
+    PushNotificationCreate,
 )
 
 logger = logging.getLogger(__name__)
@@ -41,8 +38,8 @@ class PushNotificationService:
 
     def __init__(
         self,
-        fcm_credentials: Optional[dict] = None,
-        apns_credentials: Optional[dict] = None,
+        fcm_credentials: dict | None = None,
+        apns_credentials: dict | None = None,
         default_ttl: int = 86400,  # 24h
     ) -> None:
         """
@@ -65,7 +62,7 @@ class PushNotificationService:
         self,
         db: AsyncSession,
         notification_data: PushNotificationCreate,
-    ) -> PushNotification:
+    ) -> MobilePushNotification:
         """
         Envia notificação push para um usuário.
 
@@ -74,13 +71,13 @@ class PushNotificationService:
             notification_data: Dados da notificação
 
         Returns:
-            PushNotification criada
+            MobilePushNotification criada
         """
         # Buscar tokens do usuário
         tokens_query = select(DeviceToken).where(
             DeviceToken.user_id == notification_data.user_id,
-            DeviceToken.is_active == True,
-            DeviceToken.push_enabled == True,
+            DeviceToken.is_active.is_(True),
+            DeviceToken.push_enabled.is_(True),
         )
         result = await db.execute(tokens_query)
         tokens = result.scalars().all()
@@ -88,7 +85,7 @@ class PushNotificationService:
         if not tokens:
             logger.warning(f"No active tokens for user {notification_data.user_id}")
             # Criar notificação com status failed
-            notification = PushNotification(
+            notification = MobilePushNotification(
                 user_id=notification_data.user_id,
                 title=notification_data.title,
                 body=notification_data.body,
@@ -109,7 +106,7 @@ class PushNotificationService:
             return notification
 
         # Criar notificação no banco
-        notification = PushNotification(
+        notification = MobilePushNotification(
             user_id=notification_data.user_id,
             title=notification_data.title,
             body=notification_data.body,
@@ -154,7 +151,7 @@ class PushNotificationService:
     async def _send_to_device(
         self,
         token: DeviceToken,
-        notification: PushNotification,
+        notification: MobilePushNotification,
     ) -> bool:
         """
         Envia notificação para um dispositivo específico.
@@ -181,7 +178,7 @@ class PushNotificationService:
     async def _send_fcm(
         self,
         token: DeviceToken,
-        notification: PushNotification,
+        notification: MobilePushNotification,
     ) -> bool:
         """Envia via Firebase Cloud Messaging."""
         if not self.fcm_credentials:
@@ -227,7 +224,7 @@ class PushNotificationService:
     async def _send_apns(
         self,
         token: DeviceToken,
-        notification: PushNotification,
+        notification: MobilePushNotification,
     ) -> bool:
         """Envia via Apple Push Notification service."""
         if not self.apns_credentials:
@@ -293,8 +290,8 @@ class PushNotificationService:
 
         # Construir query de tokens
         query = select(DeviceToken).where(
-            DeviceToken.is_active == True,
-            DeviceToken.push_enabled == True,
+            DeviceToken.is_active.is_(True),
+            DeviceToken.push_enabled.is_(True),
             DeviceToken.platform.in_(request.target_platforms),
         )
 
@@ -317,7 +314,7 @@ class PushNotificationService:
         failed_count = 0
 
         # Enviar para cada usuário
-        for user_id, user_token_list in user_tokens.items():
+        for user_id, _user_token_list in user_tokens.items():
             notification_data = PushNotificationCreate(
                 user_id=user_id,
                 title=request.title,
@@ -361,8 +358,8 @@ class PushNotificationService:
     ) -> bool:
         """Marca notificação como entregue."""
         query = (
-            update(PushNotification)
-            .where(PushNotification.id == notification_id)
+            update(MobilePushNotification)
+            .where(MobilePushNotification.id == notification_id)
             .values(
                 status=NotificationStatus.DELIVERED,
                 delivered_at=datetime.utcnow(),
@@ -379,8 +376,8 @@ class PushNotificationService:
     ) -> bool:
         """Marca notificação como lida."""
         query = (
-            update(PushNotification)
-            .where(PushNotification.id == notification_id)
+            update(MobilePushNotification)
+            .where(MobilePushNotification.id == notification_id)
             .values(
                 status=NotificationStatus.READ,
                 read_at=datetime.utcnow(),
@@ -397,7 +394,7 @@ class PushNotificationService:
         limit: int = 20,
         offset: int = 0,
         unread_only: bool = False,
-    ) -> tuple[list[PushNotification], int, int]:
+    ) -> tuple[list[MobilePushNotification], int, int]:
         """
         Obtém notificações do usuário.
 
@@ -405,15 +402,13 @@ class PushNotificationService:
             Tupla (notificações, total, não lidas)
         """
         # Query base
-        base_query = select(PushNotification).where(
-            PushNotification.user_id == user_id,
-            PushNotification.status != NotificationStatus.FAILED,
+        base_query = select(MobilePushNotification).where(
+            MobilePushNotification.user_id == user_id,
+            MobilePushNotification.status != NotificationStatus.FAILED,
         )
 
         if unread_only:
-            base_query = base_query.where(
-                PushNotification.status != NotificationStatus.READ
-            )
+            base_query = base_query.where(MobilePushNotification.status != NotificationStatus.READ)
 
         # Total
         count_query = select(func.count()).select_from(base_query.subquery())
@@ -422,19 +417,19 @@ class PushNotificationService:
 
         # Não lidas
         unread_query = select(func.count()).where(
-            PushNotification.user_id == user_id,
-            PushNotification.status.in_([
-                NotificationStatus.SENT,
-                NotificationStatus.DELIVERED,
-            ]),
+            MobilePushNotification.user_id == user_id,
+            MobilePushNotification.status.in_(
+                [
+                    NotificationStatus.SENT,
+                    NotificationStatus.DELIVERED,
+                ]
+            ),
         )
         unread_result = await db.execute(unread_query)
         unread_count = unread_result.scalar() or 0
 
         # Notificações
-        query = base_query.order_by(
-            PushNotification.created_at.desc()
-        ).offset(offset).limit(limit)
+        query = base_query.order_by(MobilePushNotification.created_at.desc()).offset(offset).limit(limit)
 
         result = await db.execute(query)
         notifications = result.scalars().all()
@@ -444,28 +439,31 @@ class PushNotificationService:
     async def get_stats(
         self,
         db: AsyncSession,
-        user_id: Optional[int] = None,
+        user_id: int | None = None,
         days: int = 30,
     ) -> NotificationStats:
         """Obtém estatísticas de notificações."""
         since = datetime.utcnow() - timedelta(days=days)
 
-        base_query = select(PushNotification).where(
-            PushNotification.created_at >= since
-        )
+        base_query = select(MobilePushNotification).where(MobilePushNotification.created_at >= since)
 
         if user_id:
-            base_query = base_query.where(PushNotification.user_id == user_id)
+            base_query = base_query.where(MobilePushNotification.user_id == user_id)
 
         # Contar por status
         result = await db.execute(base_query)
         notifications = result.scalars().all()
 
         total_sent = sum(1 for n in notifications if n.status != NotificationStatus.PENDING)
-        total_delivered = sum(1 for n in notifications if n.status in [
-            NotificationStatus.DELIVERED,
-            NotificationStatus.READ,
-        ])
+        total_delivered = sum(
+            1
+            for n in notifications
+            if n.status
+            in [
+                NotificationStatus.DELIVERED,
+                NotificationStatus.READ,
+            ]
+        )
         total_read = sum(1 for n in notifications if n.status == NotificationStatus.READ)
         total_failed = sum(1 for n in notifications if n.status == NotificationStatus.FAILED)
 
@@ -502,12 +500,15 @@ class PushNotificationService:
 
         # Deletar notificações antigas que foram lidas ou falharam
         from sqlalchemy import delete
-        query = delete(PushNotification).where(
-            PushNotification.created_at < cutoff,
-            PushNotification.status.in_([
-                NotificationStatus.READ,
-                NotificationStatus.FAILED,
-            ]),
+
+        query = delete(MobilePushNotification).where(
+            MobilePushNotification.created_at < cutoff,
+            MobilePushNotification.status.in_(
+                [
+                    NotificationStatus.READ,
+                    NotificationStatus.FAILED,
+                ]
+            ),
         )
 
         result = await db.execute(query)
@@ -524,7 +525,7 @@ class PushNotificationService:
         token: str,
         platform: str,
         device_id: str,
-        device_info: Optional[dict] = None,
+        device_info: dict | None = None,
     ) -> DeviceToken:
         """
         Registra token de dispositivo.
@@ -604,11 +605,7 @@ class PushNotificationService:
         token: str,
     ) -> bool:
         """Remove registro de token."""
-        query = (
-            update(DeviceToken)
-            .where(DeviceToken.token == token)
-            .values(is_active=False)
-        )
+        query = update(DeviceToken).where(DeviceToken.token == token).values(is_active=False)
         result = await db.execute(query)
         await db.commit()
         return result.rowcount > 0
