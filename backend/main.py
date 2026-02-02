@@ -9,13 +9,12 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from core.config import settings
 from core.logging import configure_logging, logger
 from core.monitoring import MetricsMiddleware, get_metrics
+from core.rate_limit import limiter, rate_limit_handler
 
 
 # =============================================================================
@@ -53,7 +52,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # =============================================================================
 # RATE LIMITER
 # =============================================================================
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+# Importado de core.rate_limit com configuração customizada
+# Usa Redis para storage distribuído e identifica por user_id + IP
+# Limite padrão: 1000/hour (definido no módulo)
 
 
 @asynccontextmanager
@@ -95,9 +96,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Rate Limiter state
+# Rate Limiter state (necessário para slowapi funcionar)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 # =============================================================================
 # MIDDLEWARES (ordem importa: último adicionado = primeiro executado)

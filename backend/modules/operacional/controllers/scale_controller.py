@@ -4,12 +4,13 @@ Controller (endpoints) para Scale.
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
+from core.rate_limit import CRITICAL_LIMIT, limiter
 from modules.operacional.models.scale import ScaleStatus, ScaleType
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.scale_repository import ScaleRepository
@@ -79,7 +80,9 @@ async def create_scale(
     status_code=status.HTTP_201_CREATED,
     dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
 )
+@limiter.limit(CRITICAL_LIMIT)
 async def generate_scale(
+    request: Request,
     data: ScaleGenerateRequest,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -448,7 +451,9 @@ async def delete_scale(
     status_code=status.HTTP_200_OK,
     dependencies=[require_operacional_permission(Permission.SCALES_CREATE)],
 )
+@limiter.limit(CRITICAL_LIMIT)
 async def auto_generate_scales(
+    request: Request,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
     month: Optional[int] = Query(None, ge=1, le=12, description="Mês (se não especificado, usa mês atual)"),

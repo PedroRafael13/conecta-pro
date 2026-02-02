@@ -4,12 +4,13 @@ Controller (endpoints) para Shift.
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
+from core.rate_limit import BULK_LIMIT, limiter
 from modules.operacional.models.shift import ShiftStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.shift_repository import ShiftRepository
@@ -359,7 +360,9 @@ async def delete_shift(
     response_model=ShiftBulkOperationResult,
     dependencies=[require_operacional_permission(Permission.SHIFTS_CREATE)],
 )
+@limiter.limit(BULK_LIMIT)
 async def bulk_update_shifts(
+    request: Request,
     data: ShiftBulkUpdate,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),

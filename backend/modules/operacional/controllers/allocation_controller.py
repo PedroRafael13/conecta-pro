@@ -4,12 +4,13 @@ Controller (endpoints) para Allocation (Alocação Funcionário-Posto).
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
 from core.database import get_db
 from core.logging import logger
+from core.rate_limit import BULK_LIMIT, limiter
 from modules.operacional.models.allocation import AllocationStatus
 from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.repositories.allocation_repository import AllocationRepository
@@ -335,7 +336,9 @@ async def delete_allocation(
     response_model=AllocationBulkOperationResult,
     dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
 )
+@limiter.limit(BULK_LIMIT)
 async def bulk_delete_allocations(
+    request: Request,
     data: AllocationBulkDelete,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
@@ -366,7 +369,9 @@ async def bulk_delete_allocations(
     response_model=AllocationBulkOperationResult,
     dependencies=[require_operacional_permission(Permission.ALLOCATIONS_EDIT)],
 )
+@limiter.limit(BULK_LIMIT)
 async def bulk_update_allocations(
+    request: Request,
     data: AllocationBulkUpdate,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
