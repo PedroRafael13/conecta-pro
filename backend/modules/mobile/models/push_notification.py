@@ -1,11 +1,10 @@
 """Model de Push Notification."""
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -54,6 +53,7 @@ class PushNotification(Base):
     """
 
     __tablename__ = "push_notifications"
+    __table_args__ = {"extend_existing": True}
 
     id = Column(
         UUID(as_uuid=True),
@@ -176,12 +176,12 @@ class PushNotification(Base):
 
     # Relacionamentos
     user = relationship("User")
-    device_token = relationship("DeviceToken")
+    device_token_ref = relationship("DeviceToken")
 
     def __repr__(self) -> str:
         return f"<PushNotification {self.id} status={self.status}>"
 
-    def mark_as_sent(self, external_id: Optional[str] = None) -> None:
+    def mark_as_sent(self, external_id: str | None = None) -> None:
         """Marca como enviada."""
         self.status = NotificationStatus.SENT.value
         self.sent_at = datetime.now(UTC)

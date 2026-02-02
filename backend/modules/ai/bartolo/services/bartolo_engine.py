@@ -131,16 +131,21 @@ class BartoloEngine:
         self.alerta_agent = None
 
         # Mapa de agentes por domínio (keywords -> agent_name)
+        # NOTA: Keywords devem ser específicas para evitar capturar data queries.
+        # Ex: "turno noite hoje" deve ir para DataConnector, não para agente escala.
         self.specialized_agents_map = {
-            "escala": "escala",
-            "scale": "escala",
-            "turno": "escala",
-            "substituicao": "substituicao",
-            "substituto": "substituicao",
-            "cobrir": "substituicao",
-            "alerta": "alerta",
-            "alertas": "alerta",
-            "urgente": "alerta",
+            "gerar escala": "escala",
+            "criar escala": "escala",
+            "montar escala": "escala",
+            "otimizar escala": "escala",
+            "validar escala": "escala",
+            "substituicao urgente": "substituicao",
+            "buscar substituto": "substituicao",
+            "preciso de substituto": "substituicao",
+            "cobrir turno": "substituicao",
+            "cobrir posto": "substituicao",
+            "alerta critico": "alerta",
+            "resolver alerta": "alerta",
         }
 
         # Cache de sessoes

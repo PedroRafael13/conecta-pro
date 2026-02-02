@@ -4,19 +4,19 @@ Executor de ações relacionadas a escalas.
 Suporta ações básicas (criar, aprovar, publicar) e avançadas
 (geração automática, otimização inteligente, templates).
 """
+
 import logging
 from datetime import datetime
 from uuid import uuid4
-from typing import Optional
 
-from modules.operacional.repositories.scale_repository import ScaleRepository
-from modules.operacional.repositories.post_repository import PostRepository
-from modules.operacional.schemas.scale import ScaleCreate
-from modules.operacional.models.scale import ScaleType, ScaleStatus
+from modules.operacional.models.scale import ScaleStatus, ScaleType
 from modules.operacional.permissions import has_permission
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionCategory, ActionStatus
+from modules.operacional.repositories.scale_repository import ScaleRepository
+from modules.operacional.schemas.scale import ScaleCreate
+
 from ..action_permissions import get_required_permission
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus, ActionType
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,6 @@ class ScaleActionExecutor(BaseActionExecutor):
         """Cria preview para ação de escala."""
         action_type = request.action_type
         action_value = action_type.value if isinstance(action_type, ActionType) else str(action_type)
-        params = request.parameters
 
         if action_value == ActionType.CREATE_SCALE.value:
             return await self._create_scale_preview(request)
@@ -100,43 +99,40 @@ class ScaleActionExecutor(BaseActionExecutor):
     async def _create_scale_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para criação de escala."""
         params = request.parameters
-        post_code = params.get('post_code')
-        month = params.get('month')
-        year = params.get('year')
+        month = params.get("month")
+        year = params.get("year")
 
         changes_summary = []
         warnings = []
         affected_entities = []
 
         # Validar parâmetros mínimos
-        if not post_code:
-            warnings.append("⚠️ Código do posto não informado")
+        if not params.get("post_code") and not params.get("post_name"):
+            warnings.append("⚠️ Código ou nome do posto não informado")
         if not month:
             warnings.append("⚠️ Mês não informado")
         if not year:
             # Usar ano atual como padrão
             year = datetime.now().year
-            params['year'] = year
+            params["year"] = year
 
-        # Buscar posto
-        post_repo = PostRepository(self.db)
-        post = await post_repo.get_by_code(post_code) if post_code else None
+        # Resolver posto (code primeiro, depois name)
+        post, post_warnings = await self.resolve_post(params)
+        warnings.extend(post_warnings)
+
+        # Se resolveu por nome, propagar post_code para execução
+        if post and not params.get("post_code"):
+            params["post_code"] = post.code
 
         if not post:
-            warnings.append(f"⚠️ Posto '{post_code}' não encontrado")
             title = "Criar Escala"
             description = "Não foi possível criar preview - posto não encontrado"
         else:
-            affected_entities.append({
-                "type": "post",
-                "id": post.id,
-                "name": post.name,
-                "code": post.code
-            })
+            affected_entities.append({"type": "post", "id": post.id, "name": post.name, "code": post.code})
 
             changes_summary.append(f"Posto: {post.code} - {post.name}")
             changes_summary.append(f"Período: {month:02d}/{year}")
-            changes_summary.append(f"Tipo: Escala 12x36 (padrão)")
+            changes_summary.append("Tipo: Escala 12x36 (padrão)")
 
             # Verificar se já existe escala
             scale_repo = ScaleRepository(self.db)
@@ -152,7 +148,7 @@ class ScaleActionExecutor(BaseActionExecutor):
         # Verificar permissão
         required_perm = get_required_permission(request.action_type)
         # Usa role que foi setado pelo ActionExecutor
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissão {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -174,8 +170,8 @@ class ScaleActionExecutor(BaseActionExecutor):
     async def _approve_scale_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para aprovação de escala."""
         params = request.parameters
-        scale_id = params.get('scale_id')
-        post_code = params.get('post_code')
+        scale_id = params.get("scale_id")
+        post_code = params.get("post_code")
 
         warnings = []
         affected_entities = []
@@ -187,10 +183,9 @@ class ScaleActionExecutor(BaseActionExecutor):
 
         if scale_id:
             scale = await scale_repo.get_by_id(scale_id)
-        elif post_code:
+        elif post_code or params.get("post_name"):
             # Buscar última escala do posto
-            post_repo = PostRepository(self.db)
-            post = await post_repo.get_by_code(post_code)
+            post, _ = await self.resolve_post(params)
             if post:
                 # Buscar escalas do mês atual
                 now = datetime.now()
@@ -201,11 +196,13 @@ class ScaleActionExecutor(BaseActionExecutor):
             title = "Aprovar Escala"
             description = "Escala não encontrada"
         else:
-            affected_entities.append({
-                "type": "scale",
-                "id": scale.id,
-                "code": getattr(scale, 'code', 'N/A'),
-            })
+            affected_entities.append(
+                {
+                    "type": "scale",
+                    "id": scale.id,
+                    "code": getattr(scale, "code", "N/A"),
+                }
+            )
 
             changes_summary.append(f"Escala: {getattr(scale, 'code', scale.id)}")
             changes_summary.append(f"Período: {scale.month:02d}/{scale.year}")
@@ -224,7 +221,7 @@ class ScaleActionExecutor(BaseActionExecutor):
         # Verificar permissão
         required_perm = get_required_permission(request.action_type)
         # Usa role que foi setado pelo ActionExecutor
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissão {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -246,7 +243,7 @@ class ScaleActionExecutor(BaseActionExecutor):
     async def _publish_scale_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para publicação de escala."""
         params = request.parameters
-        scale_id = params.get('scale_id')
+        scale_id = params.get("scale_id")
 
         warnings = []
         affected_entities = []
@@ -261,11 +258,13 @@ class ScaleActionExecutor(BaseActionExecutor):
             title = "Publicar Escala"
             description = "Escala não encontrada"
         else:
-            affected_entities.append({
-                "type": "scale",
-                "id": scale.id,
-                "code": getattr(scale, 'code', 'N/A'),
-            })
+            affected_entities.append(
+                {
+                    "type": "scale",
+                    "id": scale.id,
+                    "code": getattr(scale, "code", "N/A"),
+                }
+            )
 
             changes_summary.append(f"Escala: {getattr(scale, 'code', scale.id)}")
             changes_summary.append(f"Status atual: {scale.status}")
@@ -283,7 +282,7 @@ class ScaleActionExecutor(BaseActionExecutor):
         # Verificar permissão
         required_perm = get_required_permission(request.action_type)
         # Usa role que foi setado pelo ActionExecutor
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissão {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
 
@@ -302,24 +301,17 @@ class ScaleActionExecutor(BaseActionExecutor):
             requires_confirmation=True,
         )
 
-    async def _execute_create_scale(
-        self,
-        request: ActionRequest,
-        action_id: str,
-        started_at: datetime
-    ) -> ActionResult:
+    async def _execute_create_scale(self, request: ActionRequest, action_id: str, started_at: datetime) -> ActionResult:
         """Executa criação de escala."""
         params = request.parameters
-        post_code = params.get('post_code')
-        month = params.get('month')
-        year = params.get('year', datetime.now().year)
+        month = params.get("month")
+        year = params.get("year", datetime.now().year)
 
-        # Buscar posto
-        post_repo = PostRepository(self.db)
-        post = await post_repo.get_by_code(post_code)
+        # Resolver posto (code ou name)
+        post, _ = await self.resolve_post(params)
 
         if not post:
-            raise ValueError(f"Posto '{post_code}' não encontrado")
+            raise ValueError(f"Posto não encontrado (code={params.get('post_code')}, name={params.get('post_name')})")
 
         # Criar escala
         scale_data = ScaleCreate(
@@ -327,13 +319,13 @@ class ScaleActionExecutor(BaseActionExecutor):
             scale_type=ScaleType.SCALE_12X36,  # Padrão
             month=month,
             year=year,
-            notes=params.get('notes'),
-            config=params.get('config'),
+            notes=params.get("notes"),
+            config=params.get("config"),
         )
 
         scale_repo = ScaleRepository(self.db)
         # Usa UUID real do usuário que foi setado pelo ActionExecutor
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
         scale = await scale_repo.create(scale_data, created_by=user_uuid)
 
         return ActionResult(
@@ -341,7 +333,7 @@ class ScaleActionExecutor(BaseActionExecutor):
             action_type=request.action_type,
             status=ActionStatus.COMPLETED,
             success=True,
-            message=f"Escala criada com sucesso",
+            message="Escala criada com sucesso",
             details={
                 "scale_id": scale.id,
                 "post_code": post.code,
@@ -360,16 +352,13 @@ class ScaleActionExecutor(BaseActionExecutor):
         )
 
     async def _execute_approve_scale(
-        self,
-        request: ActionRequest,
-        action_id: str,
-        started_at: datetime
+        self, request: ActionRequest, action_id: str, started_at: datetime
     ) -> ActionResult:
         """Executa aprovação de escala."""
         params = request.parameters
-        scale_id = params.get('scale_id')
-        post_code = params.get('post_code')
-        notes = params.get('notes')
+        scale_id = params.get("scale_id")
+        post_code = params.get("post_code")
+        notes = params.get("notes")
 
         scale_repo = ScaleRepository(self.db)
         scale = None
@@ -377,9 +366,8 @@ class ScaleActionExecutor(BaseActionExecutor):
         # Buscar escala por ID direto ou pelo posto
         if scale_id:
             scale = await scale_repo.get_by_id(scale_id)
-        elif post_code:
-            post_repo = PostRepository(self.db)
-            post = await post_repo.get_by_code(post_code)
+        elif post_code or params.get("post_name"):
+            post, _ = await self.resolve_post(params)
             if post:
                 now = datetime.now()
                 scale = await scale_repo.get_by_post_and_period(post.id, now.month, now.year)
@@ -394,15 +382,13 @@ class ScaleActionExecutor(BaseActionExecutor):
             raise ValueError("Escala já foi publicada")
 
         # Usar UUID real do usuário
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
 
         # Se a escala está em DRAFT, mudar para PENDING_APPROVAL antes de aprovar
         if scale.status == ScaleStatus.DRAFT.value:
             from modules.operacional.schemas.scale import ScaleUpdate
-            await scale_repo.update(
-                scale.id,
-                ScaleUpdate(status=ScaleStatus.PENDING_APPROVAL)
-            )
+
+            await scale_repo.update(scale.id, ScaleUpdate(status=ScaleStatus.PENDING_APPROVAL))
             # Recarregar a escala após update
             scale = await scale_repo.get_by_id(scale.id)
 
@@ -445,15 +431,12 @@ class ScaleActionExecutor(BaseActionExecutor):
         )
 
     async def _execute_publish_scale(
-        self,
-        request: ActionRequest,
-        action_id: str,
-        started_at: datetime
+        self, request: ActionRequest, action_id: str, started_at: datetime
     ) -> ActionResult:
         """Executa publicação de escala."""
         params = request.parameters
-        scale_id = params.get('scale_id')
-        post_code = params.get('post_code')
+        scale_id = params.get("scale_id")
+        post_code = params.get("post_code")
 
         scale_repo = ScaleRepository(self.db)
         scale = None
@@ -461,9 +444,8 @@ class ScaleActionExecutor(BaseActionExecutor):
         # Buscar escala por ID direto ou pelo posto
         if scale_id:
             scale = await scale_repo.get_by_id(scale_id)
-        elif post_code:
-            post_repo = PostRepository(self.db)
-            post = await post_repo.get_by_code(post_code)
+        elif post_code or params.get("post_name"):
+            post, _ = await self.resolve_post(params)
             if post:
                 now = datetime.now()
                 scale = await scale_repo.get_by_post_and_period(post.id, now.month, now.year)
@@ -475,13 +457,10 @@ class ScaleActionExecutor(BaseActionExecutor):
         if scale.status == ScaleStatus.PUBLISHED.value:
             raise ValueError("Escala já está publicada")
         if scale.status != ScaleStatus.APPROVED.value:
-            raise ValueError(
-                f"Escala precisa estar aprovada antes de publicar. "
-                f"Status atual: {scale.status}"
-            )
+            raise ValueError(f"Escala precisa estar aprovada antes de publicar. Status atual: {scale.status}")
 
         # Usar UUID real do usuário
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
 
         # Publicar via repository
         published_scale = await scale_repo.publish(
@@ -529,15 +508,15 @@ class ScaleActionExecutor(BaseActionExecutor):
     async def _auto_generate_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para geração automática de escalas."""
         params = request.parameters
-        month = params.get('month')
-        year = params.get('year', datetime.now().year)
+        month = params.get("month")
+        year = params.get("year", datetime.now().year)
 
         warnings = []
         changes_summary = []
 
         if not month:
             month = datetime.now().month
-            params['month'] = month
+            params["month"] = month
             warnings.append("⚠️ Mês não informado, usando mês atual")
 
         changes_summary.append(f"Período: {month:02d}/{year}")
@@ -547,7 +526,7 @@ class ScaleActionExecutor(BaseActionExecutor):
 
         # Verificar permissão
         required_perm = get_required_permission(ActionType.CREATE_SCALE)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
 
         return ActionPreview(
@@ -568,9 +547,9 @@ class ScaleActionExecutor(BaseActionExecutor):
     async def _optimize_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para otimização inteligente de escala."""
         params = request.parameters
-        month = params.get('month', datetime.now().month)
-        year = params.get('year', datetime.now().year)
-        schedule_id = params.get('schedule_id')
+        month = params.get("month", datetime.now().month)
+        year = params.get("year", datetime.now().year)
+        schedule_id = params.get("schedule_id")
 
         changes_summary = [
             f"Período: {month:02d}/{year}",
@@ -584,7 +563,7 @@ class ScaleActionExecutor(BaseActionExecutor):
         ]
 
         required_perm = get_required_permission(ActionType.CREATE_SCALE)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
 
         return ActionPreview(
@@ -605,8 +584,8 @@ class ScaleActionExecutor(BaseActionExecutor):
     async def _create_template_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para criação de template de escala."""
         params = request.parameters
-        scale_id = params.get('scale_id')
-        template_name = params.get('name', 'Sem nome')
+        scale_id = params.get("scale_id")
+        template_name = params.get("name", "Sem nome")
 
         changes_summary = [
             f"Escala base: {scale_id or 'N/A'}",
@@ -620,7 +599,7 @@ class ScaleActionExecutor(BaseActionExecutor):
             warnings.append("⚠️ ID da escala não informado")
 
         required_perm = get_required_permission(ActionType.CREATE_SCALE)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
 
         return ActionPreview(
@@ -644,10 +623,10 @@ class ScaleActionExecutor(BaseActionExecutor):
     async def _apply_template_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para aplicação de template."""
         params = request.parameters
-        template_id = params.get('template_id')
-        post_id = params.get('post_id')
-        month = params.get('month')
-        year = params.get('year', datetime.now().year)
+        template_id = params.get("template_id")
+        post_id = params.get("post_id")
+        month = params.get("month")
+        year = params.get("year", datetime.now().year)
 
         changes_summary = [
             f"Template: {template_id or 'N/A'}",
@@ -668,8 +647,7 @@ class ScaleActionExecutor(BaseActionExecutor):
         # Verificar se já existe escala para o período
         if post_id and month:
             try:
-                post_repo = PostRepository(self.db)
-                post = await post_repo.get_by_code(post_id)
+                post, _ = await self.resolve_post({"post_code": post_id, "post_name": params.get("post_name")})
                 if post:
                     scale_repo = ScaleRepository(self.db)
                     existing = await scale_repo.get_by_post_and_period(post.id, month, year)
@@ -679,14 +657,16 @@ class ScaleActionExecutor(BaseActionExecutor):
                 logger.warning(f"Erro ao verificar escala existente: {e}")
 
         required_perm = get_required_permission(ActionType.CREATE_SCALE)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
 
         return ActionPreview(
             action_id=str(uuid4()),
             action_type=request.action_type,
             title=f"Aplicar Template - {post_id or 'N/A'} {month:02d}/{year}" if month else "Aplicar Template",
-            description=f"Aplicar template {template_id} no posto {post_id} em {month:02d}/{year}" if month else "Aplicar template de escala",
+            description=f"Aplicar template {template_id} no posto {post_id} em {month:02d}/{year}"
+            if month
+            else "Aplicar template de escala",
             affected_entities=[
                 {"type": "scale_template", "id": template_id or "N/A"},
                 {"type": "post", "id": post_id or "N/A"},
@@ -710,16 +690,15 @@ class ScaleActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa geração automática de escalas via AutoScaleService."""
         params = request.parameters
-        month = params.get('month')
-        year = params.get('year', datetime.now().year)
-        user_uuid = getattr(self, 'user_uuid', None)
+        month = params.get("month")
+        year = params.get("year", datetime.now().year)
+        user_uuid = getattr(self, "user_uuid", None)
 
         try:
             from modules.operacional.services.auto_scale_service import AutoScaleService
         except ImportError:
             raise ValueError(
-                "AutoScaleService não disponível. "
-                "O módulo operacional de geração automática não está instalado."
+                "AutoScaleService não disponível. O módulo operacional de geração automática não está instalado."
             )
 
         service = AutoScaleService(self.db)
@@ -729,9 +708,7 @@ class ScaleActionExecutor(BaseActionExecutor):
                 month=month, year=year, created_by=str(user_uuid) if user_uuid else None
             )
         else:
-            result = await service.generate_scales_for_current_month(
-                created_by=str(user_uuid) if user_uuid else None
-            )
+            result = await service.generate_scales_for_current_month(created_by=str(user_uuid) if user_uuid else None)
 
         logger.info(
             f"Auto-geração via Bartolo: {result.get('scales_created', 0)} escalas, "
@@ -767,16 +744,14 @@ class ScaleActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa otimização inteligente via IntelligentOperationsService."""
         import calendar
+
         params = request.parameters
-        month = params.get('month', datetime.now().month)
-        year = params.get('year', datetime.now().year)
-        tenant_id = params.get('tenant_id')
+        month = params.get("month", datetime.now().month)
+        year = params.get("year", datetime.now().year)
+        tenant_id = params.get("tenant_id")
 
         if not tenant_id:
-            raise ValueError(
-                "tenant_id é obrigatório para otimização inteligente. "
-                "Informe o ID do cliente/condomínio."
-            )
+            raise ValueError("tenant_id é obrigatório para otimização inteligente. Informe o ID do cliente/condomínio.")
 
         try:
             from modules.operacional.services.intelligent_operations_service import (
@@ -784,8 +759,7 @@ class ScaleActionExecutor(BaseActionExecutor):
             )
         except ImportError:
             raise ValueError(
-                "IntelligentOperationsService não disponível. "
-                "O módulo de operações inteligentes não está instalado."
+                "IntelligentOperationsService não disponível. O módulo de operações inteligentes não está instalado."
             )
 
         _, last_day = calendar.monthrange(year, month)
@@ -844,11 +818,11 @@ class ScaleActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa criação de template a partir de escala."""
         params = request.parameters
-        scale_id = params.get('scale_id')
-        template_name = params.get('name', 'Template sem nome')
-        description = params.get('description', '')
-        tenant_id = params.get('tenant_id')
-        user_uuid = getattr(self, 'user_uuid', None)
+        scale_id = params.get("scale_id")
+        template_name = params.get("name", "Template sem nome")
+        description = params.get("description", "")
+        tenant_id = params.get("tenant_id")
+        user_uuid = getattr(self, "user_uuid", None)
 
         if not scale_id:
             raise ValueError("scale_id é obrigatório para criar template")
@@ -856,13 +830,12 @@ class ScaleActionExecutor(BaseActionExecutor):
             raise ValueError("tenant_id é obrigatório para criar template")
 
         try:
-            from modules.operacional.services.scale_template_service import ScaleTemplateService
             from modules.operacional.repositories.scale_template_repository import ScaleTemplateRepository
             from modules.operacional.schemas.scale_template import ScaleTemplateCreate
+            from modules.operacional.services.scale_template_service import ScaleTemplateService
         except ImportError:
             raise ValueError(
-                "Módulo de templates de escala não disponível. "
-                "Verifique se o módulo operacional está instalado."
+                "Módulo de templates de escala não disponível. Verifique se o módulo operacional está instalado."
             )
 
         template_service = ScaleTemplateService(self.db)
@@ -920,12 +893,12 @@ class ScaleActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa aplicação de template em posto/mês."""
         params = request.parameters
-        template_id = params.get('template_id')
-        post_id = params.get('post_id')
-        month = params.get('month')
-        year = params.get('year', datetime.now().year)
-        tenant_id = params.get('tenant_id')
-        user_uuid = getattr(self, 'user_uuid', None)
+        template_id = params.get("template_id")
+        post_id = params.get("post_id")
+        month = params.get("month")
+        year = params.get("year", datetime.now().year)
+        tenant_id = params.get("tenant_id")
+        user_uuid = getattr(self, "user_uuid", None)
 
         if not template_id:
             raise ValueError("template_id é obrigatório")
@@ -937,13 +910,12 @@ class ScaleActionExecutor(BaseActionExecutor):
             raise ValueError("tenant_id é obrigatório")
 
         try:
-            from modules.operacional.services.scale_template_service import ScaleTemplateService
             from modules.operacional.repositories.scale_template_repository import ScaleTemplateRepository
             from modules.operacional.schemas.scale_template import ScaleTemplateApplyRequest
+            from modules.operacional.services.scale_template_service import ScaleTemplateService
         except ImportError:
             raise ValueError(
-                "Módulo de templates de escala não disponível. "
-                "Verifique se o módulo operacional está instalado."
+                "Módulo de templates de escala não disponível. Verifique se o módulo operacional está instalado."
             )
 
         template_repo = ScaleTemplateRepository(self.db)

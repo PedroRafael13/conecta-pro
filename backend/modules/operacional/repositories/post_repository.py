@@ -5,7 +5,6 @@ Repository para operações de banco de dados com Post.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import func, or_, select
@@ -28,7 +27,7 @@ class PostRepository:
         count = result.scalar() or 0
         return f"POST-{count + 1:04d}"
 
-    async def create(self, data: PostCreate, created_by: Optional[str] = None) -> Post:
+    async def create(self, data: PostCreate, created_by: str | None = None) -> Post:
         """
         Cria um novo posto.
 
@@ -84,7 +83,7 @@ class PostRepository:
         logger.info(f"Post criado: {post.id} ({post.code})")
         return post
 
-    async def get_by_id(self, post_id: str) -> Optional[Post]:
+    async def get_by_id(self, post_id: str) -> Post | None:
         """
         Busca posto por ID.
 
@@ -94,12 +93,10 @@ class PostRepository:
         Returns:
             Post ou None
         """
-        result = await self.db.execute(
-            select(Post).where(Post.id == post_id, Post.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Post).where(Post.id == post_id, Post.is_active.is_(True)))
         return result.scalar_one_or_none()
 
-    async def get_by_code(self, code: str) -> Optional[Post]:
+    async def get_by_code(self, code: str) -> Post | None:
         """
         Busca posto por código.
 
@@ -109,14 +106,39 @@ class PostRepository:
         Returns:
             Post ou None
         """
-        result = await self.db.execute(
-            select(Post).where(Post.code == code, Post.is_active.is_(True))
-        )
+        result = await self.db.execute(select(Post).where(Post.code == code, Post.is_active.is_(True)))
         return result.scalar_one_or_none()
+
+    async def search_by_name(self, name: str, limit: int = 5) -> list[Post]:
+        """
+        Busca postos por nome usando ILIKE (fuzzy).
+
+        Cada palavra do termo de busca deve estar presente no nome do posto.
+        Ex: "prime arena" encontra "Condomínio Prime Arena".
+
+        Args:
+            name: Termo de busca (parcial)
+            limit: Máximo de resultados
+
+        Returns:
+            Lista de postos encontrados
+        """
+        words = name.strip().split()
+        if not words:
+            return []
+
+        query = select(Post).where(Post.is_active.is_(True))
+        for word in words:
+            if len(word) >= 2:
+                query = query.where(Post.name.ilike(f"%{word}%"))
+
+        query = query.order_by(Post.name).limit(limit)
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
 
     async def list(
         self,
-        filters: Optional[PostFilter] = None,
+        filters: PostFilter | None = None,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Post], int]:
@@ -194,7 +216,7 @@ class PostRepository:
 
         return query
 
-    async def update(self, post_id: str, data: PostUpdate) -> Optional[Post]:
+    async def update(self, post_id: str, data: PostUpdate) -> Post | None:
         """
         Atualiza um posto.
 

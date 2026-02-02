@@ -7,22 +7,24 @@ Integra validacoes avancadas de check-in/check-out:
 - Validacao composta via CheckInValidator
 - Regras de jornada CLT (intervalo entre turnos, jornada maxima, horas extras)
 """
+
 import logging
 from datetime import date, datetime, time, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import select
 
-from modules.operacional.repositories.shift_repository import ShiftRepository
-from modules.operacional.repositories.post_repository import PostRepository
-from modules.operacional.models.shift import ShiftStatus
 from modules.operacional.models.employee import Employee
-from modules.operacional.schemas.shift import ShiftCreate
+from modules.operacional.models.shift import ShiftStatus
 from modules.operacional.permissions import has_permission
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+from modules.operacional.repositories.post_repository import PostRepository
+from modules.operacional.repositories.shift_repository import ShiftRepository
+from modules.operacional.schemas.shift import ShiftCreate
+
 from ..action_permissions import get_required_permission
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus, ActionType
 from .base_executor import BaseActionExecutor
 
 # Imports opcionais - services de validacao avancada
@@ -30,8 +32,8 @@ try:
     from modules.operacional.services.geolocation_service import (
         GeolocationService,
         GeoPoint,
-        GeolocationValidation,
     )
+
     _HAS_GEO_SERVICE = True
 except ImportError:
     _HAS_GEO_SERVICE = False
@@ -39,19 +41,19 @@ except ImportError:
 try:
     from modules.operacional.services.biometric_service import (
         BiometricService,
-        FaceValidationResult,
     )
+
     _HAS_BIO_SERVICE = True
 except ImportError:
     _HAS_BIO_SERVICE = False
 
 try:
     from modules.operacional.services.check_in_validator import (
-        CheckInValidator,
         CheckInData,
+        CheckInValidator,
         ValidationConfig,
-        ValidationResult,
     )
+
     _HAS_CHECKIN_VALIDATOR = True
 except ImportError:
     _HAS_CHECKIN_VALIDATOR = False
@@ -59,10 +61,10 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 # ── Constantes de Jornada CLT ─────────────────────────────────────────────
-CLT_MIN_INTER_SHIFT_HOURS = 11        # Intervalo minimo entre turnos (art. 66 CLT)
-CLT_MAX_DAILY_HOURS = 10              # Jornada maxima diaria (8h + 2h extra, art. 59 CLT)
-CLT_NORMAL_DAILY_HOURS = 8            # Jornada normal diaria
-CLT_MAX_WEEKLY_OVERTIME_HOURS = 10    # Limite semanal de horas extras
+CLT_MIN_INTER_SHIFT_HOURS = 11  # Intervalo minimo entre turnos (art. 66 CLT)
+CLT_MAX_DAILY_HOURS = 10  # Jornada maxima diaria (8h + 2h extra, art. 59 CLT)
+CLT_NORMAL_DAILY_HOURS = 8  # Jornada normal diaria
+CLT_MAX_WEEKLY_OVERTIME_HOURS = 10  # Limite semanal de horas extras
 
 
 class ShiftActionExecutor(BaseActionExecutor):
@@ -118,7 +120,7 @@ class ShiftActionExecutor(BaseActionExecutor):
 
     # ── Helpers ──────────────────────────────────────────────────────────
 
-    async def _get_employee(self, employee_id: str) -> Optional[Employee]:
+    async def _get_employee(self, employee_id: str) -> Employee | None:
         """Busca funcionário por ID."""
         result = await self.db.execute(
             select(Employee).where(
@@ -131,7 +133,7 @@ class ShiftActionExecutor(BaseActionExecutor):
     def _build_permission_info(self, request: ActionRequest) -> tuple:
         """Retorna (required_perm, user_has_perm)."""
         required_perm = get_required_permission(request.action_type)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissão {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
         return required_perm, user_has_perm
@@ -141,7 +143,7 @@ class ShiftActionExecutor(BaseActionExecutor):
         if not time_str:
             raise ValueError("Horário não informado")
         # Suporta formatos HH:MM e HH:MM:SS
-        parts = time_str.strip().split(':')
+        parts = time_str.strip().split(":")
         hour = int(parts[0])
         minute = int(parts[1]) if len(parts) > 1 else 0
         second = int(parts[2]) if len(parts) > 2 else 0
@@ -152,7 +154,7 @@ class ShiftActionExecutor(BaseActionExecutor):
         if not dt_str:
             raise ValueError("Horário não informado")
         # Se já for ISO datetime completo
-        if 'T' in dt_str or len(dt_str) > 10:
+        if "T" in dt_str or len(dt_str) > 10:
             return datetime.fromisoformat(dt_str)
         # Se for só hora (HH:MM ou HH:MM:SS)
         t = self._parse_time(dt_str)
@@ -162,9 +164,9 @@ class ShiftActionExecutor(BaseActionExecutor):
 
     async def _validate_geolocation(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         post: Any,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Valida geolocalizacao do funcionario em relacao ao posto.
 
@@ -215,9 +217,9 @@ class ShiftActionExecutor(BaseActionExecutor):
 
     async def _validate_biometric(
         self,
-        params: Dict[str, Any],
-        employee_id: Optional[str],
-    ) -> Optional[Dict[str, Any]]:
+        params: dict[str, Any],
+        employee_id: str | None,
+    ) -> dict[str, Any] | None:
         """
         Valida biometria facial do funcionario.
 
@@ -256,12 +258,12 @@ class ShiftActionExecutor(BaseActionExecutor):
 
     async def _validate_checkin_composite(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         employee_id: str,
         shift_id: str,
         post: Any,
         scheduled_time: time,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Executa validacao composta via CheckInValidator (GPS + biometria + tempo + device).
 
@@ -331,10 +333,10 @@ class ShiftActionExecutor(BaseActionExecutor):
         employee_id: str,
         shift_date: date,
         start_time: time,
-        end_time: Optional[time] = None,
+        end_time: time | None = None,
         is_checkout: bool = False,
-        actual_start: Optional[datetime] = None,
-    ) -> Dict[str, Any]:
+        actual_start: datetime | None = None,
+    ) -> dict[str, Any]:
         """
         Valida regras de jornada CLT.
 
@@ -346,7 +348,7 @@ class ShiftActionExecutor(BaseActionExecutor):
         Returns:
             Dict com resultados das validacoes CLT.
         """
-        clt_result: Dict[str, Any] = {
+        clt_result: dict[str, Any] = {
             "inter_shift_valid": True,
             "daily_hours_valid": True,
             "overtime_alert": False,
@@ -359,14 +361,10 @@ class ShiftActionExecutor(BaseActionExecutor):
         try:
             # 1. Verificar intervalo entre turnos (11h minimo)
             yesterday = shift_date - timedelta(days=1)
-            yesterday_shifts = await shift_repo.get_by_employee_and_date(
-                employee_id, yesterday
-            )
+            yesterday_shifts = await shift_repo.get_by_employee_and_date(employee_id, yesterday)
             if yesterday_shifts:
                 last_shift = yesterday_shifts[-1]
-                last_end = getattr(last_shift, "actual_end_time", None) or getattr(
-                    last_shift, "planned_end_time", None
-                )
+                last_end = getattr(last_shift, "actual_end_time", None) or getattr(last_shift, "planned_end_time", None)
                 if last_end:
                     # Converter para datetime se necessario
                     if isinstance(last_end, time):
@@ -401,22 +399,18 @@ class ShiftActionExecutor(BaseActionExecutor):
                 if worked_hours > CLT_MAX_DAILY_HOURS:
                     clt_result["daily_hours_valid"] = False
                     clt_result["warnings"].append(
-                        f"Jornada diaria excede limite CLT: "
-                        f"{worked_hours:.1f}h (maximo: {CLT_MAX_DAILY_HOURS}h)"
+                        f"Jornada diaria excede limite CLT: {worked_hours:.1f}h (maximo: {CLT_MAX_DAILY_HOURS}h)"
                     )
                 elif worked_hours > CLT_NORMAL_DAILY_HOURS:
                     overtime = worked_hours - CLT_NORMAL_DAILY_HOURS
                     clt_result["overtime_alert"] = True
                     clt_result["details"]["overtime_hours"] = round(overtime, 2)
                     clt_result["warnings"].append(
-                        f"Horas extras: {overtime:.1f}h "
-                        f"(jornada normal: {CLT_NORMAL_DAILY_HOURS}h)"
+                        f"Horas extras: {overtime:.1f}h (jornada normal: {CLT_NORMAL_DAILY_HOURS}h)"
                     )
             else:
                 # No check-in, verificar se ja existe turno no dia
-                today_shifts = await shift_repo.get_by_employee_and_date(
-                    employee_id, shift_date
-                )
+                today_shifts = await shift_repo.get_by_employee_and_date(employee_id, shift_date)
                 completed_hours = 0.0
                 for s in today_shifts:
                     actual_h = getattr(s, "actual_hours", None)
@@ -450,12 +444,10 @@ class ShiftActionExecutor(BaseActionExecutor):
     async def _create_shift_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para criação de turno."""
         params = request.parameters
-        scale_id = params.get('scale_id')
-        employee_id = params.get('employee_id')
-        post_code = params.get('post_code')
-        shift_date_str = params.get('shift_date')
-        start_time_str = params.get('start_time', '07:00')
-        end_time_str = params.get('end_time', '19:00')
+        scale_id = params.get("scale_id")
+        shift_date_str = params.get("shift_date")
+        start_time_str = params.get("start_time", "07:00")
+        end_time_str = params.get("end_time", "19:00")
 
         warnings = []
         affected_entities = []
@@ -468,32 +460,37 @@ class ShiftActionExecutor(BaseActionExecutor):
             changes_summary.append(f"Escala: {scale_id}")
 
         # Buscar funcionário
-        employee = await self._get_employee(employee_id) if employee_id else None
+        employee, emp_warnings = await self.resolve_employee(params)
+        warnings.extend(emp_warnings)
+        if employee and not params.get("employee_id"):
+            params["employee_id"] = str(employee.id)
         if employee:
-            affected_entities.append({
-                "type": "employee",
-                "id": str(employee.id),
-                "name": employee.nome,
-            })
+            affected_entities.append(
+                {
+                    "type": "employee",
+                    "id": str(employee.id),
+                    "name": employee.nome,
+                }
+            )
             changes_summary.append(f"Funcionário: {employee.nome}")
-        else:
-            if employee_id:
-                warnings.append(f"⚠️ Funcionário '{employee_id}' não encontrado")
+        elif not params.get("employee_id") and not params.get("employee_name"):
             changes_summary.append("Funcionário: Não alocado (turno vago)")
 
         # Buscar posto
-        post_repo = PostRepository(self.db)
-        post = await post_repo.get_by_code(post_code) if post_code else None
+        post, post_warnings = await self.resolve_post(params)
+        warnings.extend(post_warnings)
+        if post and not params.get("post_code"):
+            params["post_code"] = post.code
         if post:
-            affected_entities.append({
-                "type": "post",
-                "id": post.id,
-                "name": post.name,
-                "code": post.code,
-            })
+            affected_entities.append(
+                {
+                    "type": "post",
+                    "id": post.id,
+                    "name": post.name,
+                    "code": post.code,
+                }
+            )
             changes_summary.append(f"Posto: {post.code} - {post.name}")
-        elif post_code:
-            warnings.append(f"⚠️ Posto '{post_code}' não encontrado")
 
         # Data e horários
         if shift_date_str:
@@ -508,13 +505,9 @@ class ShiftActionExecutor(BaseActionExecutor):
             try:
                 shift_dt = date.fromisoformat(shift_date_str)
                 shift_repo = ShiftRepository(self.db)
-                existing = await shift_repo.get_by_employee_and_date(
-                    str(employee.id), shift_dt
-                )
+                existing = await shift_repo.get_by_employee_and_date(str(employee.id), shift_dt)
                 if existing:
-                    warnings.append(
-                        f"⚠️ Funcionário já possui {len(existing)} turno(s) nesta data"
-                    )
+                    warnings.append(f"⚠️ Funcionário já possui {len(existing)} turno(s) nesta data")
             except ValueError:
                 warnings.append("⚠️ Data do turno inválida")
 
@@ -544,9 +537,9 @@ class ShiftActionExecutor(BaseActionExecutor):
     async def _checkin_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para registro de check-in com validacoes avancadas."""
         params = request.parameters
-        shift_id = params.get('shift_id')
-        employee_id = params.get('employee_id')
-        checkin_time_str = params.get('checkin_time') or params.get('actual_start_time')
+        shift_id = params.get("shift_id")
+        employee_id = params.get("employee_id")
+        checkin_time_str = params.get("checkin_time") or params.get("actual_start_time")
 
         warnings = []
         affected_entities = []
@@ -559,15 +552,10 @@ class ShiftActionExecutor(BaseActionExecutor):
         if shift_id:
             shift = await shift_repo.get_by_id(shift_id)
         elif employee_id:
-            today_shifts = await shift_repo.get_by_employee_and_date(
-                employee_id, date.today()
-            )
+            today_shifts = await shift_repo.get_by_employee_and_date(employee_id, date.today())
             if today_shifts:
                 # Pegar o turno agendado mais recente
-                scheduled = [
-                    s for s in today_shifts
-                    if s.status == ShiftStatus.SCHEDULED.value
-                ]
+                scheduled = [s for s in today_shifts if s.status == ShiftStatus.SCHEDULED.value]
                 shift = scheduled[0] if scheduled else today_shifts[0]
 
         if not shift:
@@ -575,29 +563,25 @@ class ShiftActionExecutor(BaseActionExecutor):
             title = "Registrar Check-in"
             description = "Turno não encontrado"
         else:
-            affected_entities.append({
-                "type": "shift",
-                "id": shift.id,
-                "date": shift.shift_date.isoformat(),
-                "status": shift.status,
-            })
+            affected_entities.append(
+                {
+                    "type": "shift",
+                    "id": shift.id,
+                    "date": shift.shift_date.isoformat(),
+                    "status": shift.status,
+                }
+            )
 
             changes_summary.append(f"Turno: {shift.id}")
             changes_summary.append(f"Data: {shift.shift_date.isoformat()}")
-            changes_summary.append(
-                f"Horário previsto: {shift.planned_start_time} - {shift.planned_end_time}"
-            )
+            changes_summary.append(f"Horário previsto: {shift.planned_start_time} - {shift.planned_end_time}")
 
             if checkin_time_str:
                 changes_summary.append(f"Hora check-in: {checkin_time_str}")
             else:
-                changes_summary.append(
-                    f"Hora check-in: {datetime.now().strftime('%H:%M')} (agora)"
-                )
+                changes_summary.append(f"Hora check-in: {datetime.now().strftime('%H:%M')} (agora)")
 
-            changes_summary.append(
-                f"Status: {shift.status} -> {ShiftStatus.IN_PROGRESS.value}"
-            )
+            changes_summary.append(f"Status: {shift.status} -> {ShiftStatus.IN_PROGRESS.value}")
 
             if shift.status == ShiftStatus.IN_PROGRESS.value:
                 warnings.append("Check-in ja registrado para este turno")
@@ -643,9 +627,7 @@ class ShiftActionExecutor(BaseActionExecutor):
             if bio_result:
                 if bio_result["status"] == "validated":
                     if bio_result["is_valid"]:
-                        changes_summary.append(
-                            f"Biometria: Validada ({bio_result['confidence']*100:.0f}% confianca)"
-                        )
+                        changes_summary.append(f"Biometria: Validada ({bio_result['confidence'] * 100:.0f}% confianca)")
                     else:
                         warnings.append(f"Biometria: {bio_result['message']}")
                 elif bio_result["status"] == "skipped":
@@ -691,9 +673,9 @@ class ShiftActionExecutor(BaseActionExecutor):
     async def _checkout_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para registro de check-out com validacoes avancadas."""
         params = request.parameters
-        shift_id = params.get('shift_id')
-        employee_id = params.get('employee_id')
-        checkout_time_str = params.get('checkout_time') or params.get('actual_end_time')
+        shift_id = params.get("shift_id")
+        employee_id = params.get("employee_id")
+        checkout_time_str = params.get("checkout_time") or params.get("actual_end_time")
 
         warnings = []
         affected_entities = []
@@ -706,15 +688,10 @@ class ShiftActionExecutor(BaseActionExecutor):
         if shift_id:
             shift = await shift_repo.get_by_id(shift_id)
         elif employee_id:
-            today_shifts = await shift_repo.get_by_employee_and_date(
-                employee_id, date.today()
-            )
+            today_shifts = await shift_repo.get_by_employee_and_date(employee_id, date.today())
             if today_shifts:
                 # Pegar turno em andamento
-                in_progress = [
-                    s for s in today_shifts
-                    if s.status == ShiftStatus.IN_PROGRESS.value
-                ]
+                in_progress = [s for s in today_shifts if s.status == ShiftStatus.IN_PROGRESS.value]
                 shift = in_progress[0] if in_progress else today_shifts[0]
 
         if not shift:
@@ -722,31 +699,27 @@ class ShiftActionExecutor(BaseActionExecutor):
             title = "Registrar Check-out"
             description = "Turno não encontrado"
         else:
-            affected_entities.append({
-                "type": "shift",
-                "id": shift.id,
-                "date": shift.shift_date.isoformat(),
-                "status": shift.status,
-            })
+            affected_entities.append(
+                {
+                    "type": "shift",
+                    "id": shift.id,
+                    "date": shift.shift_date.isoformat(),
+                    "status": shift.status,
+                }
+            )
 
             changes_summary.append(f"Turno: {shift.id}")
             changes_summary.append(f"Data: {shift.shift_date.isoformat()}")
 
             if shift.actual_start_time:
-                changes_summary.append(
-                    f"Check-in registrado: {shift.actual_start_time}"
-                )
+                changes_summary.append(f"Check-in registrado: {shift.actual_start_time}")
 
             if checkout_time_str:
                 changes_summary.append(f"Hora check-out: {checkout_time_str}")
             else:
-                changes_summary.append(
-                    f"Hora check-out: {datetime.now().strftime('%H:%M')} (agora)"
-                )
+                changes_summary.append(f"Hora check-out: {datetime.now().strftime('%H:%M')} (agora)")
 
-            changes_summary.append(
-                f"Status: {shift.status} -> {ShiftStatus.COMPLETED.value}"
-            )
+            changes_summary.append(f"Status: {shift.status} -> {ShiftStatus.COMPLETED.value}")
 
             if shift.status == ShiftStatus.COMPLETED.value:
                 warnings.append("Turno ja foi concluido")
@@ -790,9 +763,7 @@ class ShiftActionExecutor(BaseActionExecutor):
             if bio_result:
                 if bio_result["status"] == "validated":
                     if bio_result["is_valid"]:
-                        changes_summary.append(
-                            f"Biometria: Validada ({bio_result['confidence']*100:.0f}% confianca)"
-                        )
+                        changes_summary.append(f"Biometria: Validada ({bio_result['confidence'] * 100:.0f}% confianca)")
                     else:
                         warnings.append(f"Biometria: {bio_result['message']}")
                 elif bio_result["status"] == "skipped":
@@ -848,10 +819,10 @@ class ShiftActionExecutor(BaseActionExecutor):
     async def _mark_absence_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para marcar falta."""
         params = request.parameters
-        shift_id = params.get('shift_id')
-        employee_id = params.get('employee_id')
-        reason = params.get('reason', 'Não informado')
-        shift_date_str = params.get('shift_date')
+        shift_id = params.get("shift_id")
+        employee_id = params.get("employee_id")
+        reason = params.get("reason", "Não informado")
+        shift_date_str = params.get("shift_date")
 
         warnings = []
         affected_entities = []
@@ -864,14 +835,8 @@ class ShiftActionExecutor(BaseActionExecutor):
         if shift_id:
             shift = await shift_repo.get_by_id(shift_id)
         elif employee_id:
-            target_date = (
-                date.fromisoformat(shift_date_str)
-                if shift_date_str
-                else date.today()
-            )
-            shifts = await shift_repo.get_by_employee_and_date(
-                employee_id, target_date
-            )
+            target_date = date.fromisoformat(shift_date_str) if shift_date_str else date.today()
+            shifts = await shift_repo.get_by_employee_and_date(employee_id, target_date)
             if shifts:
                 shift = shifts[0]
 
@@ -880,18 +845,18 @@ class ShiftActionExecutor(BaseActionExecutor):
             title = "Marcar Falta"
             description = "Turno não encontrado"
         else:
-            affected_entities.append({
-                "type": "shift",
-                "id": shift.id,
-                "date": shift.shift_date.isoformat(),
-                "status": shift.status,
-            })
+            affected_entities.append(
+                {
+                    "type": "shift",
+                    "id": shift.id,
+                    "date": shift.shift_date.isoformat(),
+                    "status": shift.status,
+                }
+            )
 
             changes_summary.append(f"Turno: {shift.id}")
             changes_summary.append(f"Data: {shift.shift_date.isoformat()}")
-            changes_summary.append(
-                f"Status: {shift.status} -> {ShiftStatus.MISSED.value}"
-            )
+            changes_summary.append(f"Status: {shift.status} -> {ShiftStatus.MISSED.value}")
             changes_summary.append(f"Motivo: {reason}")
             changes_summary.append("Necessita substituição: Sim")
 
@@ -936,41 +901,37 @@ class ShiftActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa criação de turno."""
         params = request.parameters
-        scale_id = params.get('scale_id')
-        employee_id = params.get('employee_id')
-        post_code = params.get('post_code')
-        shift_date_str = params.get('shift_date')
-        start_time_str = params.get('start_time', '07:00')
-        end_time_str = params.get('end_time', '19:00')
-        is_night_shift = params.get('is_night_shift', False)
-        is_holiday = params.get('is_holiday', False)
-        notes = params.get('notes')
+        scale_id = params.get("scale_id")
+        employee_id = params.get("employee_id")
+        shift_date_str = params.get("shift_date")
+        start_time_str = params.get("start_time", "07:00")
+        end_time_str = params.get("end_time", "19:00")
+        is_night_shift = params.get("is_night_shift", False)
+        is_holiday = params.get("is_holiday", False)
+        notes = params.get("notes")
 
         if not scale_id:
             raise ValueError("ID da escala é obrigatório para criar turno")
 
         # Buscar posto
-        post_repo = PostRepository(self.db)
-        post = await post_repo.get_by_code(post_code) if post_code else None
-        if not post and post_code:
-            raise ValueError(f"Posto '{post_code}' não encontrado")
+        post, _ = await self.resolve_post(params)
+        if not post and (params.get("post_code") or params.get("post_name")):
+            raise ValueError(f"Posto não encontrado (code={params.get('post_code')}, name={params.get('post_name')})")
 
         # Parsear data e horários
-        shift_dt = (
-            date.fromisoformat(shift_date_str) if shift_date_str else date.today()
-        )
+        shift_dt = date.fromisoformat(shift_date_str) if shift_date_str else date.today()
         start_t = self._parse_time(start_time_str)
         end_t = self._parse_time(end_time_str)
 
         # Validar funcionário (opcional -- turno pode ser vago)
         employee = None
-        if employee_id:
-            employee = await self._get_employee(employee_id)
-            if not employee:
-                raise ValueError(f"Funcionário '{employee_id}' não encontrado")
+        if employee_id or params.get("employee_name") or params.get("employee_matricula"):
+            employee, _ = await self.resolve_employee(params)
+            if not employee and employee_id:
+                raise ValueError(f"Funcionário não encontrado (id={employee_id}, nome={params.get('employee_name')})")
 
         # Determinar post_id
-        post_id = post.id if post else params.get('post_id')
+        post_id = post.id if post else params.get("post_id")
         if not post_id:
             raise ValueError("Posto é obrigatório para criar turno")
 
@@ -1028,10 +989,10 @@ class ShiftActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa registro de check-in com validacoes avancadas."""
         params = request.parameters
-        shift_id = params.get('shift_id')
-        employee_id = params.get('employee_id')
-        checkin_time_str = params.get('checkin_time') or params.get('actual_start_time')
-        notes = params.get('notes')
+        shift_id = params.get("shift_id")
+        employee_id = params.get("employee_id")
+        checkin_time_str = params.get("checkin_time") or params.get("actual_start_time")
+        notes = params.get("notes")
 
         shift_repo = ShiftRepository(self.db)
         shift = None
@@ -1040,14 +1001,9 @@ class ShiftActionExecutor(BaseActionExecutor):
         if shift_id:
             shift = await shift_repo.get_by_id(shift_id)
         elif employee_id:
-            today_shifts = await shift_repo.get_by_employee_and_date(
-                employee_id, date.today()
-            )
+            today_shifts = await shift_repo.get_by_employee_and_date(employee_id, date.today())
             if today_shifts:
-                scheduled = [
-                    s for s in today_shifts
-                    if s.status == ShiftStatus.SCHEDULED.value
-                ]
+                scheduled = [s for s in today_shifts if s.status == ShiftStatus.SCHEDULED.value]
                 shift = scheduled[0] if scheduled else today_shifts[0]
 
         if not shift:
@@ -1065,8 +1021,8 @@ class ShiftActionExecutor(BaseActionExecutor):
             actual_start = datetime.utcnow()
 
         # ── Validacoes avancadas na execucao ─────────────────────────
-        validation_details: Dict[str, Any] = {}
-        validation_warnings: List[str] = []
+        validation_details: dict[str, Any] = {}
+        validation_warnings: list[str] = []
 
         # Buscar posto para validacoes
         post = None
@@ -1179,11 +1135,11 @@ class ShiftActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa registro de check-out com validacoes avancadas."""
         params = request.parameters
-        shift_id = params.get('shift_id')
-        employee_id = params.get('employee_id')
-        checkout_time_str = params.get('checkout_time') or params.get('actual_end_time')
-        break_minutes = params.get('break_minutes', 0)
-        notes = params.get('notes')
+        shift_id = params.get("shift_id")
+        employee_id = params.get("employee_id")
+        checkout_time_str = params.get("checkout_time") or params.get("actual_end_time")
+        break_minutes = params.get("break_minutes", 0)
+        notes = params.get("notes")
 
         shift_repo = ShiftRepository(self.db)
         shift = None
@@ -1192,14 +1148,9 @@ class ShiftActionExecutor(BaseActionExecutor):
         if shift_id:
             shift = await shift_repo.get_by_id(shift_id)
         elif employee_id:
-            today_shifts = await shift_repo.get_by_employee_and_date(
-                employee_id, date.today()
-            )
+            today_shifts = await shift_repo.get_by_employee_and_date(employee_id, date.today())
             if today_shifts:
-                in_progress = [
-                    s for s in today_shifts
-                    if s.status == ShiftStatus.IN_PROGRESS.value
-                ]
+                in_progress = [s for s in today_shifts if s.status == ShiftStatus.IN_PROGRESS.value]
                 shift = in_progress[0] if in_progress else today_shifts[0]
 
         if not shift:
@@ -1217,8 +1168,8 @@ class ShiftActionExecutor(BaseActionExecutor):
             actual_end = datetime.utcnow()
 
         # ── Validacoes avancadas na execucao do checkout ─────────────
-        validation_details: Dict[str, Any] = {}
-        validation_warnings: List[str] = []
+        validation_details: dict[str, Any] = {}
+        validation_warnings: list[str] = []
 
         # Buscar posto para validacoes
         post = None
@@ -1324,10 +1275,10 @@ class ShiftActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa marcação de falta."""
         params = request.parameters
-        shift_id = params.get('shift_id')
-        employee_id = params.get('employee_id')
-        shift_date_str = params.get('shift_date')
-        reason = params.get('reason')
+        shift_id = params.get("shift_id")
+        employee_id = params.get("employee_id")
+        shift_date_str = params.get("shift_date")
+        reason = params.get("reason")
 
         shift_repo = ShiftRepository(self.db)
         shift = None
@@ -1336,14 +1287,8 @@ class ShiftActionExecutor(BaseActionExecutor):
         if shift_id:
             shift = await shift_repo.get_by_id(shift_id)
         elif employee_id:
-            target_date = (
-                date.fromisoformat(shift_date_str)
-                if shift_date_str
-                else date.today()
-            )
-            shifts = await shift_repo.get_by_employee_and_date(
-                employee_id, target_date
-            )
+            target_date = date.fromisoformat(shift_date_str) if shift_date_str else date.today()
+            shifts = await shift_repo.get_by_employee_and_date(employee_id, target_date)
             if shifts:
                 shift = shifts[0]
 

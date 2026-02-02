@@ -32,6 +32,7 @@ from modules.operacional.occurrences.repositories.occurrence_repository import O
 # Repositórios do módulo Operacional
 from modules.operacional.repositories import (
     AllocationRepository,
+    EmployeeRepository,
     PostRepository,
     ScaleRepository,
     ShiftRepository,
@@ -2826,19 +2827,76 @@ _Para detalhes, pergunte sobre itens específicos._"""
         limit: int = 5,
     ) -> list:
         """
-        Busca entidade por termo.
+        Busca entidade por termo (nome, código, etc).
+
+        Suporta busca por nome em:
+        - Funcionários (Employee): busca em nome e nome_social via EmployeeRepository
+        - Postos (Post): busca em name via PostRepository
+        - Diaristas (Diarist): busca genérica por ILIKE no campo nome
+        - Outras entidades model: busca genérica por ILIKE no name_field
 
         Args:
-            entity: Tipo de entidade
+            entity: Tipo de entidade (chave do ENTITY_MAP)
             search_term: Termo de busca
             limit: Limite de resultados
 
         Returns:
-            Lista de resultados
+            Lista de objetos encontrados
         """
-        # Em producao, fazer busca real no banco
-        # Por enquanto retorna lista vazia
-        return []
+        if not self.db or not search_term or not search_term.strip():
+            return []
+
+        entity_info = self.ENTITY_MAP.get(entity.lower())
+        if not entity_info:
+            logger.debug(f"search_entity: entidade '{entity}' não mapeada")
+            return []
+
+        entity_type = entity_info.get("type")
+        name_field = entity_info.get("name_field", "nome")
+
+        try:
+            # Postos: PostRepository.search_by_name (ILIKE multi-word)
+            if entity_info.get("repository") == "post":
+                repo = PostRepository(self.db)
+                return await repo.search_by_name(search_term, limit=limit)
+
+            # Funcionários: EmployeeRepository.search_by_name (nome + nome_social)
+            if entity_type == "model" and entity_info["model"] is Employee:
+                repo = EmployeeRepository(self.db)
+                return await repo.search_by_name(search_term, limit=limit)
+
+            # Outros model types: busca genérica por ILIKE no name_field
+            if entity_type == "model":
+                model = entity_info["model"]
+                active_field_name = entity_info.get("active_field", "is_active")
+                active_col = getattr(model, active_field_name, None)
+                name_col = getattr(model, name_field, None)
+
+                if name_col is None:
+                    return []
+
+                words = search_term.strip().split()
+                stmt = select(model)
+                if active_col is not None:
+                    stmt = stmt.where(active_col.is_(True))
+                for word in words:
+                    if len(word) >= 2:
+                        stmt = stmt.where(name_col.ilike(f"%{word}%"))
+                stmt = stmt.order_by(name_col).limit(limit)
+
+                result = await self.db.execute(stmt)
+                return list(result.scalars().all())
+
+            # Repository types sem search_by_name: não suportado
+            if entity_type == "repository":
+                logger.debug(
+                    f"search_entity: busca por nome não implementada para repo '{entity_info.get('repository')}'"
+                )
+
+            return []
+        except Exception as e:
+            logger.error(f"Erro em search_entity('{entity}', '{search_term}'): {e}")
+            return []
 
     def get_entity_info(self, entity: str) -> dict | None:
         """Retorna informacoes sobre uma entidade."""

@@ -272,6 +272,7 @@ async def get_greeting(
 @bartolo_router.post("/feedback")
 async def submit_feedback(
     request: FeedbackRequest,
+    current_user: User = Depends(get_current_user),
     learning: LearningService = Depends(get_learning_service),
 ):
     """
@@ -501,6 +502,7 @@ async def health_check():
 
 @bartolo_router.get("/learning/stats")
 async def get_learning_stats(
+    current_user: User = Depends(get_current_user),
     learning: LearningService = Depends(get_learning_service),
 ):
     """
@@ -511,6 +513,7 @@ async def get_learning_stats(
 
 @bartolo_router.get("/learning/patterns")
 async def get_learned_patterns(
+    current_user: User = Depends(get_current_user),
     pattern_type: str | None = Query(None, description="Filtrar por tipo"),
     min_usage: int = Query(3, description="Uso minimo"),
     min_success_rate: float = Query(0.7, description="Taxa de sucesso minima"),

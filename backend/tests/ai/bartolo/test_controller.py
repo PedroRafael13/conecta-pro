@@ -524,3 +524,155 @@ class TestWizardEndpoints:
         result = await wizard_status(session_id="sess-1", current_user=mock_user, engine=mock_engine)
 
         assert result["active"] is False
+
+
+# ==========================================================================
+# Testes de Feedback com JWT (fix #17)
+# ==========================================================================
+
+
+class TestFeedbackEndpoint:
+    """Testes para o endpoint /feedback com JWT."""
+
+    @pytest.mark.asyncio
+    async def test_submit_feedback_success(self):
+        """Testa feedback com usuario autenticado."""
+        from modules.ai.bartolo.controllers.bartolo_controller import submit_feedback
+
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        mock_learning = AsyncMock()
+        mock_learning.record_feedback = AsyncMock(return_value=True)
+
+        request = FeedbackRequest(
+            interaction_id=str(uuid4()),
+            feedback_type="helpful",
+            rating=5,
+        )
+
+        result = await submit_feedback(
+            request=request,
+            current_user=mock_user,
+            learning=mock_learning,
+        )
+
+        assert result["success"] is True
+        mock_learning.record_feedback.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_submit_feedback_not_found(self):
+        """Testa feedback com interacao nao encontrada."""
+        from fastapi import HTTPException
+
+        from modules.ai.bartolo.controllers.bartolo_controller import submit_feedback
+
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        mock_learning = AsyncMock()
+        mock_learning.record_feedback = AsyncMock(return_value=False)
+
+        request = FeedbackRequest(
+            interaction_id=str(uuid4()),
+            feedback_type="helpful",
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            await submit_feedback(
+                request=request,
+                current_user=mock_user,
+                learning=mock_learning,
+            )
+        assert exc_info.value.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_submit_feedback_invalid_type(self):
+        """Testa feedback com tipo invalido."""
+        from fastapi import HTTPException
+
+        from modules.ai.bartolo.controllers.bartolo_controller import submit_feedback
+
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        mock_learning = AsyncMock()
+
+        request = FeedbackRequest(
+            interaction_id=str(uuid4()),
+            feedback_type="tipo_invalido_xyz",
+        )
+
+        with pytest.raises(HTTPException) as exc_info:
+            await submit_feedback(
+                request=request,
+                current_user=mock_user,
+                learning=mock_learning,
+            )
+        assert exc_info.value.status_code == 400
+
+
+# ==========================================================================
+# Testes de Learning com JWT (fix #17)
+# ==========================================================================
+
+
+class TestLearningEndpoints:
+    """Testes para os endpoints /learning com JWT."""
+
+    @pytest.mark.asyncio
+    async def test_learning_stats(self):
+        """Testa learning stats com usuario autenticado."""
+        from modules.ai.bartolo.controllers.bartolo_controller import get_learning_stats
+
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        mock_learning = MagicMock()
+        mock_learning.get_stats = MagicMock(
+            return_value={
+                "total_interactions": 50,
+                "patterns_learned": 12,
+                "satisfaction_rate": 0.85,
+            }
+        )
+
+        result = await get_learning_stats(
+            current_user=mock_user,
+            learning=mock_learning,
+        )
+
+        assert result["total_interactions"] == 50
+        assert result["patterns_learned"] == 12
+        mock_learning.get_stats.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_learned_patterns(self):
+        """Testa learned patterns com usuario autenticado."""
+        from modules.ai.bartolo.controllers.bartolo_controller import get_learned_patterns
+
+        mock_user = MagicMock()
+        mock_user.id = uuid4()
+
+        mock_pattern = MagicMock()
+        mock_pattern.id = uuid4()
+        mock_pattern.pattern_type = "intent"
+        mock_pattern.trigger = "criar escala"
+        mock_pattern.usage_count = 10
+        mock_pattern.success_rate = 0.9
+
+        mock_learning = AsyncMock()
+        mock_learning.get_successful_patterns = AsyncMock(return_value=[mock_pattern])
+
+        result = await get_learned_patterns(
+            current_user=mock_user,
+            pattern_type=None,
+            min_usage=3,
+            min_success_rate=0.7,
+            learning=mock_learning,
+        )
+
+        assert result["total"] == 1
+        assert result["patterns"][0]["trigger"] == "criar escala"
+        assert result["patterns"][0]["success_rate"] == 90.0
+        mock_learning.get_successful_patterns.assert_called_once()

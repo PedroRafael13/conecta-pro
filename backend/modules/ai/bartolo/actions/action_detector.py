@@ -1,11 +1,13 @@
 """
 Detector de intenções de ação em mensagens do usuário.
 """
-import re
+
 import logging
-from typing import Optional, Dict, Any
-from .action_types import ActionType, ActionCategory
+import re
+from typing import Any
+
 from .action_schemas import ActionRequest
+from .action_types import ActionCategory, ActionType
 
 logger = logging.getLogger(__name__)
 
@@ -244,12 +246,7 @@ class ActionDetector:
         ActionType.RESUME_ROUND: ActionCategory.OPERATIONAL,
     }
 
-    def detect(
-        self,
-        message: str,
-        user_id: str,
-        session_id: str
-    ) -> Optional[ActionRequest]:
+    def detect(self, message: str, user_id: str, session_id: str) -> ActionRequest | None:
         """
         Detecta ação na mensagem do usuário.
 
@@ -287,7 +284,16 @@ class ActionDetector:
         """Retorna categoria da ação."""
         return self.CATEGORY_MAP.get(action_type, ActionCategory.OPERATIONAL)
 
-    def _extract_parameters(self, message: str, action_type: ActionType) -> Dict[str, Any]:
+    # Stop words usadas para delimitar nome do posto
+    # \b no final impede match parcial ("de" em "dei")
+    _POST_NAME_STOP = (
+        r"(?:em|para|de|do|da|no|na|dos|das|nos|nas|"
+        r"janeiro|fevereiro|mar[cç]o|abril|maio|junho|"
+        r"julho|agosto|setembro|outubro|novembro|dezembro|"
+        r"\d{1,2}/\d{4}|\d{4}|turno|escala)\b"
+    )
+
+    def _extract_parameters(self, message: str, action_type: ActionType) -> dict[str, Any]:
         """
         Extrai parâmetros da mensagem baseado no tipo de ação.
 
@@ -298,56 +304,118 @@ class ActionDetector:
         Returns:
             Dicionário com parâmetros extraídos
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         message_lower = message.lower()
 
-        # Extração de código de posto (ex: POST-001, 001)
-        post_match = re.search(r'(?:posto|post)[:\s-]*([a-z0-9-]+)', message_lower)
-        if post_match:
-            params['post_code'] = post_match.group(1).upper()
+        # --- Extração de posto ---
+        # 1. Código explícito: POST-0021, post-21, post 0021
+        post_code_match = re.search(r"\bpost[- ]?(\d{3,4})\b", message_lower)
+        if not post_code_match:
+            # "posto 21", "posto 0021"
+            post_code_match = re.search(r"\bposto\s+(\d{1,4})\b", message_lower)
+
+        if post_code_match:
+            code_num = post_code_match.group(1).zfill(4)
+            params["post_code"] = f"POST-{code_num}"
+        else:
+            # 2. Nome natural após keywords: "posto Prime Arena", "condomínio Michelangelo"
+            post_name_match = re.search(
+                r"(?:posto|condom[ií]nio|residencial|base)\s+(?:d[aeo]s?\s+)?"
+                r"(.+?)(?:\s+" + self._POST_NAME_STOP + r"|\s*$)",
+                message_lower,
+            )
+            if post_name_match:
+                name = post_name_match.group(1).strip()
+                # Remove artigos/preposições trailing
+                name = re.sub(r"\s+(?:para|em|de|do|da|no|na|o|a)\s*$", "", name).strip()
+                if len(name) >= 3:
+                    params["post_name"] = name
 
         # Extração de mês/ano
-        month_match = re.search(r'\b(janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b', message_lower)
+        month_match = re.search(
+            r"\b(janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\b",
+            message_lower,
+        )
         if month_match:
             months = {
-                'janeiro': 1, 'fevereiro': 2, 'março': 3, 'marco': 3,
-                'abril': 4, 'maio': 5, 'junho': 6, 'julho': 7,
-                'agosto': 8, 'setembro': 9, 'outubro': 10,
-                'novembro': 11, 'dezembro': 12
+                "janeiro": 1,
+                "fevereiro": 2,
+                "março": 3,
+                "marco": 3,
+                "abril": 4,
+                "maio": 5,
+                "junho": 6,
+                "julho": 7,
+                "agosto": 8,
+                "setembro": 9,
+                "outubro": 10,
+                "novembro": 11,
+                "dezembro": 12,
             }
-            params['month'] = months.get(month_match.group(1))
+            params["month"] = months.get(month_match.group(1))
 
         # Extração de mês numérico (ex: 02/2024, em fevereiro)
-        month_num_match = re.search(r'\b(\d{1,2})/(\d{4})\b', message)
+        month_num_match = re.search(r"\b(\d{1,2})/(\d{4})\b", message)
         if month_num_match:
-            params['month'] = int(month_num_match.group(1))
-            params['year'] = int(month_num_match.group(2))
+            params["month"] = int(month_num_match.group(1))
+            params["year"] = int(month_num_match.group(2))
 
         # Extração de ano (ex: 2024, em 2024)
-        if 'year' not in params:
-            year_match = re.search(r'\b(20\d{2})\b', message)
+        if "year" not in params:
+            year_match = re.search(r"\b(20\d{2})\b", message)
             if year_match:
-                params['year'] = int(year_match.group(1))
+                params["year"] = int(year_match.group(1))
 
-        # Extração de ID de funcionário
-        employee_match = re.search(r'(?:funcion[aá]rio|colaborador|empregado)[:\s-]*([a-z0-9-]+)', message_lower)
+        # Extração de ID de funcionário (UUID explícito)
+        employee_match = re.search(
+            r"(?:funcion[aá]rio|colaborador|empregado)[:\s-]*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})",
+            message_lower,
+        )
         if employee_match:
-            params['employee_id'] = employee_match.group(1)
+            params["employee_id"] = employee_match.group(1)
+
+        # Extração de matrícula de funcionário
+        if "employee_id" not in params:
+            matricula_match = re.search(r"(?:matr[ií]cula|mat\.?)\s*[:=]?\s*(\d{3,10})", message_lower)
+            if matricula_match:
+                params["employee_matricula"] = matricula_match.group(1)
+
+        # Extração de nome de funcionário (nome próprio após keywords)
+        if "employee_id" not in params and "employee_matricula" not in params:
+            # "funcionário João Silva", "colaborador Carlos", "vigilante Roberto"
+            emp_name_match = re.search(
+                r"(?:funcion[aá]rio|colaborador|vigilante|porteiro|seguran[cç]a)\s+"
+                r"(?:d[aeo]s?\s+)?"
+                r"([A-ZÀ-Ÿ][a-zà-ÿ]+(?:\s+(?:d[aeo]s?\s+)?[A-ZÀ-Ÿ][a-zà-ÿ]+)*)",
+                message,  # usa original (não lowercase) para detectar nomes próprios
+            )
+            if emp_name_match:
+                name = emp_name_match.group(1).strip()
+                if len(name) >= 3:
+                    params["employee_name"] = name
+
+            # "alocar o João", "transferir a Maria Silva"
+            if "employee_name" not in params:
+                verb_name_match = re.search(
+                    r"(?:alocar|transferir|escalar)\s+"
+                    r"(?:o|a|do|da)\s+"
+                    r"([A-ZÀ-Ÿ][a-zà-ÿ]+(?:\s+(?:d[aeo]s?\s+)?[A-ZÀ-Ÿ][a-zà-ÿ]+)*)",
+                    message,
+                )
+                if verb_name_match:
+                    name = verb_name_match.group(1).strip()
+                    if len(name) >= 3:
+                        params["employee_name"] = name
 
         # Extração de ID de escala
-        scale_match = re.search(r'(?:escala)[:\s-]*([a-z0-9-]+)', message_lower)
+        scale_match = re.search(r"(?:escala)[:\s-]*([a-z0-9-]+)", message_lower)
         if scale_match:
-            params['scale_id'] = scale_match.group(1)
+            params["scale_id"] = scale_match.group(1)
 
         logger.debug(f"Parâmetros extraídos: {params}")
         return params
 
-    def _calculate_confidence(
-        self,
-        message: str,
-        action_type: ActionType,
-        parameters: Dict[str, Any]
-    ) -> float:
+    def _calculate_confidence(self, message: str, action_type: ActionType, parameters: dict[str, Any]) -> float:
         """
         Calcula confiança da detecção.
 
@@ -362,18 +430,25 @@ class ActionDetector:
         confidence = 0.7  # Base
 
         # Aumenta confiança se tem parâmetros relevantes
+        # post_name conta como alternativa a post_code
+        has_post = "post_code" in parameters or "post_name" in parameters
         param_bonus = {
-            ActionType.CREATE_SCALE: ['post_code', 'month', 'year'],
-            ActionType.APPROVE_SCALE: ['scale_id', 'post_code'],
-            ActionType.PUBLISH_SCALE: ['scale_id', 'post_code'],
-            ActionType.ALLOCATE_EMPLOYEE: ['employee_id', 'post_code'],
-            ActionType.TERMINATE_ALLOCATION: ['employee_id'],
-            ActionType.TRANSFER_EMPLOYEE: ['employee_id', 'post_code'],
+            ActionType.CREATE_SCALE: ["_post", "month", "year"],
+            ActionType.APPROVE_SCALE: ["scale_id", "_post"],
+            ActionType.PUBLISH_SCALE: ["scale_id", "_post"],
+            ActionType.ALLOCATE_EMPLOYEE: ["employee_id", "_post"],
+            ActionType.TERMINATE_ALLOCATION: ["employee_id"],
+            ActionType.TRANSFER_EMPLOYEE: ["employee_id", "_post"],
         }
 
         expected_params = param_bonus.get(action_type, [])
         if expected_params:
-            found_params = sum(1 for p in expected_params if p in parameters)
+            found_params = 0
+            for p in expected_params:
+                if p == "_post":
+                    found_params += 1 if has_post else 0
+                elif p in parameters:
+                    found_params += 1
             confidence += (found_params / len(expected_params)) * 0.3
 
         return min(confidence, 1.0)

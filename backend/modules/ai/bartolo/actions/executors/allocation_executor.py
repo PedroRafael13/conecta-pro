@@ -1,22 +1,23 @@
 """
 Executor de ações relacionadas a alocações.
 """
+
 import logging
 from datetime import date, datetime
-from typing import Optional
 from uuid import uuid4
 
 from sqlalchemy import select
 
-from modules.operacional.repositories.allocation_repository import AllocationRepository
-from modules.operacional.repositories.post_repository import PostRepository
 from modules.operacional.models.allocation import AllocationStatus
 from modules.operacional.models.employee import Employee
-from modules.operacional.schemas.allocation import AllocationCreate
 from modules.operacional.permissions import has_permission
-from ..action_schemas import ActionRequest, ActionPreview, ActionResult
-from ..action_types import ActionType, ActionStatus
+from modules.operacional.repositories.allocation_repository import AllocationRepository
+from modules.operacional.repositories.post_repository import PostRepository
+from modules.operacional.schemas.allocation import AllocationCreate
+
 from ..action_permissions import get_required_permission
+from ..action_schemas import ActionPreview, ActionRequest, ActionResult
+from ..action_types import ActionStatus, ActionType
 from .base_executor import BaseActionExecutor
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ class AllocationActionExecutor(BaseActionExecutor):
 
     # ── Helpers ──────────────────────────────────────────────────────────
 
-    async def _get_employee(self, employee_id: str) -> Optional[Employee]:
+    async def _get_employee(self, employee_id: str) -> Employee | None:
         """Busca funcionário por ID."""
         result = await self.db.execute(
             select(Employee).where(
@@ -84,7 +85,7 @@ class AllocationActionExecutor(BaseActionExecutor):
     def _build_permission_info(self, request: ActionRequest) -> tuple:
         """Retorna (required_perm, user_has_perm)."""
         required_perm = get_required_permission(request.action_type)
-        user_role = getattr(self, 'user_role', None)
+        user_role = getattr(self, "user_role", None)
         user_has_perm = has_permission(user_role, required_perm) if user_role else False
         logger.info(f"Permissão {required_perm.value}: role={user_role}, has_perm={user_has_perm}")
         return required_perm, user_has_perm
@@ -94,48 +95,49 @@ class AllocationActionExecutor(BaseActionExecutor):
     async def _allocate_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para alocação de funcionário."""
         params = request.parameters
-        employee_id = params.get('employee_id')
-        post_code = params.get('post_code')
-        start_date_str = params.get('start_date')
-        role = params.get('role')
+        start_date_str = params.get("start_date")
+        role = params.get("role")
 
         warnings = []
         affected_entities = []
         changes_summary = []
 
         # Buscar funcionário
-        employee = await self._get_employee(employee_id) if employee_id else None
-        if not employee:
-            warnings.append("⚠️ Funcionário não encontrado")
-        else:
-            affected_entities.append({
-                "type": "employee",
-                "id": str(employee.id),
-                "name": employee.nome,
-                "matricula": employee.matricula,
-            })
+        employee, emp_warnings = await self.resolve_employee(params)
+        warnings.extend(emp_warnings)
+        if employee and not params.get("employee_id"):
+            params["employee_id"] = str(employee.id)
+        if employee:
+            affected_entities.append(
+                {
+                    "type": "employee",
+                    "id": str(employee.id),
+                    "name": employee.nome,
+                    "matricula": employee.matricula,
+                }
+            )
             changes_summary.append(f"Funcionário: {employee.nome} ({employee.matricula or 'sem matrícula'})")
 
             # Verificar alocações atuais
             alloc_repo = AllocationRepository(self.db)
             current_allocs = await alloc_repo.get_current_by_employee(str(employee.id))
             if current_allocs:
-                warnings.append(
-                    f"⚠️ Funcionário já possui {len(current_allocs)} alocação(ões) ativa(s)"
-                )
+                warnings.append(f"⚠️ Funcionário já possui {len(current_allocs)} alocação(ões) ativa(s)")
 
         # Buscar posto
-        post_repo = PostRepository(self.db)
-        post = await post_repo.get_by_code(post_code) if post_code else None
-        if not post:
-            warnings.append(f"⚠️ Posto '{post_code}' não encontrado")
-        else:
-            affected_entities.append({
-                "type": "post",
-                "id": post.id,
-                "name": post.name,
-                "code": post.code,
-            })
+        post, post_warnings = await self.resolve_post(params)
+        warnings.extend(post_warnings)
+        if post and not params.get("post_code"):
+            params["post_code"] = post.code
+        if post:
+            affected_entities.append(
+                {
+                    "type": "post",
+                    "id": post.id,
+                    "name": post.name,
+                    "code": post.code,
+                }
+            )
             changes_summary.append(f"Posto: {post.code} - {post.name}")
 
         # Data de início
@@ -173,9 +175,9 @@ class AllocationActionExecutor(BaseActionExecutor):
     async def _terminate_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para encerramento de alocação."""
         params = request.parameters
-        allocation_id = params.get('allocation_id')
-        employee_id = params.get('employee_id')
-        reason = params.get('reason', 'Encerramento via Bartolo')
+        allocation_id = params.get("allocation_id")
+        employee_id = params.get("employee_id")
+        reason = params.get("reason", "Encerramento via Bartolo")
 
         warnings = []
         affected_entities = []
@@ -197,11 +199,13 @@ class AllocationActionExecutor(BaseActionExecutor):
             title = "Encerrar Alocação"
             description = "Alocação não encontrada"
         else:
-            affected_entities.append({
-                "type": "allocation",
-                "id": str(allocation.id),
-                "status": allocation.status,
-            })
+            affected_entities.append(
+                {
+                    "type": "allocation",
+                    "id": str(allocation.id),
+                    "status": allocation.status,
+                }
+            )
             changes_summary.append(f"Alocação: {allocation.id}")
             changes_summary.append(f"Status atual: {allocation.status}")
             changes_summary.append(f"Novo status: {AllocationStatus.TERMINATED.value}")
@@ -238,37 +242,43 @@ class AllocationActionExecutor(BaseActionExecutor):
     async def _transfer_preview(self, request: ActionRequest) -> ActionPreview:
         """Cria preview para transferência de funcionário."""
         params = request.parameters
-        employee_id = params.get('employee_id')
-        target_post_code = params.get('post_code') or params.get('target_post_code')
+        target_post_code = params.get("post_code") or params.get("target_post_code")
 
         warnings = []
         affected_entities = []
         changes_summary = []
 
         # Buscar funcionário
-        employee = await self._get_employee(employee_id) if employee_id else None
-        if not employee:
-            warnings.append("⚠️ Funcionário não encontrado")
-        else:
-            affected_entities.append({
-                "type": "employee",
-                "id": str(employee.id),
-                "name": employee.nome,
-            })
+        employee, emp_warnings = await self.resolve_employee(params)
+        warnings.extend(emp_warnings)
+        if employee and not params.get("employee_id"):
+            params["employee_id"] = str(employee.id)
+        if employee:
+            affected_entities.append(
+                {
+                    "type": "employee",
+                    "id": str(employee.id),
+                    "name": employee.nome,
+                }
+            )
             changes_summary.append(f"Funcionário: {employee.nome}")
 
         # Buscar posto destino
-        post_repo = PostRepository(self.db)
-        target_post = await post_repo.get_by_code(target_post_code) if target_post_code else None
-        if not target_post:
-            warnings.append(f"⚠️ Posto destino '{target_post_code}' não encontrado")
-        else:
-            affected_entities.append({
-                "type": "post",
-                "id": target_post.id,
-                "name": target_post.name,
-                "code": target_post.code,
-            })
+        post_params = {
+            "post_code": target_post_code,
+            "post_name": params.get("post_name") or params.get("target_post_name"),
+        }
+        target_post, post_warnings = await self.resolve_post(post_params)
+        warnings.extend(post_warnings)
+        if target_post:
+            affected_entities.append(
+                {
+                    "type": "post",
+                    "id": target_post.id,
+                    "name": target_post.name,
+                    "code": target_post.code,
+                }
+            )
             changes_summary.append(f"Posto destino: {target_post.code} - {target_post.name}")
 
         # Verificar alocação atual
@@ -277,7 +287,8 @@ class AllocationActionExecutor(BaseActionExecutor):
             current_allocs = await alloc_repo.get_current_by_employee(str(employee.id))
             if current_allocs:
                 current_post_id = current_allocs[0].post_id
-                current_post = await post_repo.get_by_id(current_post_id)
+                current_post_repo = PostRepository(self.db)
+                current_post = await current_post_repo.get_by_id(current_post_id)
                 if current_post:
                     changes_summary.append(f"Posto atual: {current_post.code} - {current_post.name}")
             else:
@@ -316,29 +327,25 @@ class AllocationActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa alocação de funcionário em posto."""
         params = request.parameters
-        employee_id = params.get('employee_id')
-        post_code = params.get('post_code')
-        start_date_str = params.get('start_date')
-        end_date_str = params.get('end_date')
-        role = params.get('role')
-        is_temporary = params.get('is_temporary', False)
-        notes = params.get('notes')
+        employee_id = params.get("employee_id")
+        start_date_str = params.get("start_date")
+        end_date_str = params.get("end_date")
+        role = params.get("role")
+        is_temporary = params.get("is_temporary", False)
+        notes = params.get("notes")
 
         # Buscar funcionário
-        employee = await self._get_employee(employee_id)
+        employee, _ = await self.resolve_employee(params)
         if not employee:
-            raise ValueError(f"Funcionário '{employee_id}' não encontrado")
+            raise ValueError(f"Funcionário não encontrado (id={employee_id}, nome={params.get('employee_name')})")
 
         # Buscar posto
-        post_repo = PostRepository(self.db)
-        post = await post_repo.get_by_code(post_code)
+        post, _ = await self.resolve_post(params)
         if not post:
-            raise ValueError(f"Posto '{post_code}' não encontrado")
+            raise ValueError(f"Posto não encontrado (code={params.get('post_code')}, name={params.get('post_name')})")
 
         # Preparar datas
-        start_dt = (
-            date.fromisoformat(start_date_str) if start_date_str else date.today()
-        )
+        start_dt = date.fromisoformat(start_date_str) if start_date_str else date.today()
         end_dt = date.fromisoformat(end_date_str) if end_date_str else None
 
         # Criar alocação
@@ -354,7 +361,7 @@ class AllocationActionExecutor(BaseActionExecutor):
         )
 
         alloc_repo = AllocationRepository(self.db)
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
         allocation = await alloc_repo.create(alloc_data, created_by=user_uuid)
 
         logger.info(f"Alocação criada via Bartolo: {allocation.id}")
@@ -394,11 +401,11 @@ class AllocationActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa encerramento de alocação."""
         params = request.parameters
-        allocation_id = params.get('allocation_id')
-        employee_id = params.get('employee_id')
-        reason = params.get('reason', 'Encerramento via Bartolo')
-        end_date_str = params.get('end_date')
-        notes = params.get('notes')
+        allocation_id = params.get("allocation_id")
+        employee_id = params.get("employee_id")
+        reason = params.get("reason", "Encerramento via Bartolo")
+        end_date_str = params.get("end_date")
+        notes = params.get("notes")
 
         alloc_repo = AllocationRepository(self.db)
 
@@ -465,20 +472,23 @@ class AllocationActionExecutor(BaseActionExecutor):
     ) -> ActionResult:
         """Executa transferência de funcionário entre postos."""
         params = request.parameters
-        employee_id = params.get('employee_id')
-        target_post_code = params.get('post_code') or params.get('target_post_code')
-        notes = params.get('notes')
+        employee_id = params.get("employee_id")
+        target_post_code = params.get("post_code") or params.get("target_post_code")
+        notes = params.get("notes")
 
         # Buscar funcionário
-        employee = await self._get_employee(employee_id)
+        employee, _ = await self.resolve_employee(params)
         if not employee:
-            raise ValueError(f"Funcionário '{employee_id}' não encontrado")
+            raise ValueError(f"Funcionário não encontrado (id={employee_id}, nome={params.get('employee_name')})")
 
         # Buscar posto destino
-        post_repo = PostRepository(self.db)
-        target_post = await post_repo.get_by_code(target_post_code)
+        post_params = {
+            "post_code": target_post_code,
+            "post_name": params.get("post_name") or params.get("target_post_name"),
+        }
+        target_post, _ = await self.resolve_post(post_params)
         if not target_post:
-            raise ValueError(f"Posto destino '{target_post_code}' não encontrado")
+            raise ValueError(f"Posto destino não encontrado (code={target_post_code})")
 
         # Buscar alocação atual
         alloc_repo = AllocationRepository(self.db)
@@ -512,16 +522,14 @@ class AllocationActionExecutor(BaseActionExecutor):
             notes=f"Transferido de {old_post_id}. {notes or ''}".strip(),
         )
 
-        user_uuid = getattr(self, 'user_uuid', None)
+        user_uuid = getattr(self, "user_uuid", None)
         new_allocation = await alloc_repo.create(new_alloc_data, created_by=user_uuid)
 
-        logger.info(
-            f"Transferência via Bartolo: {employee.nome} de {old_post_id} "
-            f"para {target_post.id}"
-        )
+        logger.info(f"Transferência via Bartolo: {employee.nome} de {old_post_id} para {target_post.id}")
 
         # Buscar nome do posto anterior para detalhes
-        old_post = await post_repo.get_by_id(old_post_id)
+        old_post_repo = PostRepository(self.db)
+        old_post = await old_post_repo.get_by_id(old_post_id)
 
         return ActionResult(
             action_id=action_id,
