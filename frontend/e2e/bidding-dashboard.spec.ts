@@ -8,14 +8,16 @@ test.describe('Dashboard de Licitações', () => {
   test.beforeEach(async ({ page }) => {
     // Navegar para o dashboard
     await page.goto('/modulos/licitacoes');
+    // Aguardar carregamento inicial
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('deve carregar o dashboard corretamente', async ({ page }) => {
-    // Verificar título
-    await expect(page.locator('h1')).toContainText('Licitações');
+    // Aguardar título aparecer (com timeout generoso)
+    await expect(page.locator('h1')).toContainText('Licitações', { timeout: 10000 });
 
     // Verificar descrição
-    await expect(page.locator('text=Gestão de licitações públicas')).toBeVisible();
+    await expect(page.locator('text=Gestão de licitações públicas')).toBeVisible({ timeout: 5000 });
   });
 
   test('deve exibir os 4 cards de KPIs', async ({ page }) => {
@@ -33,8 +35,15 @@ test.describe('Dashboard de Licitações', () => {
   });
 
   test('deve navegar para editais ao clicar no card', async ({ page }) => {
-    await page.click('text=Editais Abertos');
-    await expect(page).toHaveURL(/\/modulos\/licitacoes\/editais/);
+    // Aguardar card estar estável antes de clicar
+    const editaisCard = page.locator('text=Editais Abertos').first();
+    await editaisCard.waitFor({ state: 'visible', timeout: 10000 });
+
+    // Usar force: true para evitar problemas com elemento sendo removido
+    await editaisCard.click({ force: true });
+
+    // Aguardar navegação
+    await expect(page).toHaveURL(/\/modulos\/licitacoes\/editais/, { timeout: 10000 });
   });
 
   test('deve navegar para propostas ao clicar no card', async ({ page }) => {

@@ -3,7 +3,7 @@ Schemas Pydantic para Post (Posto de Trabalho).
 """
 
 from datetime import datetime, time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -14,21 +14,21 @@ class PostBase(BaseModel):
     """Schema base para Post."""
 
     name: str = Field(..., min_length=2, max_length=255, description="Nome do posto")
-    description: Optional[str] = Field(None, description="Descrição")
+    description: str | None = Field(None, description="Descrição")
     post_type: PostType = Field(default=PostType.VIGILANTE, description="Tipo de posto")
     shift_type: ShiftType = Field(default=ShiftType.DIURNO, description="Tipo de turno")
 
     # Localização
-    address: Optional[str] = Field(None, max_length=500, description="Endereço")
-    city: Optional[str] = Field(None, max_length=100, description="Cidade")
-    state: Optional[str] = Field(None, max_length=2, description="UF")
-    zip_code: Optional[str] = Field(None, max_length=10, description="CEP")
-    latitude: Optional[float] = Field(None, ge=-90, le=90, description="Latitude")
-    longitude: Optional[float] = Field(None, ge=-180, le=180, description="Longitude")
+    address: str | None = Field(None, max_length=500, description="Endereço")
+    city: str | None = Field(None, max_length=100, description="Cidade")
+    state: str | None = Field(None, max_length=2, description="UF")
+    zip_code: str | None = Field(None, max_length=10, description="CEP")
+    latitude: float | None = Field(None, ge=-90, le=90, description="Latitude")
+    longitude: float | None = Field(None, ge=-180, le=180, description="Longitude")
 
     # Horários (nomes conforme schema do banco)
-    shift_start_time: Optional[time] = Field(None, description="Hora início do turno")
-    shift_end_time: Optional[time] = Field(None, description="Hora fim do turno")
+    shift_start_time: time | None = Field(None, description="Hora início do turno")
+    shift_end_time: time | None = Field(None, description="Hora fim do turno")
     break_duration_minutes: int = Field(default=60, ge=0, description="Intervalo em minutos")
     night_shift_bonus_percent: float = Field(default=20.0, ge=0, description="Adicional noturno %")
     hazard_pay_percent: float = Field(default=0.0, ge=0, description="Periculosidade %")
@@ -45,7 +45,7 @@ class PostBase(BaseModel):
 
     @field_validator("state")
     @classmethod
-    def validate_state(cls, v: Optional[str]) -> Optional[str]:
+    def validate_state(cls, v: str | None) -> str | None:
         """Valida UF."""
         if v is not None:
             return v.upper()
@@ -53,7 +53,7 @@ class PostBase(BaseModel):
 
     @field_validator("zip_code")
     @classmethod
-    def validate_zip_code(cls, v: Optional[str]) -> Optional[str]:
+    def validate_zip_code(cls, v: str | None) -> str | None:
         """Valida CEP."""
         if v is not None:
             digits = "".join(c for c in v if c.isdigit())
@@ -63,52 +63,84 @@ class PostBase(BaseModel):
 
 
 class PostCreate(PostBase):
-    """Schema para criação de Post."""
+    """
+    Schema para criação de Post.
 
-    contract_id: Optional[str] = Field(None, description="ID do contrato")
-    client_id: Optional[str] = Field(None, description="ID do cliente")
-    required_certifications: Optional[Dict[str, Any]] = Field(None, description="Certificações necessárias")
-    supervisor_name: Optional[str] = Field(None, max_length=200, description="Nome do supervisor")
-    supervisor_phone: Optional[str] = Field(None, max_length=20, description="Telefone do supervisor")
-    emergency_contact: Optional[str] = Field(None, max_length=200, description="Contato de emergência")
-    emergency_phone: Optional[str] = Field(None, max_length=20, description="Telefone de emergência")
-    notes: Optional[str] = Field(None, description="Observações")
+    Um posto de trabalho representa uma posição operacional onde funcionários
+    são alocados para realizar atividades de segurança, vigilância ou serviços.
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "Portaria Principal Shopping Center",
+                "description": "Controle de acesso principal do shopping",
+                "post_type": "VIGILANTE",
+                "shift_type": "DIURNO",
+                "address": "Av. Paulista, 1000",
+                "city": "São Paulo",
+                "state": "SP",
+                "zip_code": "01310-100",
+                "shift_start_time": "08:00:00",
+                "shift_end_time": "17:00:00",
+                "break_duration_minutes": 60,
+                "required_headcount": 2,
+                "requires_armed": False,
+                "requires_vehicle": False,
+                "hourly_rate": 25.50,
+                "monthly_cost": 8000.00,
+            }
+        }
+    )
+
+    contract_id: str | None = Field(None, description="ID do contrato")
+    client_id: str | None = Field(None, description="ID do cliente")
+    required_certifications: dict[str, Any] | None = Field(None, description="Certificações necessárias")
+    supervisor_name: str | None = Field(None, max_length=200, description="Nome do supervisor")
+    supervisor_phone: str | None = Field(None, max_length=20, description="Telefone do supervisor")
+    emergency_contact: str | None = Field(None, max_length=200, description="Contato de emergência")
+    emergency_phone: str | None = Field(None, max_length=20, description="Telefone de emergência")
+    notes: str | None = Field(None, description="Observações")
 
 
 class PostUpdate(BaseModel):
-    """Schema para atualização parcial de Post."""
+    """
+    Schema para atualização parcial de Post.
 
-    name: Optional[str] = Field(None, min_length=2, max_length=255)
-    description: Optional[str] = None
-    post_type: Optional[PostType] = None
-    status: Optional[PostStatus] = None
-    shift_type: Optional[ShiftType] = None
-    contract_id: Optional[str] = None
-    client_id: Optional[str] = None
-    address: Optional[str] = Field(None, max_length=500)
-    city: Optional[str] = Field(None, max_length=100)
-    state: Optional[str] = Field(None, max_length=2)
-    zip_code: Optional[str] = Field(None, max_length=10)
-    latitude: Optional[float] = Field(None, ge=-90, le=90)
-    longitude: Optional[float] = Field(None, ge=-180, le=180)
-    shift_start_time: Optional[time] = None
-    shift_end_time: Optional[time] = None
-    break_duration_minutes: Optional[int] = Field(None, ge=0)
-    night_shift_bonus_percent: Optional[float] = Field(None, ge=0)
-    hazard_pay_percent: Optional[float] = Field(None, ge=0)
-    required_headcount: Optional[int] = Field(None, ge=1)
-    requires_experience_months: Optional[int] = Field(None, ge=0)
-    hourly_rate: Optional[float] = Field(None, ge=0)
-    monthly_cost: Optional[float] = Field(None, ge=0)
-    requires_armed: Optional[bool] = None
-    requires_vehicle: Optional[bool] = None
-    required_certifications: Optional[Dict[str, Any]] = None
-    supervisor_name: Optional[str] = Field(None, max_length=200)
-    supervisor_phone: Optional[str] = Field(None, max_length=20)
-    emergency_contact: Optional[str] = Field(None, max_length=200)
-    emergency_phone: Optional[str] = Field(None, max_length=20)
-    notes: Optional[str] = None
-    is_active: Optional[bool] = None
+    Todos os campos são opcionais. Apenas os campos fornecidos serão atualizados.
+    """
+
+    name: str | None = Field(None, min_length=2, max_length=255, description="Nome do posto")
+    description: str | None = Field(None, description="Descrição")
+    post_type: PostType | None = Field(None, description="Tipo de posto")
+    status: PostStatus | None = Field(None, description="Status do posto")
+    shift_type: ShiftType | None = Field(None, description="Tipo de turno")
+    contract_id: str | None = Field(None, description="ID do contrato")
+    client_id: str | None = Field(None, description="ID do cliente")
+    address: str | None = Field(None, max_length=500, description="Endereço")
+    city: str | None = Field(None, max_length=100, description="Cidade")
+    state: str | None = Field(None, max_length=2, description="UF")
+    zip_code: str | None = Field(None, max_length=10, description="CEP")
+    latitude: float | None = Field(None, ge=-90, le=90, description="Latitude")
+    longitude: float | None = Field(None, ge=-180, le=180, description="Longitude")
+    shift_start_time: time | None = Field(None, description="Hora início do turno")
+    shift_end_time: time | None = Field(None, description="Hora fim do turno")
+    break_duration_minutes: int | None = Field(None, ge=0, description="Intervalo em minutos")
+    night_shift_bonus_percent: float | None = Field(None, ge=0, description="Adicional noturno %")
+    hazard_pay_percent: float | None = Field(None, ge=0, description="Periculosidade %")
+    required_headcount: int | None = Field(None, ge=1, description="Quantidade necessária")
+    requires_experience_months: int | None = Field(None, ge=0, description="Experiência mínima em meses")
+    hourly_rate: float | None = Field(None, ge=0, description="Valor hora")
+    monthly_cost: float | None = Field(None, ge=0, description="Custo mensal")
+    requires_armed: bool | None = Field(None, description="Requer armamento")
+    requires_vehicle: bool | None = Field(None, description="Requer veículo")
+    required_certifications: dict[str, Any] | None = Field(None, description="Certificações necessárias")
+    supervisor_name: str | None = Field(None, max_length=200, description="Nome do supervisor")
+    supervisor_phone: str | None = Field(None, max_length=20, description="Telefone do supervisor")
+    emergency_contact: str | None = Field(None, max_length=200, description="Contato de emergência")
+    emergency_phone: str | None = Field(None, max_length=20, description="Telefone de emergência")
+    notes: str | None = Field(None, description="Observações")
+    is_active: bool | None = Field(None, description="Ativo/Inativo")
 
 
 class PostResponse(BaseModel):
@@ -119,24 +151,24 @@ class PostResponse(BaseModel):
     id: str
     code: str
     name: str
-    description: Optional[str]
+    description: str | None
     post_type: str
     status: str
     shift_type: str
-    contract_id: Optional[str]
-    client_id: Optional[str]
-    address: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    zip_code: Optional[str]
-    latitude: Optional[float]
-    longitude: Optional[float]
-    shift_start_time: Optional[time]
-    shift_end_time: Optional[time]
+    contract_id: str | None
+    client_id: str | None
+    address: str | None
+    city: str | None
+    state: str | None
+    zip_code: str | None
+    latitude: float | None
+    longitude: float | None
+    shift_start_time: time | None
+    shift_end_time: time | None
     break_duration_minutes: int
     night_shift_bonus_percent: float
     hazard_pay_percent: float
-    required_certifications: Optional[Dict[str, Any]]
+    required_certifications: dict[str, Any] | None
     required_headcount: int
     current_headcount: int
     requires_experience_months: int
@@ -144,11 +176,11 @@ class PostResponse(BaseModel):
     monthly_cost: float
     requires_armed: bool
     requires_vehicle: bool
-    supervisor_name: Optional[str]
-    supervisor_phone: Optional[str]
-    emergency_contact: Optional[str]
-    emergency_phone: Optional[str]
-    notes: Optional[str]
+    supervisor_name: str | None
+    supervisor_phone: str | None
+    emergency_contact: str | None
+    emergency_phone: str | None
+    notes: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime
@@ -162,7 +194,7 @@ class PostResponse(BaseModel):
 class PostListResponse(BaseModel):
     """Schema para listagem paginada de Posts."""
 
-    items: List[PostResponse]
+    items: list[PostResponse]
     total: int
     page: int
     page_size: int
@@ -172,26 +204,26 @@ class PostListResponse(BaseModel):
 class PostFilter(BaseModel):
     """Schema para filtros de busca de Posts."""
 
-    post_type: Optional[PostType] = None
-    status: Optional[PostStatus] = None
-    shift_type: Optional[ShiftType] = None
-    contract_id: Optional[str] = None
-    client_id: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    requires_armed: Optional[bool] = None
-    requires_vehicle: Optional[bool] = None
-    has_vacancy: Optional[bool] = None
-    search: Optional[str] = Field(None, description="Busca por nome ou código")
+    post_type: PostType | None = None
+    status: PostStatus | None = None
+    shift_type: ShiftType | None = None
+    contract_id: str | None = None
+    client_id: str | None = None
+    city: str | None = None
+    state: str | None = None
+    requires_armed: bool | None = None
+    requires_vehicle: bool | None = None
+    has_vacancy: bool | None = None
+    search: str | None = Field(None, description="Busca por nome ou código")
 
 
 class PostStats(BaseModel):
     """Estatísticas de postos."""
 
     total: int
-    by_status: Dict[str, int]
-    by_type: Dict[str, int]
-    by_shift: Dict[str, int]
+    by_status: dict[str, int]
+    by_type: dict[str, int]
+    by_shift: dict[str, int]
     filled: int
     with_vacancy: int
     total_headcount: int

@@ -3,7 +3,7 @@ Schemas Pydantic para Scale (Escala de Trabalho).
 """
 
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator, model_validator
 
@@ -17,8 +17,8 @@ class ScaleBase(BaseModel):
     scale_type: ScaleType = Field(default=ScaleType.SCALE_12X36, description="Tipo de escala")
     month: int = Field(..., ge=1, le=12, description="Mês (1-12)")
     year: int = Field(..., ge=2020, le=2100, description="Ano")
-    notes: Optional[str] = Field(None, description="Observações")
-    config: Optional[Dict[str, Any]] = Field(None, description="Configurações da escala")
+    notes: str | None = Field(None, description="Observações")
+    config: dict[str, Any] | None = Field(None, description="Configurações da escala")
 
     @model_validator(mode="after")
     def validate_dates(self) -> "ScaleBase":
@@ -29,17 +29,43 @@ class ScaleBase(BaseModel):
 
 
 class ScaleCreate(ScaleBase):
-    """Schema para criação de Scale - herda todos os campos de ScaleBase."""
+    """
+    Schema para criação de Scale (Escala de Trabalho).
+
+    Uma escala organiza os turnos de trabalho dos funcionários em um posto
+    durante um período específico (mês/ano).
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "post_id": "550e8400-e29b-41d4-a716-446655440000",
+                "scale_type": "SCALE_12X36",
+                "month": 3,
+                "year": 2026,
+                "notes": "Escala com feriados no período",
+                "config": {
+                    "allow_overtime": True,
+                    "max_consecutive_days": 6,
+                    "rest_days_required": 1,
+                },
+            }
+        }
+    )
 
 
 class ScaleUpdate(BaseModel):
-    """Schema para atualização parcial de Scale."""
+    """
+    Schema para atualização parcial de Scale.
 
-    scale_type: Optional[ScaleType] = None
-    status: Optional[ScaleStatus] = None
-    notes: Optional[str] = None
-    config: Optional[Dict[str, Any]] = None
-    is_active: Optional[bool] = None
+    Todos os campos são opcionais. Apenas os campos fornecidos serão atualizados.
+    """
+
+    scale_type: ScaleType | None = Field(None, description="Tipo de escala")
+    status: ScaleStatus | None = Field(None, description="Status da escala")
+    notes: str | None = Field(None, description="Observações")
+    config: dict[str, Any] | None = Field(None, description="Configurações da escala")
+    is_active: bool | None = Field(None, description="Ativo/Inativo")
 
 
 class ScaleResponse(BaseModel):
@@ -53,26 +79,26 @@ class ScaleResponse(BaseModel):
     status: str
     month: int
     year: int
-    name: Optional[str] = None
-    description: Optional[str] = None
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    name: str | None = None
+    description: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
     total_shifts: int = 0
     filled_shifts: int = 0
     total_hours: float = 0.0
     overtime_hours: float = 0.0
     estimated_cost: float = 0.0
-    config: Optional[Dict[str, Any]] = None
-    notes: Optional[str] = None
-    approved_by: Optional[str] = None
-    approved_at: Optional[datetime] = None
-    approval_notes: Optional[str] = None
-    published_by: Optional[str] = None
-    published_at: Optional[datetime] = None
+    config: dict[str, Any] | None = None
+    notes: str | None = None
+    approved_by: str | None = None
+    approved_at: datetime | None = None
+    approval_notes: str | None = None
+    published_by: str | None = None
+    published_at: datetime | None = None
     is_active: bool = True
     created_at: datetime
     updated_at: datetime
-    created_by: Optional[str] = None
+    created_by: str | None = None
 
     # Propriedades calculadas
     @computed_field
@@ -80,6 +106,7 @@ class ScaleResponse(BaseModel):
     def is_current_month(self) -> bool:
         """Verifica se é a escala do mês atual."""
         from datetime import date as date_type
+
         today = date_type.today()
         return self.month == today.month and self.year == today.year
 
@@ -107,7 +134,7 @@ class ScaleResponse(BaseModel):
 class ScaleListResponse(BaseModel):
     """Schema para listagem paginada de Scales."""
 
-    items: List[ScaleResponse]
+    items: list[ScaleResponse]
     total: int
     page: int
     page_size: int
@@ -117,13 +144,13 @@ class ScaleListResponse(BaseModel):
 class ScaleFilter(BaseModel):
     """Schema para filtros de busca de Scales."""
 
-    post_id: Optional[str] = None
-    scale_type: Optional[ScaleType] = None
-    status: Optional[ScaleStatus] = None
-    month: Optional[int] = Field(None, ge=1, le=12)
-    year: Optional[int] = Field(None, ge=2020, le=2100)
-    is_current_month: Optional[bool] = None
-    created_by: Optional[str] = Field(None, description="Filtrar por criador")
+    post_id: str | None = None
+    scale_type: ScaleType | None = None
+    status: ScaleStatus | None = None
+    month: int | None = Field(None, ge=1, le=12)
+    year: int | None = Field(None, ge=2020, le=2100)
+    is_current_month: bool | None = None
+    created_by: str | None = Field(None, description="Filtrar por criador")
 
 
 class ScaleGenerateRequest(BaseModel):
@@ -133,8 +160,8 @@ class ScaleGenerateRequest(BaseModel):
     month: int = Field(..., ge=1, le=12, description="Mês")
     year: int = Field(..., ge=2020, le=2100, description="Ano")
     scale_type: ScaleType = Field(..., description="Tipo de escala")
-    employee_ids: List[str] = Field(..., min_length=1, description="IDs dos funcionários")
-    config: Optional[Dict[str, Any]] = Field(
+    employee_ids: list[str] = Field(..., min_length=1, description="IDs dos funcionários")
+    config: dict[str, Any] | None = Field(
         None,
         description="Configurações adicionais",
         json_schema_extra={
@@ -149,7 +176,7 @@ class ScaleGenerateRequest(BaseModel):
 
     @field_validator("employee_ids")
     @classmethod
-    def validate_employees(cls, v: List[str]) -> List[str]:
+    def validate_employees(cls, v: list[str]) -> list[str]:
         """Valida lista de funcionários."""
         if len(v) == 0:
             raise ValueError("Deve informar pelo menos 1 funcionário")
@@ -159,21 +186,21 @@ class ScaleGenerateRequest(BaseModel):
 class ScaleApproveRequest(BaseModel):
     """Schema para aprovação de escala."""
 
-    notes: Optional[str] = Field(None, description="Observações da aprovação")
+    notes: str | None = Field(None, description="Observações da aprovação")
 
 
 class ScaleRejectRequest(BaseModel):
     """Schema para rejeição de escala."""
 
     reason: str = Field(..., min_length=10, max_length=500, description="Motivo da rejeição")
-    notes: Optional[str] = Field(None, description="Observações adicionais")
+    notes: str | None = Field(None, description="Observações adicionais")
 
 
 class ScalePublishRequest(BaseModel):
     """Schema para publicação de escala."""
 
     notify_employees: bool = Field(default=True, description="Notificar funcionários")
-    notification_channels: List[str] = Field(
+    notification_channels: list[str] = Field(
         default=["email", "push"],
         description="Canais de notificação",
     )
@@ -183,8 +210,8 @@ class ScaleStats(BaseModel):
     """Estatísticas de escalas."""
 
     total: int
-    by_status: Dict[str, int]
-    by_type: Dict[str, int]
+    by_status: dict[str, int]
+    by_type: dict[str, int]
     total_hours: float
     total_overtime_hours: float
     total_estimated_cost: float
