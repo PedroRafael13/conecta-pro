@@ -91,7 +91,7 @@ Comandos disponíveis:
 - `/openclaw daemon [start|stop|status]` - Controlar modo daemon
 """
 
-    def _show_help(self, args=None, context=None) -> dict[str, Any]:
+    async def _show_help(self, args=None, context=None) -> dict[str, Any]:
         """Mostra ajuda"""
         return {
             "response": self.get_help(),
