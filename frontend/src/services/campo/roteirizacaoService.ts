@@ -3,15 +3,15 @@
  * Otimização de rotas e distribuição de equipes
  */
 
-import * as RoteirizacaoAPI from '@/api/campo/generated/roteirização/roteirização';
+import * as RoteirizacaoAPI from '@/api/campo/generated/campo-roteirizacao/campo-roteirizacao';
 import type {
   OtimizarRotaRequest,
   ReotimizarRotaRequest,
-  AnalisarRotasEquipeApiV1CampoRoteirizacaoAnaliseEquipeGetParams,
-  SugerirRedistribuicaoApiV1CampoRoteirizacaoAnaliseRedistribuicaoGetParams,
-  GetRotaTecnicoApiV1CampoRoteirizacaoTecnicoTecnicoIdGetParams,
-  GetResumoDiaApiV1CampoRoteirizacaoResumoDiaTecnicoIdGetParams,
-  CalcularDistanciaApiV1CampoRoteirizacaoCalcularDistanciaPostParams,
+  AnalisarRotasEquipeApiV1CampoRotasAnaliseEquipeGetParams,
+  SugerirRedistribuicaoApiV1CampoRotasAnaliseRedistribuicaoGetParams,
+  GetRotaTecnicoApiV1CampoRotasTecnicoTecnicoIdGetParams,
+  GetResumoDiaApiV1CampoRotasResumoDiaTecnicoIdGetParams,
+  CalcularDistanciaApiV1CampoRotasCalcularDistanciaPostParams,
 } from '@/api/campo/generated/models';
 
 export class RoteirizacaoService {
@@ -19,35 +19,35 @@ export class RoteirizacaoService {
    * Otimiza rotas para equipes
    */
   async otimizar(data: OtimizarRotaRequest) {
-    return RoteirizacaoAPI.otimizarRotaApiV1CampoRoteirizacaoOtimizarPost(data);
+    return RoteirizacaoAPI.otimizarRotaApiV1CampoRotasOtimizarPost(data);
   }
 
   /**
    * Reotimiza rotas existentes
    */
   async reotimizar(data: ReotimizarRotaRequest) {
-    return RoteirizacaoAPI.reotimizarRotaApiV1CampoRoteirizacaoReotimizarPost(data);
+    return RoteirizacaoAPI.reotimizarRotaApiV1CampoRotasReotimizarPost(data);
   }
 
   /**
    * Calcula distância entre pontos
    */
-  async calcularDistancia(params: CalcularDistanciaApiV1CampoRoteirizacaoCalcularDistanciaPostParams) {
-    return RoteirizacaoAPI.calcularDistanciaApiV1CampoRoteirizacaoCalcularDistanciaPost(params);
+  async calcularDistancia(params: CalcularDistanciaApiV1CampoRotasCalcularDistanciaPostParams) {
+    return RoteirizacaoAPI.calcularDistanciaApiV1CampoRotasCalcularDistanciaPost(params);
   }
 
   /**
    * Análise de carga de trabalho por equipe
    */
-  async analisarEquipe(params: AnalisarRotasEquipeApiV1CampoRoteirizacaoAnaliseEquipeGetParams) {
-    return RoteirizacaoAPI.analisarRotasEquipeApiV1CampoRoteirizacaoAnaliseEquipeGet(params);
+  async analisarEquipe(params: AnalisarRotasEquipeApiV1CampoRotasAnaliseEquipeGetParams) {
+    return RoteirizacaoAPI.analisarRotasEquipeApiV1CampoRotasAnaliseEquipeGet(params);
   }
 
   /**
    * Análise de redistribuição de tarefas
    */
-  async analisarRedistribuicao(params: SugerirRedistribuicaoApiV1CampoRoteirizacaoAnaliseRedistribuicaoGetParams) {
-    return RoteirizacaoAPI.sugerirRedistribuicaoApiV1CampoRoteirizacaoAnaliseRedistribuicaoGet(params);
+  async analisarRedistribuicao(params: SugerirRedistribuicaoApiV1CampoRotasAnaliseRedistribuicaoGetParams) {
+    return RoteirizacaoAPI.sugerirRedistribuicaoApiV1CampoRotasAnaliseRedistribuicaoGet(params);
   }
 
   /**
@@ -85,8 +85,8 @@ export class RoteirizacaoService {
   /**
    * Obtém rota do técnico
    */
-  async getRotaTecnico(tecnicoId: string, params: GetRotaTecnicoApiV1CampoRoteirizacaoTecnicoTecnicoIdGetParams) {
-    return RoteirizacaoAPI.getRotaTecnicoApiV1CampoRoteirizacaoTecnicoTecnicoIdGet(
+  async getRotaTecnico(tecnicoId: string, params: GetRotaTecnicoApiV1CampoRotasTecnicoTecnicoIdGetParams) {
+    return RoteirizacaoAPI.getRotaTecnicoApiV1CampoRotasTecnicoTecnicoIdGet(
       tecnicoId,
       params
     );
@@ -96,14 +96,14 @@ export class RoteirizacaoService {
    * Lista tipos de otimização disponíveis
    */
   async listarTiposOtimizacao() {
-    return RoteirizacaoAPI.listarTiposOtimizacaoApiV1CampoRoteirizacaoTiposOtimizacaoGet();
+    return RoteirizacaoAPI.listarTiposOtimizacaoApiV1CampoRotasTiposOtimizacaoGet();
   }
 
   /**
    * Obtém resumo do dia do técnico
    */
-  async getResumoDia(tecnicoId: string, params: GetResumoDiaApiV1CampoRoteirizacaoResumoDiaTecnicoIdGetParams) {
-    return RoteirizacaoAPI.getResumoDiaApiV1CampoRoteirizacaoResumoDiaTecnicoIdGet(
+  async getResumoDia(tecnicoId: string, params: GetResumoDiaApiV1CampoRotasResumoDiaTecnicoIdGetParams) {
+    return RoteirizacaoAPI.getResumoDiaApiV1CampoRotasResumoDiaTecnicoIdGet(
       tecnicoId,
       params
     );

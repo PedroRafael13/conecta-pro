@@ -3,7 +3,7 @@
  * Gestão de visitas técnicas e comerciais
  */
 
-import * as VisitaAPI from '@/api/campo/generated/visitas/visitas';
+import * as VisitaAPI from '@/api/campo/generated/campo-visitas/campo-visitas';
 import type {
   VisitaCreate,
   VisitaUpdate,

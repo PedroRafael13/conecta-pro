@@ -2,20 +2,21 @@
 Skills do Bartolo Operacional
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from .base_skill import BaseSkill
-from .escala_skill import EscalaSkill
-from .cobertura_skill import CoberturaSkill
-from .substituto_skill import SubstitutoSkill
 from .alerta_skill import AlertaSkill
-from .ocorrencia_skill import OcorrenciaSkill
-from .disciplinar_skill import DisciplinarSkill
-from .ronda_skill import RondaSkill
-from .diarista_skill import DiaristaSkill
-from .comunicado_skill import ComunicadoSkill
 from .banco_horas_skill import BancoHorasSkill
+from .base_skill import BaseSkill
+from .cobertura_skill import CoberturaSkill
+from .comunicado_skill import ComunicadoSkill
+from .diarista_skill import DiaristaSkill
+from .disciplinar_skill import DisciplinarSkill
+from .escala_skill import EscalaSkill
+from .ocorrencia_skill import OcorrenciaSkill
+from .openclaw_skill import OpenClawSkill
 from .posto_skill import PostoSkill
+from .ronda_skill import RondaSkill
+from .substituto_skill import SubstitutoSkill
 
 if TYPE_CHECKING:
     from modules.ai.bartolo.services.data_connector import DataConnector
@@ -33,6 +34,7 @@ __all__ = [
     "ComunicadoSkill",
     "BancoHorasSkill",
     "PostoSkill",
+    "OpenClawSkill",
 ]
 
 # Registry de skills disponiveis
@@ -48,6 +50,7 @@ SKILL_REGISTRY = {
     "comunicado": ComunicadoSkill,
     "banco_horas": BancoHorasSkill,
     "posto": PostoSkill,
+    "openclaw": OpenClawSkill,
 }
 
 

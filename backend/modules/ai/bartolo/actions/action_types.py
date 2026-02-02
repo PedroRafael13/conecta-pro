@@ -1,6 +1,7 @@
 """
 Enums e tipos para o sistema de ações executivas do Bartolo.
 """
+
 from enum import Enum
 
 
@@ -82,9 +83,26 @@ class ActionType(str, Enum):
     # Relatórios
     GENERATE_REPORT = "generate_report"
 
+    # OpenClaw - Quality Checks
+    OPENCLAW_RUN_TESTS = "openclaw_run_tests"
+    OPENCLAW_RUN_LINT = "openclaw_run_lint"
+    OPENCLAW_RUN_SECURITY = "openclaw_run_security"
+    OPENCLAW_RUN_COVERAGE = "openclaw_run_coverage"
+    OPENCLAW_RUN_HEALTH = "openclaw_run_health"
+    OPENCLAW_RUN_FULL_CYCLE = "openclaw_run_full_cycle"
+
+    # OpenClaw - Deploy
+    OPENCLAW_DEPLOY_STAGING = "openclaw_deploy_staging"
+    OPENCLAW_DEPLOY_PRODUCTION = "openclaw_deploy_production"
+
+    # OpenClaw - Daemon
+    OPENCLAW_DAEMON_START = "openclaw_daemon_start"
+    OPENCLAW_DAEMON_STOP = "openclaw_daemon_stop"
+
 
 class ActionCategory(str, Enum):
     """Categorias de ações."""
+
     OPERATIONAL = "operational"
     ADMINISTRATIVE = "administrative"
     NOTIFICATION = "notification"
@@ -93,6 +111,7 @@ class ActionCategory(str, Enum):
 
 class ActionStatus(str, Enum):
     """Status de uma ação."""
+
     PENDING_CONFIRMATION = "pending_confirmation"
     CONFIRMED = "confirmed"
     EXECUTING = "executing"

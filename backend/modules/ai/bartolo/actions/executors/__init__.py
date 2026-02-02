@@ -1,20 +1,22 @@
 """
 Executores de ações do Bartolo.
 """
-from .base_executor import BaseActionExecutor
-from .scale_executor import ScaleActionExecutor
+
 from .allocation_executor import AllocationActionExecutor
-from .shift_executor import ShiftActionExecutor
-from .occurrence_executor import OccurrenceActionExecutor
+from .base_executor import BaseActionExecutor
+from .communication_executor import CommunicationActionExecutor
+from .diarist_executor import DiaristActionExecutor
 from .disciplinary_executor import DisciplinaryActionExecutor
 from .inspection_executor import InspectionActionExecutor
-from .diarist_executor import DiaristActionExecutor
-from .communication_executor import CommunicationActionExecutor
-from .time_bank_executor import TimeBankActionExecutor
-from .post_executor import PostActionExecutor
-from .substitution_executor import SubstitutionActionExecutor
 from .notification_executor import NotificationActionExecutor
+from .occurrence_executor import OccurrenceActionExecutor
+from .openclaw_executor import OpenClawActionExecutor
+from .post_executor import PostActionExecutor
 from .report_executor import ReportActionExecutor
+from .scale_executor import ScaleActionExecutor
+from .shift_executor import ShiftActionExecutor
+from .substitution_executor import SubstitutionActionExecutor
+from .time_bank_executor import TimeBankActionExecutor
 
 __all__ = [
     "BaseActionExecutor",
@@ -31,4 +33,5 @@ __all__ = [
     "SubstitutionActionExecutor",
     "NotificationActionExecutor",
     "ReportActionExecutor",
+    "OpenClawActionExecutor",
 ]

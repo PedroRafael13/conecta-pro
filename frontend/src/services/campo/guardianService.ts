@@ -3,15 +3,15 @@
  * Gestão de logs, ocorrências e equipamentos Guardian
  */
 
-import * as AccessLogAPI from '@/api/campo/generated/guardian-access-logs/guardian-access-logs';
-import * as OccurrenceAPI from '@/api/campo/generated/guardian-occurrences/guardian-occurrences';
-import * as EquipmentAPI from '@/api/campo/generated/guardian-equipment/guardian-equipment';
-import * as SyncAPI from '@/api/campo/generated/guardian-sync/guardian-sync';
+import * as AccessLogAPI from '@/api/campo/generated/access/access';
+import * as OccurrenceAPI from '@/api/campo/generated/events/events';
+import * as EquipmentAPI from '@/api/campo/generated/equip/equip';
+import * as SyncAPI from '@/api/campo/generated/physical-sync/physical-sync';
 import type {
   // Access Log types
   AccessLogCreate,
-  ListAccessLogsApiV1CampoGuardianAccessLogsGuardianAccessLogsGetParams,
-  GetAccessLogStatsApiV1CampoGuardianAccessLogsGuardianAccessLogsStatsGetParams,
+  ListAccessLogsApiV1CampoGuardianAccessGuardianAccessLogsGetParams,
+  GetAccessLogStatsApiV1CampoGuardianAccessGuardianAccessLogsStatsGetParams,
   // Occurrence types
   GuardianOccurrenceCreate,
   ListOccurrencesApiV1CampoGuardianOccurrencesGuardianOccurrencesGetParams,
@@ -24,13 +24,13 @@ import type {
   // Equipment types
   EquipmentStatusCreate,
   EquipmentStatusUpdate,
-  ListEquipmentStatusApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusGetParams,
-  GetOfflineEquipmentApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusOfflineGetParams,
-  GetEquipmentNeedsMaintenanceApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusNeedsMaintenanceGetParams,
-  GetEquipmentWithAlertsApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusWithAlertsGetParams,
-  SetEquipmentOnlineApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdSetOnlinePostParams,
-  SetEquipmentOfflineApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdSetOfflinePostParams,
-  GetEquipmentStatsApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusStatsGetParams,
+  ListEquipmentStatusApiV1CampoGuardianEquipmentGuardianEquipmentStatusGetParams,
+  GetOfflineEquipmentApiV1CampoGuardianEquipmentGuardianEquipmentStatusOfflineGetParams,
+  GetEquipmentNeedsMaintenanceApiV1CampoGuardianEquipmentGuardianEquipmentStatusNeedsMaintenanceGetParams,
+  GetEquipmentWithAlertsApiV1CampoGuardianEquipmentGuardianEquipmentStatusWithAlertsGetParams,
+  SetEquipmentOnlineApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdSetOnlinePostParams,
+  SetEquipmentOfflineApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdSetOfflinePostParams,
+  GetEquipmentStatsApiV1CampoGuardianEquipmentGuardianEquipmentStatusStatsGetParams,
   // Sync types
   GuardianSyncCreate,
   ListSyncsApiV1CampoGuardianSyncGuardianSyncGetParams,
@@ -43,40 +43,40 @@ import type {
  * Service para Access Logs
  */
 export class GuardianAccessLogService {
-  async listar(params?: ListAccessLogsApiV1CampoGuardianAccessLogsGuardianAccessLogsGetParams) {
-    return AccessLogAPI.listAccessLogsApiV1CampoGuardianAccessLogsGuardianAccessLogsGet(params);
+  async listar(params?: ListAccessLogsApiV1CampoGuardianAccessGuardianAccessLogsGetParams) {
+    return AccessLogAPI.listAccessLogsApiV1CampoGuardianAccessGuardianAccessLogsGet(params);
   }
 
   async buscar(logId: string) {
-    return AccessLogAPI.getAccessLogApiV1CampoGuardianAccessLogsGuardianAccessLogsLogIdGet(logId);
+    return AccessLogAPI.getAccessLogApiV1CampoGuardianAccessGuardianAccessLogsLogIdGet(logId);
   }
 
   async criar(data: AccessLogCreate) {
-    return AccessLogAPI.createAccessLogApiV1CampoGuardianAccessLogsGuardianAccessLogsPost(data);
+    return AccessLogAPI.createAccessLogApiV1CampoGuardianAccessGuardianAccessLogsPost(data);
   }
 
   async criarBatch(logs: AccessLogCreate[]) {
-    return AccessLogAPI.createAccessLogsBatchApiV1CampoGuardianAccessLogsGuardianAccessLogsBatchPost(logs);
+    return AccessLogAPI.createAccessLogsBatchApiV1CampoGuardianAccessGuardianAccessLogsBatchPost(logs);
   }
 
   async buscarPorPessoa(personDocument: string) {
-    return AccessLogAPI.getLogsByPersonApiV1CampoGuardianAccessLogsGuardianAccessLogsByPersonPersonDocumentGet(
+    return AccessLogAPI.getLogsByPersonApiV1CampoGuardianAccessGuardianAccessLogsByPersonPersonDocumentGet(
       personDocument
     );
   }
 
   async buscarPorVeiculo(vehiclePlate: string) {
-    return AccessLogAPI.getLogsByVehicleApiV1CampoGuardianAccessLogsGuardianAccessLogsByVehicleVehiclePlateGet(
+    return AccessLogAPI.getLogsByVehicleApiV1CampoGuardianAccessGuardianAccessLogsByVehicleVehiclePlateGet(
       vehiclePlate
     );
   }
 
-  async estatisticas(params?: GetAccessLogStatsApiV1CampoGuardianAccessLogsGuardianAccessLogsStatsGetParams) {
-    return AccessLogAPI.getAccessLogStatsApiV1CampoGuardianAccessLogsGuardianAccessLogsStatsGet(params);
+  async estatisticas(params?: GetAccessLogStatsApiV1CampoGuardianAccessGuardianAccessLogsStatsGetParams) {
+    return AccessLogAPI.getAccessLogStatsApiV1CampoGuardianAccessGuardianAccessLogsStatsGet(params);
   }
 
   async deletar(logId: string) {
-    return AccessLogAPI.deleteAccessLogApiV1CampoGuardianAccessLogsGuardianAccessLogsLogIdDelete(logId);
+    return AccessLogAPI.deleteAccessLogApiV1CampoGuardianAccessGuardianAccessLogsLogIdDelete(logId);
   }
 }
 
@@ -133,61 +133,61 @@ export class GuardianOccurrenceService {
  * Service para Equipment Status
  */
 export class GuardianEquipmentService {
-  async listar(params?: ListEquipmentStatusApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusGetParams) {
-    return EquipmentAPI.listEquipmentStatusApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusGet(params);
+  async listar(params?: ListEquipmentStatusApiV1CampoGuardianEquipmentGuardianEquipmentStatusGetParams) {
+    return EquipmentAPI.listEquipmentStatusApiV1CampoGuardianEquipmentGuardianEquipmentStatusGet(params);
   }
 
   async buscar(equipmentId: string) {
-    return EquipmentAPI.getEquipmentStatusApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdGet(
+    return EquipmentAPI.getEquipmentStatusApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdGet(
       equipmentId
     );
   }
 
   async criar(data: EquipmentStatusCreate) {
-    return EquipmentAPI.createEquipmentStatusApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusPost(data);
+    return EquipmentAPI.createEquipmentStatusApiV1CampoGuardianEquipmentGuardianEquipmentStatusPost(data);
   }
 
   async atualizar(equipmentId: string, data: EquipmentStatusUpdate) {
-    return EquipmentAPI.updateEquipmentStatusApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdPatch(
+    return EquipmentAPI.updateEquipmentStatusApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdPatch(
       equipmentId,
       data
     );
   }
 
   async deletar(equipmentId: string) {
-    return EquipmentAPI.deleteEquipmentStatusApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdDelete(
+    return EquipmentAPI.deleteEquipmentStatusApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdDelete(
       equipmentId
     );
   }
 
-  async listarOffline(params?: GetOfflineEquipmentApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusOfflineGetParams) {
-    return EquipmentAPI.getOfflineEquipmentApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusOfflineGet(params);
+  async listarOffline(params?: GetOfflineEquipmentApiV1CampoGuardianEquipmentGuardianEquipmentStatusOfflineGetParams) {
+    return EquipmentAPI.getOfflineEquipmentApiV1CampoGuardianEquipmentGuardianEquipmentStatusOfflineGet(params);
   }
 
-  async listarManutencao(params?: GetEquipmentNeedsMaintenanceApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusNeedsMaintenanceGetParams) {
-    return EquipmentAPI.getEquipmentNeedsMaintenanceApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusNeedsMaintenanceGet(params);
+  async listarManutencao(params?: GetEquipmentNeedsMaintenanceApiV1CampoGuardianEquipmentGuardianEquipmentStatusNeedsMaintenanceGetParams) {
+    return EquipmentAPI.getEquipmentNeedsMaintenanceApiV1CampoGuardianEquipmentGuardianEquipmentStatusNeedsMaintenanceGet(params);
   }
 
-  async listarComAlertas(params?: GetEquipmentWithAlertsApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusWithAlertsGetParams) {
-    return EquipmentAPI.getEquipmentWithAlertsApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusWithAlertsGet(params);
+  async listarComAlertas(params?: GetEquipmentWithAlertsApiV1CampoGuardianEquipmentGuardianEquipmentStatusWithAlertsGetParams) {
+    return EquipmentAPI.getEquipmentWithAlertsApiV1CampoGuardianEquipmentGuardianEquipmentStatusWithAlertsGet(params);
   }
 
-  async setarOnline(equipmentId: string, params?: SetEquipmentOnlineApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdSetOnlinePostParams) {
-    return EquipmentAPI.setEquipmentOnlineApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdSetOnlinePost(
+  async setarOnline(equipmentId: string, params?: SetEquipmentOnlineApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdSetOnlinePostParams) {
+    return EquipmentAPI.setEquipmentOnlineApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdSetOnlinePost(
       equipmentId,
       params
     );
   }
 
-  async setarOffline(equipmentId: string, params?: SetEquipmentOfflineApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdSetOfflinePostParams) {
-    return EquipmentAPI.setEquipmentOfflineApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusEquipmentIdSetOfflinePost(
+  async setarOffline(equipmentId: string, params?: SetEquipmentOfflineApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdSetOfflinePostParams) {
+    return EquipmentAPI.setEquipmentOfflineApiV1CampoGuardianEquipmentGuardianEquipmentStatusEquipmentIdSetOfflinePost(
       equipmentId,
       params
     );
   }
 
-  async estatisticas(params?: GetEquipmentStatsApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusStatsGetParams) {
-    return EquipmentAPI.getEquipmentStatsApiV1CampoGuardianEquipmentStatusGuardianEquipmentStatusStatsGet(params);
+  async estatisticas(params?: GetEquipmentStatsApiV1CampoGuardianEquipmentGuardianEquipmentStatusStatsGetParams) {
+    return EquipmentAPI.getEquipmentStatsApiV1CampoGuardianEquipmentGuardianEquipmentStatusStatsGet(params);
   }
 }
 

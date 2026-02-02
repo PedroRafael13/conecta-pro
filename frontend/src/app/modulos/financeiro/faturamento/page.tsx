@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ConfirmModal } from '@/components/ui/modal';
 import {
   Receipt,
   Search,
@@ -18,33 +18,24 @@ import {
   Eye,
   Edit,
   Trash2,
-  AlertCircle,
   ArrowLeft,
   DollarSign,
   Clock,
   CheckCircle,
 } from 'lucide-react';
 import { BillingRuleFormModal } from '@/components/financeiro/billing-rule-form-modal';
-
-type BillingRule = {
-  id: string;
-  name: string;
-  type: 'fixed' | 'variable' | 'percentage';
-  value: number;
-  frequency: 'monthly' | 'quarterly' | 'annual';
-  description: string;
-  status: 'active' | 'inactive';
-  created_at: string;
-};
+import {
+  useBillingRules,
+  useCreateBillingRule,
+  useUpdateBillingRule,
+  useDeleteBillingRule,
+  useActivateBillingRule,
+  usePauseBillingRule,
+} from '@/hooks/financial/useFinancial';
 
 const formatCurrency = (value: number | undefined | null) => {
   if (value == null) return 'R$ 0,00';
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-};
-
-const formatDate = (date: string | undefined | null) => {
-  if (!date) return '-';
-  return new Date(date).toLocaleDateString('pt-BR');
 };
 
 const getTypeColor = (type: string) => {
@@ -73,77 +64,85 @@ const FREQUENCY_LABELS: Record<string, string> = {
 };
 
 export default function FaturamentoPage() {
-  const [rules, setRules] = useState<BillingRule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showFormModal, setShowFormModal] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<BillingRule | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<any | null>(null);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    title: string;
+    message: string;
+    action: () => Promise<void>;
+    variant: 'danger' | 'warning' | 'info';
+  } | null>(null);
+
+  const { data: rulesData, isLoading, error, refetch } = useBillingRules({
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    search: searchTerm || undefined,
+  } as any);
+
+  const createMutation = useCreateBillingRule();
+  const updateMutation = useUpdateBillingRule();
+  const deleteMutation = useDeleteBillingRule();
+  const activateMutation = useActivateBillingRule();
+  const pauseMutation = usePauseBillingRule();
+
+  const rules = (rulesData as any)?.items || (Array.isArray(rulesData) ? rulesData : []);
 
   const handleCreate = () => {
     setSelectedRule(null);
     setShowFormModal(true);
   };
 
-  const handleEdit = (rule: BillingRule) => {
+  const handleEdit = (rule: any) => {
     setSelectedRule(rule);
     setShowFormModal(true);
   };
 
-  const handleDelete = (rule: BillingRule) => {
-    setRules((prev) => prev.filter((r) => r.id !== rule.id));
+  const handleDelete = (rule: any) => {
+    setConfirmAction({
+      title: 'Excluir Regra',
+      message: `Excluir "${rule.name}" permanentemente?`,
+      action: async () => {
+        await deleteMutation.mutateAsync({ ruleId: rule.id });
+      },
+      variant: 'danger',
+    });
+    setConfirmOpen(true);
   };
 
-  const handleToggleStatus = (rule: BillingRule) => {
-    setRules((prev) =>
-      prev.map((r) =>
-        r.id === rule.id
-          ? { ...r, status: r.status === 'active' ? 'inactive' : 'active' }
-          : r
-      )
-    );
-  };
-
-  const handleFormSubmit = (data: any) => {
-    if (selectedRule) {
-      // Edit
-      setRules((prev) =>
-        prev.map((r) =>
-          r.id === selectedRule.id ? { ...r, ...data } : r
-        )
-      );
+  const handleToggleStatus = async (rule: any) => {
+    if (rule.status === 'active') {
+      await pauseMutation.mutateAsync({ ruleId: rule.id } as any);
     } else {
-      // Create
-      const newRule: BillingRule = {
-        id: crypto.randomUUID(),
-        ...data,
-        status: 'active',
-        created_at: new Date().toISOString(),
-      };
-      setRules((prev) => [...prev, newRule]);
+      await activateMutation.mutateAsync({ ruleId: rule.id });
+    }
+  };
+
+  const handleFormSubmit = async (data: any) => {
+    if (selectedRule) {
+      await updateMutation.mutateAsync({ ruleId: selectedRule.id, data });
+    } else {
+      await createMutation.mutateAsync({ data });
     }
     setShowFormModal(false);
     setSelectedRule(null);
   };
 
-  const handleRefresh = useCallback(() => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 500);
-  }, []);
-
-  const filteredRules = rules.filter((rule) => {
+  const filteredRules = rules.filter((rule: any) => {
     const matchesSearch =
       !searchTerm ||
-      rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rule.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       rule.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || rule.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const activeRules = rules.filter((r) => r.status === 'active');
+  const activeRules = rules.filter((r: any) => r.status === 'active');
   const totalFixedValue = activeRules
-    .filter((r) => r.type === 'fixed')
-    .reduce((sum, r) => sum + (r.value || 0), 0);
+    .filter((r: any) => r.type === 'fixed' || r.rule_type === 'fixed')
+    .reduce((sum: number, r: any) => sum + (r.value || r.amount || 0), 0);
 
   return (
     <div className="min-h-screen bg-grid">
@@ -172,10 +171,15 @@ export default function FaturamentoPage() {
                 </div>
               </div>
             </div>
-            <Button variant="primary" size="sm" onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Regra
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nova Regra
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -190,7 +194,7 @@ export default function FaturamentoPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {rules.length}
+                  {isLoading ? '...' : rules.length}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Total Regras</p>
               </div>
@@ -204,7 +208,7 @@ export default function FaturamentoPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-500">
-                  {activeRules.length}
+                  {isLoading ? '...' : activeRules.length}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Ativas</p>
               </div>
@@ -218,7 +222,7 @@ export default function FaturamentoPage() {
               </div>
               <div>
                 <p className="text-xl font-bold text-blue-500 truncate">
-                  {formatCurrency(totalFixedValue)}
+                  {isLoading ? '...' : formatCurrency(totalFixedValue)}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Valor Fixo Total</p>
               </div>
@@ -232,7 +236,7 @@ export default function FaturamentoPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {rules.filter((r) => r.status === 'inactive').length}
+                  {isLoading ? '...' : rules.filter((r: any) => r.status !== 'active').length}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Inativas</p>
               </div>
@@ -261,112 +265,128 @@ export default function FaturamentoPage() {
               <SelectItem value="inactive">Inativo</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center gap-3 mb-6">
+            <Receipt className="h-5 w-5 text-destructive" />
+            <p className="text-sm text-destructive flex-1">Erro ao carregar regras de faturamento</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Tentar novamente
+            </Button>
+          </div>
+        )}
 
         {/* Table */}
         <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Valor / Percentual</TableHead>
-                <TableHead>Periodicidade</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Acoes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRules.map((rule) => (
-                <TableRow key={rule.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium text-[hsl(var(--foreground))]">{rule.name}</p>
-                      {rule.description && (
-                        <p className="text-xs text-[hsl(var(--muted-foreground))] truncate max-w-[200px]">
-                          {rule.description}
-                        </p>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getTypeColor(rule.type)}>
-                      {TYPE_LABELS[rule.type] || rule.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {rule.type === 'percentage'
-                      ? `${rule.value}%`
-                      : formatCurrency(rule.value)
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-[hsl(var(--foreground))]">
-                      {FREQUENCY_LABELS[rule.frequency] || rule.frequency}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={
-                        rule.status === 'active'
-                          ? 'bg-green-500/10 text-green-500 border-green-500/20 cursor-pointer'
-                          : 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-pointer'
-                      }
-                      onClick={() => handleToggleStatus(rule)}
-                    >
-                      {rule.status === 'active' ? 'Ativo' : 'Inativo'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(rule)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleStatus(rule)}>
-                          <Eye className="w-4 h-4 mr-2" />
-                          {rule.status === 'active' ? 'Desativar' : 'Ativar'}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(rule)}
-                          className="text-red-500 focus:text-red-500"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {filteredRules.length === 0 && (
-            <div className="text-center py-12">
-              <Receipt className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
-                Nenhuma regra de faturamento encontrada
-              </h3>
-              <p className="text-[hsl(var(--muted-foreground))] mt-1 mb-4">
-                {searchTerm ? 'Tente ajustar os filtros de busca' : 'Crie a primeira regra de faturamento'}
-              </p>
-              {!searchTerm && (
-                <Button variant="primary" onClick={handleCreate}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova Regra
-                </Button>
-              )}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
             </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Valor / Percentual</TableHead>
+                    <TableHead>Periodicidade</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Acoes</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRules.map((rule: any) => (
+                    <TableRow key={rule.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-[hsl(var(--foreground))]">{rule.name}</p>
+                          {rule.description && (
+                            <p className="text-xs text-[hsl(var(--muted-foreground))] truncate max-w-[200px]">
+                              {rule.description}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getTypeColor(rule.type || rule.rule_type)}>
+                          {TYPE_LABELS[rule.type || rule.rule_type] || rule.type || rule.rule_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {(rule.type || rule.rule_type) === 'percentage'
+                          ? `${rule.value || rule.amount}%`
+                          : formatCurrency(rule.value || rule.amount)
+                        }
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-[hsl(var(--foreground))]">
+                          {FREQUENCY_LABELS[rule.frequency || rule.recurrence] || rule.frequency || rule.recurrence || '-'}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            rule.status === 'active'
+                              ? 'bg-green-500/10 text-green-500 border-green-500/20 cursor-pointer'
+                              : 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-pointer'
+                          }
+                          onClick={() => handleToggleStatus(rule)}
+                        >
+                          {rule.status === 'active' ? 'Ativo' : 'Inativo'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(rule)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleStatus(rule)}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              {rule.status === 'active' ? 'Desativar' : 'Ativar'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(rule)}
+                              className="text-red-500 focus:text-red-500"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {filteredRules.length === 0 && (
+                <div className="text-center py-12">
+                  <Receipt className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
+                    Nenhuma regra de faturamento encontrada
+                  </h3>
+                  <p className="text-[hsl(var(--muted-foreground))] mt-1 mb-4">
+                    {searchTerm ? 'Tente ajustar os filtros de busca' : 'Crie a primeira regra de faturamento'}
+                  </p>
+                  {!searchTerm && (
+                    <Button variant="primary" onClick={handleCreate}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Nova Regra
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -378,6 +398,21 @@ export default function FaturamentoPage() {
         onSubmit={handleFormSubmit}
         rule={selectedRule}
       />
+
+      {confirmAction && (
+        <ConfirmModal
+          isOpen={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={async () => {
+            await confirmAction.action();
+            setConfirmOpen(false);
+          }}
+          title={confirmAction.title}
+          message={confirmAction.message}
+          variant={confirmAction.variant}
+          isLoading={deleteMutation.isPending}
+        />
+      )}
     </div>
   );
 }

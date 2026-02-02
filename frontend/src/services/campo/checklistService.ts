@@ -3,7 +3,7 @@
  * Gestão de checklists dinâmicos para OS e visitas
  */
 
-import * as ChecklistAPI from '@/api/campo/generated/checklists/checklists';
+import * as ChecklistAPI from '@/api/campo/generated/campo-checklists/campo-checklists';
 import type {
   ChecklistTemplateCreate,
   ChecklistTemplateUpdate,

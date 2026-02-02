@@ -4,127 +4,50 @@ API v1 - Router principal.
 
 from fastapi import APIRouter
 
-from .endpoints.auth import router as auth_router
-from modules.crm.controllers import (
-    commission_router,
-    contract_router,
-    dashboard_router,
-    lead_router,
-    opportunity_router,
-    proposal_router,
-)
-
-from modules.operacional.controllers import (
-    allocation_router,
-    dashboard_router as operacional_dashboard_router,
-    employee_router,
-    kpi_trends_router,
-    post_router,
-    reports_router,
-    scale_router,
-    scale_template_router,
-    shift_router,
-    substitution_router,
-    time_bank_router,
-)
-
-# Occurrence router now comes from occurrences module
-from modules.operacional.occurrences import occurrence_router
-
-# Disciplinary - Medidas Administrativas
-from modules.operacional.disciplinary import router as disciplinary_router
-
-# Communication - Comunicados, Notificacoes, Alertas
-from modules.operacional.communication import communication_router
-
-# Inspection Rounds - Rondas de Inspecao
-from modules.operacional.inspection_rounds import inspection_round_router
-
-# ===================================================================
-# MÓDULO FINANCIAL - Gestão Financeira Completa
-# ===================================================================
-from modules.financial.controllers import (
-    # Contabilidade
-    accounting_router,
-    # Contas a Pagar
-    supplier_router,
-    payable_router,
-    # Contas a Receber
-    customer_router,
-    receivable_category_router,
-    receivable_router,
-    billing_rule_router,
-    # Fluxo de Caixa / Bancos
-    bank_account_router,
-    bank_transaction_router,
-    bank_reconciliation_router,
-    cashflow_router,
-    # Compras
-    purchase_router,
-    # Estoque
-    inventory_router,
-    # Fiscal
-    fiscal_router,
-)
-
+# Bartolo - Assistente Inteligente (Sessao 4)
+from modules.ai.bartolo.controllers import bartolo_router, openclaw_router
 
 # ===================================================================
 # MÓDULO AI - INTELIGÊNCIA ARTIFICIAL (Sprints 34-55)
 # ===================================================================
 # Análise de Contratos (Sprint 46)
 from modules.ai.contract_analysis.controllers import router as ai_contract_router
+
 # Qualidade de Dados (Sprint 48)
 from modules.ai.data_quality.controllers import data_quality_router as ai_data_quality_router
+
 # Assistente de Email (Sprint 54)
 from modules.ai.email_assistant.controllers import router as ai_email_router
+
 # Detecção de Fraude (Sprint 47)
 from modules.ai.fraud_detection.controllers import router as ai_fraud_router
+
 # Previsão de Inventário (Sprint 45)
 from modules.ai.inventory_forecast.controllers import router as ai_forecast_router
+
 # Base de Conhecimento (Sprint 53)
 from modules.ai.knowledge_base.controllers import kb_router as ai_kb_router
+
 # Assistente de Reuniões (Sprint 49)
 from modules.ai.meeting_assistant.controllers import meeting_assistant_router as ai_meeting_router
+
 # OCR - Leitura de Documentos (Sprint 39)
 from modules.ai.ocr.controllers import ocr_router as ai_ocr_router
+
 # Gerador de Relatórios (Sprint 44)
 from modules.ai.report_generator.controllers import report_router as ai_report_router
+
 # Análise de Sentimento (Sprint 43)
 from modules.ai.sentiment_analysis.controllers import router as ai_sentiment_router
+
 # Reconhecimento de Assinatura (Sprint 40)
 from modules.ai.signature.controllers import signature_router as ai_signature_router
+
 # Reconhecimento de Voz (Sprint 52)
 from modules.ai.voice_recognition.controllers import voice_router as ai_voice_router
+
 # Otimizador de Workflows (Sprint 55)
 from modules.ai.workflow_optimizer.controllers import router as ai_workflow_router
-# Bartolo - Assistente Inteligente (Sessao 4)
-from modules.ai.bartolo.controllers import bartolo_router
-
-# ===================================================================
-# HR - RECURSOS HUMANOS
-# ===================================================================
-# Analytics Dashboard
-from modules.hr.analytics_dashboard import router as hr_analytics_router
-# Portal do Funcionário
-from modules.hr.employee_portal.controllers import router as hr_portal_router
-# Mobile Time Clock (Ponto Mobile)
-from modules.hr.mobile_time_clock import (
-    device_router as mobile_device_router,
-    checkin_router as mobile_checkin_router,
-    geofence_router as mobile_geofence_router,
-    offline_router as mobile_offline_router,
-)
-# Integração com Folha de Pagamento
-from modules.hr.payroll_integration import router as hr_payroll_router
-# Integração REP (Registrador Eletrônico de Ponto)
-from modules.hr.rep_integration.controllers import router as hr_rep_router
-# Ponto Eletrônico / Time Tracking
-from modules.hr.time_tracking.controllers import router as hr_time_tracking_router
-
-# ===================================================================
-# RECRUITMENT - RECRUTAMENTO E SELEÇÃO
-# ===================================================================
-from modules.recruitment import router as recruitment_router
 
 # ===================================================================
 # MÓDULO AUDIT - Auditoria e Compliance (Sprint 33)
@@ -140,14 +63,13 @@ from modules.clients.controllers import router as client_router
 # MÓDULO CONFIG - Configurações e Multi-tenant (Sprint 35)
 # ===================================================================
 from modules.config.controllers import router as config_router
-
-# ===================================================================
-# MÓDULO DIARISTS - Gestão de Diaristas
-# ===================================================================
-from modules.operacional.diaristas.controllers import (
-    router as diarist_router,
-    notificacao_router as diarist_notificacao_router,
-    fiscal_router as diarist_fiscal_router,
+from modules.crm.controllers import (
+    commission_router,
+    contract_router,
+    dashboard_router,
+    lead_router,
+    opportunity_router,
+    proposal_router,
 )
 
 # ===================================================================
@@ -164,38 +86,142 @@ from modules.documents.controllers import router as documents_router
 # MÓDULO EQUIPMENT_MANAGEMENT - Gestão de Equipamentos
 # ===================================================================
 from modules.equipment_management.controllers import (
+    comodato_router,
     equipment_router,
     installation_router,
+)
+from modules.equipment_management.controllers import (
     maintenance_router as equipment_maintenance_router,
-    comodato_router,
+)
+
+# ===================================================================
+# MÓDULO FINANCIAL - Gestão Financeira Completa
+# ===================================================================
+from modules.financial.controllers import (
+    # Contabilidade
+    accounting_router,
+    # Fluxo de Caixa / Bancos
+    bank_account_router,
+    bank_reconciliation_router,
+    bank_transaction_router,
+    billing_rule_router,
+    cashflow_router,
+    # Contas a Receber
+    customer_router,
+    # Fiscal
+    fiscal_router,
+    # Estoque
+    inventory_router,
+    payable_router,
+    # Compras
+    purchase_router,
+    receivable_category_router,
+    receivable_router,
+    # Contas a Pagar
+    supplier_router,
 )
 
 # ===================================================================
 # MÓDULO FACILITIES - REMOVIDO (Transferido para PLUS)
 # ===================================================================
-
 # ===================================================================
 # MÓDULO GED - Gestão Eletrônica de Documentos
 # ===================================================================
 from modules.ged.controllers import (
-    folder_router,
     document_router,
-    version_router,
+    folder_router,
     share_router,
-    tag_router,
     signature_router,
     stats_router,
+    tag_router,
+    version_router,
 )
+
+# ===================================================================
+# HR - RECURSOS HUMANOS
+# ===================================================================
+# Analytics Dashboard
+from modules.hr.analytics_dashboard import router as hr_analytics_router
+
+# Portal do Funcionário
+from modules.hr.employee_portal.controllers import router as hr_portal_router
+from modules.hr.mobile_time_clock import (
+    checkin_router as mobile_checkin_router,
+)
+
+# Mobile Time Clock (Ponto Mobile)
+from modules.hr.mobile_time_clock import (
+    device_router as mobile_device_router,
+)
+from modules.hr.mobile_time_clock import (
+    geofence_router as mobile_geofence_router,
+)
+from modules.hr.mobile_time_clock import (
+    offline_router as mobile_offline_router,
+)
+
+# Integração com Folha de Pagamento
+from modules.hr.payroll_integration import router as hr_payroll_router
+
+# Integração REP (Registrador Eletrônico de Ponto)
+from modules.hr.rep_integration.controllers import router as hr_rep_router
+
+# Ponto Eletrônico / Time Tracking
+from modules.hr.time_tracking.controllers import router as hr_time_tracking_router
 
 # ===================================================================
 # MÓDULO INTEGRATIONS - API Gateway / Integrações (Sprint 32)
 # ===================================================================
 from modules.integrations.controllers import router as integration_router
 
+# Communication - Comunicados, Notificacoes, Alertas
+from modules.operacional.communication import communication_router
+from modules.operacional.controllers import (
+    allocation_router,
+    employee_router,
+    kpi_trends_router,
+    post_router,
+    reports_router,
+    scale_router,
+    scale_template_router,
+    shift_router,
+    substitution_router,
+    time_bank_router,
+)
+from modules.operacional.controllers import (
+    dashboard_router as operacional_dashboard_router,
+)
+from modules.operacional.diaristas.controllers import (
+    fiscal_router as diarist_fiscal_router,
+)
+from modules.operacional.diaristas.controllers import (
+    notificacao_router as diarist_notificacao_router,
+)
+
+# ===================================================================
+# MÓDULO DIARISTS - Gestão de Diaristas
+# ===================================================================
+from modules.operacional.diaristas.controllers import (
+    router as diarist_router,
+)
+
+# Disciplinary - Medidas Administrativas
+from modules.operacional.disciplinary import router as disciplinary_router
+
+# Inspection Rounds - Rondas de Inspecao
+from modules.operacional.inspection_rounds import inspection_round_router
+
+# Occurrence router now comes from occurrences module
+from modules.operacional.occurrences import occurrence_router
+
+# ===================================================================
+# RECRUITMENT - RECRUTAMENTO E SELEÇÃO
+# ===================================================================
+from modules.recruitment import router as recruitment_router
+
 # ===================================================================
 # MÓDULO OCCURRENCES - REMOVIDO (Transferido para PLUS)
 # ===================================================================
-
 # ===================================================================
 # MÓDULO REPORTS - Relatórios Gerenciais (Sprint 34)
 # ===================================================================
@@ -205,6 +231,8 @@ from modules.reports.controllers import router as report_router
 # MÓDULO SERVICES - Gestão de Serviços (Sprint 31)
 # ===================================================================
 from modules.services.controllers import router as service_router
+
+from .endpoints.auth import router as auth_router
 
 router = APIRouter(prefix="/api/v1")
 
@@ -228,7 +256,9 @@ router.include_router(contract_router, prefix="/crm", tags=["CRM - Contratos"])
 # ===================================================================
 router.include_router(post_router, prefix="/operacional/postos", tags=["Operacional - Postos"])
 router.include_router(scale_router, prefix="/operacional/escalas", tags=["Operacional - Escalas"])
-router.include_router(scale_template_router, prefix="/operacional/scales/templates", tags=["Operacional - Templates de Escalas"])
+router.include_router(
+    scale_template_router, prefix="/operacional/scales/templates", tags=["Operacional - Templates de Escalas"]
+)
 router.include_router(shift_router, prefix="/operacional/turnos", tags=["Operacional - Turnos"])
 router.include_router(allocation_router, prefix="/operacional/alocacoes", tags=["Operacional - Alocações"])
 router.include_router(employee_router, prefix="/operacional", tags=["Operacional - Funcionarios"])
@@ -254,14 +284,20 @@ router.include_router(payable_router, prefix="/financial/payables", tags=["Finan
 
 # Contas a Receber
 router.include_router(customer_router, prefix="/financial/customers", tags=["Financial - Clientes"])
-router.include_router(receivable_category_router, prefix="/financial/receivable-categories", tags=["Financial - Categorias Recebíveis"])
+router.include_router(
+    receivable_category_router, prefix="/financial/receivable-categories", tags=["Financial - Categorias Recebíveis"]
+)
 router.include_router(receivable_router, prefix="/financial/receivables", tags=["Financial - Contas a Receber"])
 router.include_router(billing_rule_router, prefix="/financial/billing-rules", tags=["Financial - Regras de Cobrança"])
 
 # Fluxo de Caixa / Bancos
 router.include_router(bank_account_router, prefix="/financial/bank-accounts", tags=["Financial - Contas Bancárias"])
-router.include_router(bank_transaction_router, prefix="/financial/bank-transactions", tags=["Financial - Transações Bancárias"])
-router.include_router(bank_reconciliation_router, prefix="/financial/bank-reconciliation", tags=["Financial - Conciliação Bancária"])
+router.include_router(
+    bank_transaction_router, prefix="/financial/bank-transactions", tags=["Financial - Transações Bancárias"]
+)
+router.include_router(
+    bank_reconciliation_router, prefix="/financial/bank-reconciliation", tags=["Financial - Conciliação Bancária"]
+)
 router.include_router(cashflow_router, prefix="/financial/cashflow", tags=["Financial - Fluxo de Caixa"])
 
 # Compras
@@ -323,8 +359,14 @@ router.include_router(config_router, prefix="/config", tags=["Config - Configura
 # OPERACIONAL - DIARISTAS (Submódulo)
 # ===================================================================
 router.include_router(diarist_router, prefix="/operacional/diaristas", tags=["Operacional - Diaristas"])
-router.include_router(diarist_notificacao_router, prefix="/operacional/diaristas/notificacoes", tags=["Operacional - Diaristas Notificações"])
-router.include_router(diarist_fiscal_router, prefix="/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"])
+router.include_router(
+    diarist_notificacao_router,
+    prefix="/operacional/diaristas/notificacoes",
+    tags=["Operacional - Diaristas Notificações"],
+)
+router.include_router(
+    diarist_fiscal_router, prefix="/operacional/diaristas/fiscal", tags=["Operacional - Diaristas Fiscal"]
+)
 
 # ===================================================================
 # DOCUMENT KITS - KITS DOCUMENTAIS
@@ -409,53 +451,68 @@ router.include_router(ai_voice_router, prefix="/ai/voice", tags=["AI - Reconheci
 router.include_router(ai_workflow_router, prefix="/ai/workflows", tags=["AI - Otimizador de Workflows"])
 # Bartolo - Assistente Inteligente
 router.include_router(bartolo_router, prefix="/ai", tags=["AI - Bartolo Assistente"])
+# OpenClaw - Code Quality Checker
+router.include_router(openclaw_router, prefix="/ai", tags=["AI - OpenClaw Code Quality"])
 
 # ===================================================================
 # MONITORING - EARLY WARNING SYSTEM (Fase 0)
 # ===================================================================
 from modules.monitoring import router as monitoring_router
+
 router.include_router(monitoring_router, tags=["Monitoring - Early Warning System"])
 
 # ===================================================================
 # AUTOMATION - WORKFLOW ENGINE (Sprint 33)
 # ===================================================================
 from modules.automation.workflow.controllers import router as workflow_router
+
 router.include_router(workflow_router, prefix="/workflows", tags=["Automation - Workflows"])
 
 # ===================================================================
 # FASE 5 - GRAND FINALE (CCT + Email Intelligence + MCP)
 # ===================================================================
 from modules.fase5.controllers import fase5_router
+
 router.include_router(fase5_router, tags=["Fase 5 - Grand Finale"])
 
 # ===================================================================
 # FASE 3 - SECURITY LGPD (Seguranca e Compliance LGPD)
 # ===================================================================
 from modules.security_lgpd import security_lgpd_router
+
 router.include_router(security_lgpd_router, prefix="/security")
 
 # ===================================================================
 # FASE 3 - HEALTH OCCUPATIONAL (Saude Ocupacional NR-4/6/7/9)
 # ===================================================================
 from modules.health_occupational import health_occupational_router
+
 router.include_router(health_occupational_router, tags=["Health - Saude Ocupacional"])
 
 # ===================================================================
 # FASE 3 - GOVERNMENT INTEGRATIONS (eSocial, SEFAZ, FGTS/INSS)
 # ===================================================================
 from modules.government_integrations import government_integrations_router
+
 router.include_router(government_integrations_router, tags=["Government - Integracoes Governamentais"])
 
 # ===================================================================
 # BIDDING - MÓDULO DE LICITAÇÕES PÚBLICAS
 # ===================================================================
 from modules.bidding import (
-    tender_router,
-    document_router as bidding_document_router,
-    proposal_router as bidding_proposal_router,
-    contract_router as bidding_contract_router,
     certificate_router,
+    tender_router,
 )
+from modules.bidding import (
+    contract_router as bidding_contract_router,
+)
+from modules.bidding import (
+    document_router as bidding_document_router,
+)
+from modules.bidding import (
+    proposal_router as bidding_proposal_router,
+)
+
 router.include_router(tender_router, prefix="/bidding", tags=["Bidding - Editais"])
 router.include_router(bidding_document_router, prefix="/bidding", tags=["Bidding - Documentos"])
 router.include_router(bidding_proposal_router, prefix="/bidding", tags=["Bidding - Propostas"])
@@ -466,17 +523,24 @@ router.include_router(certificate_router, prefix="/bidding", tags=["Bidding - Ce
 # CAMPO - SERVIÇO DE CAMPO (Equipes Externas, Visitas, OS)
 # ===================================================================
 from modules.campo import (
-    campo_service_router,
     access_log_router as campo_access_router,
-    occurrence_router as campo_occurrence_router,
-    equipment_status_router as campo_equipment_router,
+)
+from modules.campo import (
+    campo_service_router,
+    checklist_router,
+    estoque_router,
     # Novos routers CAMPO v3.0
     ordem_servico_router,
-    visita_router,
-    checklist_router,
     roteirizacao_router,
-    estoque_router,
+    visita_router,
 )
+from modules.campo import (
+    equipment_status_router as campo_equipment_router,
+)
+from modules.campo import (
+    occurrence_router as campo_occurrence_router,
+)
+
 # Routers legados
 router.include_router(campo_service_router, prefix="/campo", tags=["Campo - Serviços e OS"])
 router.include_router(campo_access_router, prefix="/campo/acessos", tags=["Campo - Logs de Acesso"])
@@ -493,33 +557,61 @@ router.include_router(estoque_router, prefix="/campo/estoque", tags=["Campo - Es
 # CENTRAL DE IA - INTELLIGENCE HUB (Nova Funcionalidade)
 # ===================================================================
 from modules.ai.intelligence_hub.controllers import intelligence_hub_router
+
 router.include_router(intelligence_hub_router, prefix="/ai", tags=["Intelligence Hub - Central IA"])
 
 # ===================================================================
 # REIMBURSEMENT - MÓDULO DE REEMBOLSO DE DESPESAS
 # ===================================================================
 from modules.reimbursement import reimbursement_router
+
 router.include_router(reimbursement_router, prefix="/reimbursements", tags=["Reimbursement - Reembolsos"])
 
 # ===================================================================
 # SEARCH - BUSCA GLOBAL
 # ===================================================================
 from modules.search import search_router
+
 router.include_router(search_router, tags=["Search - Busca Global"])
 
 # ===================================================================
 # SCHEDULER - AGENDAMENTO DE TAREFAS (Sprint 35)
 # ===================================================================
 from modules.scheduler.controllers import router as scheduler_router
+
 router.include_router(scheduler_router, prefix="/scheduler", tags=["Scheduler - Agendamento de Tarefas"])
 
 # ===================================================================
 # NOTIFICATIONS - NOTIFICATION HUB (Sprint 36, 37, 03)
 # ===================================================================
-from modules.notifications.controllers import router as notification_router
 from modules.notifications.controllers import intelligent_router as intelligent_notification_router
+from modules.notifications.controllers import router as notification_router
 from modules.notifications.push.controllers import router as push_notification_router
 
 router.include_router(notification_router, prefix="/notifications", tags=["Notifications - Hub"])
-router.include_router(intelligent_notification_router, prefix="/notifications/intelligent", tags=["Notifications - Intelligent"])
+router.include_router(
+    intelligent_notification_router, prefix="/notifications/intelligent", tags=["Notifications - Intelligent"]
+)
 router.include_router(push_notification_router, prefix="/notifications/push", tags=["Notifications - Push"])
+
+# ===================================================================
+# MOBILE - API MOBILE (Sprint 38)
+# ===================================================================
+from modules.mobile import mobile_router
+
+router.include_router(mobile_router, prefix="/mobile", tags=["Mobile API"])
+
+# ===================================================================
+# RETENTION - RETENÇÃO DE TALENTOS (Sprint 39)
+# ===================================================================
+from modules.retention import (
+    climate_router,
+    onboarding_router,
+    profile_router,
+    turnover_router,
+)
+
+router.include_router(onboarding_router, prefix="/retention/onboarding", tags=["Retention - Onboarding"])
+router.include_router(profile_router, prefix="/retention/profile", tags=["Retention - Operational Profile"])
+router.include_router(climate_router, prefix="/retention/climate", tags=["Retention - Climate Survey"])
+router.include_router(turnover_router, prefix="/retention/turnover", tags=["Retention - Turnover Prediction"])

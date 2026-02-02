@@ -3,10 +3,10 @@
  * Auditoria de segurança do sistema CAMPO
  */
 
-import * as SecurityAuditAPI from '@/api/campo/generated/security-audit/security-audit';
+import * as SecurityAuditAPI from '@/api/campo/generated/cyber/cyber';
 import type {
   AuditRequest,
-  ListAuditsApiV1CampoSecurityAuditSecurityAuditListGetParams,
+  ListAuditsApiV1CampoGuardianCyberSecurityAuditListGetParams,
 } from '@/api/campo/generated/models';
 
 export class SecurityAuditService {
@@ -14,14 +14,14 @@ export class SecurityAuditService {
    * Inicia nova auditoria de segurança
    */
   async iniciarAudit(data: AuditRequest) {
-    return SecurityAuditAPI.startSecurityAuditApiV1CampoSecurityAuditSecurityAuditStartPost(data);
+    return SecurityAuditAPI.startSecurityAuditApiV1CampoGuardianCyberSecurityAuditStartPost(data);
   }
 
   /**
    * Verifica status da auditoria
    */
   async verificarStatus(auditId: string) {
-    return SecurityAuditAPI.getAuditStatusApiV1CampoSecurityAuditSecurityAuditStatusAuditIdGet(
+    return SecurityAuditAPI.getAuditStatusApiV1CampoGuardianCyberSecurityAuditStatusAuditIdGet(
       auditId
     );
   }
@@ -29,8 +29,8 @@ export class SecurityAuditService {
   /**
    * Lista todas as auditorias
    */
-  async listarAudits(params?: ListAuditsApiV1CampoSecurityAuditSecurityAuditListGetParams) {
-    return SecurityAuditAPI.listAuditsApiV1CampoSecurityAuditSecurityAuditListGet(params);
+  async listarAudits(params?: ListAuditsApiV1CampoGuardianCyberSecurityAuditListGetParams) {
+    return SecurityAuditAPI.listAuditsApiV1CampoGuardianCyberSecurityAuditListGet(params);
   }
 }
 

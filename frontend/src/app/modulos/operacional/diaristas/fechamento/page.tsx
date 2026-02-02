@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -12,20 +11,17 @@ import {
   RefreshCw,
   CheckCircle,
   AlertTriangle,
-  Download,
   CreditCard,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { customInstance } from '@/lib/api-client';
-import {
-  type PayrollReport,
-  type PayrollDiaristItem,
+import { usePayrollReport, useGeneratePayments } from '@/hooks/operacional/useDiarists';
+import type {
+  PayrollDiaristItem,
 } from '@/lib/services/diarists';
 
 export default function FechamentoFolhaPage() {
-  const router = useRouter();
-  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const { isLoading: authLoading } = useAuth();
 
   // Default = mes anterior
   const now = new Date();
@@ -33,33 +29,30 @@ export default function FechamentoFolhaPage() {
   const defaultCompetencia = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
 
   const [competencia, setCompetencia] = useState(defaultCompetencia);
-  const [report, setReport] = useState<PayrollReport | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleGenerateReport = async () => {
-    setIsLoading(true);
+  // Hook para relatório de folha
+  const {
+    data: report,
+    isLoading,
+    refetch,
+  } = usePayrollReport(
+    { competencia },
+    { query: { enabled: showReport } },
+  );
+
+  // Hook para gerar pagamentos
+  const generatePaymentsMutation = useGeneratePayments();
+
+  const handleGenerateReport = () => {
     setError(null);
     setSuccess(null);
-    setReport(null);
-
-    try {
-      const result = await customInstance<PayrollReport>({
-        url: '/api/v1/operacional/diaristas/payments/payroll-report',
-        method: 'GET',
-        params: { competencia },
-      });
-      setReport(result);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro desconhecido';
-      setError(`Erro ao gerar relatorio: ${message}`);
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
+    setShowReport(true);
+    refetch();
   };
 
   const handleGeneratePayments = async () => {
@@ -72,22 +65,21 @@ export default function FechamentoFolhaPage() {
 
     try {
       const condominioId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
-      const result = await customInstance<any>({
-        url: '/api/v1/operacional/diaristas/payments/generate',
-        method: 'POST',
-        data: {
+      const result = await generatePaymentsMutation.mutateAsync({
+        params: {
           condominio_id: condominioId,
           competencia,
           forma_pagamento: 'pix',
         },
       });
 
-      if (result.total_erros > 0) {
-        setError(`${result.total_gerados} gerados, ${result.total_erros} erros: ${result.erros.join('; ')}`);
+      const data = result as any;
+      if (data.total_erros > 0) {
+        setError(`${data.total_gerados} gerados, ${data.total_erros} erros: ${data.erros.join('; ')}`);
       }
 
-      if (result.total_gerados > 0) {
-        setSuccess(`${result.total_gerados} pagamentos gerados com sucesso para ${competencia}!`);
+      if (data.total_gerados > 0) {
+        setSuccess(`${data.total_gerados} pagamentos gerados com sucesso para ${competencia}!`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Erro desconhecido';
@@ -98,8 +90,10 @@ export default function FechamentoFolhaPage() {
     }
   };
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  const formatCurrency = (value: number | string) => {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
+  };
 
   const formatCPF = (cpf: string) => {
     const clean = cpf.replace(/\D/g, '');
@@ -242,7 +236,7 @@ export default function FechamentoFolhaPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                      {formatCurrency(report.valor_bruto_total)}
+                      {formatCurrency(report.valor_bruto_total ?? 0)}
                     </p>
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Valor Bruto</p>
                   </div>
@@ -256,7 +250,7 @@ export default function FechamentoFolhaPage() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-green-500">
-                      {formatCurrency(report.valor_liquido_total)}
+                      {formatCurrency(report.valor_liquido_total ?? 0)}
                     </p>
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Valor Liquido</p>
                   </div>
@@ -280,7 +274,7 @@ export default function FechamentoFolhaPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {report.items.map((item: PayrollDiaristItem, index: number) => (
+                    {(report.items ?? []).map((item: PayrollDiaristItem, index: number) => (
                       <tr
                         key={item.diarist_id}
                         className={`border-b border-[hsl(var(--border))]/50 ${
@@ -297,13 +291,13 @@ export default function FechamentoFolhaPage() {
                           {item.quantidade_diarias}
                         </td>
                         <td className="px-4 py-3 text-sm text-right text-[hsl(var(--foreground))]">
-                          {formatCurrency(item.valor_bruto)}
+                          {formatCurrency(item.valor_bruto ?? 0)}
                         </td>
                         <td className="px-4 py-3 text-sm text-right text-red-400">
-                          -{formatCurrency(item.inss_retido)}
+                          -{formatCurrency(item.inss_retido ?? 0)}
                         </td>
                         <td className="px-4 py-3 text-sm text-right font-semibold text-green-500">
-                          {formatCurrency(item.valor_liquido)}
+                          {formatCurrency(item.valor_liquido ?? 0)}
                         </td>
                         <td className="px-4 py-3 text-xs text-[hsl(var(--muted-foreground))]">
                           {item.pix || (item.banco ? `${item.banco} Ag:${item.agencia} Cc:${item.conta}` : '-')}
@@ -315,9 +309,9 @@ export default function FechamentoFolhaPage() {
                     <tr className="bg-[hsl(var(--muted))]/30 font-semibold">
                       <td className="px-4 py-3 text-sm" colSpan={2}>TOTAIS</td>
                       <td className="px-4 py-3 text-sm text-center">{report.total_diarias}</td>
-                      <td className="px-4 py-3 text-sm text-right">{formatCurrency(report.valor_bruto_total)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-400">-{formatCurrency(report.inss_total)}</td>
-                      <td className="px-4 py-3 text-sm text-right text-green-500">{formatCurrency(report.valor_liquido_total)}</td>
+                      <td className="px-4 py-3 text-sm text-right">{formatCurrency(report.valor_bruto_total ?? 0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-red-400">-{formatCurrency(report.inss_total ?? 0)}</td>
+                      <td className="px-4 py-3 text-sm text-right text-green-500">{formatCurrency(report.valor_liquido_total ?? 0)}</td>
                       <td></td>
                     </tr>
                   </tfoot>
@@ -326,7 +320,7 @@ export default function FechamentoFolhaPage() {
             </div>
 
             {/* Empty state */}
-            {report.items.length === 0 && (
+            {(report.items ?? []).length === 0 && (
               <div className="text-center py-12 bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl mb-6">
                 <FileText className="w-12 h-12 text-[hsl(var(--muted-foreground))] mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-[hsl(var(--foreground))]">
@@ -339,7 +333,7 @@ export default function FechamentoFolhaPage() {
             )}
 
             {/* Botao Gerar Pagamentos */}
-            {report.items.length > 0 && (
+            {(report.items ?? []).length > 0 && (
               <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-xl p-4">
                 {!showConfirm ? (
                   <div className="flex items-center justify-between">
@@ -348,7 +342,7 @@ export default function FechamentoFolhaPage() {
                         <strong>{report.total_diaristas}</strong> diaristas - <strong>{report.total_diarias}</strong> diarias
                       </p>
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                        Valor liquido total: {formatCurrency(report.valor_liquido_total)}
+                        Valor liquido total: {formatCurrency(report.valor_liquido_total ?? 0)}
                       </p>
                     </div>
                     <Button
@@ -368,7 +362,7 @@ export default function FechamentoFolhaPage() {
                       </div>
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">
                         Serao gerados <strong>{report.total_diaristas}</strong> pagamentos no valor total de{' '}
-                        <strong className="text-green-500">{formatCurrency(report.valor_liquido_total)}</strong>.
+                        <strong className="text-green-500">{formatCurrency(report.valor_liquido_total ?? 0)}</strong>.
                         Esta acao nao pode ser desfeita.
                       </p>
                     </div>

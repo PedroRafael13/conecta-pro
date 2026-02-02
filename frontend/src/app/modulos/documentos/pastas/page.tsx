@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,18 +57,16 @@ import {
   Unlock,
 } from 'lucide-react';
 import Link from 'next/link';
-import { customInstance } from '@/lib/api-client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useFolders, useFolder, useCreateFolder, useUpdateFolder, useDeleteFolder } from '@/hooks/ged/useGedFolders';
 import { Folder, formatFileSize, FOLDER_TYPES } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
 
 function PastasContent() {
   const searchParams = useSearchParams();
   const folderId = searchParams.get('id');
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [currentFolder, setCurrentFolder] = useState<Folder | null>(null);
-  const [breadcrumb, setBreadcrumb] = useState<Folder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -83,57 +81,39 @@ function PastasContent() {
     is_public: false,
   });
 
-  const loadFolders = useCallback(async () => {
-    try {
-      setLoading(true);
+  // Query: pasta atual (se tiver folderId)
+  const { data: currentFolder } = useFolder(folderId || '', {
+    query: { enabled: !!folderId },
+  });
 
-      if (folderId) {
-        // Carregar pasta atual
-        const folder = await customInstance<Folder>({
-          url: `/api/v1/ged/folders/${folderId}`,
-          method: 'GET',
-        });
-        setCurrentFolder(folder);
+  // Query: subpastas ou pastas raiz
+  const foldersParams = folderId
+    ? { parent_id: folderId, page_size: 100 }
+    : { page_size: 100 };
 
-        // Carregar subpastas
-        const response = await customInstance<{ items: Folder[] }>({
-          url: '/api/v1/ged/folders/',
-          method: 'GET',
-          params: { parent_id: folderId, page_size: 100 },
-        });
-        setFolders(response.items);
+  const { data: foldersData, isLoading: loading, refetch } = useFolders(foldersParams);
 
-        setBreadcrumb([folder]);
-      } else {
-        // Carregar pastas raiz
-        setCurrentFolder(null);
-        const response = await customInstance<{ items: Folder[] }>({
-          url: '/api/v1/ged/folders/',
-          method: 'GET',
-          params: { page_size: 100 },
-        });
-        const rootFolders = response.items.filter((f: any) => f.is_root);
-        setFolders(rootFolders);
-        setBreadcrumb([]);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar pastas:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao carregar pastas',
-        description: 'Não foi possível carregar a lista de pastas.',
-      });
-    } finally {
-      setLoading(false);
+  // Filtra pastas raiz quando nao tem folderId
+  const folders = folderId
+    ? (foldersData as any)?.items || []
+    : ((foldersData as any)?.items || []).filter((f: any) => f.is_root);
+
+  const breadcrumb = currentFolder ? [currentFolder as Folder] : [];
+
+  // Mutations
+  const createFolderMutation = useCreateFolder();
+  const updateFolderMutation = useUpdateFolder();
+  const deleteFolderMutation = useDeleteFolder();
+
+  const invalidateFolders = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/v1/ged/folders/'] });
+    if (folderId) {
+      queryClient.invalidateQueries({ queryKey: [`/api/v1/ged/folders/${folderId}`] });
     }
-  }, [folderId, toast]);
-
-  useEffect(() => {
-    loadFolders();
-  }, [loadFolders]);
+  };
 
   // Filtrar por busca
-  const filteredFolders = folders.filter(f =>
+  const filteredFolders = folders.filter((f: Folder) =>
     f.name.toLowerCase().includes(search.toLowerCase()) ||
     f.description?.toLowerCase().includes(search.toLowerCase())
   );
@@ -141,13 +121,11 @@ function PastasContent() {
   // Criar nova pasta
   const handleCreateFolder = async () => {
     try {
-      await customInstance({
-        url: '/api/v1/ged/folders/',
-        method: 'POST',
+      await createFolderMutation.mutateAsync({
         data: {
           ...formData,
           parent_id: folderId || undefined,
-        },
+        } as any,
       });
       setDialogOpen(false);
       setFormData({ name: '', description: '', folder_type: 'condominio', is_public: false });
@@ -156,11 +134,10 @@ function PastasContent() {
         title: 'Pasta criada',
         description: `A pasta "${formData.name}" foi criada com sucesso.`,
       });
-      loadFolders();
+      invalidateFolders();
     } catch (error: any) {
       console.error('Erro ao criar pasta:', error);
 
-      // Tratar erro 409 (pasta duplicada)
       if (error?.response?.status === 409 || error?.status === 409) {
         const errorMsg = error?.response?.data?.detail || error?.message || 'Já existe uma pasta com este nome neste local';
         toast({
@@ -171,7 +148,6 @@ function PastasContent() {
         return;
       }
 
-      // Outros erros
       toast({
         variant: 'destructive',
         title: 'Erro ao criar pasta',
@@ -184,14 +160,13 @@ function PastasContent() {
   const handleEditFolder = async () => {
     if (!selectedFolder) return;
     try {
-      await customInstance({
-        url: `/api/v1/ged/folders/${selectedFolder.id}`,
-        method: 'PUT',
+      await updateFolderMutation.mutateAsync({
+        folderId: selectedFolder.id,
         data: {
           name: formData.name,
           description: formData.description,
           is_public: formData.is_public,
-        },
+        } as any,
       });
       setEditDialogOpen(false);
       setSelectedFolder(null);
@@ -200,11 +175,10 @@ function PastasContent() {
         title: 'Pasta atualizada',
         description: `A pasta "${formData.name}" foi atualizada com sucesso.`,
       });
-      loadFolders();
+      invalidateFolders();
     } catch (error: any) {
       console.error('Erro ao atualizar pasta:', error);
 
-      // Tratar erro 409 (nome duplicado)
       if (error?.response?.status === 409 || error?.status === 409) {
         const errorMsg = error?.response?.data?.detail || error?.message || 'Já existe uma pasta com este nome neste local';
         toast({
@@ -215,7 +189,6 @@ function PastasContent() {
         return;
       }
 
-      // Outros erros
       toast({
         variant: 'destructive',
         title: 'Erro ao atualizar',
@@ -228,9 +201,8 @@ function PastasContent() {
   const handleDeleteFolder = async () => {
     if (!selectedFolder) return;
     try {
-      await customInstance({
-        url: `/api/v1/ged/folders/${selectedFolder.id}`,
-        method: 'DELETE',
+      await deleteFolderMutation.mutateAsync({
+        folderId: selectedFolder.id,
       });
       setDeleteDialogOpen(false);
       toast({
@@ -239,7 +211,7 @@ function PastasContent() {
         description: `A pasta "${selectedFolder.name}" foi excluída com sucesso.`,
       });
       setSelectedFolder(null);
-      loadFolders();
+      invalidateFolders();
     } catch (error) {
       console.error('Erro ao excluir pasta:', error);
       toast({
@@ -250,7 +222,7 @@ function PastasContent() {
     }
   };
 
-  // Abrir dialog de edição
+  // Abrir dialog de edicao
   const openEditDialog = (folder: Folder, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -264,7 +236,7 @@ function PastasContent() {
     setEditDialogOpen(true);
   };
 
-  // Abrir dialog de exclusão
+  // Abrir dialog de exclusao
   const openDeleteDialog = (folder: Folder, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -286,11 +258,11 @@ function PastasContent() {
           )}
           <div>
             <h1 className="text-2xl font-bold">
-              {currentFolder ? currentFolder.name : 'Pastas'}
+              {(currentFolder as any)?.name || 'Pastas'}
             </h1>
             <p className="text-muted-foreground">
               {currentFolder
-                ? currentFolder.description || 'Organize seus documentos em pastas'
+                ? (currentFolder as any).description || 'Organize seus documentos em pastas'
                 : 'Gerencie a estrutura de pastas do sistema'}
             </p>
           </div>
@@ -426,7 +398,7 @@ function PastasContent() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredFolders.map((folder) => (
+          {filteredFolders.map((folder: Folder) => (
             <div key={folder.id} className="relative group">
               <Link href={`/modulos/documentos/pastas?id=${folder.id}`}>
                 <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
@@ -472,7 +444,7 @@ function PastasContent() {
                 </Card>
               </Link>
 
-              {/* Menu de ações */}
+              {/* Menu de acoes */}
               {!folder.is_system && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -520,34 +492,34 @@ function PastasContent() {
             <div>
               <p className="text-sm text-muted-foreground">Tipo</p>
               <p className="font-medium">
-                {FOLDER_TYPES.find(t => t.value === currentFolder.folder_type)?.label}
+                {FOLDER_TYPES.find(t => t.value === (currentFolder as any).folder_type)?.label}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Subpastas</p>
-              <p className="font-medium">{currentFolder.subfolder_count}</p>
+              <p className="font-medium">{(currentFolder as any).subfolder_count}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Documentos</p>
-              <p className="font-medium">{currentFolder.document_count}</p>
+              <p className="font-medium">{(currentFolder as any).document_count}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Tamanho Total</p>
-              <p className="font-medium">{formatFileSize(currentFolder.total_size_bytes)}</p>
+              <p className="font-medium">{formatFileSize((currentFolder as any).total_size_bytes)}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Visibilidade</p>
-              <p className="font-medium">{currentFolder.is_public ? 'Pública' : 'Privada'}</p>
+              <p className="font-medium">{(currentFolder as any).is_public ? 'Pública' : 'Privada'}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Caminho</p>
-              <p className="font-medium truncate">{currentFolder.full_path}</p>
+              <p className="font-medium truncate">{(currentFolder as any).full_path}</p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Dialog de edição */}
+      {/* Dialog de edicao */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -597,13 +569,13 @@ function PastasContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmação de exclusão */}
+      {/* Dialog de confirmacao de exclusao */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir pasta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a pasta "{selectedFolder?.name}"?
+              Tem certeza que deseja excluir a pasta &quot;{selectedFolder?.name}&quot;?
               Esta ação não pode ser desfeita. A pasta precisa estar vazia para ser excluída.
             </AlertDialogDescription>
           </AlertDialogHeader>

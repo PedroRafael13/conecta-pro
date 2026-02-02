@@ -3,12 +3,12 @@
  * Gestão de técnicos, tickets e serviços de campo
  */
 
-import * as CampoServiceAPI from '@/api/campo/generated/campo-service/campo-service';
+import * as CampoServiceAPI from '@/api/campo/generated/campo/campo';
 import type {
   TechnicianInfo,
   TicketRequest,
   TicketUpdate,
-  ListTechniciansApiV1CampoCampoTechniciansGetParams,
+  ListTechniciansApiV1CampoGuardianCampoCampoTechniciansGetParams,
 } from '@/api/campo/generated/models';
 
 export class CampoServiceMain {
@@ -16,21 +16,21 @@ export class CampoServiceMain {
    * Dashboard principal do módulo CAMPO
    */
   async dashboard(params?: { periodo?: string }) {
-    return CampoServiceAPI.campoDashboardApiV1CampoCampoDashboardGet();
+    return CampoServiceAPI.campoDashboardApiV1CampoGuardianCampoCampoDashboardGet();
   }
 
   /**
    * Lista todos os técnicos
    */
-  async listarTecnicos(params?: ListTechniciansApiV1CampoCampoTechniciansGetParams) {
-    return CampoServiceAPI.listTechniciansApiV1CampoCampoTechniciansGet(params);
+  async listarTecnicos(params?: ListTechniciansApiV1CampoGuardianCampoCampoTechniciansGetParams) {
+    return CampoServiceAPI.listTechniciansApiV1CampoGuardianCampoCampoTechniciansGet(params);
   }
 
   /**
    * Cria novo técnico
    */
   async criarTecnico(data: TechnicianInfo) {
-    return CampoServiceAPI.createTechnicianApiV1CampoCampoTechniciansPost(data);
+    return CampoServiceAPI.createTechnicianApiV1CampoGuardianCampoCampoTechniciansPost(data);
   }
 
   /**
@@ -61,7 +61,7 @@ export class CampoServiceMain {
    * Cria novo ticket
    */
   async criarTicket(data: TicketRequest) {
-    return CampoServiceAPI.createTicketApiV1CampoCampoTicketsPost(data);
+    return CampoServiceAPI.createTicketApiV1CampoGuardianCampoCampoTicketsPost(data);
   }
 
   /**
@@ -82,21 +82,21 @@ export class CampoServiceMain {
    * Busca ticket por ID
    */
   async buscarTicket(ticketId: string) {
-    return CampoServiceAPI.getTicketApiV1CampoCampoTicketsTicketIdGet(ticketId);
+    return CampoServiceAPI.getTicketApiV1CampoGuardianCampoCampoTicketsTicketIdGet(ticketId);
   }
 
   /**
    * Atualiza ticket
    */
   async atualizarTicket(ticketId: string, data: TicketUpdate) {
-    return CampoServiceAPI.updateTicketApiV1CampoCampoTicketsTicketIdPut(ticketId, data);
+    return CampoServiceAPI.updateTicketApiV1CampoGuardianCampoCampoTicketsTicketIdPut(ticketId, data);
   }
 
   /**
    * Atribui ticket a técnico
    */
   async atribuirTicket(ticketId: string, tecnicoId: string) {
-    return CampoServiceAPI.assignTechnicianApiV1CampoCampoTicketsTicketIdAssignTechnicianIdPost(ticketId, tecnicoId);
+    return CampoServiceAPI.assignTechnicianApiV1CampoGuardianCampoCampoTicketsTicketIdAssignTechnicianIdPost(ticketId, tecnicoId);
   }
 }
 

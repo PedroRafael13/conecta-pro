@@ -193,6 +193,55 @@ class ActionDetector:
         ActionType.RESUME_ROUND: [
             r"(?:retomar|continuar|reativar)\s+(?:a?\s+)?(?:ronda|inspe[cç][aã]o)",
         ],
+        # OpenClaw - CI/CD
+        ActionType.OPENCLAW_RUN_TESTS: [
+            r"(?:roda|execut|faz)(?:r|ar?)?\s+(?:os?\s+)?test(?:e|es)",
+            r"test(?:ar?|es?)?\s+(?:o\s+)?(?:backend|sistema|codigo)",
+            r"(?:rodar|executar)\s+pytest",
+        ],
+        ActionType.OPENCLAW_RUN_LINT: [
+            r"(?:roda|execut|faz)(?:r|ar?)?\s+(?:o\s+)?lint",
+            r"verific(?:ar?|a)\s+(?:a\s+)?(?:formatacao|qualidade)(?:\s+do)?\s+codigo",
+            r"(?:ruff|eslint)",
+        ],
+        ActionType.OPENCLAW_RUN_SECURITY: [
+            r"(?:scan|verific|analisa)(?:r|ar?)?\s+(?:de\s+)?seguranc(?:a|ça)",
+            r"(?:roda|execut)(?:r|ar?)?\s+(?:o\s+)?(?:bandit|security)",
+            r"(?:tem|ha)\s+vulnerabilidade",
+        ],
+        ActionType.OPENCLAW_RUN_COVERAGE: [
+            r"(?:qual|como)\s+(?:esta|e|ta)\s+(?:a\s+)?cobertura",
+            r"verific(?:ar?|a)\s+(?:a\s+)?cobertura",
+            r"coverage\s+(?:do\s+)?(?:backend|codigo)",
+        ],
+        ActionType.OPENCLAW_RUN_HEALTH: [
+            r"(?:como|qual)\s+(?:esta|e|sao)\s+(?:os?\s+)?servic(?:o|os)",
+            r"health\s*check",
+            r"(?:esta|tudo)\s+(?:tudo\s+)?(?:ok|bem|funcionando|rodando)",
+            r"status\s+(?:dos?\s+)?(?:servicos|containers|docker)",
+        ],
+        ActionType.OPENCLAW_RUN_FULL_CYCLE: [
+            r"(?:roda|execut|faz)(?:r|ar?)?\s+(?:um\s+)?ciclo\s+(?:completo|full)",
+            r"(?:roda|execut|faz)(?:r|ar?)?\s+(?:o\s+)?openclaw",
+            r"(?:verific|analisa|checa)(?:r|ar?)?\s+tudo",
+            r"qualidade\s+(?:geral|completa|do\s+sistema)",
+        ],
+        ActionType.OPENCLAW_DEPLOY_PRODUCTION: [
+            r"(?:faz|execut|dispar)(?:r|er|ar?)?\s+(?:o\s+)?deploy",
+            r"deploy(?:ar?)?\s+(?:para?|em)\s+(?:prod|producao|production)",
+            r"(?:atualiz|public)(?:ar?|a)\s+(?:o\s+)?(?:sistema|producao)",
+        ],
+        ActionType.OPENCLAW_DEPLOY_STAGING: [
+            r"deploy(?:ar?)?\s+(?:para?|em)\s+(?:stag|homolog)",
+        ],
+        ActionType.OPENCLAW_DAEMON_START: [
+            r"(?:iniciar|start|ligar)\s+(?:o\s+)?(?:daemon|openclaw)",
+            r"ativar\s+(?:o\s+)?openclaw",
+        ],
+        ActionType.OPENCLAW_DAEMON_STOP: [
+            r"(?:parar|stop|desligar)\s+(?:o\s+)?(?:daemon|openclaw)",
+            r"desativar\s+(?:o\s+)?openclaw",
+        ],
     }
 
     CATEGORY_MAP = {

@@ -9,24 +9,17 @@ import {
   BarChart3,
   Filter,
   RefreshCw,
-  Download,
   FileSpreadsheet,
   FileText,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PageGuard } from '@/components/ui/permission-guard';
 import { useAuth } from '@/hooks/useAuth';
-import { Permission } from '@/hooks/usePermission';
 import { useEmployees } from '@/hooks/operacional/useEmployees';
 import { usePosts } from '@/hooks/operacional/usePosts';
-import { getErrorMessage } from '@/lib/api';
-import { customInstance } from '@/lib/api-client';
+import { useCoverageReport, useHoursReport, useCostsReport } from '@/hooks/operacional/useReports';
 import type {
-  CoverageReportResponse,
-  CostsReportResponse,
   Employee,
-  HoursReportResponse,
   Post,
 } from '@/types/operacional';
 
@@ -56,17 +49,60 @@ export default function RelatoriosPage() {
   const [employeeId, setEmployeeId] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
-  const [coverageReport, setCoverageReport] = useState<CoverageReportResponse | null>(null);
-  const [hoursReport, setHoursReport] = useState<HoursReportResponse | null>(null);
-  const [costsReport, setCostsReport] = useState<CostsReportResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Report hooks com params
+  const coverageParams = useMemo(() => ({
+    start_date: startDate,
+    end_date: endDate,
+    ...(postId ? { post_id: postId } : {}),
+  }), [startDate, endDate, postId]);
+
+  const hoursParams = useMemo(() => ({
+    start_date: startDate,
+    end_date: endDate,
+    ...(employeeId ? { employee_id: employeeId } : {}),
+  }), [startDate, endDate, employeeId]);
+
+  const costsParams = useMemo(() => ({
+    start_date: startDate,
+    end_date: endDate,
+    ...(postId ? { post_id: postId } : {}),
+  }), [startDate, endDate, postId]);
+
+  const {
+    data: coverageReport,
+    isLoading: coverageLoading,
+    error: coverageError,
+    refetch: refetchCoverage,
+  } = useCoverageReport(coverageParams);
+
+  const {
+    data: hoursReport,
+    isLoading: hoursLoading,
+    error: hoursError,
+    refetch: refetchHours,
+  } = useHoursReport(hoursParams);
+
+  const {
+    data: costsReport,
+    isLoading: costsLoading,
+    error: costsError,
+    refetch: refetchCosts,
+  } = useCostsReport(costsParams);
+
+  const isLoading = coverageLoading || hoursLoading || costsLoading;
+  const error = coverageError || hoursError || costsError;
+
+  const fetchReports = useCallback(() => {
+    refetchCoverage();
+    refetchHours();
+    refetchCosts();
+  }, [refetchCoverage, refetchHours, refetchCosts]);
 
   const postMap = useMemo(() => {
     return posts.reduce<Record<string, Post>>((acc, post) => {
@@ -82,62 +118,10 @@ export default function RelatoriosPage() {
     }, {});
   }, [employees]);
 
-  const getEmployeeLabel = (id: string) => {
+  const getEmployeeLabel = useCallback((id: string) => {
     const employee = employeeMap[id];
     return employee?.full_name || employee?.name || employee?.email || employee?.registration || id;
-  };
-
-  const fetchReports = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const [coverage, hours, costs] = await Promise.all([
-        customInstance<CoverageReportResponse>({
-          url: '/api/v1/operacional/reports/coverage',
-          method: 'GET',
-          params: {
-            start_date: startDate,
-            end_date: endDate,
-            post_id: postId || undefined,
-          },
-        }),
-        customInstance<HoursReportResponse>({
-          url: '/api/v1/operacional/reports/hours',
-          method: 'GET',
-          params: {
-            start_date: startDate,
-            end_date: endDate,
-            employee_id: employeeId || undefined,
-          },
-        }),
-        customInstance<CostsReportResponse>({
-          url: '/api/v1/operacional/reports/costs',
-          method: 'GET',
-          params: {
-            start_date: startDate,
-            end_date: endDate,
-            post_id: postId || undefined,
-          },
-        }),
-      ]);
-
-      setCoverageReport(coverage);
-      setHoursReport(hours);
-      setCostsReport(costs);
-    } catch (err) {
-      setError(getErrorMessage(err));
-      setCoverageReport(null);
-      setHoursReport(null);
-      setCostsReport(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [startDate, endDate, postId, employeeId]);
-
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+  }, [employeeMap]);
 
   // Export to CSV/Excel
   const exportToCSV = useCallback(() => {
@@ -224,11 +208,6 @@ export default function RelatoriosPage() {
   }, [startDate, endDate]);
 
   // Calculate max for simple bar visualization
-  const maxCoverage = useMemo(() => {
-    if (!coverageReport?.items.length) return 100;
-    return Math.max(...coverageReport.items.map(i => i.coverage_rate), 100);
-  }, [coverageReport]);
-
   const maxHours = useMemo(() => {
     if (!hoursReport?.items.length) return 100;
     return Math.max(...hoursReport.items.map(i => i.total_hours));
@@ -373,7 +352,7 @@ export default function RelatoriosPage() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500" />
-            <p className="text-red-500">{error}</p>
+            <p className="text-red-500">{(error as any)?.message || 'Erro ao carregar relatórios'}</p>
             <Button variant="outline" size="sm" onClick={fetchReports} className="ml-auto">
               Tentar novamente
             </Button>

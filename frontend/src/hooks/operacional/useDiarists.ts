@@ -19,6 +19,8 @@ import {
   useGetTodaySchedulesApiV1OperacionalDiaristasSchedulesTodayGet,
   useGetGeneralStatisticsApiV1OperacionalDiaristasStatisticsGeneralGet,
   useGetPayrollReportApiV1OperacionalDiaristasPaymentsPayrollReportGet,
+  useGeneratePayrollPaymentsApiV1OperacionalDiaristasPaymentsPayrollGeneratePost,
+  useGeneratePaymentApiV1OperacionalDiaristasPaymentsGeneratePost,
 } from '@/types/generated/operacional/operacional-diaristas/operacional-diaristas';
 
 // List & Read
@@ -38,6 +40,8 @@ export const useActivateDiarist = useActivateDiaristApiV1OperacionalDiaristasDia
 export const useDeactivateDiarist = useDeactivateDiaristApiV1OperacionalDiaristasDiaristIdDeactivatePost;
 export const useCreateSchedule = useCreateScheduleApiV1OperacionalDiaristasSchedulesPost;
 export const useCreateBatchSchedules = useCreateBatchSchedulesApiV1OperacionalDiaristasSchedulesBatchPost;
+export const useGeneratePayrollPayments = useGeneratePayrollPaymentsApiV1OperacionalDiaristasPaymentsPayrollGeneratePost;
+export const useGeneratePayments = useGeneratePaymentApiV1OperacionalDiaristasPaymentsGeneratePost;
 
 // Re-export types
 export type {
@@ -45,4 +49,7 @@ export type {
   DiaristUpdate,
   DiaristResponse,
   DiaristStatus,
+  PayrollReportResponse,
+  PayrollGenerateRequest,
+  GeneratePaymentApiV1OperacionalDiaristasPaymentsGeneratePostParams,
 } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

@@ -10,35 +10,35 @@ export class MonitoringService {
    * Verifica saúde do sistema
    */
   async health() {
-    return MonitoringAPI.healthCheckApiV1CampoMonitoringMonitoringHealthGet();
+    return MonitoringAPI.healthCheckApiV1CampoMonitoringHealthGet();
   }
 
   /**
    * Verifica prontidão do sistema
    */
   async ready() {
-    return MonitoringAPI.readinessCheckApiV1CampoMonitoringMonitoringReadyGet();
+    return MonitoringAPI.readinessCheckApiV1CampoMonitoringReadyGet();
   }
 
   /**
    * Ping de conectividade
    */
   async ping() {
-    return MonitoringAPI.pingApiV1CampoMonitoringMonitoringPingGet();
+    return MonitoringAPI.pingApiV1CampoMonitoringPingGet();
   }
 
   /**
    * Métricas do sistema
    */
   async metrics() {
-    return MonitoringAPI.getMetricsApiV1CampoMonitoringMonitoringMetricsGet();
+    return MonitoringAPI.getMetricsApiV1CampoMonitoringMetricsGet();
   }
 
   /**
    * Status detalhado dos serviços
    */
   async status() {
-    return MonitoringAPI.systemStatusApiV1CampoMonitoringMonitoringStatusGet();
+    return MonitoringAPI.systemStatusApiV1CampoMonitoringStatusGet();
   }
 }
 

@@ -7,15 +7,15 @@ import { roteirizacaoService } from '@/services/campo';
 import type {
   OtimizarRotaRequest,
   ReotimizarRotaRequest,
-  CalcularDistanciaApiV1CampoRoteirizacaoCalcularDistanciaPostParams,
-  AnalisarRotasEquipeApiV1CampoRoteirizacaoAnaliseEquipeGetParams,
-  SugerirRedistribuicaoApiV1CampoRoteirizacaoAnaliseRedistribuicaoGetParams,
+  CalcularDistanciaApiV1CampoRotasCalcularDistanciaPostParams,
+  AnalisarRotasEquipeApiV1CampoRotasAnaliseEquipeGetParams,
+  SugerirRedistribuicaoApiV1CampoRotasAnaliseRedistribuicaoGetParams,
 } from '@/api/campo/generated/models';
 
 const QUERY_KEYS = {
   all: ['campo', 'roteirizacao'] as const,
-  analiseEquipe: (params?: AnalisarRotasEquipeApiV1CampoRoteirizacaoAnaliseEquipeGetParams) => [...QUERY_KEYS.all, 'analise-equipe', params] as const,
-  analiseRedistribuicao: (params?: SugerirRedistribuicaoApiV1CampoRoteirizacaoAnaliseRedistribuicaoGetParams) =>
+  analiseEquipe: (params?: AnalisarRotasEquipeApiV1CampoRotasAnaliseEquipeGetParams) => [...QUERY_KEYS.all, 'analise-equipe', params] as const,
+  analiseRedistribuicao: (params?: SugerirRedistribuicaoApiV1CampoRotasAnaliseRedistribuicaoGetParams) =>
     [...QUERY_KEYS.all, 'analise-redistribuicao', params] as const,
   mapa: (params: { data?: string; equipe_id?: string; tecnico_id?: string }) => [...QUERY_KEYS.all, 'mapa', params] as const,
 };
@@ -38,12 +38,12 @@ export const useReotimizarRotas = () => {
 
 export const useCalcularDistancia = () => {
   return useMutation({
-    mutationFn: (params: CalcularDistanciaApiV1CampoRoteirizacaoCalcularDistanciaPostParams) =>
+    mutationFn: (params: CalcularDistanciaApiV1CampoRotasCalcularDistanciaPostParams) =>
       roteirizacaoService.calcularDistancia(params),
   });
 };
 
-export const useAnaliseEquipe = (params: AnalisarRotasEquipeApiV1CampoRoteirizacaoAnaliseEquipeGetParams) => {
+export const useAnaliseEquipe = (params: AnalisarRotasEquipeApiV1CampoRotasAnaliseEquipeGetParams) => {
   return useQuery({
     queryKey: QUERY_KEYS.analiseEquipe(params),
     queryFn: () => roteirizacaoService.analisarEquipe(params),
@@ -51,7 +51,7 @@ export const useAnaliseEquipe = (params: AnalisarRotasEquipeApiV1CampoRoteirizac
   });
 };
 
-export const useAnaliseRedistribuicao = (params: SugerirRedistribuicaoApiV1CampoRoteirizacaoAnaliseRedistribuicaoGetParams) => {
+export const useAnaliseRedistribuicao = (params: SugerirRedistribuicaoApiV1CampoRotasAnaliseRedistribuicaoGetParams) => {
   return useQuery({
     queryKey: QUERY_KEYS.analiseRedistribuicao(params),
     queryFn: () => roteirizacaoService.analisarRedistribuicao(params),

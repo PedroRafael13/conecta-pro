@@ -5,25 +5,22 @@
  */
 
 import {
-  useGetOperationalReportApiV1OperacionalReportsGet,
-  useGetAttendanceReportApiV1OperacionalReportsAttendanceGet,
-  useGetOccurrencesReportApiV1OperacionalReportsOccurrencesGet,
-  useGetPerformanceReportApiV1OperacionalReportsPerformanceGet,
-  useGetTimeBankReportApiV1OperacionalReportsTimeBankGet,
+  useCoverageReportApiV1OperacionalReportsCoverageGet,
+  useHoursReportApiV1OperacionalReportsHoursGet,
+  useCostsReportApiV1OperacionalReportsCostsGet,
 } from '@/types/generated/operacional/operacional-relatorios/operacional-relatorios';
 
 // Reports (read-only)
-export const useOperationalReport = useGetOperationalReportApiV1OperacionalReportsGet;
-export const useAttendanceReport = useGetAttendanceReportApiV1OperacionalReportsAttendanceGet;
-export const useOccurrencesReport = useGetOccurrencesReportApiV1OperacionalReportsOccurrencesGet;
-export const usePerformanceReport = useGetPerformanceReportApiV1OperacionalReportsPerformanceGet;
-export const useTimeBankReport = useGetTimeBankReportApiV1OperacionalReportsTimeBankGet;
+export const useCoverageReport = useCoverageReportApiV1OperacionalReportsCoverageGet;
+export const useHoursReport = useHoursReportApiV1OperacionalReportsHoursGet;
+export const useCostsReport = useCostsReportApiV1OperacionalReportsCostsGet;
 
 // Re-export types
 export type {
-  OperationalReportResponse,
-  AttendanceReportResponse,
-  OccurrencesReportResponse,
-  PerformanceReportResponse,
-  TimeBankReportResponse,
+  CoverageReportResponse,
+  HoursReportResponse,
+  CostsReportResponse,
+  CoverageReportApiV1OperacionalReportsCoverageGetParams,
+  HoursReportApiV1OperacionalReportsHoursGetParams,
+  CostsReportApiV1OperacionalReportsCostsGetParams,
 } from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

@@ -171,6 +171,12 @@ export {
   useLeadsStats
 } from './useLeads';
 
+/**
+ * CRM Consolidado (Orval)
+ * Oportunidades, Propostas, Contratos, Comissoes, Dashboard
+ */
+export * from './crm';
+
 // ============================================================================
 // DASHBOARD E ANALYTICS
 // ============================================================================

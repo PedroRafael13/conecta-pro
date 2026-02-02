@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,7 +76,10 @@ import {
   DOCUMENT_STATUS,
   getFileIcon,
 } from '@/types/generated/ged/conectaPROMóduloGED.schemas';
-import { customInstance } from '@/lib/api-client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useDocuments, useUploadDocument, useDeleteDocument, downloadDocumentFile } from '@/hooks/ged/useGedDocuments';
+import { useFolders } from '@/hooks/ged/useGedFolders';
+import { getViewUrlApiV1GedDocumentsDocumentIdViewUrlGet } from '@/types/generated/ged/ged-documentos/ged-documentos';
 
 interface UploadFile {
   file: File;
@@ -88,10 +91,8 @@ interface UploadFile {
 export default function ArquivosPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({
     folder_id: 'all',
@@ -100,7 +101,6 @@ export default function ArquivosPage() {
     status: 'all',
   });
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
   // Upload state
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -114,53 +114,34 @@ export default function ArquivosPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
+  // Query: folders para filtro
+  const { data: foldersData } = useFolders({ page_size: 100 });
+  const folders: Folder[] = (foldersData as any)?.items || [];
 
-      // Carregar pastas para o filtro
-      const foldersResponse = await customInstance<{ items: Folder[] }>({
-        url: '/api/v1/ged/folders/',
-        method: 'GET',
-        params: { page_size: 100 },
-      });
-      setFolders(foldersResponse.items);
+  // Query: documentos
+  const documentsParams: Record<string, any> = {
+    page,
+    page_size: 20,
+  };
+  if (filters.folder_id && filters.folder_id !== 'all') documentsParams.folder_id = filters.folder_id;
+  if (filters.document_type && filters.document_type !== 'all') documentsParams.document_type = filters.document_type;
+  if (filters.category && filters.category !== 'all') documentsParams.category = filters.category;
+  if (filters.status && filters.status !== 'all') documentsParams.status = filters.status;
+  if (search) documentsParams.search = search;
 
-      // Carregar documentos
-      const params: Record<string, string | number> = {
-        page,
-        page_size: 20,
-      };
-      if (filters.folder_id && filters.folder_id !== 'all') params.folder_id = filters.folder_id;
-      if (filters.document_type && filters.document_type !== 'all') params.document_type = filters.document_type;
-      if (filters.category && filters.category !== 'all') params.category = filters.category;
-      if (filters.status && filters.status !== 'all') params.status = filters.status;
-      if (search) params.search = search;
+  const { data: documentsData, isLoading: loading } = useDocuments(documentsParams);
+  const documents: Document[] = (documentsData as any)?.items || [];
+  const totalPages = (documentsData as any)?.pages || 1;
 
-      const response = await customInstance<{ items: Document[]; pages: number }>({
-        url: '/api/v1/ged/documents/',
-        method: 'GET',
-        params,
-      });
-      setDocuments(response.items);
-      setTotalPages(response.pages);
-    } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao carregar',
-        description: 'Não foi possível carregar os documentos.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [page, filters, search, toast]);
+  // Mutations
+  const uploadMutation = useUploadDocument();
+  const deleteMutation = useDeleteDocument();
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const invalidateDocuments = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/v1/ged/documents/'] });
+  };
 
-  // Ícone do arquivo
+  // Icone do arquivo
   const FileTypeIcon = ({ extension }: { extension: string }) => {
     const iconName = getFileIcon(extension);
     const icons: Record<string, typeof File> = {
@@ -250,29 +231,24 @@ export default function ArquivosPage() {
       ));
 
       try {
-        // Simular progresso (em produção seria via XMLHttpRequest com upload progress)
-        for (let progress = 0; progress <= 100; progress += 10) {
+        // Simular progresso
+        for (let progress = 0; progress <= 90; progress += 10) {
           await new Promise(resolve => setTimeout(resolve, 100));
           setUploadFiles(prev => prev.map((f, idx) =>
             idx === i ? { ...f, progress } : f
           ));
         }
 
-        // Criar FormData para upload
-        const formData = new FormData();
-        formData.append('file', uploadFile.file);
-        formData.append('title', uploadFile.file.name.split('.')[0]);
-        formData.append('document_type', selectedDocType);
-        formData.append('category', selectedCategory);
-        if (selectedFolderId) {
-          formData.append('folder_id', selectedFolderId);
-        }
-
-        await customInstance({
-          url: '/api/v1/ged/documents/upload',
-          method: 'POST',
-          data: formData,
-          headers: { 'Content-Type': 'multipart/form-data' },
+        await uploadMutation.mutateAsync({
+          data: {
+            file: uploadFile.file,
+            title: uploadFile.file.name.split('.')[0],
+            folder_id: selectedFolderId || '',
+            document_type: selectedDocType,
+            category: selectedCategory,
+            confidentiality: 'interno',
+            description: null,
+          } as any,
         });
 
         setUploadFiles(prev => prev.map((f, idx) =>
@@ -295,7 +271,7 @@ export default function ArquivosPage() {
         title: 'Upload concluído',
         description: `${successCount} arquivo(s) enviado(s) com sucesso.`,
       });
-      loadData();
+      invalidateDocuments();
     }
 
     if (errorCount > 0) {
@@ -315,14 +291,11 @@ export default function ArquivosPage() {
     setSelectedCategory('outros');
   };
 
-  // Ações do documento
+  // Acoes do documento
   const handleView = async (doc: Document) => {
     try {
-      const viewData = await customInstance<{ url: string }>({
-        url: `/api/v1/ged/documents/${doc.id}/view-url`,
-        method: 'GET',
-      });
-      window.open(viewData.url, '_blank');
+      const viewData = await getViewUrlApiV1GedDocumentsDocumentIdViewUrlGet(doc.id);
+      window.open((viewData as any).url, '_blank');
     } catch (error) {
       console.error('Erro ao visualizar:', error);
       toast({
@@ -335,20 +308,7 @@ export default function ArquivosPage() {
 
   const handleDownload = async (doc: Document) => {
     try {
-      const blob = await customInstance<Blob>({
-        url: `/api/v1/ged/documents/${doc.id}/download`,
-        method: 'GET',
-        responseType: 'blob',
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${doc.file_name}.${doc.file_extension}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
+      await downloadDocumentFile(doc.id, `${doc.file_name}.${doc.file_extension}`);
       toast({
         variant: 'success',
         title: 'Download iniciado',
@@ -367,9 +327,8 @@ export default function ArquivosPage() {
   const handleDelete = async () => {
     if (!selectedDocument) return;
     try {
-      await customInstance({
-        url: `/api/v1/ged/documents/${selectedDocument.id}`,
-        method: 'DELETE',
+      await deleteMutation.mutateAsync({
+        documentId: selectedDocument.id,
       });
       setDeleteDialogOpen(false);
       toast({
@@ -378,7 +337,7 @@ export default function ArquivosPage() {
         description: `O documento "${selectedDocument.title}" foi excluído.`,
       });
       setSelectedDocument(null);
-      loadData();
+      invalidateDocuments();
     } catch (error) {
       console.error('Erro ao excluir:', error);
       toast({
@@ -770,7 +729,7 @@ export default function ArquivosPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir documento?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir "{selectedDocument?.title}"?
+              Tem certeza que deseja excluir &quot;{selectedDocument?.title}&quot;?
               Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>

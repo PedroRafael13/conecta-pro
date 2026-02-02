@@ -149,16 +149,47 @@ export {
 } from '@/types/generated/financial/financial-bi-dashboard/financial-bi-dashboard';
 
 // =============================================================================
+// BILLING RULES - Regras de Faturamento
+// =============================================================================
+export * from '@/types/generated/financial/financial-billing-rules/financial-billing-rules';
+export {
+  useListBillingRulesApiV1FinancialBillingRulesBillingRulesGet as useBillingRules,
+  useGetBillingRuleApiV1FinancialBillingRulesBillingRulesRuleIdGet as useBillingRule,
+  useGetActiveRulesApiV1FinancialBillingRulesBillingRulesActiveGet as useActiveBillingRules,
+  useGetRulesDueForGenerationApiV1FinancialBillingRulesBillingRulesDueForGenerationGet as useBillingRulesDue,
+  useCreateBillingRuleApiV1FinancialBillingRulesBillingRulesPost as useCreateBillingRule,
+  useUpdateBillingRuleApiV1FinancialBillingRulesBillingRulesRuleIdPut as useUpdateBillingRule,
+  useDeleteBillingRuleApiV1FinancialBillingRulesBillingRulesRuleIdDelete as useDeleteBillingRule,
+  useActivateRuleApiV1FinancialBillingRulesBillingRulesRuleIdActivatePost as useActivateBillingRule,
+  usePauseRuleApiV1FinancialBillingRulesBillingRulesRuleIdPausePost as usePauseBillingRule,
+  useCancelRuleApiV1FinancialBillingRulesBillingRulesRuleIdCancelPost as useCancelBillingRule,
+  useGenerateChargesApiV1FinancialBillingRulesBillingRulesRuleIdGeneratePost as useGenerateCharges,
+  useProcessAllRulesApiV1FinancialBillingRulesBillingRulesProcessAllPost as useProcessAllBillingRules,
+  getListBillingRulesApiV1FinancialBillingRulesBillingRulesGetQueryKey as billingRuleKeys,
+} from '@/types/generated/financial/financial-billing-rules/financial-billing-rules';
+
+// =============================================================================
 // COSTING - Custeio ABC
 // =============================================================================
 export * from '@/types/generated/financial/financial-abc-costing/financial-abc-costing';
 export {
-  useListCostDriversApiV1FinancialAbcCostingCostDriversGet as useCostDrivers,
-  useListCostActivitiesApiV1FinancialAbcCostingCostActivitiesGet as useCostActivities,
-  useListCostPoolsApiV1FinancialAbcCostingCostPoolsGet as useCostPools,
-  useListCostObjectsApiV1FinancialAbcCostingCostObjectsGet as useCostObjects,
-  useGetDashboardApiV1FinancialAbcCostingDashboardGet as useCostingDashboard,
-  useGetCostAnalysisApiV1FinancialAbcCostingCostAnalysisGet as useCostAnalysis,
-  useCreateCostDriverApiV1FinancialAbcCostingCostDriversPost as useCreateCostDriver,
-  getListCostDriversApiV1FinancialAbcCostingCostDriversGetQueryKey as costingKeys,
+  useListDriversApiV1FinancialCostingCostingDriversGet as useCostDrivers,
+  useListActivitiesApiV1FinancialCostingCostingActivitiesGet as useCostActivities,
+  useListPoolsApiV1FinancialCostingCostingPoolsGet as useCostPools,
+  useListObjectsApiV1FinancialCostingCostingObjectsGet as useCostObjects,
+  useGetDashboardApiV1FinancialCostingCostingDashboardGet as useCostingDashboard,
+  useListAnalysesApiV1FinancialCostingCostingAnalysesGet as useCostAnalyses,
+  useCreateDriverApiV1FinancialCostingCostingDriversPost as useCreateCostDriver,
+  useCreateActivityApiV1FinancialCostingCostingActivitiesPost as useCreateCostActivity,
+  useCreatePoolApiV1FinancialCostingCostingPoolsPost as useCreateCostPool,
+  useCreateObjectApiV1FinancialCostingCostingObjectsPost as useCreateCostObject,
+  useDeleteDriverApiV1FinancialCostingCostingDriversDriverIdDelete as useDeleteCostDriver,
+  useDeleteActivityApiV1FinancialCostingCostingActivitiesActivityIdDelete as useDeleteCostActivity,
+  useDeletePoolApiV1FinancialCostingCostingPoolsPoolIdDelete as useDeleteCostPool,
+  useDeleteObjectApiV1FinancialCostingCostingObjectsObjectIdDelete as useDeleteCostObject,
+  useUpdateDriverApiV1FinancialCostingCostingDriversDriverIdPatch as useUpdateCostDriver,
+  useUpdateActivityApiV1FinancialCostingCostingActivitiesActivityIdPatch as useUpdateCostActivity,
+  useUpdatePoolApiV1FinancialCostingCostingPoolsPoolIdPatch as useUpdateCostPool,
+  useUpdateObjectApiV1FinancialCostingCostingObjectsObjectIdPatch as useUpdateCostObject,
+  getListDriversApiV1FinancialCostingCostingDriversGetQueryKey as costingKeys,
 } from '@/types/generated/financial/financial-abc-costing/financial-abc-costing';

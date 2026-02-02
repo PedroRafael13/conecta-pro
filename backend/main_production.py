@@ -631,6 +631,23 @@ except Exception as e:
     logger.warning(f"Modulo Bidding: {e}")
 
 
+# RETENTION - Retencao de Talentos
+try:
+    from modules.retention import (
+        onboarding_router,
+        profile_router,
+        climate_router,
+        turnover_router,
+    )
+    api_router.include_router(onboarding_router, prefix="/retention/onboarding", tags=["Retention - Onboarding"])
+    api_router.include_router(profile_router, prefix="/retention/profile", tags=["Retention - Operational Profile"])
+    api_router.include_router(climate_router, prefix="/retention/climate", tags=["Retention - Climate Survey"])
+    api_router.include_router(turnover_router, prefix="/retention/turnover", tags=["Retention - Turnover Prediction"])
+    logger.info("Modulo Retention: OK")
+except Exception as e:
+    logger.warning(f"Modulo Retention: {e}")
+
+
 # Incluir router principal
 app.include_router(api_router)
 

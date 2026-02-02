@@ -3,7 +3,7 @@
  * Integração com estoque para requisição e baixa de materiais
  */
 
-import * as EstoqueAPI from '@/api/campo/generated/estoque/estoque';
+import * as EstoqueAPI from '@/api/campo/generated/campo-estoque/campo-estoque';
 import type {
   CriarRequisicaoRequest,
   AprovarRequisicaoRequest,
