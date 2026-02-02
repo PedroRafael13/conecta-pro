@@ -25,6 +25,7 @@ Uso:
 """
 
 import argparse
+import asyncio
 import json
 import logging
 import os
@@ -40,6 +41,14 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import Optional, List, Tuple, Callable, Dict, Any
+
+# OpenClaw parallel execution
+try:
+    from checks.parallel_executor import ParallelExecutor
+    PARALLEL_AVAILABLE = True
+except ImportError:
+    PARALLEL_AVAILABLE = False
+    logging.warning("ParallelExecutor not available, falling back to sequential execution")
 
 
 # ============================================================================
@@ -1197,6 +1206,9 @@ class OpenClawRunner:
         self._save_report(report)
         self._print_summary(report)
 
+        # Salvar última referência para notificações
+        self.last_report = report
+
         # Notificacoes
         self._send_notifications(report)
 
@@ -1402,17 +1414,43 @@ class OpenClawRunner:
         return "\n".join(lines)
 
     def _send_discord(self, webhook_url: str, message: str):
-        """Envia notificacao via Discord webhook."""
+        """Envia notificacao via Discord webhook com embed rico."""
         try:
-            payload = json.dumps({"content": message}).encode("utf-8")
-            req = urllib.request.Request(
-                webhook_url,
-                data=payload,
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            urllib.request.urlopen(req, timeout=10)
-            self.logger.debug("Notificacao Discord enviada com sucesso")
+            # Importar NotificationService
+            import sys
+            sys.path.insert(0, str(PROJECT_ROOT / "backend"))
+            from modules.ai.bartolo.services.notification_service import NotificationService
+
+            # Converter CycleReport para dict
+            report_dict = asdict(self.last_report) if hasattr(self, 'last_report') else {}
+
+            # Se não tem relatório salvo, usa mensagem simples
+            if not report_dict:
+                payload = json.dumps({"content": message}).encode("utf-8")
+                req = urllib.request.Request(
+                    webhook_url,
+                    data=payload,
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                urllib.request.urlopen(req, timeout=10)
+                return
+
+            # Usa NotificationService para embed rico
+            notifier = NotificationService(discord_webhook_url=webhook_url)
+
+            # Executar código async de forma síncrona
+            import asyncio
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            success = loop.run_until_complete(notifier.send_discord(report_dict))
+            loop.close()
+
+            if success:
+                self.logger.info("Notificacao Discord enviada com sucesso (embed rico)")
+            else:
+                self.logger.warning("Falha ao enviar notificacao Discord")
+
         except Exception as e:
             self.logger.warning(f"Erro ao enviar notificacao Discord: {e}")
 
@@ -1570,6 +1608,11 @@ Exemplos:
         "--version",
         action="version",
         version=f"OpenClaw Runner v{VERSION}",
+    )
+    parser.add_argument(
+        "--parallel",
+        action="store_true",
+        help="Executar checks em paralelo (3x mais rapido)",
     )
 
     args = parser.parse_args()
