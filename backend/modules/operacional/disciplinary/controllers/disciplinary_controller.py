@@ -14,78 +14,72 @@ Quality Score Target: 99+/100
 """
 
 from datetime import date
-from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
+from core.cache import cache_response
 from core.database import get_db
 from core.logging import logger
-
 from modules.operacional.disciplinary.models import (
     DisciplinaryActionStatus,
     DisciplinaryActionType,
     ReasonCategory,
 )
 from modules.operacional.disciplinary.schemas import (
+    ApproveRequest,
     # DisciplinaryAction
     DisciplinaryActionCreate,
-    DisciplinaryActionUpdate,
-    DisciplinaryActionResponse,
     DisciplinaryActionDetailResponse,
     DisciplinaryActionListResponse,
+    DisciplinaryActionResponse,
+    DisciplinaryActionUpdate,
     DisciplinaryFilter,
     DisciplinaryStats,
-    # Workflow
-    SubmitForApprovalRequest,
-    ApproveRequest,
-    RejectRequest,
-    SignRequest,
-    RefuseSignRequest,
     GenerateDocumentRequest,
     GenerateDocumentResponse,
-    # Template
-    TemplateCreate,
-    TemplateUpdate,
-    TemplateResponse,
-    TemplateListResponse,
-    # Signature
-    SignatureResponse,
-    SignatureVerifyRequest,
-    SignatureVerifyResponse,
-    # AI Advisor
-    RecommendationRequest,
-    RecommendationResponse,
     LegalComplianceRequest,
     LegalComplianceResponse,
     ProportionalityCheckRequest,
     ProportionalityCheckResponse,
+    # AI Advisor
+    RecommendationRequest,
+    RecommendationResponse,
+    RefuseSignRequest,
+    RejectRequest,
+    # Signature
+    SignatureResponse,
+    SignatureVerifyRequest,
+    SignatureVerifyResponse,
+    SignRequest,
+    # Workflow
+    SubmitForApprovalRequest,
+    # Template
+    TemplateCreate,
+    TemplateListResponse,
+    TemplateResponse,
+    TemplateUpdate,
 )
 from modules.operacional.disciplinary.services import (
-    DisciplinaryService,
-    TemplateService,
-    SignatureService,
-    DisciplinaryAdvisor,
-    get_disciplinary_service,
-    get_template_service,
-    get_signature_service,
     get_disciplinary_advisor,
+    get_disciplinary_service,
+    get_signature_service,
+    get_template_service,
 )
 from modules.operacional.disciplinary.services.disciplinary_service import (
+    DisciplinaryNotFoundError,
     DisciplinaryServiceError,
     DisciplinaryValidationError,
     DisciplinaryWorkflowError,
-    DisciplinaryNotFoundError,
-)
-from modules.operacional.disciplinary.services.template_service import (
-    TemplateNotFoundError,
 )
 from modules.operacional.disciplinary.services.signature_service import (
     SignatureNotFoundError,
     SignatureValidationError,
 )
-
+from modules.operacional.disciplinary.services.template_service import (
+    TemplateNotFoundError,
+)
 
 router = APIRouter(tags=["Operacional - Medidas Administrativas"])
 
@@ -97,7 +91,7 @@ def get_tenant_id(user: CurrentActiveUser) -> str:
     Raises:
         HTTPException: Se usuario nao possui tenant_id valido
     """
-    tenant_id = getattr(user, 'tenant_id', None) or getattr(user, 'condominio_id', None)
+    tenant_id = getattr(user, "tenant_id", None) or getattr(user, "condominio_id", None)
 
     if not tenant_id:
         logger.error(
@@ -141,12 +135,12 @@ async def create_disciplinary_action(
         )
 
         logger.info(
-            f"Medida disciplinar criada: {action.code}",
-            extra={
-                "action_id": action.id,
-                "user_id": current_user.id,
-                "tenant_id": get_tenant_id(current_user),
-            },
+            "Medida disciplinar criada com sucesso",
+            action="create_disciplinary_action",
+            action_id=str(action.id),
+            action_code=action.code,
+            user_id=str(current_user.id),
+            tenant_id=get_tenant_id(current_user),
         )
 
         return DisciplinaryActionResponse.model_validate(action)
@@ -174,15 +168,15 @@ async def list_disciplinary_actions(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Pagina atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por pagina"),
-    action_type: Optional[DisciplinaryActionType] = None,
-    status_filter: Optional[DisciplinaryActionStatus] = Query(None, alias="status"),
-    reason_category: Optional[ReasonCategory] = None,
-    employee_id: Optional[str] = None,
-    post_id: Optional[str] = None,
-    client_id: Optional[str] = None,
-    incident_date_from: Optional[date] = None,
-    incident_date_to: Optional[date] = None,
-    search: Optional[str] = None,
+    action_type: DisciplinaryActionType | None = None,
+    status_filter: DisciplinaryActionStatus | None = Query(None, alias="status"),
+    reason_category: ReasonCategory | None = None,
+    employee_id: str | None = None,
+    post_id: str | None = None,
+    client_id: str | None = None,
+    incident_date_from: date | None = None,
+    incident_date_to: date | None = None,
+    search: str | None = None,
 ) -> DisciplinaryActionListResponse:
     """Lista medidas disciplinares com filtros."""
     service = get_disciplinary_service(db)
@@ -213,25 +207,30 @@ async def list_disciplinary_actions(
     summary="Estatisticas de medidas",
     description="Obtem estatisticas de medidas disciplinares",
 )
+@cache_response(ttl=240, prefix="api:disciplinary")  # 4 minutos
 async def get_disciplinary_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> DisciplinaryStats:
-    """Obtem estatisticas de medidas disciplinares."""
+    """
+    Obtem estatisticas de medidas disciplinares.
+
+    Cache: 4 minutos
+    """
     service = get_disciplinary_service(db)
     return await service.get_stats(get_tenant_id(current_user))
 
 
 @router.get(
     "/medidas-administrativas/pendentes",
-    response_model=List[DisciplinaryActionResponse],
+    response_model=list[DisciplinaryActionResponse],
     summary="Listar pendentes de aprovacao",
     description="Lista medidas pendentes de aprovacao",
 )
 async def get_pending_approval(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> List[DisciplinaryActionResponse]:
+) -> list[DisciplinaryActionResponse]:
     """Lista medidas pendentes de aprovacao."""
     service = get_disciplinary_service(db)
     actions = await service.get_pending_approval(get_tenant_id(current_user))
@@ -240,7 +239,7 @@ async def get_pending_approval(
 
 @router.get(
     "/medidas-administrativas/funcionario/{employee_id}",
-    response_model=List[DisciplinaryActionResponse],
+    response_model=list[DisciplinaryActionResponse],
     summary="Historico do funcionario",
     description="Lista historico disciplinar de um funcionario",
 )
@@ -248,7 +247,7 @@ async def get_employee_history(
     employee_id: str,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> List[DisciplinaryActionResponse]:
+) -> list[DisciplinaryActionResponse]:
     """Lista historico disciplinar de um funcionario."""
     service = get_disciplinary_service(db)
     actions = await service.get_employee_history(employee_id, get_tenant_id(current_user))
@@ -301,8 +300,11 @@ async def update_disciplinary_action(
         )
 
         logger.info(
-            f"Medida disciplinar atualizada: {action.code}",
-            extra={"action_id": action_id, "user_id": current_user.id},
+            "Medida disciplinar atualizada com sucesso",
+            action="update_disciplinary_action",
+            action_id=str(action_id),
+            action_code=action.code,
+            user_id=str(current_user.id),
         )
 
         return DisciplinaryActionResponse.model_validate(action)
@@ -336,8 +338,10 @@ async def delete_disciplinary_action(
         await service.delete(action_id, get_tenant_id(current_user))
 
         logger.info(
-            f"Medida disciplinar removida: {action_id}",
-            extra={"user_id": current_user.id},
+            "Medida disciplinar removida com sucesso",
+            action="delete_disciplinary_action",
+            action_id=str(action_id),
+            user_id=str(current_user.id),
         )
 
     except DisciplinaryNotFoundError:
@@ -538,7 +542,7 @@ async def generate_document(
     current_user: CurrentActiveUser,
     action_id: str = Query(..., description="ID da medida"),
     db: AsyncSession = Depends(get_db),
-    request: Optional[GenerateDocumentRequest] = None,
+    request: GenerateDocumentRequest | None = None,
 ) -> GenerateDocumentResponse:
     """Gera documento a partir de template."""
     try:
@@ -575,7 +579,7 @@ async def generate_document(
 async def list_templates(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    action_type: Optional[DisciplinaryActionType] = None,
+    action_type: DisciplinaryActionType | None = None,
 ) -> TemplateListResponse:
     """Lista templates de documentos."""
     service = get_template_service(db)
@@ -737,7 +741,7 @@ async def get_signature(
 
 @router.get(
     "/assinaturas/documento/{document_id}",
-    response_model=List[SignatureResponse],
+    response_model=list[SignatureResponse],
     summary="Listar assinaturas do documento",
     description="Lista todas as assinaturas de um documento",
 )
@@ -745,7 +749,7 @@ async def get_document_signatures(
     document_id: str,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-) -> List[SignatureResponse]:
+) -> list[SignatureResponse]:
     """Lista assinaturas de um documento."""
     service = get_signature_service(db)
     signatures = await service.get_by_document(document_id, get_tenant_id(current_user))
