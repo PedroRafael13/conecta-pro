@@ -32,6 +32,24 @@ class ShiftCreate(ShiftBase):
     is_overtime: bool = Field(default=False, description="É hora extra")
     planned_hours: float = Field(default=0.0, ge=0, description="Horas planejadas")
 
+    @model_validator(mode='after')
+    def validate_time_range(self):
+        """Valida que horário de início é antes do fim."""
+        if self.planned_start_time and self.planned_end_time:
+            # Para turnos que cruzam meia-noite (ex: 22h às 6h), permitir
+            # Mas validar se são horários diferentes
+            if self.planned_start_time == self.planned_end_time:
+                raise ValueError("Horário de início e fim não podem ser iguais")
+
+            # Se não é turno noturno, validar ordem normal
+            if not self.is_night_shift and self.planned_start_time >= self.planned_end_time:
+                raise ValueError(
+                    f"Horário de início ({self.planned_start_time}) deve ser anterior ao horário de fim ({self.planned_end_time}). "
+                    "Para turnos noturnos que cruzam meia-noite, marque 'is_night_shift=true'"
+                )
+
+        return self
+
 
 class ShiftUpdate(BaseModel):
     """Schema para atualização parcial de Shift."""
@@ -51,6 +69,30 @@ class ShiftUpdate(BaseModel):
     overtime_hours: Optional[float] = Field(None, ge=0)
     notes: Optional[str] = None
     is_active: Optional[bool] = None
+    is_night_shift: Optional[bool] = None
+
+    @model_validator(mode='after')
+    def validate_time_range(self):
+        """Valida horários planejados e reais."""
+        # Validar horários planejados
+        if self.planned_start_time and self.planned_end_time:
+            if self.planned_start_time == self.planned_end_time:
+                raise ValueError("Horário de início e fim não podem ser iguais")
+
+            if not self.is_night_shift and self.planned_start_time >= self.planned_end_time:
+                raise ValueError(
+                    "Horário planejado de início deve ser anterior ao fim. "
+                    "Para turnos noturnos, marque 'is_night_shift=true'"
+                )
+
+        # Validar horários reais
+        if self.actual_start_time and self.actual_end_time:
+            if self.actual_start_time >= self.actual_end_time:
+                raise ValueError(
+                    f"Horário real de início ({self.actual_start_time}) deve ser anterior ao fim ({self.actual_end_time})"
+                )
+
+        return self
 
 
 class ShiftResponse(BaseModel):

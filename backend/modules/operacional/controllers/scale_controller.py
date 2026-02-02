@@ -21,6 +21,7 @@ from modules.operacional.schemas.scale import (
     ScaleGenerateRequest,
     ScaleListResponse,
     ScalePublishRequest,
+    ScaleRejectRequest,
     ScaleResponse,
     ScaleStats,
     ScaleUpdate,
@@ -141,6 +142,7 @@ async def list_scales(
     month: Optional[int] = Query(None, ge=1, le=12),
     year: Optional[int] = Query(None, ge=2020, le=2100),
     is_current_month: Optional[bool] = None,
+    created_by: Optional[str] = Query(None, description="Filtrar por criador"),
 ) -> ScaleListResponse:
     """
     Lista escalas com filtros e paginação.
@@ -154,6 +156,7 @@ async def list_scales(
         month=month,
         year=year,
         is_current_month=is_current_month,
+        created_by=created_by,
     )
 
     scales, total = await repo.list(filters=filters, page=page, page_size=page_size)
@@ -297,6 +300,42 @@ async def approve_scale(
         )
 
     logger.info(f"Scale aprovada por {current_user.email}: {scale.id}")
+    return ScaleResponse.model_validate(scale)
+
+
+@router.post(
+    "/{scale_id}/reject",
+    response_model=ScaleResponse,
+    dependencies=[require_operacional_permission(Permission.SCALES_APPROVE)],
+)
+async def reject_scale(
+    scale_id: str,
+    data: ScaleRejectRequest,
+    current_user: CurrentActiveUser,
+    db: AsyncSession = Depends(get_db),
+) -> ScaleResponse:
+    """
+    Rejeita uma escala em aprovação.
+
+    A escala volta para status DRAFT para correções.
+    """
+    repo = ScaleRepository(db)
+    scale = await repo.reject(scale_id, current_user.id, data.reason, data.notes)
+
+    if not scale:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Escala não encontrada ou não pode ser rejeitada",
+        )
+
+    logger.info(
+        "Scale rejeitada",
+        action="reject_scale",
+        scale_id=scale_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        reason=data.reason,
+    )
     return ScaleResponse.model_validate(scale)
 
 

@@ -252,6 +252,9 @@ class ScaleRepository:
                 Scale.year == today.year,
             )
 
+        if filters.created_by:
+            query = query.where(Scale.created_by == filters.created_by)
+
         return query
 
     async def update(self, scale_id: str, data: ScaleUpdate) -> Optional[Scale]:
@@ -323,6 +326,56 @@ class ScaleRepository:
         await self.db.refresh(scale)
 
         logger.info(f"Scale aprovada: {scale.id}")
+        return scale
+
+    async def reject(
+        self,
+        scale_id: str,
+        rejected_by: str,
+        reason: str,
+        notes: Optional[str] = None
+    ) -> Optional[Scale]:
+        """
+        Rejeita uma escala em aprovação.
+
+        Args:
+            scale_id: ID da escala
+            rejected_by: ID do usuário que rejeitou
+            reason: Motivo da rejeição
+            notes: Observações adicionais
+
+        Returns:
+            Scale rejeitada ou None
+        """
+        scale = await self.get_by_id(scale_id)
+        if not scale:
+            return None
+
+        if scale.status != ScaleStatus.PENDING_APPROVAL.value:
+            logger.warning(f"Escala não está pendente de aprovação: {scale_id}")
+            return None
+
+        # Volta para DRAFT para correções
+        scale.status = ScaleStatus.DRAFT.value
+
+        # Adiciona nota de rejeição
+        rejection_note = f"[Rejeitada por {rejected_by}] {reason}"
+        if notes:
+            rejection_note += f"\n{notes}"
+
+        scale.notes = f"{scale.notes or ''}\n{rejection_note}".strip()
+        scale.updated_at = datetime.utcnow()
+
+        await self.db.commit()
+        await self.db.refresh(scale)
+
+        logger.info(
+            "Scale rejeitada",
+            action="reject_scale",
+            scale_id=scale_id,
+            rejected_by=rejected_by,
+            reason=reason,
+        )
         return scale
 
     async def publish(self, scale_id: str, published_by: str) -> Optional[Scale]:

@@ -123,6 +123,7 @@ class ScaleFilter(BaseModel):
     month: Optional[int] = Field(None, ge=1, le=12)
     year: Optional[int] = Field(None, ge=2020, le=2100)
     is_current_month: Optional[bool] = None
+    created_by: Optional[str] = Field(None, description="Filtrar por criador")
 
 
 class ScaleGenerateRequest(BaseModel):
@@ -159,6 +160,13 @@ class ScaleApproveRequest(BaseModel):
     """Schema para aprovação de escala."""
 
     notes: Optional[str] = Field(None, description="Observações da aprovação")
+
+
+class ScaleRejectRequest(BaseModel):
+    """Schema para rejeição de escala."""
+
+    reason: str = Field(..., min_length=10, max_length=500, description="Motivo da rejeição")
+    notes: Optional[str] = Field(None, description="Observações adicionais")
 
 
 class ScalePublishRequest(BaseModel):
