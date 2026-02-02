@@ -87,7 +87,7 @@ export default function FiscalPage() {
   const handleAuthorize = async (nfe: any) => {
     try {
       await authorizeNFe.mutateAsync({ nfeId: nfe.id });
-      refetchNFes();
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao autorizar NF-e:', error);
     }
@@ -96,9 +96,8 @@ export default function FiscalPage() {
   const handleFormSubmit = async (data: any) => {
     try {
       await createNFe.mutateAsync({ data });
-      if (activeTab === 'nfe') refetchNFes();
-      else refetchNFSes();
       setShowFormModal(false);
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao criar nota fiscal:', error);
     }

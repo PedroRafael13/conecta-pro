@@ -56,8 +56,7 @@ export default function FluxoCaixaPage() {
     try {
       await createEntry.mutateAsync({ data });
       setShowFormModal(false);
-      refetch();
-      refetchDashboard();
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
       console.error('Erro ao criar lancamento:', err);
       throw err;

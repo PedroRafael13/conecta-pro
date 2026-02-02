@@ -89,8 +89,8 @@ export default function ContabilidadePage() {
   const handleFormSubmit = async (data: any) => {
     try {
       await createEntry.mutateAsync({ data });
-      refetchEntries();
       setShowFormModal(false);
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao criar lancamento:', error);
     }

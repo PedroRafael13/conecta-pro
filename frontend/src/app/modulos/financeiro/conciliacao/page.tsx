@@ -63,7 +63,7 @@ export default function ConciliacaoPage() {
     try {
       await createBankAccount.mutateAsync({ data });
       setShowAccountModal(false);
-      refetchAccounts();
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
       console.error('Erro ao criar conta bancaria:', err);
       throw err;
@@ -82,7 +82,7 @@ export default function ConciliacaoPage() {
         const formData = new FormData();
         formData.append('file', file);
         await importOFX.mutateAsync({ data: formData as any });
-        refetchTransactions();
+        // refetch() removido - mutation já invalida queries automaticamente
       } catch (err) {
         console.error('Erro ao importar OFX:', err);
       }

@@ -57,9 +57,8 @@ export default function EstoquePage() {
   const handleFormSubmit = async (data: any) => {
     try {
       await createMovement.mutateAsync({ data });
-      refetchItems();
-      refetchBalance();
       setShowFormModal(false);
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao registrar movimentacao:', error);
     }

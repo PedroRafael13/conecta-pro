@@ -119,12 +119,11 @@ export default function ComprasPage() {
     try {
       if (formType === 'requisition') {
         await createRequisition.mutateAsync({ data });
-        refetchRequisitions();
       } else {
         await createOrder.mutateAsync({ data });
-        refetchOrders();
       }
       setShowFormModal(false);
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao salvar:', error);
     }

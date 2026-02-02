@@ -92,8 +92,7 @@ export default function FornecedoresPage() {
       await deleteSupplierMutation.mutateAsync({ supplierId: selectedSupplier.id });
       setShowDeleteModal(false);
       setSelectedSupplier(null);
-      refetch();
-      refetchStats();
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
       console.error('Erro ao excluir fornecedor:', err);
     } finally {
@@ -104,8 +103,7 @@ export default function FornecedoresPage() {
   const handleBlock = async (supplier: any) => {
     try {
       await blockSupplier.mutateAsync({ supplierId: supplier.id });
-      refetch();
-      refetchStats();
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
       console.error('Erro ao bloquear fornecedor:', err);
     }
@@ -114,8 +112,7 @@ export default function FornecedoresPage() {
   const handleUnblock = async (supplier: any) => {
     try {
       await unblockSupplier.mutateAsync({ supplierId: supplier.id });
-      refetch();
-      refetchStats();
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
       console.error('Erro ao desbloquear fornecedor:', err);
     }
@@ -133,8 +130,7 @@ export default function FornecedoresPage() {
       }
       setShowFormModal(false);
       setSelectedSupplier(null);
-      refetch();
-      refetchStats();
+      // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
       console.error('Erro ao salvar fornecedor:', err);
       throw err;
