@@ -212,6 +212,29 @@ export class BartoloService {
   }
 
   /**
+   * Detecta o módulo atual baseado no pathname
+   */
+  static detectModule(pathname: string): string {
+    if (!pathname || pathname === '/') return 'dashboard';
+
+    // Remove trailing slash e pega o primeiro segmento após /modulos
+    const segments = pathname.split('/').filter(Boolean);
+
+    // Se estiver em /modulos/[nome-modulo]
+    if (segments[0] === 'modulos' && segments[1]) {
+      return segments[1];
+    }
+
+    // Se estiver em /dashboard
+    if (segments[0] === 'dashboard') {
+      return 'dashboard';
+    }
+
+    // Default
+    return 'default';
+  }
+
+  /**
    * Sugestões contextuais por módulo
    */
   static getSuggestionsForModule(module: string): string[] {
