@@ -3,12 +3,13 @@ Controller (endpoints) para Occurrence.
 """
 
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
+from core.cache import cache_response
+from core.cache.utils import invalidate_on_create, invalidate_on_delete, invalidate_on_update
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.occurrences.models import (
@@ -17,9 +18,9 @@ from modules.operacional.occurrences.models import (
     OccurrenceStatus,
     OccurrenceType,
 )
-from modules.operacional.permissions import Permission, require_operacional_permission
 from modules.operacional.occurrences.repositories import OccurrenceRepository
 from modules.operacional.occurrences.schemas import (
+    AttachmentSchema,
     OccurrenceCreate,
     OccurrenceFilter,
     OccurrenceListResponse,
@@ -27,8 +28,8 @@ from modules.operacional.occurrences.schemas import (
     OccurrenceResponse,
     OccurrenceStats,
     OccurrenceUpdate,
-    AttachmentSchema,
 )
+from modules.operacional.permissions import Permission, require_operacional_permission
 
 router = APIRouter(prefix="/occurrences", tags=["Operations - Occurrences"])
 
@@ -51,11 +52,12 @@ def parse_date_filter(date_str: str | None) -> datetime | None:
 
     try:
         from datetime import datetime
-        return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
-    except (ValueError, AttributeError) as e:
+
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    except (ValueError, AttributeError):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Formato de data inválido: {date_str}. Use formato ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)"
+            detail=f"Formato de data inválido: {date_str}. Use formato ISO (YYYY-MM-DD ou YYYY-MM-DDTHH:MM:SS)",
         )
 
 
@@ -81,6 +83,14 @@ async def create_occurrence(
     repo = OccurrenceRepository(db)
     occurrence = await repo.create(data, inspector_id=current_user.id)
 
+    # Invalidar cache
+    related_entities = []
+    if data.post_id:
+        related_entities.append(("post", data.post_id))
+    if data.employee_id:
+        related_entities.append(("employee", data.employee_id))
+    await invalidate_on_create("occurrence", related_entities if related_entities else None)
+
     logger.info(
         "Occurrence criada com sucesso",
         action="create_occurrence",
@@ -103,17 +113,17 @@ async def list_occurrences(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    occurrence_type: Optional[OccurrenceType] = None,
-    severity: Optional[OccurrenceSeverity] = None,
-    category: Optional[OccurrenceCategory] = None,
-    status_filter: Optional[OccurrenceStatus] = Query(None, alias="status"),
-    employee_id: Optional[str] = None,
-    inspector_id: Optional[str] = None,
-    post_id: Optional[str] = None,
-    patrol_round_id: Optional[str] = None,
-    date_from: Optional[str] = None,
-    date_to: Optional[str] = None,
-    search: Optional[str] = None,
+    occurrence_type: OccurrenceType | None = None,
+    severity: OccurrenceSeverity | None = None,
+    category: OccurrenceCategory | None = None,
+    status_filter: OccurrenceStatus | None = Query(None, alias="status"),
+    employee_id: str | None = None,
+    inspector_id: str | None = None,
+    post_id: str | None = None,
+    patrol_round_id: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    search: str | None = None,
 ) -> OccurrenceListResponse:
     """
     Lista ocorrências com filtros e paginação.
@@ -137,6 +147,29 @@ async def list_occurrences(
     occurrences, total = await repo.list(filters=filters, page=page, page_size=page_size)
     total_pages = (total + page_size - 1) // page_size
 
+    logger.info(
+        "Ocorrências listadas",
+        action="list_occurrences",
+        total=total,
+        page=page,
+        page_size=page_size,
+        filters_applied=any(
+            [
+                occurrence_type,
+                severity,
+                category,
+                status_filter,
+                employee_id,
+                inspector_id,
+                post_id,
+                patrol_round_id,
+                date_from,
+                date_to,
+                search,
+            ]
+        ),
+    )
+
     return OccurrenceListResponse(
         items=[OccurrenceResponse.model_validate(occ) for occ in occurrences],
         total=total,
@@ -151,12 +184,15 @@ async def list_occurrences(
     response_model=OccurrenceStats,
     dependencies=[require_operacional_permission(Permission.OCCURRENCES_VIEW)],
 )
+@cache_response(ttl=180, prefix="api:occurrence")  # 3 minutos
 async def get_occurrence_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> OccurrenceStats:
     """
     Obtém estatísticas de ocorrências.
+
+    Cache: 3 minutos
     """
     repo = OccurrenceRepository(db)
     return await repo.get_stats()
@@ -198,9 +234,15 @@ async def get_occurrence(
     occurrence = await repo.get_by_id(occurrence_id)
 
     if not occurrence:
+        logger.warning(
+            "Tentativa de acessar ocorrência inexistente",
+            action="get_occurrence_not_found",
+            occurrence_id=occurrence_id,
+            user_id=str(current_user.id),
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ocorrência não encontrada",
+            detail=f"Ocorrência {occurrence_id} não encontrada. Verifique se o ID está correto.",
         )
 
     return OccurrenceResponse.model_validate(occurrence)
@@ -228,8 +270,16 @@ async def update_occurrence(
     if not occurrence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ocorrência não encontrada",
+            detail=f"Não foi possível atualizar. Ocorrência {occurrence_id} não encontrada.",
         )
+
+    # Invalidar cache
+    related_entities = []
+    if occurrence.post_id:
+        related_entities.append(("post", occurrence.post_id))
+    if occurrence.employee_id:
+        related_entities.append(("employee", occurrence.employee_id))
+    await invalidate_on_update("occurrence", occurrence_id, related_entities if related_entities else None)
 
     logger.info(
         "Occurrence atualizada com sucesso",
@@ -263,7 +313,7 @@ async def resolve_occurrence(
     if not occurrence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ocorrência não encontrada",
+            detail=f"Não foi possível resolver. Ocorrência {occurrence_id} não encontrada ou já resolvida.",
         )
 
     logger.info(
@@ -301,7 +351,7 @@ async def add_attachment(
     if not occurrence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ocorrência não encontrada",
+            detail=f"Não foi possível adicionar anexo. Ocorrência {occurrence_id} não encontrada.",
         )
 
     logger.info(
@@ -330,12 +380,37 @@ async def delete_occurrence(
     A ocorrência não é removida do banco, apenas marcada como inativa.
     """
     repo = OccurrenceRepository(db)
-    deleted = await repo.delete(occurrence_id)
 
-    if not deleted:
+    # Buscar occurrence antes de deletar para invalidar cache relacionado
+    occurrence = await repo.get_by_id(occurrence_id)
+    if not occurrence:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Ocorrência não encontrada",
+            detail=f"Ocorrência {occurrence_id} não encontrada.",
         )
 
-    logger.info(f"Occurrence deletada por {current_user.email}: {occurrence_id}")
+    post_id = occurrence.post_id
+    employee_id = occurrence.employee_id
+
+    deleted = await repo.delete(occurrence_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro ao deletar ocorrência {occurrence_id}.",
+        )
+
+    # Invalidar cache
+    related_entities = []
+    if post_id:
+        related_entities.append(("post", post_id))
+    if employee_id:
+        related_entities.append(("employee", employee_id))
+    await invalidate_on_delete("occurrence", occurrence_id, related_entities if related_entities else None)
+
+    logger.info(
+        "Occurrence deletada com sucesso",
+        action="delete_occurrence",
+        occurrence_id=occurrence_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
