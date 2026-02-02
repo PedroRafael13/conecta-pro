@@ -99,7 +99,7 @@ services:
       JWT_ALGORITHM: HS256
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       # CORS
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:8080}
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       # Sólides Integration
@@ -141,6 +141,8 @@ services:
       - ./uploads:/app/uploads
       # Credenciais (certificados digitais)
       - ./credentials:/opt/conecta-pro/credentials:ro
+      # OpenClaw Reports
+      - ./reports:/opt/conecta-pro/reports
       # Módulos Fase 3 (externos ao backend)
       - ./01_security_lgpd:/opt/conecta-pro/security_lgpd:ro
       - ./02_health_occupational:/opt/conecta-pro/health_occupational:ro
