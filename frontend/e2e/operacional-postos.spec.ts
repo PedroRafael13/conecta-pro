@@ -14,9 +14,10 @@ import { test, expect } from '@playwright/test';
 test.describe('Operacional - Postos de Trabalho', () => {
   // Executar antes de cada teste
   test.beforeEach(async ({ page }) => {
-    // Navegar para a página de postos
+    // Navegar para a página de postos (auth via storageState)
     await page.goto('/modulos/operacional/postos');
-    await page.waitForTimeout(1000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
   });
 
   test('deve carregar a página de postos', async ({ page }) => {
@@ -244,6 +245,7 @@ test.describe('Operacional - Postos de Trabalho', () => {
 });
 
 test.describe('Operacional - Postos - Validações', () => {
+
   test('não deve permitir criar posto sem nome', async ({ page }) => {
     await page.goto('/modulos/operacional/postos');
     await page.waitForLoadState('networkidle');

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginViaAPI } from './helpers/auth';
 
 /**
  * Testes E2E - Ocorrências Disciplinares
@@ -13,6 +14,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Operacional - Ocorrências', () => {
   test.beforeEach(async ({ page }) => {
+    // Login via API primeiro
+    await loginViaAPI(page);
+
     await page.goto('/modulos/operacional/ocorrencias');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
@@ -276,6 +280,11 @@ test.describe('Operacional - Ocorrências - Workflow', () => {
 });
 
 test.describe('Operacional - Ocorrências - Validações', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login via API primeiro
+    await loginViaAPI(page);
+  });
+
   test('deve validar título obrigatório', async ({ page }) => {
     await page.goto('/modulos/operacional/ocorrencias');
     await page.waitForLoadState('networkidle');

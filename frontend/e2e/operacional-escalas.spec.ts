@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginViaAPI } from './helpers/auth';
 
 /**
  * Testes E2E - Escalas de Trabalho
@@ -13,6 +14,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Operacional - Escalas', () => {
   test.beforeEach(async ({ page }) => {
+    // Login via API primeiro
+    await loginViaAPI(page);
+
     await page.goto('/modulos/operacional/escalas');
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
@@ -246,6 +250,11 @@ test.describe('Operacional - Escalas - Workflow', () => {
 });
 
 test.describe('Operacional - Escalas - Validações', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login via API primeiro
+    await loginViaAPI(page);
+  });
+
   test('deve validar seleção de posto ao gerar', async ({ page }) => {
     await page.goto('/modulos/operacional/escalas');
     await page.waitForLoadState('networkidle');

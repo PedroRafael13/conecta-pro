@@ -1,8 +1,8 @@
 # Status das Correções - Módulo Financeiro
 
-**Data**: 2026-02-02 21:56 UTC
-**Status**: ✅ PROBLEMAS CRÍTICOS CORRIGIDOS
-**Versão Backend**: Latest (após correção de models)
+**Data**: 2026-02-02 22:15 UTC
+**Status**: ✅ PROBLEMAS CRÍTICOS CORRIGIDOS E VALIDADOS
+**Versão Backend**: Latest (após rebuild completo do container)
 
 ---
 
@@ -61,17 +61,70 @@ parent_recurrence_id = Column(
 )
 ```
 
-### 2. Backend Reiniciado
+### 2. Backend Reiniciado (INCORRETO - Primeira Tentativa)
 
 ```bash
 docker restart conecta-pro-backend
 ```
 
+**Problema**: Apenas reiniciar não aplicou as correções porque o container usa **IMAGEM COMPILADA**, não volumes.
+
+### 3. Descoberta Crítica ⚠️
+
+**Problema Identificado**: Backend usa Docker image compilada (não monta código via volume)
+
+```bash
+# Verificação dentro do container:
+docker exec conecta-pro-backend python3 -c "
+from modules.financial.models.receivable_account import ReceivableAccount
+from modules.financial.models.payable_account import PayableAccount
+print('ReceivableAccount:', [c.name for c in ReceivableAccount.__table__.columns if 'parent' in c.name])
+print('PayableAccount:', [c.name for c in PayableAccount.__table__.columns if 'parent' in c.name])
+"
+```
+
+**Resultado**: Código antigo ainda estava rodando (arquivos de 13 de janeiro).
+
+### 4. Rebuild Completo (SOLUÇÃO)
+
+```bash
+# Rebuild sem cache
+docker compose build backend --no-cache
+
+# Redeploy
+docker compose up -d backend
+```
+
 **Resultado**:
 ```
-✅ 2026-02-02 21:55:37 | INFO | Modulo Financial: OK
-✅ 2026-02-02 21:55:37 | INFO | Modulo Financial BI Dashboard: OK
+✅ ReceivableAccount parent columns: ['parent_account_id']
+✅ PayableAccount parent columns: ['parent_recurrence_id']
+✅ 2026-02-02 22:12:20 | INFO | Application startup complete
+✅ 2026-02-02 22:12:20 | INFO | Uvicorn running on http://0.0.0.0:8080
 ```
+
+---
+
+## ✅ Validação das Correções
+
+**Data**: 2026-02-02 22:15 UTC
+
+```bash
+# Testes após rebuild (sem autenticação):
+curl "http://localhost:8080/api/v1/financial/suppliers?condominio_id=..."
+→ 403 Forbidden ✅ (era 503 antes)
+
+curl "http://localhost:8080/api/v1/financial/customers?condominio_id=..."
+→ 403 Forbidden ✅ (era 503 antes)
+
+curl "http://localhost:8080/api/v1/financial/payables?condominio_id=..."
+→ 403 Forbidden ✅ (era 503 antes)
+
+curl "http://localhost:8080/api/v1/financial/receivables?condominio_id=..."
+→ 403 Forbidden ✅ (era 503 antes)
+```
+
+**Análise**: Endpoints agora respondem corretamente. O erro 403 é esperado (falta token de auth). O problema 503 (coluna inexistente) foi **RESOLVIDO**.
 
 ---
 
@@ -194,24 +247,54 @@ git log --oneline -1
 
 ## 🚀 Próximos Passos
 
-### Imediato (Agora)
+### ⚠️ AÇÃO NECESSÁRIA - Testar no Navegador
 
-1. ✅ **Testar endpoints corrigidos**:
-   ```bash
-   # Limpar cache do navegador
-   Ctrl+Shift+R
+**IMPORTANTE**: Limpar cache do navegador é **OBRIGATÓRIO**
 
-   # Testar criação de fornecedor
-   https://erp.conectamais.pro/modulos/financeiro/fornecedores
+1. **Limpar cache**:
+   ```
+   Chrome/Edge: Ctrl+Shift+Delete
+   → Selecionar "Cached images and files"
+   → Limpar dados
 
-   # Testar criação de cliente
-   https://erp.conectamais.pro/modulos/financeiro/clientes
+   OU
+
+   Hard Refresh: Ctrl+Shift+R (pode não ser suficiente)
    ```
 
-2. ✅ **Verificar console logs**:
-   - Não deve mais aparecer erro 503
-   - Deve mostrar `[API Client] Financial endpoint: ...`
-   - Deve mostrar `[API Client] Added condominio_id: ...`
+2. **Abrir DevTools (F12)**:
+   - Aba Console: verificar logs do api-client
+   - Aba Network: verificar status codes das requisições
+
+3. **Testar criação de Fornecedor**:
+   ```
+   URL: https://erp.conectamais.pro/modulos/financeiro/fornecedores
+   Ação: Clicar "Novo Fornecedor" → Preencher → Salvar
+
+   Resultado Esperado:
+   ✅ Console: [API Client] Financial endpoint: /api/v1/financial/suppliers
+   ✅ Console: [API Client] Added condominio_id: a1b2c3d4-...
+   ✅ Network: POST /api/v1/financial/suppliers → 200 ou 201
+   ✅ Mensagem: Fornecedor criado com sucesso
+
+   ❌ NÃO DEVE APARECER:
+   ❌ 503 Service Unavailable
+   ❌ "column parent_id does not exist"
+   ```
+
+4. **Testar criação de Cliente**:
+   ```
+   URL: https://erp.conectamais.pro/modulos/financeiro/clientes
+   Ação: Clicar "Novo Cliente" → Preencher → Salvar
+
+   Resultado Esperado:
+   ✅ Cliente criado sem erro 503
+   ```
+
+5. **Testar Contas a Pagar/Receber**:
+   ```
+   Testar se listagem carrega sem erro 503
+   ```
 
 ### Curto Prazo (Hoje)
 
@@ -256,5 +339,25 @@ docker exec conecta-pro-postgres psql -U postgres -d conecta_pro -c "\d tablenam
 
 ---
 
-**Última Atualização**: 2026-02-02 21:56 UTC
-**Status Geral**: ✅ PRONTO PARA TESTES (503 resolvido)
+## 📝 Lições Aprendidas
+
+1. **Backend usa imagem compilada**, não volume mount → Sempre fazer rebuild após mudanças em código Python
+2. **Restart não aplica mudanças de código** → Usar `docker compose build --no-cache` + `docker compose up -d`
+3. **Verificar código dentro do container** → Usar `docker exec` para confirmar versão do código
+4. **Testes curl sem auth retornam 403** → Usar 403 vs 503 para validar se problema de banco foi resolvido
+
+---
+
+**Última Atualização**: 2026-02-02 22:15 UTC
+**Status Geral**: ✅ BACKEND CORRIGIDO E VALIDADO - AGUARDANDO TESTE NO NAVEGADOR
+
+**Comandos para Rebuild Futuro**:
+```bash
+# Sempre que modificar código Python do backend:
+cd /opt/conecta-pro
+docker compose build backend --no-cache
+docker compose up -d backend
+
+# Verificar logs:
+docker logs -f conecta-pro-backend | grep -E "Financial|ERROR"
+```
