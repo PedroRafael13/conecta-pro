@@ -42,6 +42,7 @@ export default function SubstituicoesPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<SubstitutionStatus | ''>('');
   const [selectedReason, setSelectedReason] = useState<SubstitutionReason | ''>('');
   const [selectedDate, setSelectedDate] = useState('');
@@ -55,6 +56,14 @@ export default function SubstituicoesPage() {
   const loadPending = useCallback(() => {
     // Dados pendentes agora vêm do hook usePendingSubstitutions
   }, []);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -153,6 +162,29 @@ export default function SubstituicoesPage() {
         return <AlertTriangle className="w-4 h-4" />;
     }
   };
+
+  // Filtrar substituições localmente
+  const filteredSubstitutions = substitutions.filter((sub) => {
+    // Filtro de busca
+    if (debouncedSearchTerm) {
+      const searchLower = debouncedSearchTerm.toLowerCase();
+      const matchesSearch =
+        sub.original_employee_name?.toLowerCase().includes(searchLower) ||
+        sub.substitute_employee_name?.toLowerCase().includes(searchLower) ||
+        sub.post_name?.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+    // Filtro de status
+    if (selectedStatus && sub.status !== selectedStatus) return false;
+    // Filtro de motivo
+    if (selectedReason && sub.reason !== selectedReason) return false;
+    // Filtro de data
+    if (selectedDate) {
+      const subDate = new Date(sub.shift_date).toISOString().split('T')[0];
+      if (subDate !== selectedDate) return false;
+    }
+    return true;
+  });
 
   if (authLoading) {
     return (
@@ -390,7 +422,7 @@ export default function SubstituicoesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[hsl(var(--border))]">
-                    {substitutions.map((sub) => (
+                    {filteredSubstitutions.map((sub) => (
                       <tr
                         key={sub.id}
                         className="hover:bg-[hsl(var(--muted))]/50 transition-colors"

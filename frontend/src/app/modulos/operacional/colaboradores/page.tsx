@@ -59,6 +59,7 @@ export default function ColaboradoresPage() {
   const { mutateAsync: updateEmployeeMutation } = useUpdateEmployee();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [source, setSource] = useState<string>('local');
   const total = employees.length;
@@ -104,6 +105,14 @@ export default function ColaboradoresPage() {
     }
   };
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   useEffect(() => {
     if (queryError) {
       setError(String(queryError));
@@ -112,8 +121,8 @@ export default function ColaboradoresPage() {
 
   // Filtrar localmente se houver busca
   const filteredEmployees = employees.filter((emp) => {
-    if (!search) return true;
-    const searchLower = search.toLowerCase();
+    if (!debouncedSearch) return true;
+    const searchLower = debouncedSearch.toLowerCase();
     return (
       (emp.full_name || emp.name || '').toLowerCase().includes(searchLower) ||
       (emp.email || '').toLowerCase().includes(searchLower) ||

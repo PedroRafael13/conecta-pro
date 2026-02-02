@@ -30,12 +30,21 @@ export default function AgentesPage() {
   const [dataSource, setDataSource] = useState<string>('local');
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
 
   // Modal state
   const [selectedEmployee, setSelectedEmployee] = useState<SolidesEmployeeExtended | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Redirecionar se nao autenticado
   useEffect(() => {
@@ -80,6 +89,26 @@ export default function AgentesPage() {
       </div>
     );
   }
+
+  // Filtrar agentes localmente
+  const filteredEmployees = employees.filter((emp) => {
+    // Filtro de busca
+    if (debouncedSearchTerm) {
+      const searchLower = debouncedSearchTerm.toLowerCase();
+      const matchesSearch =
+        emp.full_name?.toLowerCase().includes(searchLower) ||
+        emp.name?.toLowerCase().includes(searchLower) ||
+        emp.email?.toLowerCase().includes(searchLower) ||
+        emp.registration?.toLowerCase().includes(searchLower) ||
+        emp.cargo?.toLowerCase().includes(searchLower);
+      if (!matchesSearch) return false;
+    }
+    // Filtro de status
+    if (statusFilter && emp.status?.toLowerCase() !== statusFilter.toLowerCase()) {
+      return false;
+    }
+    return true;
+  });
 
   const getStatusColor = (status?: string | null) => {
     switch (status?.toLowerCase()) {
@@ -300,7 +329,7 @@ export default function AgentesPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[hsl(var(--border))]">
-                    {employees.map((employee) => (
+                    {filteredEmployees.map((employee) => (
                       <tr
                         key={employee.id}
                         className="hover:bg-[hsl(var(--muted))]/50 transition-colors cursor-pointer"

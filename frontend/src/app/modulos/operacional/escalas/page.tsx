@@ -56,14 +56,18 @@ export default function EscalasPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  // Apply filters
+  // Apply filters with debounce for search
   useEffect(() => {
-    const filters: Record<string, string | number | boolean | undefined> = {};
-    if (statusFilter) filters.status = statusFilter;
-    if (monthFilter) filters.month = monthFilter;
-    if (yearFilter) filters.year = yearFilter;
-    setFilters(Object.keys(filters).length > 0 ? filters : undefined);
-  }, [statusFilter, monthFilter, yearFilter, setFilters]);
+    const timer = setTimeout(() => {
+      const filters: Record<string, string | number | boolean | undefined> = {};
+      if (searchTerm) filters.search = searchTerm;
+      if (statusFilter) filters.status = statusFilter;
+      if (monthFilter) filters.month = monthFilter;
+      if (yearFilter) filters.year = yearFilter;
+      setFilters(Object.keys(filters).length > 0 ? filters : undefined);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, monthFilter, yearFilter, setFilters]);
 
   // Helper to get post name
   const getPostName = (postId: string): string => {
