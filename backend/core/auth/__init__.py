@@ -17,6 +17,7 @@ from .jwt import (
     verify_refresh_token,
 )
 from .security import get_password_hash, hash_password, verify_password
+from .utils import get_tenant_id
 
 __all__ = [
     # JWT
@@ -37,4 +38,6 @@ __all__ = [
     "CurrentUserId",
     "CurrentUser",
     "CurrentActiveUser",
+    # Utils
+    "get_tenant_id",
 ]

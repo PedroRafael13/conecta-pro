@@ -5,6 +5,7 @@ Controller (endpoints) para ScaleTemplate.
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth import get_tenant_id
 from core.auth.dependencies import CurrentActiveUser
 from core.cache import cache_response
 from core.database import get_db
@@ -44,8 +45,7 @@ async def create_template(
     """
     repo = ScaleTemplateRepository(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     template = await repo.create(
         data=data,
@@ -76,8 +76,7 @@ async def create_template_from_scale(
     service = ScaleTemplateService(db)
     repo = ScaleTemplateRepository(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     try:
         # Extrair template da escala
@@ -127,8 +126,7 @@ async def list_templates(
     """
     repo = ScaleTemplateRepository(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     skip = (page - 1) * page_size
     templates, total = await repo.list(
@@ -166,8 +164,7 @@ async def get_template_stats(
     """
     repo = ScaleTemplateRepository(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     stats = await repo.get_stats(tenant_id)
     most_used = await repo.get_most_used(tenant_id, limit=5)
@@ -198,8 +195,7 @@ async def get_template(
     """
     repo = ScaleTemplateRepository(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     template = await repo.get_by_id(template_id, tenant_id)
 
@@ -228,8 +224,7 @@ async def update_template(
     """
     repo = ScaleTemplateRepository(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     template = await repo.update(template_id, data, tenant_id)
 
@@ -264,8 +259,7 @@ async def apply_template(
     repo = ScaleTemplateRepository(db)
     service = ScaleTemplateService(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     # Buscar template
     template = await repo.get_by_id(template_id, tenant_id)
@@ -312,8 +306,7 @@ async def delete_template(
     """
     repo = ScaleTemplateRepository(db)
 
-    # TODO: Extrair tenant_id do current_user quando implementado
-    tenant_id = "default_tenant"
+    tenant_id = get_tenant_id(current_user)
 
     deleted = await repo.delete(template_id, tenant_id)
 

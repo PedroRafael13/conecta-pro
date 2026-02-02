@@ -18,6 +18,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from core.auth import get_tenant_id
 from core.auth.dependencies import CurrentActiveUser
 from core.cache import cache_response
 from core.database import get_db
@@ -82,31 +83,6 @@ from modules.operacional.disciplinary.services.template_service import (
 )
 
 router = APIRouter(tags=["Operacional - Medidas Administrativas"])
-
-
-def get_tenant_id(user: CurrentActiveUser) -> str:
-    """
-    Obtem tenant_id do usuario de forma segura.
-
-    Raises:
-        HTTPException: Se usuario nao possui tenant_id valido
-    """
-    tenant_id = getattr(user, "tenant_id", None) or getattr(user, "condominio_id", None)
-
-    if not tenant_id:
-        logger.error(
-            "Usuario sem tenant_id tentou acessar recurso",
-            action="get_tenant_id",
-            user_id=str(user.id),
-            user_email=user.email,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Usuário não está associado a nenhum condomínio/tenant. Contate o administrador.",
-        )
-
-    return str(tenant_id)
-
 
 # =============================================================================
 # MEDIDAS DISCIPLINARES - CRUD
