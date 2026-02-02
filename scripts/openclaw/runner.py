@@ -182,11 +182,14 @@ def load_config(config_path: Path = CONFIG_PATH) -> dict:
             "backend_lint": {"enabled": True, "timeout": 60},
             "frontend_lint": {"enabled": True, "timeout": 60},
             "security_bandit": {"enabled": True, "timeout": 60},
+            "gitleaks": {"enabled": True, "timeout": 60},
+            "npm_audit": {"enabled": True, "timeout": 60},
+            "pip_audit": {"enabled": True, "timeout": 60},
             "coverage": {"enabled": True, "timeout": 180, "min_coverage": 60},
             "health": {"enabled": True, "timeout": 30},
             "docker_status": {"enabled": True, "timeout": 15},
             "disk_space": {"enabled": True, "timeout": 5, "min_free_gb": 5},
-            "lighthouse": {"enabled": False, "timeout": 120},
+            "lighthouse": {"enabled": True, "timeout": 120},
         },
         "notifications": {
             "discord_webhook": "",
@@ -1148,6 +1151,252 @@ class OpenClawRunner:
                 message="Lighthouse executado com avisos", details=details
             )
 
+    def check_dependency_audit_frontend(self) -> CheckResult:
+        """Verifica vulnerabilidades em dependencias do frontend (npm audit)."""
+        name = "Dependency Audit (Frontend)"
+
+        if not self._is_check_enabled("npm_audit"):
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Check desabilitado na configuracao"
+            )
+
+        timeout = self._get_check_timeout("npm_audit", 60)
+
+        # npm audit --audit-level=moderate retorna 0 se nao houver moderate/high/critical
+        cmd = "npm audit --audit-level=moderate --json 2>&1"
+        code, stdout, stderr, duration = self._run_command(cmd, cwd=self.frontend_dir, timeout=timeout)
+
+        if code == -1:
+            return CheckResult(
+                name=name, status=CheckStatus.ERROR, duration_seconds=duration,
+                message=f"Timeout apos {timeout}s"
+            )
+
+        # Parse JSON output
+        try:
+            import json
+            output = stdout + stderr
+            audit_data = json.loads(output)
+
+            vulnerabilities = audit_data.get("metadata", {}).get("vulnerabilities", {})
+            total = vulnerabilities.get("total", 0)
+            critical = vulnerabilities.get("critical", 0)
+            high = vulnerabilities.get("high", 0)
+            moderate = vulnerabilities.get("moderate", 0)
+
+            details = {
+                "total": total,
+                "critical": critical,
+                "high": high,
+                "moderate": moderate
+            }
+
+            if critical > 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.FAIL, duration_seconds=duration,
+                    message=f"{critical} vulnerabilidades CRITICAS encontradas",
+                    details=details
+                )
+            elif high > 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.WARN, duration_seconds=duration,
+                    message=f"{high} vulnerabilidades HIGH encontradas",
+                    details=details
+                )
+            elif moderate > 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.WARN, duration_seconds=duration,
+                    message=f"{moderate} vulnerabilidades MODERATE encontradas",
+                    details=details
+                )
+            else:
+                return CheckResult(
+                    name=name, status=CheckStatus.PASS, duration_seconds=duration,
+                    message="Nenhuma vulnerabilidade encontrada",
+                    details=details
+                )
+
+        except (json.JSONDecodeError, KeyError) as e:
+            self.logger.warning(f"Erro ao parsear npm audit output: {e}")
+            # Fallback: usar exit code
+            if code == 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.PASS, duration_seconds=duration,
+                    message="npm audit executado sem vulnerabilidades"
+                )
+            else:
+                return CheckResult(
+                    name=name, status=CheckStatus.WARN, duration_seconds=duration,
+                    message=f"npm audit retornou codigo {code}"
+                )
+
+    def check_dependency_audit_backend(self) -> CheckResult:
+        """Verifica vulnerabilidades em dependencias do backend (pip-audit)."""
+        name = "Dependency Audit (Backend)"
+
+        if not self._is_check_enabled("pip_audit"):
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Check desabilitado na configuracao"
+            )
+
+        timeout = self._get_check_timeout("pip_audit", 60)
+
+        # Verificar se pip-audit esta instalado
+        check_cmd = "pip-audit --version 2>&1"
+        rc, _, _, _ = self._run_command(check_cmd, timeout=10)
+
+        if rc != 0:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="pip-audit nao instalado. Execute: pip install pip-audit"
+            )
+
+        # Rodar pip-audit com output JSON
+        cmd = "pip-audit --format=json 2>&1"
+        code, stdout, stderr, duration = self._run_command(cmd, cwd=self.backend_dir, timeout=timeout)
+
+        if code == -1:
+            return CheckResult(
+                name=name, status=CheckStatus.ERROR, duration_seconds=duration,
+                message=f"Timeout apos {timeout}s"
+            )
+
+        # Parse JSON output
+        try:
+            import json
+            output = stdout + stderr
+            audit_data = json.loads(output)
+
+            # pip-audit retorna lista de vulnerabilidades
+            vulnerabilities = audit_data.get("vulnerabilities", [])
+            total = len(vulnerabilities)
+
+            # Contar por severidade (se disponivel)
+            critical = sum(1 for v in vulnerabilities if v.get("severity", "").lower() == "critical")
+            high = sum(1 for v in vulnerabilities if v.get("severity", "").lower() == "high")
+
+            details = {
+                "total": total,
+                "critical": critical,
+                "high": high,
+                "packages": list({v.get("name") for v in vulnerabilities})[:10]  # Top 10
+            }
+
+            if critical > 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.FAIL, duration_seconds=duration,
+                    message=f"{critical} vulnerabilidades CRITICAS encontradas",
+                    details=details
+                )
+            elif high > 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.WARN, duration_seconds=duration,
+                    message=f"{high} vulnerabilidades HIGH encontradas",
+                    details=details
+                )
+            elif total > 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.WARN, duration_seconds=duration,
+                    message=f"{total} vulnerabilidades encontradas",
+                    details=details
+                )
+            else:
+                return CheckResult(
+                    name=name, status=CheckStatus.PASS, duration_seconds=duration,
+                    message="Nenhuma vulnerabilidade encontrada",
+                    details=details
+                )
+
+        except (json.JSONDecodeError, KeyError) as e:
+            self.logger.warning(f"Erro ao parsear pip-audit output: {e}")
+            # Fallback: usar exit code
+            if code == 0:
+                return CheckResult(
+                    name=name, status=CheckStatus.PASS, duration_seconds=duration,
+                    message="pip-audit executado sem vulnerabilidades"
+                )
+            else:
+                return CheckResult(
+                    name=name, status=CheckStatus.FAIL, duration_seconds=duration,
+                    message=f"pip-audit retornou codigo {code}"
+                )
+
+    def check_secret_scanning(self) -> CheckResult:
+        """Escaneia repositorio em busca de secrets expostos (gitleaks)."""
+        name = "Secret Scanning (Gitleaks)"
+
+        if not self._is_check_enabled("gitleaks"):
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="Check desabilitado na configuracao"
+            )
+
+        timeout = self._get_check_timeout("gitleaks", 60)
+
+        # Verificar se gitleaks esta instalado
+        check_cmd = "gitleaks version 2>&1"
+        rc, _, _, _ = self._run_command(check_cmd, timeout=10)
+
+        if rc != 0:
+            return CheckResult(
+                name=name, status=CheckStatus.SKIP, duration_seconds=0,
+                message="gitleaks nao instalado. Veja: https://github.com/gitleaks/gitleaks#installation"
+            )
+
+        # Rodar gitleaks detect
+        cmd = "gitleaks detect --no-git --report-format=json --report-path=/tmp/gitleaks-report.json 2>&1"
+        code, stdout, stderr, duration = self._run_command(cmd, cwd=self.project_root, timeout=timeout)
+
+        if code == -1:
+            return CheckResult(
+                name=name, status=CheckStatus.ERROR, duration_seconds=duration,
+                message=f"Timeout apos {timeout}s"
+            )
+
+        # Parse resultados
+        import json
+        from pathlib import Path
+
+        report_file = Path("/tmp/gitleaks-report.json")
+        details = {"findings": 0}
+
+        try:
+            if report_file.exists():
+                with open(report_file, "r") as f:
+                    gitleaks_data = json.load(f)
+
+                findings = len(gitleaks_data) if isinstance(gitleaks_data, list) else 0
+                details["findings"] = findings
+
+                if findings > 0:
+                    # Pegar primeiros secrets encontrados (sem expor valores)
+                    details["files"] = list({f.get("File", "") for f in gitleaks_data[:5]})
+
+                    return CheckResult(
+                        name=name, status=CheckStatus.FAIL, duration_seconds=duration,
+                        message=f"{findings} secret(s) expostos encontrados!",
+                        details=details
+                    )
+        except (json.JSONDecodeError, IOError) as e:
+            self.logger.warning(f"Erro ao ler gitleaks report: {e}")
+
+        # code == 0 significa nenhum secret encontrado
+        if code == 0:
+            return CheckResult(
+                name=name, status=CheckStatus.PASS, duration_seconds=duration,
+                message="Nenhum secret exposto detectado",
+                details=details
+            )
+        else:
+            # code == 1 geralmente significa secrets encontrados
+            return CheckResult(
+                name=name, status=CheckStatus.FAIL, duration_seconds=duration,
+                message="Possíveis secrets detectados",
+                details=details
+            )
+
     # ========================================================================
     # CICLO DE EXECUCAO
     # ========================================================================
@@ -1166,7 +1415,8 @@ class OpenClawRunner:
         checks_map: Dict[str, List[Callable[[], CheckResult]]] = {
             "tests": [self.check_backend_tests, self.check_frontend_tests],
             "lint": [self.check_backend_lint, self.check_frontend_lint],
-            "security": [self.check_security_bandit],
+            "security": [self.check_security_bandit, self.check_secret_scanning],
+            "audit": [self.check_dependency_audit_frontend, self.check_dependency_audit_backend],
             "coverage": [self.check_coverage],
             "health": [self.check_health, self.check_docker_status, self.check_disk_space],
             "performance": [self.check_performance_lighthouse],
@@ -1283,6 +1533,11 @@ class OpenClawRunner:
             ],
             "security": [
                 {"name": "Security Bandit", "func": self.check_security_bandit, "timeout": 60},
+                {"name": "Secret Scanning", "func": self.check_secret_scanning, "timeout": 60},
+            ],
+            "audit": [
+                {"name": "NPM Audit", "func": self.check_dependency_audit_frontend, "timeout": 60},
+                {"name": "Pip Audit", "func": self.check_dependency_audit_backend, "timeout": 60},
             ],
             "coverage": [
                 {"name": "Coverage", "func": self.check_coverage, "timeout": 120},
@@ -1737,8 +1992,10 @@ def main():
         epilog="""
 Exemplos:
   python runner.py                    # Ciclo completo
+  python runner.py --parallel         # Ciclo completo paralelo
   python runner.py --only tests       # Apenas testes
   python runner.py --only security    # Apenas seguranca
+  python runner.py --only audit       # Apenas dependency audit
   python runner.py --only health      # Apenas health check
   python runner.py --only lint        # Apenas linting
   python runner.py --only coverage    # Apenas cobertura
@@ -1750,7 +2007,7 @@ Exemplos:
     )
     parser.add_argument(
         "--only",
-        choices=["tests", "lint", "security", "coverage", "health", "performance"],
+        choices=["tests", "lint", "security", "audit", "coverage", "health", "performance"],
         help="Executar apenas um grupo especifico de checks",
     )
     parser.add_argument(
