@@ -60,7 +60,16 @@ async def create_scale(
 
     scale = await repo.create(data, created_by=current_user.id)
 
-    logger.info(f"Scale criada por {current_user.email}: {scale.id}")
+    logger.info(
+        "Scale criada com sucesso",
+        action="create_scale",
+        scale_id=str(scale.id),
+        post_id=str(data.post_id),
+        month=data.month,
+        year=data.year,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ScaleResponse.model_validate(scale)
 
 
@@ -237,7 +246,13 @@ async def update_scale(
             detail="Escala não encontrada ou não pode ser editada",
         )
 
-    logger.info(f"Scale atualizada por {current_user.email}: {scale.id}")
+    logger.info(
+        "Scale atualizada com sucesso",
+        action="update_scale",
+        scale_id=str(scale.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ScaleResponse.model_validate(scale)
 
 
@@ -272,7 +287,13 @@ async def submit_scale_for_approval(
     update = ScaleUpdate(status=ScaleStatus.PENDING_APPROVAL)
     scale = await repo.update(scale_id, update)
 
-    logger.info(f"Scale enviada para aprovação por {current_user.email}: {scale.id}")
+    logger.info(
+        "Scale enviada para aprovação",
+        action="submit_scale_for_approval",
+        scale_id=str(scale.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ScaleResponse.model_validate(scale)
 
 
@@ -299,7 +320,13 @@ async def approve_scale(
             detail="Escala não encontrada ou não pode ser aprovada",
         )
 
-    logger.info(f"Scale aprovada por {current_user.email}: {scale.id}")
+    logger.info(
+        "Scale aprovada com sucesso",
+        action="approve_scale",
+        scale_id=str(scale.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ScaleResponse.model_validate(scale)
 
 
@@ -366,9 +393,20 @@ async def publish_scale(
 
     # PENDENTE: Enviar notificações aos funcionários
     if data.notify_employees:
-        logger.info(f"Notificando funcionários via {data.notification_channels}")
+        logger.info(
+            "Notificação de funcionários solicitada",
+            action="notify_employees",
+            scale_id=str(scale.id),
+            channels=data.notification_channels,
+        )
 
-    logger.info(f"Scale publicada por {current_user.email}: {scale.id}")
+    logger.info(
+        "Scale publicada com sucesso",
+        action="publish_scale",
+        scale_id=str(scale.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ScaleResponse.model_validate(scale)
 
 
@@ -396,7 +434,13 @@ async def delete_scale(
             detail="Escala não encontrada ou não pode ser deletada",
         )
 
-    logger.info(f"Scale deletada por {current_user.email}: {scale_id}")
+    logger.info(
+        "Scale deletada com sucesso",
+        action="delete_scale",
+        scale_id=scale_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
 
 
 @router.post(
@@ -423,5 +467,11 @@ async def auto_generate_scales(
     else:
         result = await service.generate_scales_for_current_month(created_by=current_user.id)
 
-    logger.info(f"Geração automática executada por {current_user.email}: {result}")
+    logger.info(
+        "Geração automática de escalas executada",
+        action="auto_generate_scales",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        result=result,
+    )
     return result

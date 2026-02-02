@@ -81,7 +81,15 @@ async def create_occurrence(
     repo = OccurrenceRepository(db)
     occurrence = await repo.create(data, inspector_id=current_user.id)
 
-    logger.info(f"Occurrence criada por inspetor {current_user.email}: {occurrence.id}")
+    logger.info(
+        "Occurrence criada com sucesso",
+        action="create_occurrence",
+        occurrence_id=str(occurrence.id),
+        post_id=str(data.post_id) if data.post_id else None,
+        inspector_id=str(current_user.id),
+        inspector_email=current_user.email,
+        severity=data.severity.value if data.severity else None,
+    )
     return OccurrenceResponse.model_validate(occurrence)
 
 
@@ -223,7 +231,13 @@ async def update_occurrence(
             detail="Ocorrência não encontrada",
         )
 
-    logger.info(f"Occurrence atualizada por {current_user.email}: {occurrence_id}")
+    logger.info(
+        "Occurrence atualizada com sucesso",
+        action="update_occurrence",
+        occurrence_id=occurrence_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return OccurrenceResponse.model_validate(occurrence)
 
 
@@ -252,7 +266,13 @@ async def resolve_occurrence(
             detail="Ocorrência não encontrada",
         )
 
-    logger.info(f"Occurrence resolvida por {current_user.email}: {occurrence_id}")
+    logger.info(
+        "Occurrence resolvida com sucesso",
+        action="resolve_occurrence",
+        occurrence_id=occurrence_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return OccurrenceResponse.model_validate(occurrence)
 
 
@@ -284,7 +304,13 @@ async def add_attachment(
             detail="Ocorrência não encontrada",
         )
 
-    logger.info(f"Anexo adicionado a Occurrence por {current_user.email}: {occurrence_id}")
+    logger.info(
+        "Anexo adicionado a occurrence",
+        action="add_occurrence_attachment",
+        occurrence_id=occurrence_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return OccurrenceResponse.model_validate(occurrence)
 
 

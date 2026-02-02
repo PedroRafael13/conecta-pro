@@ -45,7 +45,15 @@ async def create_shift(
     repo = ShiftRepository(db)
     shift = await repo.create(data)
 
-    logger.info(f"Shift criado por {current_user.email}: {shift.id}")
+    logger.info(
+        "Shift criado com sucesso",
+        action="create_shift",
+        shift_id=str(shift.id),
+        scale_id=str(data.scale_id),
+        post_id=str(data.post_id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ShiftResponse.model_validate(shift)
 
 
@@ -201,7 +209,13 @@ async def update_shift(
             detail="Turno não encontrado",
         )
 
-    logger.info(f"Shift atualizado por {current_user.email}: {shift.id}")
+    logger.info(
+        "Shift atualizado com sucesso",
+        action="update_shift",
+        shift_id=str(shift.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ShiftResponse.model_validate(shift)
 
 
@@ -228,7 +242,13 @@ async def check_in(
             detail="Turno não encontrado",
         )
 
-    logger.info(f"Check-in registrado: {shift.id}")
+    logger.info(
+        "Check-in registrado com sucesso",
+        action="shift_check_in",
+        shift_id=str(shift.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ShiftResponse.model_validate(shift)
 
 
@@ -260,7 +280,13 @@ async def check_out(
             detail="Turno não encontrado",
         )
 
-    logger.info(f"Check-out registrado: {shift.id}")
+    logger.info(
+        "Check-out registrado com sucesso",
+        action="shift_check_out",
+        shift_id=str(shift.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ShiftResponse.model_validate(shift)
 
 
@@ -287,7 +313,13 @@ async def mark_as_missed(
             detail="Turno não encontrado",
         )
 
-    logger.info(f"Turno marcado como falta: {shift.id}")
+    logger.info(
+        "Turno marcado como falta",
+        action="mark_shift_missed",
+        shift_id=str(shift.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return ShiftResponse.model_validate(shift)
 
 
@@ -313,7 +345,13 @@ async def delete_shift(
             detail="Turno não encontrado",
         )
 
-    logger.info(f"Shift deletado por {current_user.email}: {shift_id}")
+    logger.info(
+        "Shift deletado com sucesso",
+        action="delete_shift",
+        shift_id=shift_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
 
 
 @router.patch(

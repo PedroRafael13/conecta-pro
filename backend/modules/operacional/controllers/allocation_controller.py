@@ -47,7 +47,15 @@ async def create_allocation(
     repo = AllocationRepository(db)
     allocation = await repo.create(data)
 
-    logger.info(f"Allocation criada por {current_user.email}: funcionário {data.employee_id} -> posto {data.post_id}")
+    logger.info(
+        "Allocation criada com sucesso",
+        action="create_allocation",
+        allocation_id=str(allocation.id),
+        employee_id=str(data.employee_id),
+        post_id=str(data.post_id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return AllocationResponse.model_validate(allocation)
 
 
@@ -243,7 +251,13 @@ async def update_allocation(
             detail="Alocação não encontrada",
         )
 
-    logger.info(f"Allocation atualizada por {current_user.email}: {allocation.id}")
+    logger.info(
+        "Allocation atualizada com sucesso",
+        action="update_allocation",
+        allocation_id=str(allocation.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return AllocationResponse.model_validate(allocation)
 
 
@@ -275,7 +289,13 @@ async def terminate_allocation(
             detail="Alocação não encontrada ou já encerrada",
         )
 
-    logger.info(f"Allocation encerrada por {current_user.email}: {allocation.id}")
+    logger.info(
+        "Allocation encerrada com sucesso",
+        action="terminate_allocation",
+        allocation_id=str(allocation.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return AllocationResponse.model_validate(allocation)
 
 
@@ -301,7 +321,13 @@ async def delete_allocation(
             detail="Alocação não encontrada",
         )
 
-    logger.info(f"Allocation deletada por {current_user.email}: {allocation_id}")
+    logger.info(
+        "Allocation deletada com sucesso",
+        action="delete_allocation",
+        allocation_id=allocation_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
 
 
 @router.delete(

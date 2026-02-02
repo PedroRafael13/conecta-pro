@@ -44,7 +44,13 @@ async def create_post(
     repo = PostRepository(db)
     post = await repo.create(data, created_by=current_user.id)
 
-    logger.info(f"Post criado por {current_user.email}: {post.id}")
+    logger.info(
+        "Post criado com sucesso",
+        action="create_post",
+        post_id=str(post.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return PostResponse.model_validate(post)
 
 
@@ -165,7 +171,13 @@ async def update_post(
             detail="Posto não encontrado",
         )
 
-    logger.info(f"Post atualizado por {current_user.email}: {post.id}")
+    logger.info(
+        "Post atualizado com sucesso",
+        action="update_post",
+        post_id=str(post.id),
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
     return PostResponse.model_validate(post)
 
 
@@ -191,7 +203,13 @@ async def delete_post(
             detail="Posto não encontrado",
         )
 
-    logger.info(f"Post deletado por {current_user.email}: {post_id}")
+    logger.info(
+        "Post deletado com sucesso",
+        action="delete_post",
+        post_id=post_id,
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+    )
 
 
 @router.get(
