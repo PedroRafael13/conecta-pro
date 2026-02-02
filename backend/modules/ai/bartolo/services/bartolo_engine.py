@@ -38,7 +38,7 @@ except ImportError:
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from modules.ai.bartolo.actions import ActionDetector, ActionExecutor, ActionPreview
+from modules.ai.bartolo.actions import ActionExecutor, ActionPreview, EnhancedActionDetector
 from modules.ai.bartolo.config.identity import (
     BartoloConfig,
     get_greeting,
@@ -121,8 +121,8 @@ class BartoloEngine:
         # LLM Fallback Classifier (Fase 3 do refinamento)
         self.llm_fallback_classifier = LLMFallbackClassifier(llm_provider=self.llm_provider)
 
-        # Sistema de ações executivas
-        self.action_detector = ActionDetector()
+        # Sistema de ações executivas (com detector avançado NLP)
+        self.action_detector = EnhancedActionDetector(llm_provider=self.llm_provider, fuzzy_threshold=0.8)
         self.action_executor: ActionExecutor | None = None  # Inicializado com db
 
         # Agentes especializados (inicializados sob demanda com db)
