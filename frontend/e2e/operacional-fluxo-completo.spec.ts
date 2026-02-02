@@ -19,14 +19,29 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Operacional - Fluxo Completo', () => {
   test.beforeEach(async ({ page }) => {
-    // Login (assumindo que há autenticação)
-    await page.goto('/login');
-    await page.waitForTimeout(1000);
+    // Mocka endpoint /auth/me para todos os testes
+    await page.route('**/api/v1/auth/me', (route) => {
+      if (route.request().method() === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            email: 'admin@conectaplus.com.br',
+            name: 'Admin',
+            role: 'admin',
+            is_active: true,
+            permissions: ['*'],
+            tenant_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          }),
+        });
+      } else {
+        route.continue();
+      }
+    });
 
-    // Se já estiver logado, vai para operacional
-    if (page.url().includes('/modulos')) {
-      await page.goto('/modulos/operacional');
-    }
+    // Não navega para login - já estamos autenticados via storageState
+    // Os testes vão navegar direto para suas páginas
   });
 
   test('Fluxo 01: Navegação no Dashboard Operacional', async ({ page }) => {
@@ -621,6 +636,29 @@ test.describe('Operacional - Fluxo Completo', () => {
 });
 
 test.describe('Operacional - Testes de Integração', () => {
+  test.beforeEach(async ({ page }) => {
+    // Mocka endpoint /auth/me para todos os testes de integração
+    await page.route('**/api/v1/auth/me', (route) => {
+      if (route.request().method() === 'GET') {
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+            email: 'admin@conectaplus.com.br',
+            name: 'Admin',
+            role: 'admin',
+            is_active: true,
+            permissions: ['*'],
+            tenant_id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+  });
+
   test('Integração 01: Criar posto → Criar escala → Alocar colaborador', async ({ page }) => {
     // Simular fluxo completo de criação
 
