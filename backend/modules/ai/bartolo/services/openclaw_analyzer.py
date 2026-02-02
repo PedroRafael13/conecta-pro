@@ -8,7 +8,7 @@ Date: 2026-02-02
 import json
 import logging
 
-from .llm_service import LLMService
+from modules.ai.conversation.services.llm_provider import LLMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class OpenClawAnalyzer:
     """Analisa falhas do OpenClaw usando LLM e sugere correções."""
 
     def __init__(self):
-        self.llm = LLMService()
+        self.llm = LLMProvider()
 
     async def analyze_failures(self, report: dict) -> str:
         """
@@ -40,13 +40,14 @@ class OpenClawAnalyzer:
 
         try:
             # Envia para LLM com timeout
-            response = await self.llm.generate(
-                prompt=prompt,
+            llm_response = await self.llm.generate(
+                messages=[{"role": "user", "content": prompt}],
+                system_prompt=None,
                 max_tokens=1500,
                 temperature=0.3,  # Mais determinístico para análise técnica
             )
 
-            return self._format_analysis_response(report, problems, response)
+            return self._format_analysis_response(report, problems, llm_response.content)
 
         except Exception as e:
             logger.error(f"Erro na análise IA: {e}")
@@ -230,8 +231,13 @@ Seja conciso (máx 200 palavras).
 """
 
         try:
-            response = await self.llm.generate(prompt=prompt, max_tokens=500, temperature=0.3)
-            return f"**🔍 Análise: {check_name}**\n\n{response}"
+            llm_response = await self.llm.generate(
+                messages=[{"role": "user", "content": prompt}],
+                system_prompt=None,
+                max_tokens=500,
+                temperature=0.3,
+            )
+            return f"**🔍 Análise: {check_name}**\n\n{llm_response.content}"
         except Exception as e:
             logger.error(f"Erro ao analisar check específico: {e}")
             return f"❌ Erro ao analisar {check_name}: {str(e)}"
