@@ -20,6 +20,20 @@ Sistema de monitoramento contínuo de qualidade para Conecta PRO.
 - 📦 **Artifacts**: Relatórios persistidos por 30-90 dias
 - 💬 **PR Comments**: Relatórios automáticos em pull requests
 
+### FASE 3 - Intelligence (✅ Concluída)
+- 📊 **TrendAnalyzer**: Análise de tendências e padrões históricos
+  - Health Score trending (improving/declining/stable)
+  - Identificação de falhas recorrentes
+  - Detecção de degradação de performance
+  - Insights e recomendações automáticas
+- 🔄 **AutoHealer**: Correções automáticas de problemas comuns
+  - npm audit fix para vulnerabilidades
+  - Docker restart para containers unhealthy
+  - Ruff/ESLint auto-fix para linting
+  - Limpeza de disco automática
+- 🧠 **Análise Inteligente**: Sumários em linguagem natural
+- 🎯 **Dry-Run Mode**: Simulação segura de correções
+
 ## 📋 Checks Disponíveis
 
 ### Tests
@@ -72,6 +86,20 @@ python3 scripts/openclaw/runner.py --only security --parallel
 # - coverage
 # - health
 # - performance
+
+# FASE 3: Intelligence & Auto-Healing
+
+# Analisar tendências dos últimos 30 dias
+python3 scripts/openclaw/runner.py --analyze-trends
+
+# Auto-healing (dry-run - apenas simula)
+python3 scripts/openclaw/runner.py --only health --auto-heal --dry-run
+
+# Auto-healing (executa correções reais)
+python3 scripts/openclaw/runner.py --auto-heal
+
+# Combinar paralelo + auto-healing
+python3 scripts/openclaw/runner.py --parallel --auto-heal
 ```
 
 ### GitHub Actions
@@ -273,17 +301,22 @@ Interpretação:
 
 ## 🔮 Roadmap
 
-### FASE 3 - Intelligence (Pendente)
-- 🤖 Análise de trends com IA
-- 📊 Predição de falhas
-- 🔄 Auto-healing para problemas comuns
-- 📈 Dashboards interativos
+### FASE 3 - Intelligence (✅ Concluída)
+- ✅ Análise de trends com IA
+- ✅ Auto-healing para problemas comuns
+- ✅ Insights e recomendações inteligentes
+- ⏭️ Predição de falhas (futuro - ML)
+- ⏭️ Dashboards interativos (futuro - web UI)
 
-### FASE 4 - Polish (Pendente)
-- 🎨 UI web para visualização
-- 📱 Notificações mobile
-- 🔍 Busca e filtros avançados
-- 📦 Exportação para formatos diversos
+### FASE 4 - Polish (Em Desenvolvimento)
+- 🎨 UI web para visualização de histórico
+- 📊 Gráficos interativos (Health Score over time)
+- 🔌 Integração com Prometheus/Grafana
+- 📱 Notificações Slack/Teams
+- 🔍 Busca e filtros em relatórios
+- 📦 Exportação CSV/Excel
+- 🧪 Testes E2E do pipeline completo
+- 📚 Documentação expandida
 
 ## 🤝 Contribuindo
 
@@ -294,6 +327,15 @@ Interpretação:
 5. Pull request para `develop`
 
 ## 📝 Changelog
+
+### v3.0.0 (2026-02-02)
+- ✨ FASE 3 completa: Intelligence + Auto-healing
+- 📊 TrendAnalyzer: Análise de histórico e tendências
+- 🔄 AutoHealer: Correções automáticas (6 healers)
+- 🧠 Insights com recomendações inteligentes
+- 🎯 Dry-run mode para simulação segura
+- 📈 Detecção de degradação de performance
+- 🔴 Identificação de falhas recorrentes
 
 ### v2.0.0 (2026-02-02)
 - ✨ FASE 2 completa: Novos checks + CI/CD

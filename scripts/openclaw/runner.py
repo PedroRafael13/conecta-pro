@@ -1938,6 +1938,153 @@ class OpenClawRunner:
             )
 
     # ========================================================================
+    # INTELLIGENCE - FASE 3
+    # ========================================================================
+
+    def analyze_trends(self, days: int = 30) -> Dict[str, Any]:
+        """
+        Analisa tendências dos últimos N dias.
+
+        Args:
+            days: Número de dias para analisar
+
+        Returns:
+            Dict com insights e análises
+        """
+        try:
+            # Import absoluto para funcionar quando executado como script
+            import sys
+            from pathlib import Path
+
+            intelligence_dir = Path(__file__).parent / "intelligence"
+            if str(intelligence_dir.parent) not in sys.path:
+                sys.path.insert(0, str(intelligence_dir.parent))
+
+            from intelligence.trend_analyzer import TrendAnalyzer
+
+            analyzer = TrendAnalyzer(self.reports_dir)
+            reports = analyzer.load_reports(days=days)
+
+            if not reports:
+                self.logger.warning(f"Nenhum relatório encontrado nos últimos {days} dias")
+                return {"error": "Nenhum relatório disponível"}
+
+            self.logger.info(f"Analisando {len(reports)} relatórios dos últimos {days} dias...")
+
+            insights = analyzer.generate_insights(reports)
+            summary = analyzer.generate_ai_summary(insights)
+
+            # Exibir sumário
+            print("\n" + "=" * 70)
+            print("  ANÁLISE DE TENDÊNCIAS - OpenClaw Intelligence")
+            print("=" * 70 + "\n")
+            print(summary)
+            print("\n" + "=" * 70 + "\n")
+
+            # Salvar insights em JSON
+            insights_file = self.reports_dir / f"trends_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+            with open(insights_file, "w", encoding="utf-8") as f:
+                json.dump(insights, f, indent=2, ensure_ascii=False)
+
+            self.logger.info(f"Insights salvos em: {insights_file}")
+
+            return insights
+
+        except ImportError as e:
+            self.logger.error(f"Módulo intelligence não disponível: {e}")
+            return {"error": "Módulo intelligence não disponível"}
+        except Exception as e:
+            self.logger.error(f"Erro ao analisar tendências: {e}", exc_info=True)
+            return {"error": str(e)}
+
+    def run_auto_heal(self, report: CycleReport, dry_run: bool = False) -> Dict[str, Any]:
+        """
+        Executa auto-healing baseado no relatório.
+
+        Args:
+            report: Relatório do ciclo OpenClaw
+            dry_run: Se True, apenas simula sem executar
+
+        Returns:
+            Dict com resultados das correções
+        """
+        try:
+            # Import absoluto para funcionar quando executado como script
+            import sys
+            from pathlib import Path
+
+            intelligence_dir = Path(__file__).parent / "intelligence"
+            if str(intelligence_dir.parent) not in sys.path:
+                sys.path.insert(0, str(intelligence_dir.parent))
+
+            from intelligence.auto_healer import AutoHealer
+
+            healer = AutoHealer(
+                project_root=self.project_root,
+                dry_run=dry_run,
+                auto_fix_enabled=True,
+            )
+
+            self.logger.info("=" * 62)
+            self.logger.info("  AUTO-HEALING - Correções Automáticas")
+            self.logger.info("=" * 62)
+
+            if dry_run:
+                self.logger.info("  [DRY RUN MODE] Simulando correções...")
+
+            # Converter CycleReport para dict
+            checks_list = []
+            for check in report.checks:
+                # Check pode ser CheckResult (dataclass) ou dict
+                if isinstance(check, dict):
+                    checks_list.append(check)
+                else:
+                    # É um CheckResult dataclass
+                    checks_list.append({
+                        "name": check.name,
+                        "status": check.status.value if hasattr(check.status, 'value') else check.status,
+                        "duration_seconds": check.duration_seconds,
+                        "message": check.message,
+                        "details": check.details,
+                    })
+
+            report_dict = {
+                "cycle_id": report.cycle_id,
+                "checks": checks_list,
+            }
+
+            results = healer.heal_report(report_dict)
+
+            # Exibir resultados
+            self.logger.info(f"  Checks analisados: {results['total_checks']}")
+            self.logger.info(f"  Checks corrigíveis: {results['healable']}")
+            self.logger.info(f"  Checks corrigidos: {results['healed']}")
+            self.logger.info("-" * 62)
+
+            for result in results["results"]:
+                check_name = result["check_name"]
+                fixed = result.get("fixed", False)
+                reason = result.get("reason", "")
+                recommendation = result.get("recommendation", "")
+
+                status_emoji = "✅" if fixed else "❌"
+                self.logger.info(f"{status_emoji} {check_name}: {reason}")
+
+                if recommendation:
+                    self.logger.info(f"   💡 {recommendation}")
+
+            self.logger.info("=" * 62)
+
+            return results
+
+        except ImportError as e:
+            self.logger.error(f"Módulo intelligence não disponível: {e}")
+            return {"error": "Módulo intelligence não disponível"}
+        except Exception as e:
+            self.logger.error(f"Erro ao executar auto-healing: {e}", exc_info=True)
+            return {"error": str(e)}
+
+    # ========================================================================
     # MODO DAEMON
     # ========================================================================
 
@@ -2042,6 +2189,21 @@ Exemplos:
         action="store_true",
         help="Executar checks em paralelo (3x mais rapido)",
     )
+    parser.add_argument(
+        "--analyze-trends",
+        action="store_true",
+        help="Analisar tendencias dos ultimos 30 dias",
+    )
+    parser.add_argument(
+        "--auto-heal",
+        action="store_true",
+        help="Tentar corrigir automaticamente problemas apos o ciclo",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Modo dry-run: simula acoes sem executar (com --auto-heal)",
+    )
 
     args = parser.parse_args()
 
@@ -2060,6 +2222,9 @@ Exemplos:
 
     if args.report:
         runner.show_latest_report()
+    elif args.analyze_trends:
+        # FASE 3: Análise de tendências
+        runner.analyze_trends(days=30)
     elif args.daemon:
         runner.run_daemon(interval=interval)
     else:
@@ -2070,6 +2235,10 @@ Exemplos:
             report = runner.run_cycle_parallel(only=args.only)
         else:
             report = runner.run_cycle(only=args.only)
+
+        # FASE 3: Auto-healing se habilitado
+        if args.auto_heal:
+            runner.run_auto_heal(report, dry_run=args.dry_run)
 
         # Exit code baseado no status
         if report.overall_status == CheckStatus.FAIL:
