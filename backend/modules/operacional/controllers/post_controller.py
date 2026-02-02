@@ -2,12 +2,11 @@
 Controller (endpoints) para Post.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
+from core.cache import cache_response
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.post import PostStatus, PostType, ShiftType
@@ -64,17 +63,17 @@ async def list_posts(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    post_type: Optional[PostType] = None,
-    status_filter: Optional[PostStatus] = Query(None, alias="status"),
-    shift_type: Optional[ShiftType] = None,
-    contract_id: Optional[str] = None,
-    client_id: Optional[str] = None,
-    city: Optional[str] = None,
-    state: Optional[str] = None,
-    requires_armed: Optional[bool] = None,
-    requires_vehicle: Optional[bool] = None,
-    has_vacancy: Optional[bool] = None,
-    search: Optional[str] = None,
+    post_type: PostType | None = None,
+    status_filter: PostStatus | None = Query(None, alias="status"),
+    shift_type: ShiftType | None = None,
+    contract_id: str | None = None,
+    client_id: str | None = None,
+    city: str | None = None,
+    state: str | None = None,
+    requires_armed: bool | None = None,
+    requires_vehicle: bool | None = None,
+    has_vacancy: bool | None = None,
+    search: str | None = None,
 ) -> PostListResponse:
     """
     Lista postos com filtros e paginação.
@@ -112,12 +111,15 @@ async def list_posts(  # pylint: disable=too-many-locals
     response_model=PostStats,
     dependencies=[require_operacional_permission(Permission.POSTS_VIEW)],
 )
+@cache_response(ttl=300, prefix="api:post")  # 5 minutos
 async def get_post_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> PostStats:
     """
     Obtém estatísticas de postos.
+
+    Cache: 5 minutos
     """
     repo = PostRepository(db)
     return await repo.get_stats()

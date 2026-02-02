@@ -2,12 +2,11 @@
 Controller (endpoints) para ScaleTemplate.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
+from core.cache import cache_response
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.permissions import Permission, require_operacional_permission
@@ -100,10 +99,7 @@ async def create_template_from_scale(
             created_by=current_user.id,
         )
 
-        logger.info(
-            f"Template criado a partir da escala {data.scale_id} "
-            f"por {current_user.email}: {template.id}"
-        )
+        logger.info(f"Template criado a partir da escala {data.scale_id} por {current_user.email}: {template.id}")
 
         return ScaleTemplateResponse.model_validate(template)
 
@@ -117,9 +113,7 @@ async def create_template_from_scale(
 @router.get(
     "/",
     response_model=ScaleTemplateListResponse,
-    dependencies=[
-        require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)
-    ],
+    dependencies=[require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)],
 )
 async def list_templates(
     current_user: CurrentActiveUser,
@@ -158,16 +152,17 @@ async def list_templates(
 @router.get(
     "/stats",
     response_model=ScaleTemplateStats,
-    dependencies=[
-        require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)
-    ],
+    dependencies=[require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)],
 )
+@cache_response(ttl=300, prefix="api:scale_template")  # 5 minutos
 async def get_template_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleTemplateStats:
     """
     Obtém estatísticas de templates.
+
+    Cache: 5 minutos
     """
     repo = ScaleTemplateRepository(db)
 
@@ -191,9 +186,7 @@ async def get_template_stats(
 @router.get(
     "/{template_id}",
     response_model=ScaleTemplateResponse,
-    dependencies=[
-        require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)
-    ],
+    dependencies=[require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)],
 )
 async def get_template(
     template_id: str,
@@ -293,10 +286,7 @@ async def apply_template(
         # Incrementar contador de uso
         await repo.increment_usage(template_id)
 
-        logger.info(
-            f"Template {template_id} aplicado por {current_user.email}, "
-            f"escala criada: {scale.id}"
-        )
+        logger.info(f"Template {template_id} aplicado por {current_user.email}, escala criada: {scale.id}")
 
         return ScaleResponse.model_validate(scale)
 

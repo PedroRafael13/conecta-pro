@@ -2,12 +2,12 @@
 Controller (endpoints) para Scale.
 """
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
+from core.cache import cache_response
+from core.cache.utils import invalidate_on_create, invalidate_on_delete, invalidate_on_update
 from core.database import get_db
 from core.logging import logger
 from core.rate_limit import CRITICAL_LIMIT, limiter
@@ -27,8 +27,8 @@ from modules.operacional.schemas.scale import (
     ScaleStats,
     ScaleUpdate,
 )
-from modules.operacional.services.scale_generator import scale_generator
 from modules.operacional.services.auto_scale_service import AutoScaleService
+from modules.operacional.services.scale_generator import scale_generator
 
 router = APIRouter(prefix="/scales", tags=["Operations - Scales"])
 
@@ -60,6 +60,9 @@ async def create_scale(
         )
 
     scale = await repo.create(data, created_by=current_user.id)
+
+    # Invalidar cache
+    await invalidate_on_create("scale", [("post", data.post_id)])
 
     logger.info(
         "Scale criada com sucesso",
@@ -131,9 +134,7 @@ async def generate_scale(
     # Atualizar métricas da escala
     scale = await scale_repo.update_metrics(scale.id)
 
-    logger.info(
-        f"Scale gerada por {current_user.email}: {scale.id} " f"({len(shifts_data)} turnos)"
-    )
+    logger.info(f"Scale gerada por {current_user.email}: {scale.id} ({len(shifts_data)} turnos)")
 
     return ScaleResponse.model_validate(scale)
 
@@ -148,13 +149,13 @@ async def list_scales(
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    post_id: Optional[str] = None,
-    scale_type: Optional[ScaleType] = None,
-    status_filter: Optional[ScaleStatus] = Query(None, alias="status"),
-    month: Optional[int] = Query(None, ge=1, le=12),
-    year: Optional[int] = Query(None, ge=2020, le=2100),
-    is_current_month: Optional[bool] = None,
-    created_by: Optional[str] = Query(None, description="Filtrar por criador"),
+    post_id: str | None = None,
+    scale_type: ScaleType | None = None,
+    status_filter: ScaleStatus | None = Query(None, alias="status"),
+    month: int | None = Query(None, ge=1, le=12),
+    year: int | None = Query(None, ge=2020, le=2100),
+    is_current_month: bool | None = None,
+    created_by: str | None = Query(None, description="Filtrar por criador"),
 ) -> ScaleListResponse:
     """
     Lista escalas com filtros e paginação.
@@ -188,12 +189,15 @@ async def list_scales(
     response_model=ScaleStats,
     dependencies=[require_operacional_permission(Permission.SCALES_VIEW_ALL, Permission.SCALES_VIEW_OWN)],
 )
+@cache_response(ttl=180, prefix="api:scale")  # 3 minutos
 async def get_scale_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> ScaleStats:
     """
     Obtém estatísticas de escalas.
+
+    Cache: 3 minutos
     """
     repo = ScaleRepository(db)
     return await repo.get_stats()
@@ -248,6 +252,9 @@ async def update_scale(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Escala não encontrada ou não pode ser editada",
         )
+
+    # Invalidar cache
+    await invalidate_on_update("scale", scale_id, [("post", scale.post_id)])
 
     logger.info(
         "Scale atualizada com sucesso",
@@ -429,13 +436,26 @@ async def delete_scale(
     Só é possível deletar escalas em rascunho.
     """
     repo = ScaleRepository(db)
+
+    # Buscar scale antes de deletar para invalidar cache do post
+    scale = await repo.get_by_id(scale_id)
+    if not scale:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Escala não encontrada",
+        )
+
+    post_id = scale.post_id
     deleted = await repo.delete(scale_id)
 
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Escala não encontrada ou não pode ser deletada",
+            detail="Escala não pode ser deletada",
         )
+
+    # Invalidar cache
+    await invalidate_on_delete("scale", scale_id, [("post", post_id)])
 
     logger.info(
         "Scale deletada com sucesso",
@@ -456,8 +476,8 @@ async def auto_generate_scales(
     request: Request,
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    month: Optional[int] = Query(None, ge=1, le=12, description="Mês (se não especificado, usa mês atual)"),
-    year: Optional[int] = Query(None, ge=2020, le=2100, description="Ano (se não especificado, usa ano atual)"),
+    month: int | None = Query(None, ge=1, le=12, description="Mês (se não especificado, usa mês atual)"),
+    year: int | None = Query(None, ge=2020, le=2100, description="Ano (se não especificado, usa ano atual)"),
 ) -> dict:
     """
     Gera escalas automaticamente para todos os postos com alocações ativas.

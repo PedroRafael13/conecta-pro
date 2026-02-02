@@ -3,12 +3,12 @@ Controller (endpoints) para TimeBank (Banco de Horas).
 """
 
 from datetime import date
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import CurrentActiveUser
+from core.cache import cache_response
 from core.database import get_db
 from core.logging import logger
 from modules.operacional.models.time_bank import TimeBankEntryType, TimeBankStatus
@@ -72,15 +72,15 @@ async def list_entries(  # pylint: disable=too-many-locals
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1, description="Página atual"),
     page_size: int = Query(20, ge=1, le=100, description="Itens por página"),
-    employee_id: Optional[str] = None,
-    entry_type: Optional[TimeBankEntryType] = None,
-    status_filter: Optional[TimeBankStatus] = Query(None, alias="status"),
-    shift_id: Optional[str] = None,
-    post_id: Optional[str] = None,
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    is_expired: Optional[bool] = None,
-    is_pending: Optional[bool] = None,
+    employee_id: str | None = None,
+    entry_type: TimeBankEntryType | None = None,
+    status_filter: TimeBankStatus | None = Query(None, alias="status"),
+    shift_id: str | None = None,
+    post_id: str | None = None,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    is_expired: bool | None = None,
+    is_pending: bool | None = None,
 ) -> TimeBankListResponse:
     """
     Lista entradas do banco de horas com filtros e paginação.
@@ -119,7 +119,7 @@ async def list_entries(  # pylint: disable=too-many-locals
 async def get_pending_entries(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
-    employee_id: Optional[str] = None,
+    employee_id: str | None = None,
 ) -> list[TimeBankResponse]:
     """
     Lista entradas pendentes de aprovação.
@@ -197,12 +197,15 @@ async def get_employee_summary(
     response_model=TimeBankStats,
     dependencies=[require_operacional_permission(Permission.TIMEBANK_VIEW_ALL)],
 )
+@cache_response(ttl=240, prefix="api:time_bank")  # 4 minutos
 async def get_stats(
     current_user: CurrentActiveUser,
     db: AsyncSession = Depends(get_db),
 ) -> TimeBankStats:
     """
     Obtém estatísticas gerais do banco de horas.
+
+    Cache: 4 minutos
     """
     repo = TimeBankRepository(db)
     return await repo.get_stats()
