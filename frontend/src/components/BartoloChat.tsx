@@ -3,9 +3,9 @@
 import { X, Send, Loader2, User, ThumbsUp, ThumbsDown, Minimize2, Maximize2, RotateCcw } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-;
 import { cn } from '@/lib/utils';
 import { useBartoloChat } from '@/hooks/ai/useBartolo';
+import { BartoloService } from '@/services/ai/bartolo.service';
 import { ActionConfirmationModal } from '@/components/ai/ActionConfirmationModal';
 
 // Types
