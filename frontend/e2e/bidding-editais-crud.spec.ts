@@ -2,12 +2,14 @@
  * Testes E2E - CRUD de Editais
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Editais - CRUD', () => {
   test.beforeEach(async ({ page }) => {
+    // Usar domcontentloaded pois networkidle nunca é atingido devido a polling/re-renders
     await page.goto('/modulos/licitacoes/editais', { waitUntil: 'domcontentloaded' });
-    // Aguardar carregamento inicial da página
+
+    // Aguardar carregamento inicial do React
     await page.waitForTimeout(2000);
   });
 

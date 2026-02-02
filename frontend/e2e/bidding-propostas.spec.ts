@@ -2,7 +2,7 @@
  * Testes E2E - Propostas
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test.describe('Propostas', () => {
   test('deve carregar página de propostas', async ({ page }) => {

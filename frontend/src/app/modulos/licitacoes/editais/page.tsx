@@ -91,7 +91,7 @@ export default function EditaisPage() {
     await removerMutation.mutateAsync(selectedTender.id);
     setShowDeleteModal(false);
     setSelectedTender(null);
-    handleRefresh();
+    // handleRefresh() removido - mutation já invalida queries automaticamente
   };
 
   const confirmDelete = (tender: TenderResponse) => {
@@ -105,7 +105,7 @@ export default function EditaisPage() {
       participando: true,
       interesse: true,
     });
-    handleRefresh();
+    // handleRefresh() removido - mutation já invalida queries automaticamente
   };
 
   const handleAlterarStatus = async (tender: TenderResponse, novoStatus: string) => {
@@ -113,14 +113,14 @@ export default function EditaisPage() {
       tender_id: tender.id,
       novo_status: novoStatus,
     });
-    handleRefresh();
+    // handleRefresh() removido - mutation já invalida queries automaticamente
   };
 
   const handleSincronizarPNCP = async () => {
     await sincronizarMutation.mutateAsync({
       dias_retroativos: 30,
     });
-    handleRefresh();
+    // handleRefresh() removido - mutation já invalida queries automaticamente
   };
 
   const handleBuscarPNCP = async () => {
@@ -128,7 +128,7 @@ export default function EditaisPage() {
       uf: filters.uf,
       segmento: filters.segmento,
     });
-    handleRefresh();
+    // handleRefresh() removido - mutation já invalida queries automaticamente
   };
 
   const formatCurrency = (value?: number) => {
@@ -417,7 +417,10 @@ export default function EditaisPage() {
           setShowFormModal(false);
           setEditTender(null);
         }}
-        onSuccess={handleRefresh}
+        onSuccess={() => {
+          // TenderFormModal já invalida queries via mutations
+          // Não precisa chamar handleRefresh() aqui
+        }}
         editData={editTender}
       />
 

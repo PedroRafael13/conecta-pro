@@ -9,6 +9,7 @@ import { Search, Filter, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { useCallback, useMemo } from 'react';
 
 interface TenderFiltersProps {
   filters: {
@@ -75,12 +76,13 @@ export function TenderFilters({
   onFilterChange,
   onClearFilters,
 }: TenderFiltersProps) {
-  const handleChange = (key: string, value: any) => {
+  const handleChange = useCallback((key: string, value: any) => {
     onFilterChange({ ...filters, [key]: value || undefined });
-  };
+  }, [filters, onFilterChange]);
 
-  const hasActiveFilters = Object.values(filters).some(
-    (value) => value !== undefined && value !== ''
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some((value) => value !== undefined && value !== ''),
+    [filters]
   );
 
   return (

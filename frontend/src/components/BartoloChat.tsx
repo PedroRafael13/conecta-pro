@@ -182,7 +182,7 @@ export function BartoloChat() {
       };
       setMessages([greetingMessage]);
     }
-  }, [greeting]);
+  }, [greeting, messages.length]); // Adicionado messages.length para evitar re-renders
 
   // Adiciona resposta do Bartolo quando recebe
   useEffect(() => {
