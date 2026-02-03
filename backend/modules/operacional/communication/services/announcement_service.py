@@ -10,13 +10,12 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import List, Optional, Tuple
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from modules.operacional.communication.models.announcement import (
     Announcement,
-    AnnouncementStatus,
 )
 from modules.operacional.communication.models.announcement_read import AnnouncementRead
 from modules.operacional.communication.repositories.communication_repository import (
@@ -25,9 +24,10 @@ from modules.operacional.communication.repositories.communication_repository imp
 from modules.operacional.communication.schemas.communication_schemas import (
     AnnouncementCreate,
     AnnouncementFilter,
-    AnnouncementUpdate,
     AnnouncementReadStats,
+    AnnouncementUpdate,
 )
+from modules.operacional.models.employee import Employee
 
 logger = logging.getLogger(__name__)
 
@@ -99,9 +99,7 @@ class AnnouncementService:
         """
         try:
             announcement = await self.repository.create(data, tenant_id, created_by)
-            logger.info(
-                f"Comunicado criado: {announcement.id} por {created_by}"
-            )
+            logger.info(f"Comunicado criado: {announcement.id} por {created_by}")
             return announcement
         except Exception as e:
             logger.error(f"Erro ao criar comunicado: {e}")
@@ -127,18 +125,16 @@ class AnnouncementService:
         """
         announcement = await self.repository.get_by_id(announcement_id, tenant_id)
         if not announcement:
-            raise AnnouncementNotFoundError(
-                f"Comunicado nao encontrado: {announcement_id}"
-            )
+            raise AnnouncementNotFoundError(f"Comunicado nao encontrado: {announcement_id}")
         return announcement
 
     async def list(
         self,
         tenant_id: str,
-        filters: Optional[AnnouncementFilter] = None,
+        filters: AnnouncementFilter | None = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Announcement], int]:
+    ) -> tuple[list[Announcement], int]:
         """
         Lista comunicados com filtros e paginacao.
 
@@ -176,9 +172,7 @@ class AnnouncementService:
         """
         announcement = await self.repository.update(announcement_id, data, tenant_id)
         if not announcement:
-            raise AnnouncementNotFoundError(
-                f"Comunicado nao encontrado ou nao pode ser editado: {announcement_id}"
-            )
+            raise AnnouncementNotFoundError(f"Comunicado nao encontrado ou nao pode ser editado: {announcement_id}")
         return announcement
 
     async def delete(
@@ -201,9 +195,7 @@ class AnnouncementService:
         """
         deleted = await self.repository.delete(announcement_id, tenant_id)
         if not deleted:
-            raise AnnouncementNotFoundError(
-                f"Comunicado nao encontrado: {announcement_id}"
-            )
+            raise AnnouncementNotFoundError(f"Comunicado nao encontrado: {announcement_id}")
         return True
 
     async def publish(
@@ -211,7 +203,7 @@ class AnnouncementService:
         announcement_id: str,
         tenant_id: str,
         published_by: str,
-        schedule_at: Optional[datetime] = None,
+        schedule_at: datetime | None = None,
     ) -> Announcement:
         """
         Publica ou agenda um comunicado.
@@ -229,19 +221,90 @@ class AnnouncementService:
             AnnouncementNotFoundError: Se nao encontrado
             AnnouncementPublishError: Se nao puder ser publicado
         """
-        announcement = await self.repository.publish(
-            announcement_id, tenant_id, published_by, schedule_at
-        )
+        announcement = await self.repository.publish(announcement_id, tenant_id, published_by, schedule_at)
         if not announcement:
-            raise AnnouncementPublishError(
-                f"Comunicado nao pode ser publicado: {announcement_id}"
-            )
+            raise AnnouncementPublishError(f"Comunicado nao pode ser publicado: {announcement_id}")
 
         # Notificar usuarios se publicado imediatamente
         if not schedule_at:
             await self._notify_recipients(announcement)
 
         return announcement
+
+    async def _get_recipient_user_ids(self, announcement: Announcement) -> list[str]:
+        """
+        Busca IDs dos usuarios destinatarios baseado no tipo de destinatario.
+
+        Args:
+            announcement: Comunicado com configuracao de destinatarios
+
+        Returns:
+            Lista de IDs de funcionarios destinatarios
+        """
+        destinatarios_tipo = announcement.destinatarios_tipo or "todos"
+
+        # Query base: funcionarios ativos do tenant
+        query = select(Employee.id).where(
+            Employee.is_active == True,  # noqa: E712
+        )
+
+        if destinatarios_tipo == "todos" or destinatarios_tipo == "all":
+            # Todos os funcionarios ativos
+            pass
+
+        elif destinatarios_tipo == "post" or destinatarios_tipo == "posto":
+            # Funcionarios alocados nos postos especificados
+            if announcement.destinatarios_postos:
+                query = query.where(Employee.posto_atual_id.in_(announcement.destinatarios_postos))
+            else:
+                logger.warning(f"Comunicado {announcement.id} com tipo 'post' mas sem postos definidos")
+                return []
+
+        elif destinatarios_tipo == "employee" or destinatarios_tipo == "funcionario":
+            # Funcionarios especificos
+            if announcement.destinatarios_funcionarios:
+                query = query.where(Employee.id.in_(announcement.destinatarios_funcionarios))
+            else:
+                logger.warning(f"Comunicado {announcement.id} com tipo 'employee' mas sem funcionarios definidos")
+                return []
+
+        elif destinatarios_tipo == "department" or destinatarios_tipo == "departamento":
+            # Funcionarios do departamento (usar extra_data para departamento_ids)
+            department_ids = (announcement.extra_data or {}).get("departamento_ids", [])
+            if department_ids:
+                query = query.where(Employee.departamento_id.in_(department_ids))
+            else:
+                logger.warning(f"Comunicado {announcement.id} com tipo 'department' mas sem departamentos definidos")
+                return []
+
+        elif destinatarios_tipo == "client" or destinatarios_tipo == "cliente":
+            # Funcionarios alocados em clientes especificos
+            client_ids = (announcement.extra_data or {}).get("cliente_ids", [])
+            if client_ids:
+                query = query.where(Employee.cliente_id.in_(client_ids))
+            else:
+                logger.warning(f"Comunicado {announcement.id} com tipo 'client' mas sem clientes definidos")
+                return []
+
+        elif destinatarios_tipo == "role" or destinatarios_tipo == "cargo":
+            # Funcionarios com cargo especifico
+            role_ids = (announcement.extra_data or {}).get("cargo_ids", [])
+            if role_ids:
+                query = query.where(Employee.cargo_id.in_(role_ids))
+            else:
+                logger.warning(f"Comunicado {announcement.id} com tipo 'role' mas sem cargos definidos")
+                return []
+
+        else:
+            logger.warning(f"Tipo de destinatario desconhecido: {destinatarios_tipo}, usando 'todos'")
+
+        result = await self.db.execute(query)
+        employee_ids = [str(row[0]) for row in result.fetchall()]
+
+        logger.info(
+            f"Comunicado {announcement.id}: {len(employee_ids)} destinatarios encontrados (tipo: {destinatarios_tipo})"
+        )
+        return employee_ids
 
     async def _notify_recipients(self, announcement: Announcement) -> None:
         """
@@ -251,27 +314,63 @@ class AnnouncementService:
             announcement: Comunicado publicado
         """
         try:
-            from .notification_service import NotificationService
             from modules.operacional.communication.models.notification import (
-                NotificationType,
                 NotificationChannel,
+                NotificationType,
             )
             from modules.operacional.communication.schemas.communication_schemas import (
                 NotificationCreate,
             )
 
+            from .notification_service import NotificationService
+
             notification_service = NotificationService(self.db)
 
             # Determina canais baseado na prioridade
             channels = [NotificationChannel.IN_APP]
-            if announcement.priority in ("importante", "urgente"):
+            if announcement.prioridade in ("alta", "urgente"):
                 channels.append(NotificationChannel.PUSH)
+            if announcement.enviar_email:
+                channels.append(NotificationChannel.EMAIL)
 
-            # TODO: Buscar usuarios destinatarios baseado em target_type/target_ids
-            # Por enquanto, apenas log
-            logger.info(
-                f"Notificando destinatarios do comunicado {announcement.id}"
+            # Busca usuarios destinatarios baseado em destinatarios_tipo
+            recipient_ids = await self._get_recipient_user_ids(announcement)
+
+            if not recipient_ids:
+                logger.warning(f"Comunicado {announcement.id}: nenhum destinatario encontrado")
+                return
+
+            # Cria notificacoes para cada destinatario
+            notifications = [
+                NotificationCreate(
+                    user_id=user_id,
+                    title=announcement.titulo,
+                    body=announcement.resumo or announcement.conteudo[:200],
+                    type=NotificationType.COMUNICADO,
+                    channels=channels,
+                    reference_type="announcement",
+                    reference_id=str(announcement.id),
+                    action_url=f"/comunicados/{announcement.id}",
+                    extra_data={
+                        "announcement_id": str(announcement.id),
+                        "prioridade": announcement.prioridade,
+                        "requer_confirmacao": announcement.requer_confirmacao,
+                    },
+                )
+                for user_id in recipient_ids
+            ]
+
+            # Envia em lote
+            await notification_service.send_bulk(
+                notifications=notifications,
+                tenant_id=str(announcement.tenant_id),
             )
+
+            # Atualiza contador de destinatarios
+            announcement.total_destinatarios = len(recipient_ids)
+            await self.db.commit()
+
+            logger.info(f"Comunicado {announcement.id}: {len(notifications)} notificacoes enviadas")
 
         except Exception as e:
             logger.error(f"Erro ao notificar destinatarios: {e}")
@@ -280,13 +379,13 @@ class AnnouncementService:
         self,
         tenant_id: str,
         user_id: str,
-        user_roles: List[str],
-        department_id: Optional[str] = None,
-        post_id: Optional[str] = None,
+        user_roles: list[str],
+        department_id: str | None = None,
+        post_id: str | None = None,
         only_unread: bool = False,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[List[Announcement], int]:
+    ) -> tuple[list[Announcement], int]:
         """
         Busca comunicados relevantes para um usuario.
 
@@ -318,9 +417,9 @@ class AnnouncementService:
         self,
         announcement_id: str,
         user_id: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-    ) -> Optional[AnnouncementRead]:
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+    ) -> AnnouncementRead | None:
         """
         Marca comunicado como lido por um usuario.
 
@@ -333,9 +432,7 @@ class AnnouncementService:
         Returns:
             Registro de leitura ou None se ja lido
         """
-        return await self.repository.mark_as_read(
-            announcement_id, user_id, ip_address, user_agent
-        )
+        return await self.repository.mark_as_read(announcement_id, user_id, ip_address, user_agent)
 
     async def acknowledge(
         self,
@@ -366,9 +463,7 @@ class AnnouncementService:
         # Depois confirma
         read = await self.repository.acknowledge(announcement_id, user_id)
         if not read:
-            raise AnnouncementNotFoundError(
-                f"Registro de leitura nao encontrado: {announcement_id}"
-            )
+            raise AnnouncementNotFoundError(f"Registro de leitura nao encontrado: {announcement_id}")
 
         return read
 
@@ -395,9 +490,7 @@ class AnnouncementService:
 
         stats = await self.repository.get_read_stats(announcement_id, tenant_id)
         if not stats:
-            raise AnnouncementNotFoundError(
-                f"Comunicado nao encontrado: {announcement_id}"
-            )
+            raise AnnouncementNotFoundError(f"Comunicado nao encontrado: {announcement_id}")
 
         from modules.operacional.communication.schemas.communication_schemas import (
             AnnouncementReadResponse,
@@ -409,9 +502,7 @@ class AnnouncementService:
             total_acknowledgments=stats["total_acknowledgments"],
             read_percentage=stats["read_percentage"],
             acknowledgment_percentage=stats["acknowledgment_percentage"],
-            reads=[
-                AnnouncementReadResponse.model_validate(r) for r in stats["reads"]
-            ],
+            reads=[AnnouncementReadResponse.model_validate(r) for r in stats["reads"]],
         )
 
     async def process_scheduled(self) -> int:
@@ -442,8 +533,8 @@ class AnnouncementService:
         self,
         tenant_id: str,
         user_id: str,
-        user_roles: List[str],
-    ) -> List[Announcement]:
+        user_roles: list[str],
+    ) -> list[Announcement]:
         """
         Busca comunicados nao lidos para um usuario.
 
@@ -469,7 +560,7 @@ class AnnouncementService:
         self,
         tenant_id: str,
         user_id: str,
-        user_roles: List[str],
+        user_roles: list[str],
     ) -> int:
         """
         Conta comunicados nao lidos para um usuario.
