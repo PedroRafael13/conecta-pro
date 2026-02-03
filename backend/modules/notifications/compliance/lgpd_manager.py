@@ -715,7 +715,9 @@ class LGPDComplianceManager:
                             "registered_at": device.created_at.isoformat() if device.created_at else None,
                             "last_seen": device.last_seen.isoformat() if device.last_seen else None,
                             # Token é omitido por segurança
-                            "token_hash": hashlib.md5(device.token.encode(), usedforsecurity=False).hexdigest()[:8] if device.token else None,
+                            "token_hash": hashlib.md5(device.token.encode(), usedforsecurity=False).hexdigest()[:8]
+                            if device.token
+                            else None,
                         }
                         for device in devices
                     ],

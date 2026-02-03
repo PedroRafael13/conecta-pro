@@ -222,7 +222,7 @@ class DataDeletionConfirmation(BaseModel):
     reason: str | None = Field(None, max_length=200, description="Motivo da exclusão (opcional)")
 
     @validator("confirmation")
-    @classmethod 
+    @classmethod
     def validate_confirmation(cls, v):
         """Valida confirmação de exclusão."""
         if v != "DELETE_MY_DATA":

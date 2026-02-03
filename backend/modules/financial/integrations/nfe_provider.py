@@ -78,8 +78,8 @@ class NFeProvider:
             )
 
             logger.info(
-                f"Certificado carregado: {self._certificado.certificado.subject.common_name} "
-                f"- Válido até: {self._certificado.certificado.not_valid_after}"
+                f"Certificado carregado com sucesso: {self.config.certificado_path} "
+                f"- Ambiente: {'Homologação' if self.config.ambiente == '2' else 'Produção'}"
             )
 
         except Exception as e:
@@ -102,7 +102,8 @@ class NFeProvider:
 
             self._webservice = ComunicacaoSefaz(
                 uf=self.config.uf,
-                certificado=self._certificado,
+                certificado=self.config.certificado_path,
+                certificado_senha=self.config.certificado_senha,
                 homologacao=(self.config.ambiente == "2"),  # True = Homologação, False = Produção
             )
 
