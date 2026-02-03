@@ -591,6 +591,7 @@ router.include_router(scheduler_router, prefix="/scheduler", tags=["Scheduler - 
 # ===================================================================
 # NOTIFICATIONS - NOTIFICATION HUB (Sprint 36, 37, 03)
 # ===================================================================
+from modules.notifications.controllers import compliance_router as notification_compliance_router
 from modules.notifications.controllers import intelligent_router as intelligent_notification_router
 from modules.notifications.controllers import router as notification_router
 from modules.notifications.push.controllers import router as push_notification_router
@@ -598,6 +599,9 @@ from modules.notifications.push.controllers import router as push_notification_r
 router.include_router(notification_router, prefix="/notifications", tags=["Notifications - Hub"])
 router.include_router(
     intelligent_notification_router, prefix="/notifications/intelligent", tags=["Notifications - Intelligent"]
+)
+router.include_router(
+    notification_compliance_router, prefix="/notifications/compliance", tags=["Notifications - LGPD Compliance"]
 )
 router.include_router(push_notification_router, prefix="/notifications/push", tags=["Notifications - Push"])
 

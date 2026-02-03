@@ -6,10 +6,17 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# Imports para coleta de dados LGPD
+from core.models.user import User
+from modules.notifications.models.notification_log import NotificationLog
+from modules.notifications.models.notification_preference import NotificationPreference
+from modules.notifications.push.models.push_device import PushDevice
 
 logger = logging.getLogger(__name__)
 
@@ -63,11 +70,11 @@ class ConsentRecord:
     user_id: int
     consent_type: ConsentType
     status: ConsentStatus
-    granted_at: Optional[datetime]
-    withdrawn_at: Optional[datetime]
-    expires_at: Optional[datetime]
-    ip_address: Optional[str]
-    user_agent: Optional[str]
+    granted_at: datetime | None
+    withdrawn_at: datetime | None
+    expires_at: datetime | None
+    ip_address: str | None
+    user_agent: str | None
     consent_text: str
     version: str
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -82,13 +89,13 @@ class DataProcessingRequest:
     request_type: DataRequestType
     status: RequestStatus
     created_at: datetime
-    processed_at: Optional[datetime]
+    processed_at: datetime | None
     deadline: datetime
     requester_email: str
     verification_token: str
     verified: bool = False
     notes: str = ""
-    result_url: Optional[str] = None
+    result_url: str | None = None
 
 
 @dataclass
@@ -114,13 +121,13 @@ class ComplianceAuditLog:
     id: UUID
     timestamp: datetime
     action: str
-    user_id: Optional[int]
-    actor_id: Optional[int]
+    user_id: int | None
+    actor_id: int | None
     resource_type: str
     resource_id: str
-    old_value: Optional[dict]
-    new_value: Optional[dict]
-    ip_address: Optional[str]
+    old_value: dict | None
+    new_value: dict | None
+    ip_address: str | None
     reason: str
 
 
@@ -178,9 +185,9 @@ class LGPDComplianceManager:
         granted: bool,
         consent_text: str,
         version: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        metadata: Optional[dict] = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        metadata: dict | None = None,
     ) -> ConsentRecord:
         """
         Registra consentimento do usuário.
@@ -242,7 +249,7 @@ class LGPDComplianceManager:
         db: AsyncSession,
         user_id: int,
         consent_type: ConsentType,
-        ip_address: Optional[str] = None,
+        ip_address: str | None = None,
         reason: str = "",
     ) -> ConsentRecord:
         """
@@ -594,37 +601,224 @@ class LGPDComplianceManager:
         db: AsyncSession,
         user_id: int,
     ) -> dict[str, Any]:
-        """Coleta todos os dados do usuário."""
-        # TODO: Implementar coleta real
+        """
+        Coleta todos os dados do usuário para exportação LGPD.
+
+        Implementa o direito de acesso (Art. 15 LGPD) coletando:
+        - Dados cadastrais básicos
+        - Preferências de notificação
+        - Histórico de notificações
+        - Dispositivos registrados
+        - Dados de engajamento
+        - Registros de consentimento
+        """
+        logger.info(f"Coletando dados LGPD para usuário {user_id}")
+
+        try:
+            # 1. Dados básicos do usuário
+            user_query = select(User).where(User.id == user_id)
+            user_result = await db.execute(user_query)
+            user = user_result.scalar_one_or_none()
+
+            if not user:
+                raise ValueError(f"Usuário {user_id} não encontrado")
+
+            # 2. Preferências de notificação
+            prefs_query = select(NotificationPreference).where(NotificationPreference.user_id == user_id)
+            prefs_result = await db.execute(prefs_query)
+            preferences = prefs_result.scalars().all()
+
+            # 3. Histórico de notificações (últimas 500)
+            history_query = (
+                select(NotificationLog)
+                .where(NotificationLog.user_id == user_id)
+                .order_by(NotificationLog.created_at.desc())
+                .limit(500)
+            )
+            history_result = await db.execute(history_query)
+            notifications = history_result.scalars().all()
+
+            # 4. Dispositivos registrados
+            devices_query = select(PushDevice).where(PushDevice.user_id == user_id)
+            devices_result = await db.execute(devices_query)
+            devices = devices_result.scalars().all()
+
+            # 5. Processar dados coletados
+            user_data = {
+                "user_id": user_id,
+                "export_date": datetime.utcnow().isoformat(),
+                "export_version": "1.0",
+                "data_categories": {
+                    # Dados cadastrais (anonimiza dados sensíveis)
+                    "basic_profile": {
+                        "user_id": user_id,
+                        "name": user.name,
+                        "email": user.email,
+                        "phone": user.phone,
+                        "role": user.role,
+                        "created_at": user.created_at.isoformat() if user.created_at else None,
+                        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+                        "last_login": user.last_login,
+                        "is_active": user.is_active if hasattr(user, "is_active") else True,
+                    },
+                    # Preferências de notificação
+                    "notification_preferences": [
+                        {
+                            "id": str(pref.id),
+                            "category": pref.category.value if pref.category else None,
+                            "channel": pref.channel.value if pref.channel else None,
+                            "enabled": pref.enabled,
+                            "frequency": pref.frequency.value if pref.frequency else None,
+                            "quiet_hours_start": pref.quiet_hours_start,
+                            "quiet_hours_end": pref.quiet_hours_end,
+                            "digest_enabled": pref.digest_enabled,
+                            "digest_type": pref.digest_type.value if pref.digest_type else None,
+                            "created_at": pref.created_at.isoformat() if pref.created_at else None,
+                            "updated_at": pref.updated_at.isoformat() if pref.updated_at else None,
+                        }
+                        for pref in preferences
+                    ],
+                    # Histórico de notificações
+                    "notification_history": {
+                        "total_notifications": len(notifications),
+                        "summary": {
+                            "sent": len([n for n in notifications if n.status == "sent"]),
+                            "delivered": len([n for n in notifications if n.status == "delivered"]),
+                            "opened": len([n for n in notifications if n.status == "opened"]),
+                            "failed": len([n for n in notifications if n.status == "failed"]),
+                        },
+                        "recent_notifications": [
+                            {
+                                "id": str(notif.id),
+                                "template_id": str(notif.template_id) if notif.template_id else None,
+                                "channel": notif.channel,
+                                "title": notif.title,
+                                "status": notif.status,
+                                "sent_at": notif.sent_at.isoformat() if notif.sent_at else None,
+                                "delivered_at": notif.delivered_at.isoformat() if notif.delivered_at else None,
+                                "opened_at": notif.opened_at.isoformat() if notif.opened_at else None,
+                                "metadata": notif.metadata,
+                                "created_at": notif.created_at.isoformat() if notif.created_at else None,
+                            }
+                            for notif in notifications[:100]  # Últimas 100 detalhadas
+                        ],
+                    },
+                    # Dispositivos registrados
+                    "registered_devices": [
+                        {
+                            "id": str(device.id),
+                            "platform": device.platform.value if device.platform else None,
+                            "device_type": device.device_type,
+                            "app_version": device.app_version,
+                            "os_version": device.os_version,
+                            "status": device.status.value if device.status else None,
+                            "registered_at": device.created_at.isoformat() if device.created_at else None,
+                            "last_seen": device.last_seen.isoformat() if device.last_seen else None,
+                            # Token é omitido por segurança
+                            "token_hash": hashlib.md5(device.token.encode(), usedforsecurity=False).hexdigest()[:8] if device.token else None,
+                        }
+                        for device in devices
+                    ],
+                    # Dados de engajamento calculados
+                    "engagement_analytics": self._calculate_engagement_stats(notifications),
+                    # Registros de consentimento (se existir tabela)
+                    "consent_records": await self._collect_consent_records(db, user_id),
+                },
+                # Metadados da exportação
+                "metadata": {
+                    "export_requested_by": "lgpd_data_export",
+                    "data_retention_policy": "Dados mantidos conforme política de retenção",
+                    "data_sources": ["users", "notification_preferences", "notification_log", "push_devices"],
+                    "anonymization_applied": False,
+                    "legal_basis": "Cumprimento da LGPD - Direito de Acesso (Art. 15)",
+                },
+            }
+
+            logger.info(
+                f"Coleta LGPD completada para usuário {user_id} - {len(notifications)} notificações, {len(devices)} dispositivos"
+            )
+            return user_data
+
+        except Exception as e:
+            logger.error(f"Erro na coleta de dados LGPD para usuário {user_id}: {str(e)}")
+            raise
+
+    def _calculate_engagement_stats(self, notifications: list) -> dict[str, Any]:
+        """Calcula estatísticas de engajamento do usuário."""
+        if not notifications:
+            return {
+                "total_notifications": 0,
+                "engagement_rate": 0.0,
+                "avg_response_time": None,
+                "most_active_hour": None,
+            }
+
+        total = len(notifications)
+        opened = len([n for n in notifications if n.opened_at])
+
+        # Calcula horários mais ativos
+        active_hours = {}
+        for notif in notifications:
+            if notif.opened_at:
+                hour = notif.opened_at.hour
+                active_hours[hour] = active_hours.get(hour, 0) + 1
+
+        most_active_hour = max(active_hours.keys(), key=active_hours.get) if active_hours else None
 
         return {
-            "user_id": user_id,
-            "export_date": datetime.utcnow().isoformat(),
-            "data_categories": {
-                "notification_preferences": {
-                    "channels": ["push", "email"],
-                    "quiet_hours": {"start": "22:00", "end": "08:00"},
-                    "frequency": "normal",
-                },
-                "notification_history": {
-                    "total_received": 150,
-                    "total_opened": 100,
-                    "total_clicked": 45,
-                    "recent_notifications": [],  # Últimas 100
-                },
-                "engagement_data": {
-                    "avg_open_rate": 0.67,
-                    "avg_click_rate": 0.30,
-                    "preferred_time": "10:00",
-                },
-                "device_tokens": [
-                    {"type": "fcm", "registered_at": "2024-01-15"},
-                ],
-                "consent_records": [
-                    {"type": "marketing", "granted": True, "date": "2024-01-10"},
-                ],
-            },
+            "total_notifications": total,
+            "opened_notifications": opened,
+            "engagement_rate": round(opened / total * 100, 2) if total > 0 else 0.0,
+            "most_active_hour": f"{most_active_hour:02d}:00" if most_active_hour is not None else None,
+            "engagement_by_channel": self._calculate_channel_engagement(notifications),
         }
+
+    def _calculate_channel_engagement(self, notifications: list) -> dict[str, dict]:
+        """Calcula engajamento por canal."""
+        channels = {}
+
+        for notif in notifications:
+            channel = notif.channel or "unknown"
+            if channel not in channels:
+                channels[channel] = {"total": 0, "opened": 0}
+
+            channels[channel]["total"] += 1
+            if notif.opened_at:
+                channels[channel]["opened"] += 1
+
+        # Calcula taxa de engajamento por canal
+        for channel_data in channels.values():
+            if channel_data["total"] > 0:
+                channel_data["engagement_rate"] = round(channel_data["opened"] / channel_data["total"] * 100, 2)
+            else:
+                channel_data["engagement_rate"] = 0.0
+
+        return channels
+
+    async def _collect_consent_records(self, db: AsyncSession, user_id: int) -> list[dict]:
+        """Coleta registros de consentimento (se existir tabela específica)."""
+        # TODO: Implementar quando houver tabela de consentimentos
+        # Por enquanto, retorna registro baseado nas preferências
+        prefs_query = select(NotificationPreference).where(
+            NotificationPreference.user_id == user_id, NotificationPreference.enabled.is_(True)
+        )
+        prefs_result = await db.execute(prefs_query)
+        active_prefs = prefs_result.scalars().all()
+
+        consent_records = []
+        for pref in active_prefs:
+            consent_records.append(
+                {
+                    "consent_type": pref.category.value if pref.category else "notifications",
+                    "status": "granted",
+                    "granted_at": pref.created_at.isoformat() if pref.created_at else None,
+                    "updated_at": pref.updated_at.isoformat() if pref.updated_at else None,
+                    "channel": pref.channel.value if pref.channel else None,
+                    "source": "notification_preferences",
+                }
+            )
+
+        return consent_records
 
     async def _anonymize_user_data(
         self,
@@ -648,14 +842,14 @@ class LGPDComplianceManager:
         self,
         db: AsyncSession,
         action: str,
-        user_id: Optional[int],
+        user_id: int | None,
         resource_type: str,
         resource_id: str,
-        old_value: Optional[dict] = None,
-        new_value: Optional[dict] = None,
-        ip_address: Optional[str] = None,
+        old_value: dict | None = None,
+        new_value: dict | None = None,
+        ip_address: str | None = None,
         reason: str = "",
-        actor_id: Optional[int] = None,
+        actor_id: int | None = None,
     ) -> ComplianceAuditLog:
         """Registra log de auditoria."""
         log = ComplianceAuditLog(
@@ -697,10 +891,10 @@ class LGPDComplianceManager:
     async def get_audit_logs(
         self,
         db: AsyncSession,
-        user_id: Optional[int] = None,
-        action: Optional[str] = None,
-        start_date: Optional[datetime] = None,
-        end_date: Optional[datetime] = None,
+        user_id: int | None = None,
+        action: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
         limit: int = 100,
     ) -> list[ComplianceAuditLog]:
         """
@@ -720,15 +914,15 @@ class LGPDComplianceManager:
         logs = self._audit_logs
 
         if user_id:
-            logs = [l for l in logs if l.user_id == user_id]
+            logs = [log for log in logs if log.user_id == user_id]
         if action:
-            logs = [l for l in logs if l.action == action]
+            logs = [log for log in logs if log.action == action]
         if start_date:
-            logs = [l for l in logs if l.timestamp >= start_date]
+            logs = [log for log in logs if log.timestamp >= start_date]
         if end_date:
-            logs = [l for l in logs if l.timestamp <= end_date]
+            logs = [log for log in logs if log.timestamp <= end_date]
 
-        return sorted(logs, key=lambda l: l.timestamp, reverse=True)[:limit]
+        return sorted(logs, key=lambda log: log.timestamp, reverse=True)[:limit]
 
     async def generate_compliance_report(
         self,
@@ -763,15 +957,12 @@ class LGPDComplianceManager:
 
         # Calcular SLA
         completed_requests = [
-            r for r in self._requests.values()
-            if r.status == RequestStatus.COMPLETED
-            and start_date <= r.created_at <= end_date
+            r
+            for r in self._requests.values()
+            if r.status == RequestStatus.COMPLETED and start_date <= r.created_at <= end_date
         ]
 
-        on_time = sum(
-            1 for r in completed_requests
-            if r.processed_at and r.processed_at <= r.deadline
-        )
+        on_time = sum(1 for r in completed_requests if r.processed_at and r.processed_at <= r.deadline)
 
         sla_compliance = on_time / len(completed_requests) if completed_requests else 1.0
 
@@ -786,9 +977,88 @@ class LGPDComplianceManager:
             "action_breakdown": action_counts,
             "consent_stats": {
                 "total_consents": len(self._consents),
-                "active_consents": sum(
-                    1 for c in self._consents.values()
-                    if c.status == ConsentStatus.GRANTED
-                ),
+                "active_consents": sum(1 for c in self._consents.values() if c.status == ConsentStatus.GRANTED),
             },
         }
+
+    # =============================================================================
+    # MÉTODOS PÚBLICOS PARA CONTROLLER API
+    # =============================================================================
+
+    async def export_user_data(self, db: AsyncSession, user_id: int, actor_id: int | None = None) -> dict[str, Any]:
+        """
+        Método público para exportar dados do usuário.
+
+        Implementa o direito de acesso (LGPD Art. 15).
+        Inclui audit logging automático.
+        """
+        # Coleta os dados
+        user_data = await self._collect_user_data(db, user_id)
+
+        # Registra audit log
+        await self._log_audit(
+            db=db,
+            action="data_export",
+            user_id=user_id,
+            resource_type="user_data",
+            resource_id=str(user_id),
+            reason="Solicitação de exportação de dados pessoais via API",
+            actor_id=actor_id or user_id,
+        )
+
+        return user_data
+
+    async def get_data_request_status(
+        self, db: AsyncSession, request_id: UUID, user_id: int
+    ) -> DataProcessingRequest | None:
+        """
+        Obtém status de solicitação de dados (apenas do usuário proprietário).
+
+        Args:
+            db: Sessão do banco
+            request_id: ID da solicitação
+            user_id: ID do usuário (para verificar propriedade)
+
+        Returns:
+            DataProcessingRequest se encontrada e pertence ao usuário, None caso contrário
+        """
+        request = self._requests.get(request_id)
+
+        # Verifica se a solicitação existe e pertence ao usuário
+        if request and request.user_id == user_id:
+            return request
+
+        return None
+
+    async def complete_data_request(self, db: AsyncSession, request_id: UUID, result_data: dict[str, Any]) -> bool:
+        """
+        Marca solicitação de dados como completa.
+
+        Args:
+            db: Sessão do banco
+            request_id: ID da solicitação
+            result_data: Dados do resultado
+
+        Returns:
+            True se atualizada com sucesso
+        """
+        if request_id in self._requests:
+            request = self._requests[request_id]
+            request.status = RequestStatus.COMPLETED
+            request.completion_date = datetime.utcnow()
+            request.result_data = result_data
+
+            # Log da conclusão
+            await self._log_audit(
+                db=db,
+                action="data_request_completed",
+                user_id=request.user_id,
+                resource_type="data_request",
+                resource_id=str(request_id),
+                new_value={"status": "completed", "completion_date": request.completion_date.isoformat()},
+                reason="Solicitação de dados processada com sucesso",
+            )
+
+            return True
+
+        return False
