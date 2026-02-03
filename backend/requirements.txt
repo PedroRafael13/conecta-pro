@@ -67,7 +67,7 @@ lxml>=5.0.0
 defusedxml>=0.7.1
 
 # Fiscal Integration - NF-e/NFS-e
-brazilfiscal>=1.0.0
+pynfe>=0.6.0
 
 # Central de IA - Machine Learning Dependencies
 pandas==2.2.3

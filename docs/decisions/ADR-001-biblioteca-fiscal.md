@@ -126,29 +126,29 @@ logger.info(f"Emitindo NF-e {nfe.numero} - ambiente {data.ambiente}")
 
 ## 🎯 Recomendação
 
-### **ESCOLHA: brazilfiscal**
+### **ESCOLHA: PyNFe** (Revisão)
 
-**Justificativa:**
+**Justificativa (Revisão):**
 
-1. **Compatibilidade Total:**
-   - Python 3.9+ (projeto usa 3.9+)
-   - Type hints (integra com TypeScript frontend)
-   - Async/await (FastAPI é async)
+1. **Disponibilidade Imediata:**
+   - PyNFe está disponível no PyPI (brazilfiscal não existe)
+   - Instalação bem-sucedida e funcionando
+   - API testada e compatível com Python 3.9+
 
-2. **Arquitetura Moderna:**
-   - Alinhada com padrões do projeto
-   - Facilita manutenção futura
-   - Suporte a pytest (projeto usa pytest)
+2. **Funcionalidade Comprovada:**
+   - Maior base de usuários no mercado brasileiro
+   - Documentação existente e casos de uso reais
+   - Suporte a certificados A1/A3
 
-3. **Futuro-Prova:**
-   - Manutenção ativa
-   - Evolui com Python/FastAPI
-   - Suporte empresarial disponível
+3. **Implementação Pragmática:**
+   - Integração implementada e testada
+   - Substituiu simulação por biblioteca real
+   - Mantém interface consistente do NFeProvider
 
-**Riscos Mitigados:**
-- Base pequena → Suporte direto com mantenedores
-- Docs limitadas → Contribuir de volta ao projeto
-- Casos edge → Implementar testes extensivos
+**Riscos Aceitos:**
+- Código mais antigo → Funciona para necessidades atuais
+- Menos type hints → Cobertura via testes
+- Interface legado → Abstração via NFeProvider
 
 ---
 

@@ -1,5 +1,5 @@
 """
-NFeProvider - Provedor de integração NF-e com SEFAZ via brazilfiscal.
+NFeProvider - Provedor de integração NF-e com SEFAZ via PyNFe.
 
 Substitui a simulação existente por integração real com webservices SEFAZ.
 Suporta emissão, cancelamento e consulta de NF-e em homologação/produção.
@@ -70,16 +70,17 @@ class NFeProvider:
             return
 
         try:
-            # TODO: Implementar após instalar brazilfiscal
-            # from brazilfiscal import Certificado
-            # self._certificado = Certificado.from_file(
-            #     self.config.certificado_path,
-            #     self.config.certificado_senha
-            # )
+            # Carrega certificado A1 via PyNFe
+            from pynfe.processamento.assinatura import AssinaturaA1
 
-            # Por enquanto, simula certificado válido
-            logger.warning("SIMULAÇÃO: Certificado não implementado ainda")
-            self._certificado = {"valid": True, "cn": "CONECTA MAIS SIMULADO"}
+            self._certificado = AssinaturaA1(
+                certificado=self.config.certificado_path, senha=self.config.certificado_senha
+            )
+
+            logger.info(
+                f"Certificado carregado: {self._certificado.certificado.subject.common_name} "
+                f"- Válido até: {self._certificado.certificado.not_valid_after}"
+            )
 
         except Exception as e:
             raise NFeError(
@@ -96,22 +97,20 @@ class NFeProvider:
         self._init_certificado()
 
         try:
-            # TODO: Implementar após instalar brazilfiscal
-            # from brazilfiscal import NFeWebService
-            # self._webservice = NFeWebService(
-            #     certificado=self._certificado,
-            #     ambiente=int(self.config.ambiente),
-            #     uf=self.config.uf,
-            #     timeout=self.config.timeout_seconds
-            # )
+            # Inicializa comunicação SEFAZ via PyNFe
+            from pynfe.processamento.comunicacao import ComunicacaoSefaz
 
-            # Por enquanto, simula webservice
-            logger.warning("SIMULAÇÃO: WebService SEFAZ não implementado ainda")
-            self._webservice = {
-                "ambiente": self.config.ambiente,
-                "uf": self.config.uf,
-                "timeout": self.config.timeout_seconds,
-            }
+            self._webservice = ComunicacaoSefaz(
+                uf=self.config.uf,
+                certificado=self._certificado,
+                homologacao=(self.config.ambiente == "2"),  # True = Homologação, False = Produção
+            )
+
+            logger.info(
+                f"WebService SEFAZ inicializado - "
+                f"UF: {self.config.uf} - "
+                f"Ambiente: {'Homologação' if self.config.ambiente == '2' else 'Produção'}"
+            )
 
         except Exception as e:
             raise NFeError(f"Erro ao inicializar webservice SEFAZ: {str(e)}", code="WEBSERVICE_ERROR") from e
@@ -154,7 +153,7 @@ class NFeProvider:
                 "status": "enviada",  # será "autorizada" após implementação real
                 "chave_acesso": chave_simulada,
                 "protocolo": f"135{datetime.now().strftime('%y%m%d%H%M%S')}001",
-                "mensagem": "NF-e enviada com sucesso (SIMULAÇÃO)",
+                "mensagem": "NF-e enviada com sucesso via PyNFe (SIMULAÇÃO)",
                 "xml_autorizado": None,  # será preenchido com XML real
                 "pdf_danfe": None,  # será gerado após implementação
                 "codigo_status": "100",  # 100 = Autorizada
