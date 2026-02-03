@@ -5,14 +5,19 @@
 
 import logging
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth.dependencies import get_current_user, require_permission
+from core.config.settings import settings
 from core.database.session import get_db
+from modules.financial.integrations.nfe_provider import (
+    NFeError,
+    create_nfe_provider,
+)
 from modules.financial.models.cfop_ncm import CFOPS_VIGILANCIA_ZFM
 from modules.financial.models.fiscal_obligation import (
     SIMPLES_ANEXO_III_FAIXAS,
@@ -104,12 +109,12 @@ async def criar_cfop(
 
 @router.get("/cfop", response_model=CFOPListResponse)
 async def listar_cfops(
-    tipo: Optional[str] = Query(None, description="entrada ou saida"),
-    grupo: Optional[str] = Query(None, description="1,2,3,5,6,7"),
-    natureza: Optional[str] = None,
-    zfm_aplicavel: Optional[bool] = None,
+    tipo: str | None = Query(None, description="entrada ou saida"),
+    grupo: str | None = Query(None, description="1,2,3,5,6,7"),
+    natureza: str | None = None,
+    zfm_aplicavel: bool | None = None,
     active: bool = True,
-    search: Optional[str] = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     repo: FiscalRepository = Depends(get_repository),
@@ -134,10 +139,10 @@ async def listar_cfops(
     )
 
 
-@router.get("/cfop/vigilancia-zfm", response_model=Dict[str, str])
+@router.get("/cfop/vigilancia-zfm", response_model=dict[str, str])
 async def listar_cfops_vigilancia_zfm(
     current_user: dict = Depends(get_current_user),
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Lista CFOPs comuns para servicos de vigilancia em ZFM."""
     return CFOPS_VIGILANCIA_ZFM
 
@@ -205,13 +210,13 @@ async def criar_ncm(
 
 @router.get("/ncm", response_model=NCMListResponse)
 async def listar_ncms(
-    capitulo: Optional[str] = None,
-    posicao: Optional[str] = None,
-    tributacao_monofasica: Optional[bool] = None,
-    zfm_isento_ipi: Optional[bool] = None,
+    capitulo: str | None = None,
+    posicao: str | None = None,
+    tributacao_monofasica: bool | None = None,
+    zfm_isento_ipi: bool | None = None,
     active: bool = True,
     vigente: bool = True,
-    search: Optional[str] = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     repo: FiscalRepository = Depends(get_repository),
@@ -308,7 +313,7 @@ async def criar_retencao(
 @router.get("/retencao", response_model=RetencaoFederalListResponse)
 async def listar_retencoes(
     condominio_id: UUID,
-    servico_vigilancia: Optional[bool] = None,
+    servico_vigilancia: bool | None = None,
     active: bool = True,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
@@ -407,8 +412,7 @@ async def calcular_retencoes(
             "liminar_ativa": retencao.inss_liminar_ativa,
             "anexo": "III",
             "observacao": (
-                "CPP ja incluso no DAS do Simples Nacional. "
-                "Retencao de INSS caracteriza bitributacao."
+                "CPP ja incluso no DAS do Simples Nacional. Retencao de INSS caracteriza bitributacao."
                 if retencao.inss_liminar_ativa
                 else None
             ),
@@ -448,15 +452,15 @@ async def criar_nfe(
 @router.get("/nfe", response_model=NFeListResponse)
 async def listar_nfes(  # pylint: disable=too-many-locals
     condominio_id: UUID,
-    tipo: Optional[str] = None,
-    status: Optional[str] = None,
-    serie: Optional[int] = None,
-    numero_inicial: Optional[int] = None,
-    numero_final: Optional[int] = None,
-    data_inicial: Optional[date] = None,
-    data_final: Optional[date] = None,
-    destinatario_cpf_cnpj: Optional[str] = None,
-    search: Optional[str] = None,
+    tipo: str | None = None,
+    status: str | None = None,
+    serie: int | None = None,
+    numero_inicial: int | None = None,
+    numero_final: int | None = None,
+    data_inicial: date | None = None,
+    data_final: date | None = None,
+    destinatario_cpf_cnpj: str | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     repo: FiscalRepository = Depends(get_repository),
@@ -551,31 +555,65 @@ async def emitir_nfe(
             detail=f"NF-e em status {nfe.status} nao pode ser emitida",
         )
 
-    # TODO: Implementar integracao com SEFAZ
-    # Por enquanto, simula emissao
-    logger.info(f"Emitindo NF-e {nfe.numero} - ambiente {data.ambiente}")
+    # Integração real com SEFAZ via NFeProvider
+    try:
+        # Criar provedor NF-e com configurações do ambiente
+        nfe_provider = create_nfe_provider(
+            certificado_path=settings.NFE_CERT_PATH,
+            certificado_senha=settings.NFE_CERT_PASSWORD,
+            ambiente=data.ambiente,  # Usar ambiente da requisição (1=prod, 2=homolog)
+            uf=settings.NFE_UF,
+        )
 
-    # Atualiza status para enviada (simulacao)
-    await repo.update_nfe(
-        data.nfe_id,
-        {
-            "status": "enviada",
-            "chave_acesso": (
-                f"13{datetime.now().strftime('%y%m')}"
-                f"13123456000199550010000000{nfe.numero:09d}1"
-            ),
-        },
-    )
+        # Preparar dados da NF-e para emissão
+        nfe_data = {
+            "destinatario": nfe.dados_destinatario if hasattr(nfe, "dados_destinatario") else {},
+            "items": nfe.items if hasattr(nfe, "items") else [],
+            "dados_adicionais": nfe.dados_adicionais if hasattr(nfe, "dados_adicionais") else {},
+        }
 
-    return NFeEmitirResponse(
-        nfe_id=data.nfe_id,
-        status="enviada",
-        chave_acesso=nfe.chave_acesso,
-        protocolo=None,
-        mensagem="NF-e enviada para processamento",
-        xml_autorizado=None,
-        pdf_danfe=None,
-    )
+        # Emitir NF-e na SEFAZ
+        resultado = await nfe_provider.emitir_nfe(nfe_data=nfe_data, nfe_id=data.nfe_id, numero=nfe.numero)
+
+        # Atualizar NF-e no banco com resultado da SEFAZ
+        await repo.update_nfe(
+            data.nfe_id,
+            {
+                "status": resultado["status"],
+                "chave_acesso": resultado["chave_acesso"],
+                "protocolo": resultado.get("protocolo"),
+                "xml_autorizado": resultado.get("xml_autorizado"),
+                "data_emissao": datetime.now(),
+            },
+        )
+
+        logger.info(
+            f"NF-e {nfe.numero} emitida com sucesso - "
+            f"Status: {resultado['status']} - "
+            f"Chave: {resultado['chave_acesso'][:16]}..."
+        )
+
+        return NFeEmitirResponse(
+            nfe_id=data.nfe_id,
+            status=resultado["status"],
+            chave_acesso=resultado["chave_acesso"],
+            protocolo=resultado.get("protocolo"),
+            mensagem=resultado["mensagem"],
+            xml_autorizado=resultado.get("xml_autorizado"),
+            pdf_danfe=resultado.get("pdf_danfe"),
+        )
+
+    except NFeError as nfe_error:
+        logger.error(f"Erro NF-e {nfe.numero}: {nfe_error.message}")
+        # Atualizar status para rejeitada em caso de erro
+        await repo.update_nfe(
+            data.nfe_id, {"status": "rejeitada", "erro_sefaz": nfe_error.message, "codigo_erro": nfe_error.code}
+        )
+        raise HTTPException(status_code=400, detail=f"Erro na emissão NF-e: {nfe_error.message}")
+    except Exception as e:
+        logger.error(f"Erro inesperado na emissão NF-e {nfe.numero}: {str(e)}")
+        await repo.update_nfe(data.nfe_id, {"status": "rejeitada", "erro_sefaz": f"Erro interno: {str(e)}"})
+        raise HTTPException(status_code=500, detail="Erro interno na emissão da NF-e")
 
 
 @router.post("/nfe/cancelar")
@@ -583,7 +621,7 @@ async def cancelar_nfe(
     data: NFeCancelarRequest,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:nfe:cancelar")),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Cancela NF-e autorizada."""
     nfe = await repo.get_nfe_by_id(data.nfe_id)
     if not nfe:
@@ -594,12 +632,56 @@ async def cancelar_nfe(
             detail="Apenas NF-e autorizada pode ser cancelada",
         )
 
-    # TODO: Implementar cancelamento na SEFAZ
-    logger.info(f"Cancelando NF-e {nfe.numero}: {data.justificativa}")
+    # Cancelamento real na SEFAZ via NFeProvider
+    try:
+        # Criar provedor NF-e
+        nfe_provider = create_nfe_provider(
+            certificado_path=settings.NFE_CERT_PATH,
+            certificado_senha=settings.NFE_CERT_PASSWORD,
+            ambiente=settings.NFE_AMBIENTE,
+            uf=settings.NFE_UF,
+        )
 
-    await repo.update_nfe(data.nfe_id, {"status": "cancelada"})
+        # Verificar se NF-e tem chave de acesso
+        if not nfe.chave_acesso:
+            raise HTTPException(status_code=400, detail="NF-e não possui chave de acesso para cancelamento")
 
-    return {"message": "NF-e cancelada com sucesso", "nfe_id": str(data.nfe_id)}
+        # Cancelar na SEFAZ
+        resultado = await nfe_provider.cancelar_nfe(
+            chave_acesso=nfe.chave_acesso, motivo=data.justificativa, nfe_id=data.nfe_id
+        )
+
+        # Atualizar no banco
+        await repo.update_nfe(
+            data.nfe_id,
+            {
+                "status": resultado["status"],
+                "protocolo_cancelamento": resultado.get("protocolo"),
+                "data_cancelamento": datetime.now(),
+                "motivo_cancelamento": data.justificativa,
+            },
+        )
+
+        logger.info(
+            f"NF-e {nfe.numero} cancelada com sucesso - "
+            f"Chave: {nfe.chave_acesso[:16]}... - "
+            f"Motivo: {data.justificativa}"
+        )
+
+        return {
+            "message": resultado["mensagem"],
+            "nfe_id": str(data.nfe_id),
+            "status": resultado["status"],
+            "protocolo": resultado.get("protocolo"),
+            "data_cancelamento": resultado["data_cancelamento"],
+        }
+
+    except NFeError as nfe_error:
+        logger.error(f"Erro cancelamento NF-e {nfe.numero}: {nfe_error.message}")
+        raise HTTPException(status_code=400, detail=f"Erro no cancelamento: {nfe_error.message}")
+    except Exception as e:
+        logger.error(f"Erro inesperado no cancelamento NF-e {nfe.numero}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Erro interno no cancelamento da NF-e")
 
 
 @router.post("/nfe/inutilizar")
@@ -608,7 +690,7 @@ async def inutilizar_numeracao(
     condominio_id: UUID = Query(...),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:nfe:inutilizar")),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Inutiliza faixa de numeracao de NF-e."""
     # TODO: Implementar inutilizacao na SEFAZ
     logger.info(
@@ -655,14 +737,14 @@ async def criar_nfse(
 @router.get("/nfse", response_model=NFSeListResponse)
 async def listar_nfses(
     condominio_id: UUID,
-    status: Optional[str] = None,
-    data_inicial: Optional[date] = None,
-    data_final: Optional[date] = None,
-    competencia_mes: Optional[int] = None,
-    competencia_ano: Optional[int] = None,
-    tomador_cpf_cnpj: Optional[str] = None,
-    codigo_servico: Optional[str] = None,
-    search: Optional[str] = None,
+    status: str | None = None,
+    data_inicial: date | None = None,
+    data_final: date | None = None,
+    competencia_mes: int | None = None,
+    competencia_ano: int | None = None,
+    tomador_cpf_cnpj: str | None = None,
+    codigo_servico: str | None = None,
+    search: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     repo: FiscalRepository = Depends(get_repository),
@@ -766,7 +848,7 @@ async def cancelar_nfse(
     data: NFSeCancelarRequest,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:nfse:cancelar")),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Cancela NFS-e autorizada."""
     nfse = await repo.get_nfse_by_id(data.nfse_id)
     if not nfse:
@@ -792,7 +874,7 @@ async def obter_retencoes_competencia(
     ano: int = Query(..., ge=2000),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Retorna total de retencoes de uma competencia.
 
     Util para conferencia de DAS e relatorios fiscais.
@@ -832,10 +914,10 @@ async def criar_sped(
 @router.get("/sped", response_model=SPEDFileListResponse)
 async def listar_speds(
     condominio_id: UUID,
-    tipo: Optional[str] = None,
-    status: Optional[str] = None,
-    ano: Optional[int] = None,
-    mes: Optional[int] = None,
+    tipo: str | None = None,
+    status: str | None = None,
+    ano: int | None = None,
+    mes: int | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     repo: FiscalRepository = Depends(get_repository),
@@ -878,7 +960,7 @@ async def gerar_sped(
     condominio_id: UUID = Query(...),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:sped:gerar")),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Gera arquivo SPED.
 
     TODO: Implementar geracao de arquivos SPED
@@ -911,7 +993,7 @@ async def validar_sped(
     sped_id: UUID,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:sped:validar")),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Valida arquivo SPED."""
     sped = await repo.get_sped_file_by_id(sped_id)
     if not sped:
@@ -931,7 +1013,7 @@ async def transmitir_sped(
     data: SPEDTransmitirRequest,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(require_permission("fiscal:sped:transmitir")),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Transmite arquivo SPED."""
     sped = await repo.get_sped_file_by_id(sped_id)
     if not sped:
@@ -976,12 +1058,12 @@ async def criar_obrigacao(
 @router.get("/obrigacao", response_model=ObrigacaoFiscalListResponse)
 async def listar_obrigacoes(
     condominio_id: UUID,
-    tipo: Optional[str] = None,
-    status: Optional[str] = None,
-    mes: Optional[int] = None,
-    ano: Optional[int] = None,
-    vencimento_inicio: Optional[date] = None,
-    vencimento_fim: Optional[date] = None,
+    tipo: str | None = None,
+    status: str | None = None,
+    mes: int | None = None,
+    ano: int | None = None,
+    vencimento_inicio: date | None = None,
+    vencimento_fim: date | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     repo: FiscalRepository = Depends(get_repository),
@@ -1016,7 +1098,7 @@ async def listar_obrigacoes_pendentes(
     condominio_id: UUID,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> List[ObrigacaoFiscalResponse]:
+) -> list[ObrigacaoFiscalResponse]:
     """Lista obrigacoes pendentes ordenadas por vencimento."""
     obrigacoes = await repo.get_obrigacoes_pendentes(condominio_id)
     return [ObrigacaoFiscalResponse.model_validate(o) for o in obrigacoes]
@@ -1027,7 +1109,7 @@ async def listar_obrigacoes_atrasadas(
     condominio_id: UUID,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> List[ObrigacaoFiscalResponse]:
+) -> list[ObrigacaoFiscalResponse]:
     """Lista obrigacoes atrasadas."""
     obrigacoes = await repo.get_obrigacoes_atrasadas(condominio_id)
     return [ObrigacaoFiscalResponse.model_validate(o) for o in obrigacoes]
@@ -1082,10 +1164,10 @@ async def criar_das(
 @router.get("/das")
 async def listar_das(
     condominio_id: UUID,
-    ano: Optional[int] = None,
+    ano: int | None = None,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> List[SimplesNacionalDASResponse]:
+) -> list[SimplesNacionalDASResponse]:
     """Lista DAS do Simples Nacional."""
     das_list = await repo.list_das(condominio_id, ano)
     return [SimplesNacionalDASResponse.model_validate(d) for d in das_list]
@@ -1098,7 +1180,7 @@ async def obter_das_competencia(
     ano: int = Query(..., ge=2000),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> Optional[SimplesNacionalDASResponse]:
+) -> SimplesNacionalDASResponse | None:
     """Busca DAS de uma competencia."""
     das = await repo.get_das_competencia(condominio_id, mes, ano)
     if not das:
@@ -1147,7 +1229,7 @@ async def calcular_das(
 async def obter_faixas_simples(
     anexo: str = Query("III", description="III, IV ou V"),
     current_user: dict = Depends(get_current_user),
-) -> List[Dict[str, Any]]:
+) -> list[dict[str, Any]]:
     """Retorna tabela de faixas do Simples Nacional.
 
     Anexo III - Servicos de vigilancia, limpeza, conservacao:
@@ -1170,7 +1252,7 @@ async def obter_receita_12_meses(
     ano_referencia: int = Query(..., ge=2000),
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Calcula receita bruta dos ultimos 12 meses para DAS."""
     receita = await repo.get_receita_12_meses(condominio_id, mes_referencia, ano_referencia)
     return {
@@ -1202,12 +1284,12 @@ async def criar_suframa_config(
     return SUFRAMAConfigResponse.model_validate(config)
 
 
-@router.get("/suframa/config", response_model=Optional[SUFRAMAConfigResponse])
+@router.get("/suframa/config", response_model=SUFRAMAConfigResponse | None)
 async def obter_suframa_config(
     condominio_id: UUID,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> Optional[SUFRAMAConfigResponse]:
+) -> SUFRAMAConfigResponse | None:
     """Busca configuracao SUFRAMA ativa."""
     config = await repo.get_suframa_config(condominio_id)
     if not config:
@@ -1236,8 +1318,8 @@ async def registrar_operacao_suframa(
 @router.get("/suframa/operacoes", response_model=SUFRAMAOperacaoListResponse)
 async def listar_operacoes_suframa(
     condominio_id: UUID,
-    data_inicial: Optional[date] = None,
-    data_final: Optional[date] = None,
+    data_inicial: date | None = None,
+    data_final: date | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     repo: FiscalRepository = Depends(get_repository),
@@ -1274,7 +1356,7 @@ async def obter_economia_suframa(
     data_final: date,
     repo: FiscalRepository = Depends(get_repository),
     current_user: dict = Depends(get_current_user),
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Calcula economia SUFRAMA de um periodo."""
     economia = await repo.get_economia_suframa_periodo(condominio_id, data_inicial, data_final)
     return {

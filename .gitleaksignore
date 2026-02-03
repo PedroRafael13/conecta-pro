@@ -1,2 +1,3 @@
 # Tokens de teste para E2E
 frontend/e2e/auth.setup.ts:jwt:134
+frontend/e2e/helpers/auth.ts:jwt:9

@@ -4,7 +4,6 @@ Usa pydantic-settings para validação e carregamento de variáveis de ambiente.
 """
 
 from functools import lru_cache
-from typing import List
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -32,9 +31,7 @@ class Settings(BaseSettings):
     port: int = Field(default=8080)
 
     # Database
-    database_url: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/erp_conecta_mais"
-    )
+    database_url: str = Field(default="postgresql+asyncpg://postgres:postgres@localhost:5432/erp_conecta_mais")
     database_pool_size: int = Field(default=10)
     database_max_overflow: int = Field(default=20)
 
@@ -75,8 +72,15 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = Field(default=0.7)
     LLM_FALLBACK_ENABLED: bool = Field(default=True)
 
+    # NF-e/Fiscal Configuration
+    NFE_CERT_PATH: str = Field(default="/certs/certificado.p12")
+    NFE_CERT_PASSWORD: str = Field(default="")
+    NFE_AMBIENTE: str = Field(default="2")  # 1-Produção, 2-Homologação
+    NFE_UF: str = Field(default="SP")
+    NFE_TIMEOUT_SECONDS: int = Field(default=30)
+
     @property
-    def cors_origins(self) -> List[str]:
+    def cors_origins(self) -> list[str]:
         """Retorna lista de CORS origins parseada."""
         if isinstance(self.cors_origins_str, str):
             return [origin.strip() for origin in self.cors_origins_str.split(",") if origin.strip()]

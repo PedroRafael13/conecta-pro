@@ -1,0 +1,224 @@
+# ==========================================================================
+# Conecta PRO - Staging Environment (OpenClaw Workspace)
+# ==========================================================================
+# Ambiente separado para OpenClaw trabalhar 24/7 sem afetar produção
+#
+# Uso:
+#   docker compose -f docker-compose.staging.yml up -d
+#   docker compose -f docker-compose.staging.yml logs -f
+#   docker compose -f docker-compose.staging.yml down
+#
+# Portas:
+#   - Backend: 8081 (staging) vs 8080 (prod)
+#   - Frontend: 3002 (staging) vs 3001 (prod)
+#   - PostgreSQL: não exposta (rede interna apenas)
+#   - Redis: não exposta (rede interna apenas)
+# ==========================================================================
+
+services:
+  # ==========================================================================
+  # PostgreSQL Staging Database
+  # ==========================================================================
+  postgres-staging:
+    image: postgres:16-alpine
+    container_name: conecta-pro-postgres-staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB_STAGING:-conecta_pro_staging}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - ./scripts/init-db-staging.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # Backup automático diário
+      - ./backups/staging:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB_STAGING:-conecta_pro_staging}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conecta-staging-network
+
+  # ==========================================================================
+  # Redis Staging Cache
+  # ==========================================================================
+  redis-staging:
+    image: redis:7-alpine
+    container_name: conecta-pro-redis-staging
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_staging_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - conecta-staging-network
+
+  # ==========================================================================
+  # Backend FastAPI Staging
+  # ==========================================================================
+  backend-staging:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: conecta-pro-backend-staging
+    restart: unless-stopped
+    environment:
+      # App
+      APP_NAME: ${APP_NAME:-Conecta PRO Staging}
+      DEBUG: ${DEBUG:-true}
+      ENVIRONMENT: staging
+      HOST: 0.0.0.0
+      PORT: 8081
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
+      # Redis
+      REDIS_URL: redis://redis-staging:6379/1
+      REDIS_TTL: ${REDIS_TTL:-3600}
+      # Celery
+      CELERY_BROKER_URL: redis://redis-staging:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-staging:6379/0
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY_STAGING:-STAGING_SECRET_KEY_NOT_FOR_PROD}
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      # CORS (Allow OpenClaw)
+      CORS_ORIGINS: http://localhost:3002,http://localhost:8081,http://localhost:8080
+      # Logging
+      LOG_LEVEL: DEBUG
+      # Bartolo AI
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-2000}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.7}
+      LLM_FALLBACK_ENABLED: ${LLM_FALLBACK_ENABLED:-true}
+      # OpenClaw Flags
+      OPENCLAW_MODE: "true"
+      OPENCLAW_FULL_ACCESS: "true"
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - conecta-staging-network
+    volumes:
+      - ./logs/staging:/app/logs
+      - ./uploads/staging:/app/uploads
+      - ./reports:/opt/conecta-pro/reports
+      # OpenClaw precisa acessar o código fonte
+      - ./backend:/app:ro
+      # Testes
+      - ./backend/tests:/app/tests
+
+  # ==========================================================================
+  # Frontend Next.js Staging
+  # ==========================================================================
+  frontend-staging:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8081
+    container_name: conecta-pro-frontend-staging
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:8081
+      NEXT_PUBLIC_ENVIRONMENT: staging
+    ports:
+      - "3002:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+    networks:
+      - conecta-staging-network
+    depends_on:
+      backend-staging:
+        condition: service_healthy
+    volumes:
+      # OpenClaw precisa acessar o código fonte
+      - ./frontend:/app:ro
+
+  # ==========================================================================
+  # Celery Worker Staging (Operacional)
+  # ==========================================================================
+  celery-operacional-staging:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: conecta-pro-celery-operacional-staging
+    restart: unless-stopped
+    command: celery -A backend.infrastructure.celery_app worker -Q operacional -n operacional@%h --loglevel=info --concurrency=2
+    environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
+      # Celery
+      CELERY_BROKER_URL: redis://redis-staging:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-staging:6379/0
+      ENVIRONMENT: staging
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+    networks:
+      - conecta-staging-network
+    volumes:
+      - ./logs/staging:/app/logs
+
+  # ==========================================================================
+  # Celery Beat Staging (Scheduler)
+  # ==========================================================================
+  celery-beat-staging:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: conecta-pro-celery-beat-staging
+    restart: unless-stopped
+    command: celery -A backend.infrastructure.celery_app beat --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres-staging:5432/${POSTGRES_DB_STAGING:-conecta_pro_staging}
+      CELERY_BROKER_URL: redis://redis-staging:6379/0
+      CELERY_RESULT_BACKEND: redis://redis-staging:6379/0
+      ENVIRONMENT: staging
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres-staging:
+        condition: service_healthy
+      redis-staging:
+        condition: service_healthy
+    networks:
+      - conecta-staging-network
+    volumes:
+      - ./logs/staging:/app/logs
+
+volumes:
+  postgres_staging_data:
+    driver: local
+  redis_staging_data:
+    driver: local
+
+networks:
+  conecta-staging-network:
+    driver: bridge
+    name: conecta-staging-network
