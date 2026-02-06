@@ -4,22 +4,25 @@ Sistema de Versionamento de Documentos.
 Gerencia histórico de versões de documentos fiscais.
 """
 
-from datetime import datetime
-from typing import Dict, Any, List, Optional
-from dataclasses import dataclass
-from uuid import UUID, uuid4
-from enum import Enum
 import json
 import logging
+from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+from typing import Any
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.security.sql_validator import validate_table_name
 
 logger = logging.getLogger(__name__)
 
 
 class MotivoAlteracao(Enum):
     """Motivos de alteração de documento."""
+
     RETIFICACAO = "retificacao"
     CARTA_CORRECAO = "carta_correcao"
     CANCELAMENTO = "cancelamento"
@@ -32,14 +35,15 @@ class MotivoAlteracao(Enum):
 @dataclass
 class VersaoDocumento:
     """Representa uma versão de documento."""
+
     id: UUID
     documento_id: UUID
     tipo_documento: str
     versao: int
-    dados: Dict[str, Any]
+    dados: dict[str, Any]
     motivo: MotivoAlteracao
-    usuario_id: Optional[UUID]
-    observacao: Optional[str]
+    usuario_id: UUID | None
+    observacao: str | None
     created_at: datetime
 
 
@@ -54,10 +58,10 @@ class GerenciadorVersoes:
         documento_id: UUID,
         tipo_documento: str,
         versao: int,
-        dados: Dict[str, Any],
+        dados: dict[str, Any],
         motivo: MotivoAlteracao,
-        usuario_id: Optional[UUID] = None,
-        observacao: Optional[str] = None
+        usuario_id: UUID | None = None,
+        observacao: str | None = None,
     ) -> UUID:
         """
         Registra nova versão de documento.
@@ -97,21 +101,16 @@ class GerenciadorVersoes:
                 "motivo": motivo.value,
                 "usuario_id": usuario_id,
                 "obs": observacao,
-            }
+            },
         )
 
         logger.info(
-            f"Versão {versao} registrada para documento {documento_id} "
-            f"({tipo_documento}) - Motivo: {motivo.value}"
+            f"Versão {versao} registrada para documento {documento_id} ({tipo_documento}) - Motivo: {motivo.value}"
         )
 
         return versao_id
 
-    async def obter_historico(
-        self,
-        documento_id: UUID,
-        limite: int = 10
-    ) -> List[VersaoDocumento]:
+    async def obter_historico(self, documento_id: UUID, limite: int = 10) -> list[VersaoDocumento]:
         """
         Obtém histórico de versões de um documento.
 
@@ -132,30 +131,28 @@ class GerenciadorVersoes:
             ORDER BY versao DESC
             LIMIT :limite
             """),
-            {"doc_id": documento_id, "limite": limite}
+            {"doc_id": documento_id, "limite": limite},
         )
 
         versoes = []
         for row in result.fetchall():
-            versoes.append(VersaoDocumento(
-                id=row.id,
-                documento_id=row.documento_id,
-                tipo_documento=row.tipo_documento,
-                versao=row.versao,
-                dados=json.loads(row.dados_anteriores) if row.dados_anteriores else {},
-                motivo=MotivoAlteracao(row.motivo_alteracao),
-                usuario_id=row.usuario_id,
-                observacao=row.observacao,
-                created_at=row.created_at,
-            ))
+            versoes.append(
+                VersaoDocumento(
+                    id=row.id,
+                    documento_id=row.documento_id,
+                    tipo_documento=row.tipo_documento,
+                    versao=row.versao,
+                    dados=json.loads(row.dados_anteriores) if row.dados_anteriores else {},
+                    motivo=MotivoAlteracao(row.motivo_alteracao),
+                    usuario_id=row.usuario_id,
+                    observacao=row.observacao,
+                    created_at=row.created_at,
+                )
+            )
 
         return versoes
 
-    async def obter_versao_especifica(
-        self,
-        documento_id: UUID,
-        versao: int
-    ) -> Optional[VersaoDocumento]:
+    async def obter_versao_especifica(self, documento_id: UUID, versao: int) -> VersaoDocumento | None:
         """
         Obtém uma versão específica de um documento.
 
@@ -174,7 +171,7 @@ class GerenciadorVersoes:
             FROM documentos_historico
             WHERE documento_id = :doc_id AND versao = :versao
             """),
-            {"doc_id": documento_id, "versao": versao}
+            {"doc_id": documento_id, "versao": versao},
         )
 
         row = result.fetchone()
@@ -193,12 +190,7 @@ class GerenciadorVersoes:
             created_at=row.created_at,
         )
 
-    async def comparar_versoes(
-        self,
-        documento_id: UUID,
-        versao1: int,
-        versao2: int
-    ) -> Dict[str, Any]:
+    async def comparar_versoes(self, documento_id: UUID, versao1: int, versao2: int) -> dict[str, Any]:
         """
         Compara duas versões de um documento.
 
@@ -230,35 +222,37 @@ class GerenciadorVersoes:
 
         # Campos adicionados
         for campo in chaves_v2 - chaves_v1:
-            diferencas["campos_adicionados"].append({
-                "campo": campo,
-                "valor_novo": v2.dados[campo],
-            })
+            diferencas["campos_adicionados"].append(
+                {
+                    "campo": campo,
+                    "valor_novo": v2.dados[campo],
+                }
+            )
 
         # Campos removidos
         for campo in chaves_v1 - chaves_v2:
-            diferencas["campos_removidos"].append({
-                "campo": campo,
-                "valor_antigo": v1.dados[campo],
-            })
+            diferencas["campos_removidos"].append(
+                {
+                    "campo": campo,
+                    "valor_antigo": v1.dados[campo],
+                }
+            )
 
         # Campos alterados
         for campo in chaves_v1 & chaves_v2:
             if v1.dados[campo] != v2.dados[campo]:
-                diferencas["campos_alterados"].append({
-                    "campo": campo,
-                    "valor_antigo": v1.dados[campo],
-                    "valor_novo": v2.dados[campo],
-                })
+                diferencas["campos_alterados"].append(
+                    {
+                        "campo": campo,
+                        "valor_antigo": v1.dados[campo],
+                        "valor_novo": v2.dados[campo],
+                    }
+                )
 
         return diferencas
 
     async def restaurar_versao(
-        self,
-        documento_id: UUID,
-        versao: int,
-        tabela: str,
-        usuario_id: Optional[UUID] = None
+        self, documento_id: UUID, versao: int, tabela: str, usuario_id: UUID | None = None
     ) -> bool:
         """
         Restaura documento para uma versão anterior.
@@ -276,16 +270,15 @@ class GerenciadorVersoes:
         if not versao_obj:
             raise ValueError(f"Versão {versao} não encontrada")
 
+        validate_table_name(tabela)
+
         # Obter versão atual
-        result = await self.db.execute(
-            text(f"SELECT * FROM {tabela} WHERE id = :id"),
-            {"id": documento_id}
-        )
+        result = await self.db.execute(text(f"SELECT * FROM {tabela} WHERE id = :id"), {"id": documento_id})  # noqa: S608
         atual = result.fetchone()
         if not atual:
             raise ValueError("Documento não encontrado")
 
-        versao_atual = atual.versao if hasattr(atual, 'versao') else 1
+        versao_atual = atual.versao if hasattr(atual, "versao") else 1
 
         # Registrar versão atual antes de restaurar
         await self.registrar_versao(
@@ -304,23 +297,18 @@ class GerenciadorVersoes:
         dados["updated_at"] = datetime.utcnow()
 
         # Construir UPDATE
-        campos_update = [
-            f"{k} = :{k}" for k in dados.keys()
-            if k not in ["id", "tenant_id", "created_at"]
-        ]
+        campos_update = [f"{k} = :{k}" for k in dados.keys() if k not in ["id", "tenant_id", "created_at"]]
 
         await self.db.execute(
             text(f"""
             UPDATE {tabela}
-            SET {', '.join(campos_update)}
+            SET {", ".join(campos_update)}
             WHERE id = :documento_id
             """),
-            {**dados, "documento_id": documento_id}
+            {**dados, "documento_id": documento_id},
         )
 
-        logger.info(
-            f"Documento {documento_id} restaurado para versão {versao}"
-        )
+        logger.info(f"Documento {documento_id} restaurado para versão {versao}")
 
         return True
 
@@ -331,14 +319,11 @@ class GerenciadorVersoes:
             SELECT COUNT(*) FROM documentos_historico
             WHERE documento_id = :doc_id
             """),
-            {"doc_id": documento_id}
+            {"doc_id": documento_id},
         )
         return result.scalar() or 0
 
-    async def obter_versao_mais_recente(
-        self,
-        documento_id: UUID
-    ) -> Optional[VersaoDocumento]:
+    async def obter_versao_mais_recente(self, documento_id: UUID) -> VersaoDocumento | None:
         """Obtém a versão mais recente no histórico."""
         result = await self.db.execute(
             text("""
@@ -350,7 +335,7 @@ class GerenciadorVersoes:
             ORDER BY versao DESC
             LIMIT 1
             """),
-            {"doc_id": documento_id}
+            {"doc_id": documento_id},
         )
 
         row = result.fetchone()
@@ -369,11 +354,7 @@ class GerenciadorVersoes:
             created_at=row.created_at,
         )
 
-    async def limpar_historico_antigo(
-        self,
-        dias: int = 365,
-        manter_minimo: int = 5
-    ) -> int:
+    async def limpar_historico_antigo(self, dias: int = 365, manter_minimo: int = 5) -> int:
         """
         Remove versões antigas do histórico.
 
@@ -401,7 +382,7 @@ class GerenciadorVersoes:
                 ) >= :manter
             )
             """),
-            {"dias": dias, "manter": manter_minimo}
+            {"dias": dias, "manter": manter_minimo},
         )
 
         count = result.rowcount

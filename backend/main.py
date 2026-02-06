@@ -2,14 +2,14 @@
 ERP Conecta Mais V2.0 - Aplicação Principal
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from core.config import settings
 from core.logging import configure_logging, logger
@@ -40,9 +40,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "connect-src 'self' ws: wss:; "
             "frame-ancestors 'none'"
         )
-        response.headers["Strict-Transport-Security"] = (
-            "max-age=31536000; includeSubDomains; preload"
-        )
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         # Cache control para APIs
         if "/api/" in request.url.path:
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
@@ -109,8 +107,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
 )
 
 # 2. Security Headers
@@ -151,9 +149,14 @@ async def root():
 
 
 # Incluir routers
-from api.v1 import router as api_v1_router
+from api.v1 import router as api_v1_router  # noqa: E402
 
 app.include_router(api_v1_router)
+
+# PATCH 03: LGPD - Endpoint de direitos do titular
+from modules.lgpd.routes.delete_me import router as lgpd_router  # noqa: E402
+
+app.include_router(lgpd_router)
 
 
 if __name__ == "__main__":

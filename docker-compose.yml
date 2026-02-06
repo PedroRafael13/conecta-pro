@@ -32,14 +32,14 @@ services:
     image: redis:7-alpine
     container_name: conecta-pro-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD:-conecta_redis_2024}
     volumes:
       - redis_data:/data
     # SEGURANÇA: Porta NÃO exposta publicamente - acesso apenas via rede interna Docker
     # ports:
     #   - "127.0.0.1:6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-conecta_redis_2024}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -89,11 +89,11 @@ services:
       DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-10}
       DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-20}
       # Redis
-      REDIS_URL: redis://redis:6379/1
+      REDIS_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/1
       REDIS_TTL: ${REDIS_TTL:-3600}
       # Celery
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
+      CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD:-conecta_redis_2024}@redis:6379/0
       # JWT
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-CHANGE_ME_IN_PRODUCTION_32_CHARS_MIN}
       JWT_ALGORITHM: HS256

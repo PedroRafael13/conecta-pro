@@ -4,24 +4,27 @@ Sistema de Compliance LGPD.
 Implementa controles para conformidade com a Lei Geral de Proteção de Dados.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, Optional, Any, List
-from dataclasses import dataclass, field
-from enum import Enum
-from uuid import UUID, uuid4
 import json
 import logging
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .audit_logger import AuditLogger, AuditEvent, TipoEvento, get_audit_logger
+from core.security.sql_validator import validate_table_name
+
+from .audit_logger import AuditEvent, AuditLogger, TipoEvento, get_audit_logger
 
 logger = logging.getLogger(__name__)
 
 
 class ConsentimentoStatus(Enum):
     """Status de consentimento."""
+
     PENDENTE = "pendente"
     CONCEDIDO = "concedido"
     REVOGADO = "revogado"
@@ -30,6 +33,7 @@ class ConsentimentoStatus(Enum):
 
 class TipoSolicitacao(Enum):
     """Tipos de solicitação do titular."""
+
     ACESSO = "acesso"  # Art. 18, II - acesso aos dados
     CORRECAO = "correcao"  # Art. 18, III - correção de dados
     ANONIMIZACAO = "anonimizacao"  # Art. 18, IV - anonimização
@@ -42,6 +46,7 @@ class TipoSolicitacao(Enum):
 
 class StatusSolicitacao(Enum):
     """Status de solicitação."""
+
     ABERTA = "aberta"
     EM_ANDAMENTO = "em_andamento"
     CONCLUIDA = "concluida"
@@ -52,37 +57,39 @@ class StatusSolicitacao(Enum):
 @dataclass
 class Consentimento:
     """Registro de consentimento."""
+
     id: UUID = field(default_factory=uuid4)
     tenant_id: UUID = None
     titular_id: UUID = None  # ID da pessoa
     finalidade: str = ""  # Ex: "processamento_folha", "envio_esocial"
-    dados_autorizados: List[str] = field(default_factory=list)
+    dados_autorizados: list[str] = field(default_factory=list)
     status: ConsentimentoStatus = ConsentimentoStatus.PENDENTE
-    data_consentimento: Optional[datetime] = None
-    data_revogacao: Optional[datetime] = None
-    data_expiracao: Optional[datetime] = None
-    ip_origem: Optional[str] = None
-    evidencia: Optional[str] = None  # Hash ou referência da evidência
+    data_consentimento: datetime | None = None
+    data_revogacao: datetime | None = None
+    data_expiracao: datetime | None = None
+    ip_origem: str | None = None
+    evidencia: str | None = None  # Hash ou referência da evidência
     created_at: datetime = field(default_factory=datetime.utcnow)
 
 
 @dataclass
 class SolicitacaoTitular:
     """Solicitação de titular de dados."""
+
     id: UUID = field(default_factory=uuid4)
     tenant_id: UUID = None
     titular_id: UUID = None
     tipo: TipoSolicitacao = TipoSolicitacao.ACESSO
     status: StatusSolicitacao = StatusSolicitacao.ABERTA
     descricao: str = ""
-    dados_solicitados: List[str] = field(default_factory=list)
-    resposta: Optional[str] = None
-    dados_resposta: Optional[Dict] = None
+    dados_solicitados: list[str] = field(default_factory=list)
+    resposta: str | None = None
+    dados_resposta: dict | None = None
     prazo: datetime = None  # 15 dias conforme LGPD
-    responsavel_id: Optional[UUID] = None
+    responsavel_id: UUID | None = None
     created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: Optional[datetime] = None
-    concluida_em: Optional[datetime] = None
+    updated_at: datetime | None = None
+    concluida_em: datetime | None = None
 
 
 class ControleLGPD:
@@ -110,11 +117,7 @@ class ControleLGPD:
         "marketing": "consentimento",  # Art. 7, I
     }
 
-    def __init__(
-        self,
-        db_session: Optional[AsyncSession] = None,
-        audit_logger: Optional[AuditLogger] = None
-    ):
+    def __init__(self, db_session: AsyncSession | None = None, audit_logger: AuditLogger | None = None):
         self.db = db_session
         self.audit = audit_logger or get_audit_logger()
 
@@ -123,10 +126,10 @@ class ControleLGPD:
         tenant_id: UUID,
         titular_id: UUID,
         finalidade: str,
-        dados_autorizados: List[str],
-        ip_origem: Optional[str] = None,
-        evidencia: Optional[str] = None,
-        expiracao_dias: Optional[int] = None
+        dados_autorizados: list[str],
+        ip_origem: str | None = None,
+        evidencia: str | None = None,
+        expiracao_dias: int | None = None,
     ) -> Consentimento:
         """
         Registra consentimento do titular.
@@ -161,33 +164,27 @@ class ControleLGPD:
             await self._persistir_consentimento(consentimento)
 
         # Registrar na auditoria
-        await self.audit.registrar(AuditEvent(
-            tenant_id=tenant_id,
-            tipo=TipoEvento.CONSENTIMENTO,
-            recurso="consentimento",
-            recurso_id=str(consentimento.id),
-            acao=f"Consentimento concedido para {finalidade}",
-            metadata={
-                "titular_id": str(titular_id),
-                "finalidade": finalidade,
-                "dados_autorizados": dados_autorizados,
-            },
-            ip_origem=ip_origem,
-        ))
-
-        logger.info(
-            f"Consentimento registrado: {consentimento.id} "
-            f"(titular={titular_id}, finalidade={finalidade})"
+        await self.audit.registrar(
+            AuditEvent(
+                tenant_id=tenant_id,
+                tipo=TipoEvento.CONSENTIMENTO,
+                recurso="consentimento",
+                recurso_id=str(consentimento.id),
+                acao=f"Consentimento concedido para {finalidade}",
+                metadata={
+                    "titular_id": str(titular_id),
+                    "finalidade": finalidade,
+                    "dados_autorizados": dados_autorizados,
+                },
+                ip_origem=ip_origem,
+            )
         )
+
+        logger.info(f"Consentimento registrado: {consentimento.id} (titular={titular_id}, finalidade={finalidade})")
 
         return consentimento
 
-    async def revogar_consentimento(
-        self,
-        tenant_id: UUID,
-        consentimento_id: UUID,
-        motivo: Optional[str] = None
-    ) -> bool:
+    async def revogar_consentimento(self, tenant_id: UUID, consentimento_id: UUID, motivo: str | None = None) -> bool:
         """
         Revoga um consentimento.
 
@@ -213,29 +210,26 @@ class ControleLGPD:
                     "tenant_id": tenant_id,
                     "status": ConsentimentoStatus.REVOGADO.value,
                     "data_revogacao": datetime.utcnow(),
-                }
+                },
             )
             await self.db.commit()
 
         # Registrar na auditoria
-        await self.audit.registrar(AuditEvent(
-            tenant_id=tenant_id,
-            tipo=TipoEvento.REVOGACAO_CONSENTIMENTO,
-            recurso="consentimento",
-            recurso_id=str(consentimento_id),
-            acao="Consentimento revogado",
-            metadata={"motivo": motivo},
-        ))
+        await self.audit.registrar(
+            AuditEvent(
+                tenant_id=tenant_id,
+                tipo=TipoEvento.REVOGACAO_CONSENTIMENTO,
+                recurso="consentimento",
+                recurso_id=str(consentimento_id),
+                acao="Consentimento revogado",
+                metadata={"motivo": motivo},
+            )
+        )
 
         logger.info(f"Consentimento revogado: {consentimento_id}")
         return True
 
-    async def verificar_consentimento(
-        self,
-        tenant_id: UUID,
-        titular_id: UUID,
-        finalidade: str
-    ) -> bool:
+    async def verificar_consentimento(self, tenant_id: UUID, titular_id: UUID, finalidade: str) -> bool:
         """
         Verifica se há consentimento válido para uma finalidade.
 
@@ -270,7 +264,7 @@ class ControleLGPD:
                 "titular_id": titular_id,
                 "finalidade": finalidade,
                 "status": ConsentimentoStatus.CONCEDIDO.value,
-            }
+            },
         )
 
         return (result.scalar() or 0) > 0
@@ -281,7 +275,7 @@ class ControleLGPD:
         titular_id: UUID,
         tipo: TipoSolicitacao,
         descricao: str,
-        dados_solicitados: Optional[List[str]] = None
+        dados_solicitados: list[str] | None = None,
     ) -> SolicitacaoTitular:
         """
         Cria solicitação de titular.
@@ -311,23 +305,22 @@ class ControleLGPD:
             await self._persistir_solicitacao(solicitacao)
 
         # Registrar na auditoria
-        await self.audit.registrar(AuditEvent(
-            tenant_id=tenant_id,
-            tipo=TipoEvento.SOLICITACAO_TITULAR,
-            recurso="solicitacao_lgpd",
-            recurso_id=str(solicitacao.id),
-            acao=f"Solicitação criada: {tipo.value}",
-            metadata={
-                "titular_id": str(titular_id),
-                "tipo": tipo.value,
-                "prazo": solicitacao.prazo.isoformat(),
-            },
-        ))
-
-        logger.info(
-            f"Solicitação LGPD criada: {solicitacao.id} "
-            f"(tipo={tipo.value}, prazo={solicitacao.prazo.date()})"
+        await self.audit.registrar(
+            AuditEvent(
+                tenant_id=tenant_id,
+                tipo=TipoEvento.SOLICITACAO_TITULAR,
+                recurso="solicitacao_lgpd",
+                recurso_id=str(solicitacao.id),
+                acao=f"Solicitação criada: {tipo.value}",
+                metadata={
+                    "titular_id": str(titular_id),
+                    "tipo": tipo.value,
+                    "prazo": solicitacao.prazo.isoformat(),
+                },
+            )
         )
+
+        logger.info(f"Solicitação LGPD criada: {solicitacao.id} (tipo={tipo.value}, prazo={solicitacao.prazo.date()})")
 
         return solicitacao
 
@@ -336,9 +329,9 @@ class ControleLGPD:
         tenant_id: UUID,
         solicitacao_id: UUID,
         status: StatusSolicitacao,
-        resposta: Optional[str] = None,
-        dados_resposta: Optional[Dict] = None,
-        responsavel_id: Optional[UUID] = None
+        resposta: str | None = None,
+        dados_resposta: dict | None = None,
+        responsavel_id: UUID | None = None,
     ) -> bool:
         """
         Atualiza status de uma solicitação.
@@ -378,29 +371,27 @@ class ControleLGPD:
                     "responsavel_id": responsavel_id,
                     "updated_at": agora,
                     "concluida_em": concluida_em,
-                }
+                },
             )
             await self.db.commit()
 
         # Auditoria
-        await self.audit.registrar(AuditEvent(
-            tenant_id=tenant_id,
-            usuario_id=responsavel_id,
-            tipo=TipoEvento.SOLICITACAO_TITULAR,
-            recurso="solicitacao_lgpd",
-            recurso_id=str(solicitacao_id),
-            acao=f"Solicitação atualizada para {status.value}",
-        ))
+        await self.audit.registrar(
+            AuditEvent(
+                tenant_id=tenant_id,
+                usuario_id=responsavel_id,
+                tipo=TipoEvento.SOLICITACAO_TITULAR,
+                recurso="solicitacao_lgpd",
+                recurso_id=str(solicitacao_id),
+                acao=f"Solicitação atualizada para {status.value}",
+            )
+        )
 
         return True
 
     async def listar_solicitacoes(
-        self,
-        tenant_id: UUID,
-        status: Optional[StatusSolicitacao] = None,
-        titular_id: Optional[UUID] = None,
-        limite: int = 50
-    ) -> List[Dict]:
+        self, tenant_id: UUID, status: StatusSolicitacao | None = None, titular_id: UUID | None = None, limite: int = 50
+    ) -> list[dict]:
         """Lista solicitações de um tenant."""
         if not self.db:
             return []
@@ -421,40 +412,36 @@ class ControleLGPD:
             SELECT id, titular_id, tipo, status, descricao, prazo,
                    created_at, updated_at, concluida_em
             FROM solicitacoes_lgpd
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at DESC
             LIMIT :limite
             """),
-            params
+            params,
         )
 
         solicitacoes = []
         for row in result.fetchall():
-            solicitacoes.append({
-                "id": str(row.id),
-                "titular_id": str(row.titular_id),
-                "tipo": row.tipo,
-                "status": row.status,
-                "descricao": row.descricao,
-                "prazo": row.prazo.isoformat() if row.prazo else None,
-                "created_at": row.created_at.isoformat(),
-                "vencida": row.prazo < datetime.utcnow() if row.prazo else False,
-            })
+            solicitacoes.append(
+                {
+                    "id": str(row.id),
+                    "titular_id": str(row.titular_id),
+                    "tipo": row.tipo,
+                    "status": row.status,
+                    "descricao": row.descricao,
+                    "prazo": row.prazo.isoformat() if row.prazo else None,
+                    "created_at": row.created_at.isoformat(),
+                    "vencida": row.prazo < datetime.utcnow() if row.prazo else False,
+                }
+            )
 
         return solicitacoes
 
-    async def verificar_solicitacoes_vencidas(
-        self,
-        tenant_id: Optional[UUID] = None
-    ) -> List[Dict]:
+    async def verificar_solicitacoes_vencidas(self, tenant_id: UUID | None = None) -> list[dict]:
         """Verifica solicitações com prazo vencido."""
         if not self.db:
             return []
 
-        conditions = [
-            "status IN ('aberta', 'em_andamento')",
-            "prazo < NOW()"
-        ]
+        conditions = ["status IN ('aberta', 'em_andamento')", "prazo < NOW()"]
         params = {}
 
         if tenant_id:
@@ -465,23 +452,25 @@ class ControleLGPD:
             text(f"""
             SELECT id, tenant_id, titular_id, tipo, prazo, created_at
             FROM solicitacoes_lgpd
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY prazo ASC
             """),
-            params
+            params,
         )
 
         vencidas = []
         for row in result.fetchall():
             dias_atraso = (datetime.utcnow() - row.prazo).days
-            vencidas.append({
-                "id": str(row.id),
-                "tenant_id": str(row.tenant_id),
-                "titular_id": str(row.titular_id),
-                "tipo": row.tipo,
-                "prazo": row.prazo.isoformat(),
-                "dias_atraso": dias_atraso,
-            })
+            vencidas.append(
+                {
+                    "id": str(row.id),
+                    "tenant_id": str(row.tenant_id),
+                    "titular_id": str(row.titular_id),
+                    "tipo": row.tipo,
+                    "prazo": row.prazo.isoformat(),
+                    "dias_atraso": dias_atraso,
+                }
+            )
 
         if vencidas:
             logger.warning(f"Encontradas {len(vencidas)} solicitações LGPD vencidas")
@@ -489,11 +478,8 @@ class ControleLGPD:
         return vencidas
 
     async def exportar_dados_titular(
-        self,
-        tenant_id: UUID,
-        titular_id: UUID,
-        tabelas: Optional[List[str]] = None
-    ) -> Dict[str, Any]:
+        self, tenant_id: UUID, titular_id: UUID, tabelas: list[str] | None = None
+    ) -> dict[str, Any]:
         """
         Exporta todos os dados de um titular (portabilidade).
 
@@ -526,6 +512,7 @@ class ControleLGPD:
         if self.db:
             for tabela in tabelas:
                 try:
+                    validate_table_name(tabela)
                     # Assumir que todas as tabelas têm coluna funcionario_id ou titular_id
                     result = await self.db.execute(
                         text(f"""
@@ -536,14 +523,12 @@ class ControleLGPD:
                             OR id = :titular_id
                           )
                         """),
-                        {"tenant_id": tenant_id, "titular_id": titular_id}
+                        {"tenant_id": tenant_id, "titular_id": titular_id},
                     )
 
                     rows = result.fetchall()
                     if rows:
-                        dados_exportados["dados"][tabela] = [
-                            dict(row._mapping) for row in rows
-                        ]
+                        dados_exportados["dados"][tabela] = [dict(row._mapping) for row in rows]
 
                 except Exception as e:
                     logger.warning(f"Erro ao exportar tabela {tabela}: {e}")
@@ -560,11 +545,8 @@ class ControleLGPD:
         return dados_exportados
 
     async def anonimizar_dados_titular(
-        self,
-        tenant_id: UUID,
-        titular_id: UUID,
-        tabelas: Optional[List[str]] = None
-    ) -> Dict[str, int]:
+        self, tenant_id: UUID, titular_id: UUID, tabelas: list[str] | None = None
+    ) -> dict[str, int]:
         """
         Anonimiza dados de um titular.
 
@@ -580,19 +562,18 @@ class ControleLGPD:
         resultado = {}
 
         # Registrar auditoria ANTES da anonimização
-        await self.audit.registrar(AuditEvent(
-            tenant_id=tenant_id,
-            tipo=TipoEvento.ANONIMIZACAO,
-            recurso="dados_pessoais",
-            recurso_id=str(titular_id),
-            acao="Anonimização de dados do titular",
-            metadata={"tabelas": tabelas},
-        ))
-
-        logger.warning(
-            f"Anonimização de dados iniciada: tenant={tenant_id}, "
-            f"titular={titular_id}"
+        await self.audit.registrar(
+            AuditEvent(
+                tenant_id=tenant_id,
+                tipo=TipoEvento.ANONIMIZACAO,
+                recurso="dados_pessoais",
+                recurso_id=str(titular_id),
+                acao="Anonimização de dados do titular",
+                metadata={"tabelas": tabelas},
+            )
         )
+
+        logger.warning(f"Anonimização de dados iniciada: tenant={tenant_id}, titular={titular_id}")
 
         # Implementação depende do schema específico
         # Exemplo simplificado:
@@ -611,7 +592,7 @@ class ControleLGPD:
                     anonimizado_em = NOW()
                 WHERE tenant_id = :tenant_id AND id = :titular_id
                 """),
-                {"tenant_id": tenant_id, "titular_id": titular_id}
+                {"tenant_id": tenant_id, "titular_id": titular_id},
             )
             resultado["funcionarios"] = result.rowcount
 
@@ -619,10 +600,7 @@ class ControleLGPD:
 
         return resultado
 
-    async def gerar_relatorio_impacto(
-        self,
-        tenant_id: UUID
-    ) -> Dict[str, Any]:
+    async def gerar_relatorio_impacto(self, tenant_id: UUID) -> dict[str, Any]:
         """
         Gera Relatório de Impacto à Proteção de Dados (RIPD).
 
@@ -642,7 +620,7 @@ class ControleLGPD:
                 FROM funcionarios
                 WHERE tenant_id = :tenant_id AND ativo = TRUE
                 """),
-                {"tenant_id": tenant_id}
+                {"tenant_id": tenant_id},
             )
             relatorio["titulares"] = {
                 "total_funcionarios": result.scalar() or 0,
@@ -656,7 +634,7 @@ class ControleLGPD:
                 WHERE tenant_id = :tenant_id
                 GROUP BY finalidade, status
                 """),
-                {"tenant_id": tenant_id}
+                {"tenant_id": tenant_id},
             )
             consentimentos = {}
             for row in result.fetchall():
@@ -673,7 +651,7 @@ class ControleLGPD:
                 WHERE tenant_id = :tenant_id
                 GROUP BY tipo, status
                 """),
-                {"tenant_id": tenant_id}
+                {"tenant_id": tenant_id},
             )
             solicitacoes = {}
             for row in result.fetchall():
@@ -693,7 +671,7 @@ class ControleLGPD:
 
         return relatorio
 
-    def _dados_por_finalidade(self, finalidade: str) -> List[str]:
+    def _dados_por_finalidade(self, finalidade: str) -> list[str]:
         """Retorna lista de dados tratados por finalidade."""
         mapeamento = {
             "processamento_folha": ["nome", "cpf", "dados_bancarios", "salario", "dependentes"],
@@ -732,7 +710,7 @@ class ControleLGPD:
                 "ip_origem": consentimento.ip_origem,
                 "evidencia": consentimento.evidencia,
                 "created_at": consentimento.created_at,
-            }
+            },
         )
         await self.db.commit()
 
@@ -758,13 +736,13 @@ class ControleLGPD:
                 "dados_solicitados": json.dumps(solicitacao.dados_solicitados),
                 "prazo": solicitacao.prazo,
                 "created_at": solicitacao.created_at,
-            }
+            },
         )
         await self.db.commit()
 
 
 # Instância singleton
-_lgpd_control_instance: Optional[ControleLGPD] = None
+_lgpd_control_instance: ControleLGPD | None = None
 
 
 def get_lgpd_control() -> ControleLGPD:

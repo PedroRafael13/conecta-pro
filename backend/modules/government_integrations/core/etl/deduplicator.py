@@ -4,21 +4,24 @@ Sistema de De-duplicação de Documentos.
 Gerencia unicidade de documentos fiscais e eventos.
 """
 
-from typing import Dict, Any, List, Optional, Tuple
+import logging
 from dataclasses import dataclass
-from uuid import UUID, uuid4
 from datetime import datetime
 from enum import Enum
-import logging
+from typing import Any
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from core.security.sql_validator import validate_table_name
 
 logger = logging.getLogger(__name__)
 
 
 class AcaoDedup(Enum):
     """Ação resultante da de-duplicação."""
+
     INSERIDO = "inserido"
     ATUALIZADO = "atualizado"
     IGNORADO = "ignorado"
@@ -27,28 +30,30 @@ class AcaoDedup(Enum):
 @dataclass
 class RegraDedup:
     """Regra de de-duplicação para um tipo de documento."""
+
     tipo_documento: str
     tabela: str
-    campos_chave: List[str]
-    campos_comparacao: List[str]  # Campos para detectar se houve alteração
+    campos_chave: list[str]
+    campos_comparacao: list[str]  # Campos para detectar se houve alteração
     permite_atualizacao: bool = True
 
 
 @dataclass
 class ResultadoDedup:
     """Resultado de operação de de-duplicação."""
+
     acao: AcaoDedup
     documento_id: UUID
     existia: bool
     versao: int
-    dados_anteriores: Optional[Dict[str, Any]] = None
+    dados_anteriores: dict[str, Any] | None = None
 
 
 class DeduplicadorDocumentos:
     """Gerencia de-duplicação de documentos fiscais."""
 
     # Regras de de-duplicação por tipo
-    REGRAS: Dict[str, RegraDedup] = {
+    REGRAS: dict[str, RegraDedup] = {
         "nfe": RegraDedup(
             tipo_documento="nfe",
             tabela="documentos_fiscais_nfe",
@@ -111,11 +116,7 @@ class DeduplicadorDocumentos:
         self.db = db_session
 
     async def processar(
-        self,
-        tipo_documento: str,
-        dados: Dict[str, Any],
-        tenant_id: str,
-        forcar_atualizacao: bool = False
+        self, tipo_documento: str, dados: dict[str, Any], tenant_id: str, forcar_atualizacao: bool = False
     ) -> ResultadoDedup:
         """
         Processa documento com de-duplicação.
@@ -167,9 +168,7 @@ class DeduplicadorDocumentos:
 
         # Verificar se permite atualização
         if not regra.permite_atualizacao:
-            logger.info(
-                f"Documento {tipo_documento} já existe e não permite atualização"
-            )
+            logger.info(f"Documento {tipo_documento} já existe e não permite atualização")
             return ResultadoDedup(
                 acao=AcaoDedup.IGNORADO,
                 documento_id=documento_id,
@@ -178,9 +177,7 @@ class DeduplicadorDocumentos:
             )
 
         # Atualizar
-        nova_versao = await self._atualizar(
-            regra, documento_id, dados, existente
-        )
+        nova_versao = await self._atualizar(regra, documento_id, dados, existente)
 
         return ResultadoDedup(
             acao=AcaoDedup.ATUALIZADO,
@@ -190,13 +187,10 @@ class DeduplicadorDocumentos:
             dados_anteriores=existente,
         )
 
-    async def _buscar_existente(
-        self,
-        regra: RegraDedup,
-        chave: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    async def _buscar_existente(self, regra: RegraDedup, chave: dict[str, Any]) -> dict[str, Any] | None:
         """Busca documento existente pela chave."""
-        condicoes = " AND ".join(f"{k} = :{k}" for k in chave.keys())
+        validate_table_name(regra.tabela)
+        condicoes = " AND ".join(f"{k} = :{k}" for k in chave)
 
         result = await self.db.execute(
             text(f"""
@@ -204,7 +198,7 @@ class DeduplicadorDocumentos:
             WHERE {condicoes}
             AND ativo = true
             """),
-            chave
+            chave,
         )
 
         row = result.fetchone()
@@ -212,13 +206,9 @@ class DeduplicadorDocumentos:
             return dict(row._mapping)
         return None
 
-    async def _inserir(
-        self,
-        regra: RegraDedup,
-        dados: Dict[str, Any],
-        tenant_id: str
-    ) -> UUID:
+    async def _inserir(self, regra: RegraDedup, dados: dict[str, Any], tenant_id: str) -> UUID:
         """Insere novo documento."""
+        validate_table_name(regra.tabela)
         documento_id = uuid4()
 
         # Preparar dados
@@ -237,26 +227,21 @@ class DeduplicadorDocumentos:
 
         await self.db.execute(
             text(f"""
-            INSERT INTO {regra.tabela} ({', '.join(campos)})
-            VALUES ({', '.join(placeholders)})
+            INSERT INTO {regra.tabela} ({", ".join(campos)})
+            VALUES ({", ".join(placeholders)})
             """),
-            dados_insert
+            dados_insert,
         )
 
-        logger.info(
-            f"Documento {regra.tipo_documento} inserido: {documento_id}"
-        )
+        logger.info(f"Documento {regra.tipo_documento} inserido: {documento_id}")
 
         return documento_id
 
     async def _atualizar(
-        self,
-        regra: RegraDedup,
-        documento_id: UUID,
-        dados: Dict[str, Any],
-        dados_anteriores: Dict[str, Any]
+        self, regra: RegraDedup, documento_id: UUID, dados: dict[str, Any], dados_anteriores: dict[str, Any]
     ) -> int:
         """Atualiza documento existente e registra histórico."""
+        validate_table_name(regra.tabela)
         nova_versao = dados_anteriores.get("versao", 1) + 1
 
         # Registrar versão anterior no histórico
@@ -276,14 +261,11 @@ class DeduplicadorDocumentos:
                 "versao": dados_anteriores.get("versao", 1),
                 "dados": str(dados_anteriores),  # JSON em produção
                 "motivo": "Atualização automática",
-            }
+            },
         )
 
         # Atualizar documento
-        campos_update = [
-            f"{k} = :{k}" for k in dados.keys()
-            if k not in ["id", "tenant_id", "created_at"]
-        ]
+        campos_update = [f"{k} = :{k}" for k in dados if k not in ["id", "tenant_id", "created_at"]]
         campos_update.append("versao = :nova_versao")
         campos_update.append("updated_at = NOW()")
 
@@ -296,45 +278,31 @@ class DeduplicadorDocumentos:
         await self.db.execute(
             text(f"""
             UPDATE {regra.tabela}
-            SET {', '.join(campos_update)}
+            SET {", ".join(campos_update)}
             WHERE id = :doc_id
             """),
-            dados_update
+            dados_update,
         )
 
-        logger.info(
-            f"Documento {regra.tipo_documento} atualizado: "
-            f"{documento_id} (versão {nova_versao})"
-        )
+        logger.info(f"Documento {regra.tipo_documento} atualizado: {documento_id} (versão {nova_versao})")
 
         return nova_versao
 
-    def _detectar_alteracao(
-        self,
-        regra: RegraDedup,
-        existente: Dict[str, Any],
-        novos: Dict[str, Any]
-    ) -> bool:
+    def _detectar_alteracao(self, regra: RegraDedup, existente: dict[str, Any], novos: dict[str, Any]) -> bool:
         """Detecta se houve alteração nos campos relevantes."""
         for campo in regra.campos_comparacao:
             valor_existente = existente.get(campo)
             valor_novo = novos.get(campo)
 
             if valor_existente != valor_novo:
-                logger.debug(
-                    f"Alteração detectada em {campo}: "
-                    f"{valor_existente} -> {valor_novo}"
-                )
+                logger.debug(f"Alteração detectada em {campo}: {valor_existente} -> {valor_novo}")
                 return True
 
         return False
 
     async def verificar_duplicata(
-        self,
-        tipo_documento: str,
-        chave: Dict[str, Any],
-        tenant_id: str
-    ) -> Tuple[bool, Optional[UUID]]:
+        self, tipo_documento: str, chave: dict[str, Any], tenant_id: str
+    ) -> tuple[bool, UUID | None]:
         """
         Verifica se documento já existe.
 
@@ -353,7 +321,7 @@ class DeduplicadorDocumentos:
         return False, None
 
     @classmethod
-    def obter_campos_chave(cls, tipo_documento: str) -> List[str]:
+    def obter_campos_chave(cls, tipo_documento: str) -> list[str]:
         """Retorna campos que formam a chave única do documento."""
         regra = cls.REGRAS.get(tipo_documento)
         if regra:

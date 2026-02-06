@@ -27,7 +27,7 @@ repos:
     rev: 1.8.3
     hooks:
       - id: bandit
-        args: [-r, -ll, -q]
+        args: [-r, -ll, -q, --skip, B608]
         files: ^backend/
         exclude: tests/
 

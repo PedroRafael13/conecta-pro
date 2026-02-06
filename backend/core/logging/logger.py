@@ -31,6 +31,8 @@ SENSITIVE_PATTERNS = [
     (r"Bearer [A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+", "Bearer [REDACTED]"),
     (r"\b\d{3}\.\d{3}\.\d{3}-\d{2}\b", "[CPF_REDACTED]"),  # CPF formatado
     (r"\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b", "[CNPJ_REDACTED]"),  # CNPJ formatado
+    (r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "[EMAIL_REDACTED]"),  # Email
+    (r"\b\d{11}\b", "[CPF_RAW_REDACTED]"),  # CPF sem formatação (11 dígitos)
 ]
 
 
@@ -156,9 +158,9 @@ def configure_logging() -> None:
             compression="gz",
         )
 
-    # Redireciona stdlib logging para Loguru (captura logs do Bartolo e outros módulos)
+    # Redireciona stdlib logging para Loguru (captura TODOS os módulos do app)
     intercept_handler = InterceptHandler()
-    for name in ["modules.ai", "modules.ai.bartolo", "modules.field_service"]:
+    for name in ["modules", "core", "api"]:
         stdlib_logger = logging.getLogger(name)
         stdlib_logger.handlers = [intercept_handler]
         stdlib_logger.setLevel(logging.DEBUG)

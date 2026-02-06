@@ -27,11 +27,15 @@ ignore = [
     "SIM103", # return-bool-condition-directly - nem sempre mais claro
     "SIM108", # if-else-block-instead-of-if-exp - ternarios longos sao menos legiveis
     "SIM110", # reimplemented-builtin - for+return vs any() e preferencia
+    "S608",   # SQL injection - protegido por validate_table_name() whitelist
+    "SIM118", # key in dict vs key in dict.keys() - menor prioridade
 ]
 
 [lint.per-file-ignores]
-"tests/**/*.py" = ["S101", "S106", "B017", "F401"]
+"tests/**/*.py" = ["S101", "S105", "S106", "B017", "F401"]
 "alembic/**/*.py" = ["E501"]
+"main.py" = ["E402"]  # Imports after app creation - padrao FastAPI
+"main_production.py" = ["E402"]
 
 [format]
 quote-style = "double"
