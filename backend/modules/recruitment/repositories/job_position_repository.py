@@ -1,0 +1,303 @@
+"""Repository para JobPosition."""
+
+import logging
+from datetime import date
+from typing import Optional, List, Tuple
+
+from sqlalchemy import select, func, and_, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from modules.recruitment.models.job_position import (
+    JobPosition,
+    PositionStatus,
+    Department,
+)
+from modules.recruitment.schemas.job_position import (
+    JobPositionCreate,
+    JobPositionUpdate,
+    JobPositionFilter,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class JobPositionRepository:
+    """Repository para operações de JobPosition."""
+
+    def __init__(self, session: AsyncSession):
+        """Inicializa o repository."""
+        self.session = session
+
+    async def create(self, data: JobPositionCreate) -> JobPosition:
+        """Cria uma nova vaga."""
+        # Gera código
+        sequence = await self._get_next_sequence()
+        code = JobPosition.generate_code(sequence)
+
+        position = JobPosition(
+            code=code,
+            **data.model_dump(),
+        )
+        self.session.add(position)
+        await self.session.flush()
+        return position
+
+    async def get_by_id(self, position_id: str) -> Optional[JobPosition]:
+        """Busca vaga por ID."""
+        result = await self.session.execute(
+            select(JobPosition).where(
+                and_(
+                    JobPosition.id == position_id,
+                    JobPosition.deleted_at.is_(None),
+                )
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_code(self, code: str) -> Optional[JobPosition]:
+        """Busca vaga por código."""
+        result = await self.session.execute(
+            select(JobPosition).where(
+                and_(
+                    JobPosition.code == code,
+                    JobPosition.deleted_at.is_(None),
+                )
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def update(
+        self, position_id: str, data: JobPositionUpdate
+    ) -> Optional[JobPosition]:
+        """Atualiza uma vaga."""
+        position = await self.get_by_id(position_id)
+        if not position:
+            return None
+
+        update_data = data.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(position, field, value)
+
+        await self.session.flush()
+        return position
+
+    async def soft_delete(self, position_id: str) -> bool:
+        """Soft delete de vaga."""
+        position = await self.get_by_id(position_id)
+        if not position:
+            return False
+
+        position.soft_delete()
+        await self.session.flush()
+        return True
+
+    async def list_with_filters(  # pylint: disable=too-many-branches
+        self,
+        filters: Optional[JobPositionFilter] = None,
+        skip: int = 0,
+        limit: int = 20,
+        order_by: str = "created_at",
+        order_desc: bool = True,
+    ) -> Tuple[List[JobPosition], int]:
+        """Lista vagas com filtros e paginação."""
+        query = select(JobPosition).where(JobPosition.deleted_at.is_(None))
+
+        if filters:
+            if filters.status:
+                query = query.where(JobPosition.status == filters.status)
+            if filters.position_type:
+                query = query.where(JobPosition.position_type == filters.position_type)
+            if filters.position_level:
+                query = query.where(JobPosition.position_level == filters.position_level)
+            if filters.department:
+                query = query.where(JobPosition.department == filters.department)
+            if filters.work_model:
+                query = query.where(JobPosition.work_model == filters.work_model)
+            if filters.city:
+                query = query.where(JobPosition.city.ilike(f"%{filters.city}%"))
+            if filters.state:
+                query = query.where(JobPosition.state == filters.state)
+            if filters.is_urgent is not None:
+                query = query.where(JobPosition.is_urgent == filters.is_urgent)
+            if filters.is_confidential is not None:
+                query = query.where(
+                    JobPosition.is_confidential == filters.is_confidential
+                )
+            if filters.salary_min:
+                query = query.where(JobPosition.salary_min >= filters.salary_min)
+            if filters.salary_max:
+                query = query.where(JobPosition.salary_max <= filters.salary_max)
+            if filters.recruiter_id:
+                query = query.where(JobPosition.recruiter_id == filters.recruiter_id)
+            if filters.condominium_id:
+                query = query.where(
+                    JobPosition.condominium_id == filters.condominium_id
+                )
+            if filters.search:
+                search_term = f"%{filters.search}%"
+                query = query.where(
+                    or_(
+                        JobPosition.title.ilike(search_term),
+                        JobPosition.description.ilike(search_term),
+                        JobPosition.code.ilike(search_term),
+                    )
+                )
+
+        # Contagem total
+        count_query = select(func.count()).select_from(query.subquery())
+        total_result = await self.session.execute(count_query)
+        total = total_result.scalar() or 0
+
+        # Ordenação
+        order_column = getattr(JobPosition, order_by, JobPosition.created_at)
+        if order_desc:
+            query = query.order_by(order_column.desc())
+        else:
+            query = query.order_by(order_column.asc())
+
+        # Paginação
+        query = query.offset(skip).limit(limit)
+
+        result = await self.session.execute(query)
+        positions = result.scalars().all()
+
+        return list(positions), total
+
+    async def get_open_positions(
+        self, condominium_id: str = None, skip: int = 0, limit: int = 20
+    ) -> List[JobPosition]:
+        """Retorna vagas abertas."""
+        query = select(JobPosition).where(
+            and_(
+                JobPosition.status == PositionStatus.ABERTA,
+                JobPosition.deleted_at.is_(None),
+            )
+        )
+        if condominium_id:
+            query = query.where(JobPosition.condominium_id == condominium_id)
+
+        query = query.order_by(JobPosition.is_urgent.desc(), JobPosition.created_at.desc())
+        query = query.offset(skip).limit(limit)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_by_department(
+        self, department: Department, status: PositionStatus = None
+    ) -> List[JobPosition]:
+        """Retorna vagas por departamento."""
+        query = select(JobPosition).where(
+            and_(
+                JobPosition.department == department,
+                JobPosition.deleted_at.is_(None),
+            )
+        )
+        if status:
+            query = query.where(JobPosition.status == status)
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_expiring_soon(self, days: int = 7) -> List[JobPosition]:
+        """Retorna vagas próximas da expiração."""
+        deadline = date.today()
+        deadline_limit = date.today()
+        from datetime import timedelta  # pylint: disable=import-outside-toplevel
+        deadline_limit = deadline + timedelta(days=days)
+
+        query = select(JobPosition).where(
+            and_(
+                JobPosition.status == PositionStatus.ABERTA,
+                JobPosition.deadline_date.isnot(None),
+                JobPosition.deadline_date <= deadline_limit,
+                JobPosition.deadline_date >= deadline,
+                JobPosition.deleted_at.is_(None),
+            )
+        )
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def increment_view(self, position_id: str) -> None:
+        """Incrementa visualização."""
+        position = await self.get_by_id(position_id)
+        if position:
+            position.increment_view()
+            await self.session.flush()
+
+    async def increment_application(self, position_id: str) -> None:
+        """Incrementa candidaturas."""
+        position = await self.get_by_id(position_id)
+        if position:
+            position.increment_application()
+            await self.session.flush()
+
+    async def fill_vacancy(self, position_id: str) -> Optional[JobPosition]:
+        """Preenche uma vaga."""
+        position = await self.get_by_id(position_id)
+        if position:
+            position.fill_vacancy()
+            await self.session.flush()
+        return position
+
+    async def get_stats(self, condominium_id: str = None) -> dict:
+        """Retorna estatísticas."""
+        query = select(JobPosition).where(JobPosition.deleted_at.is_(None))
+        if condominium_id:
+            query = query.where(JobPosition.condominium_id == condominium_id)
+
+        result = await self.session.execute(query)
+        positions = result.scalars().all()
+
+        stats = {
+            "total_positions": len(positions),
+            "open_positions": 0,
+            "closed_positions": 0,
+            "filled_positions": 0,
+            "total_vacancies": 0,
+            "filled_vacancies": 0,
+            "total_applications": 0,
+            "by_status": {},
+            "by_department": {},
+            "by_level": {},
+            "by_type": {},
+        }
+
+        for pos in positions:
+            stats["total_vacancies"] += pos.vacancies
+            stats["filled_vacancies"] += pos.filled_vacancies
+            stats["total_applications"] += pos.applications_count
+
+            if pos.status == PositionStatus.ABERTA:
+                stats["open_positions"] += 1
+            elif pos.status == PositionStatus.FECHADA:
+                stats["closed_positions"] += 1
+            elif pos.status == PositionStatus.PREENCHIDA:
+                stats["filled_positions"] += 1
+
+            status_key = pos.status.value
+            stats["by_status"][status_key] = stats["by_status"].get(status_key, 0) + 1
+
+            dept_key = pos.department.value
+            stats["by_department"][dept_key] = stats["by_department"].get(dept_key, 0) + 1
+
+            level_key = pos.position_level.value
+            stats["by_level"][level_key] = stats["by_level"].get(level_key, 0) + 1
+
+            type_key = pos.position_type.value
+            stats["by_type"][type_key] = stats["by_type"].get(type_key, 0) + 1
+
+        return stats
+
+    async def _get_next_sequence(self) -> int:
+        """Retorna próximo número de sequência."""
+        year = date.today().year
+        prefix = f"VAG-{year}-"
+
+        result = await self.session.execute(
+            select(func.count())
+            .select_from(JobPosition)
+            .where(JobPosition.code.like(f"{prefix}%"))
+        )
+        count = result.scalar() or 0
+        return count + 1

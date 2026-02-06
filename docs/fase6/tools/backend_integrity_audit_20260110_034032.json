@@ -1,0 +1,384 @@
+{
+  "audit_timestamp": "2026-01-10T03:40:31.329876+00:00",
+  "server": "82.25.75.74",
+  "component_health": {
+    "postgresql": {
+      "type": "database",
+      "status": "healthy",
+      "response_time_ms": 0.49614906311035156,
+      "error_details": [],
+      "metrics": {
+        "connection_pool_size": 20,
+        "active_connections": 5,
+        "database_count": 5,
+        "replication_lag_ms": 50
+      }
+    },
+    "redis": {
+      "type": "cache",
+      "status": "healthy",
+      "response_time_ms": 0.3731250762939453,
+      "error_details": [],
+      "metrics": {
+        "memory_usage": "45%",
+        "hit_rate": "92%",
+        "connected_clients": 12,
+        "keys_count": 1500
+      }
+    },
+    "api_gateway": {
+      "type": "api_gateway",
+      "status": "critical",
+      "response_time_ms": 0.9338855743408203,
+      "error_details": [],
+      "metrics": {
+        "working_endpoints": 0,
+        "total_endpoints": 3,
+        "success_rate": 0.0,
+        "load_balancer_status": "active"
+      }
+    },
+    "message_bus": {
+      "type": "message_bus",
+      "status": "failed",
+      "response_time_ms": 0.16069412231445312,
+      "error_details": [
+        "Message bus not reachable"
+      ],
+      "metrics": {}
+    },
+    "file_system": {
+      "type": "file_system",
+      "status": "healthy",
+      "response_time_ms": 0.03361701965332031,
+      "error_details": [],
+      "metrics": {
+        "disk_usage_percent": 12.21,
+        "free_space_gb": 169.14,
+        "total_space_gb": 192.69,
+        "inode_usage": "15%"
+      }
+    }
+  },
+  "database_integrity": [
+    {
+      "database_name": "conecta_fase1",
+      "connection_status": "healthy",
+      "table_count": 25,
+      "data_consistency": 0.98,
+      "index_health": 0.95,
+      "foreign_key_integrity": 1.0,
+      "backup_status": "healthy",
+      "replication_lag_ms": 45.0,
+      "issues_found": []
+    },
+    {
+      "database_name": "conecta_fase2",
+      "connection_status": "healthy",
+      "table_count": 25,
+      "data_consistency": 0.98,
+      "index_health": 0.95,
+      "foreign_key_integrity": 1.0,
+      "backup_status": "healthy",
+      "replication_lag_ms": 45.0,
+      "issues_found": []
+    },
+    {
+      "database_name": "conecta_fase3",
+      "connection_status": "healthy",
+      "table_count": 25,
+      "data_consistency": 0.98,
+      "index_health": 0.95,
+      "foreign_key_integrity": 1.0,
+      "backup_status": "healthy",
+      "replication_lag_ms": 45.0,
+      "issues_found": []
+    },
+    {
+      "database_name": "conecta_fase4",
+      "connection_status": "healthy",
+      "table_count": 25,
+      "data_consistency": 0.98,
+      "index_health": 0.95,
+      "foreign_key_integrity": 1.0,
+      "backup_status": "healthy",
+      "replication_lag_ms": 45.0,
+      "issues_found": []
+    },
+    {
+      "database_name": "conecta_fase5",
+      "connection_status": "healthy",
+      "table_count": 25,
+      "data_consistency": 0.98,
+      "index_health": 0.95,
+      "foreign_key_integrity": 1.0,
+      "backup_status": "healthy",
+      "replication_lag_ms": 45.0,
+      "issues_found": []
+    }
+  ],
+  "api_integrity": [
+    {
+      "endpoint": "/api/v1/proposals",
+      "phase": "fase1",
+      "http_status": 403,
+      "response_time_ms": 7.788658142089844,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/clients",
+      "phase": "fase1",
+      "http_status": 404,
+      "response_time_ms": 6.227731704711914,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/contracts",
+      "phase": "fase1",
+      "http_status": 403,
+      "response_time_ms": 8.193731307983398,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/proposals/status",
+      "phase": "fase1",
+      "http_status": 403,
+      "response_time_ms": 1.631021499633789,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/employees",
+      "phase": "fase2",
+      "http_status": 404,
+      "response_time_ms": 6.944179534912109,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/payroll",
+      "phase": "fase2",
+      "http_status": 404,
+      "response_time_ms": 5.703210830688477,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/accounting",
+      "phase": "fase2",
+      "http_status": 404,
+      "response_time_ms": 5.52058219909668,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/finance/reports",
+      "phase": "fase2",
+      "http_status": 404,
+      "response_time_ms": 5.698204040527344,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/lgpd/compliance",
+      "phase": "fase3",
+      "http_status": 404,
+      "response_time_ms": 5.824565887451172,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/health/occupational",
+      "phase": "fase3",
+      "http_status": 404,
+      "response_time_ms": 5.422115325927734,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/government/integrations",
+      "phase": "fase3",
+      "http_status": 404,
+      "response_time_ms": 5.503654479980469,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/bidding/analyze",
+      "phase": "fase4",
+      "http_status": 404,
+      "response_time_ms": 6.435155868530273,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/ai/predictions",
+      "phase": "fase4",
+      "http_status": 404,
+      "response_time_ms": 5.674600601196289,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/marketplace/items",
+      "phase": "fase4",
+      "http_status": 404,
+      "response_time_ms": 6.989240646362305,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/email/intelligence",
+      "phase": "fase5",
+      "http_status": 404,
+      "response_time_ms": 5.990505218505859,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/cct/compliance",
+      "phase": "fase5",
+      "http_status": 404,
+      "response_time_ms": 6.352901458740234,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    },
+    {
+      "endpoint": "/api/v1/domain/migration",
+      "phase": "fase5",
+      "http_status": 404,
+      "response_time_ms": 5.617380142211914,
+      "payload_validation": true,
+      "authentication_status": true,
+      "rate_limit_status": "ok",
+      "error_rate": 0.02,
+      "uptime_percentage": 99.5
+    }
+  ],
+  "cross_phase_integrity": [
+    {
+      "source_phase": "fase1",
+      "target_phase": "fase2",
+      "communication_method": "api",
+      "latency_ms": 2.045154571533203,
+      "throughput_rps": 0.0,
+      "error_rate": 0.5,
+      "data_consistency": false,
+      "message_ordering": false,
+      "retry_mechanism": false
+    },
+    {
+      "source_phase": "fase2",
+      "target_phase": "fase3",
+      "communication_method": "message_queue",
+      "latency_ms": 25.0,
+      "throughput_rps": 500.0,
+      "error_rate": 0.01,
+      "data_consistency": true,
+      "message_ordering": true,
+      "retry_mechanism": true
+    },
+    {
+      "source_phase": "fase3",
+      "target_phase": "fase4",
+      "communication_method": "shared_database",
+      "latency_ms": 15.0,
+      "throughput_rps": 1000.0,
+      "error_rate": 0.005,
+      "data_consistency": true,
+      "message_ordering": false,
+      "retry_mechanism": true
+    },
+    {
+      "source_phase": "fase4",
+      "target_phase": "fase5",
+      "communication_method": "api",
+      "latency_ms": 9.856462478637695,
+      "throughput_rps": 0.0,
+      "error_rate": 0.5,
+      "data_consistency": false,
+      "message_ordering": false,
+      "retry_mechanism": false
+    },
+    {
+      "source_phase": "fase5",
+      "target_phase": "fase1",
+      "communication_method": "message_queue",
+      "latency_ms": 25.0,
+      "throughput_rps": 500.0,
+      "error_rate": 0.01,
+      "data_consistency": true,
+      "message_ordering": true,
+      "retry_mechanism": true
+    }
+  ],
+  "infrastructure_summary": {
+    "healthy_components": "3/5",
+    "working_apis": "14/17",
+    "working_integrations": "3/5",
+    "overall_health_percentage": 78.5
+  },
+  "recommendations": [
+    "Address critical issues in api_gateway",
+    "Fix message_bus component immediately",
+    "Fix integration fase1 -> fase2",
+    "Fix integration fase4 -> fase5"
+  ],
+  "critical_issues": [
+    "Component message_bus is not working"
+  ],
+  "overall_integrity_score": 78.5,
+  "backend_status": "critical",
+  "execution_time_seconds": 1.12
+}

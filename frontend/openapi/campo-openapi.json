@@ -1,0 +1,2404 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Campo API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for campo module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/tickets": {
+      "post": {
+        "summary": "Create Ticket",
+        "operationId": "create_ticket",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{ticket_id}": {
+      "get": {
+        "summary": "Get Ticket",
+        "operationId": "get_ticket",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Ticket",
+        "operationId": "update_ticket",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/technicians": {
+      "post": {
+        "summary": "Create Technician",
+        "operationId": "create_technician",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Technicians",
+        "operationId": "list_technicians",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{ticket_id}/assign/{technician_id}": {
+      "post": {
+        "summary": "Assign Technician",
+        "operationId": "assign_technician",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Obter Dashboard",
+        "operationId": "obter_dashboard",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "post": {
+        "summary": "Criar Os",
+        "operationId": "criar_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Syncs",
+        "operationId": "list_syncs",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pendentes-confirmacao": {
+      "get": {
+        "summary": "Listar Pendentes Confirmacao",
+        "operationId": "listar_pendentes_confirmacao",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/responsavel/{responsavel_id}": {
+      "get": {
+        "summary": "Listar Visitas Responsavel",
+        "operationId": "listar_visitas_responsavel",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cliente/{cliente_id}": {
+      "get": {
+        "summary": "Listar Os Cliente",
+        "operationId": "listar_os_cliente",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lead/{lead_id}": {
+      "get": {
+        "summary": "Listar Visitas Lead",
+        "operationId": "listar_visitas_lead",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}": {
+      "get": {
+        "summary": "Obter Visita",
+        "operationId": "obter_visita",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualizar Visita",
+        "operationId": "atualizar_visita",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Excluir Visita",
+        "operationId": "excluir_visita",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/numero/{numero}": {
+      "get": {
+        "summary": "Obter Os Por Numero",
+        "operationId": "obter_os_por_numero",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/confirmar": {
+      "post": {
+        "summary": "Confirmar Visita",
+        "operationId": "confirmar_visita",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/iniciar-deslocamento": {
+      "post": {
+        "summary": "Iniciar Deslocamento",
+        "operationId": "iniciar_deslocamento",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/checkin": {
+      "post": {
+        "summary": "Fazer Checkin",
+        "operationId": "fazer_checkin",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/checkout": {
+      "post": {
+        "summary": "Fazer Checkout",
+        "operationId": "fazer_checkout",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/resultado": {
+      "post": {
+        "summary": "Registrar Resultado",
+        "operationId": "registrar_resultado",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/cancelar": {
+      "post": {
+        "summary": "Cancelar Visita",
+        "operationId": "cancelar_visita",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/reagendar": {
+      "post": {
+        "summary": "Reagendar Visita",
+        "operationId": "reagendar_visita",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/interesse": {
+      "post": {
+        "summary": "Registrar Interesse",
+        "operationId": "registrar_interesse",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/proposta": {
+      "post": {
+        "summary": "Vincular Proposta",
+        "operationId": "vincular_proposta",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/levantamento": {
+      "post": {
+        "summary": "Adicionar Levantamento",
+        "operationId": "adicionar_levantamento",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/necessidade": {
+      "post": {
+        "summary": "Adicionar Necessidade",
+        "operationId": "adicionar_necessidade",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/followup": {
+      "post": {
+        "summary": "Agendar Followup",
+        "operationId": "agendar_followup",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{visita_id}/foto": {
+      "post": {
+        "summary": "Adicionar Foto",
+        "operationId": "adicionar_foto",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/connect": {
+      "post": {
+        "summary": "Create Ssh Connection",
+        "operationId": "create_ssh_connection",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}": {
+      "get": {
+        "summary": "Get Ssh Session",
+        "operationId": "get_ssh_session",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Close Ssh Session",
+        "operationId": "close_ssh_session",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/execute": {
+      "post": {
+        "summary": "Execute Ssh Command",
+        "operationId": "execute_ssh_command",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "get": {
+        "summary": "List Ssh Sessions",
+        "operationId": "list_ssh_sessions",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/atrasadas": {
+      "get": {
+        "summary": "Listar Os Atrasadas",
+        "operationId": "listar_os_atrasadas",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tecnico/{tecnico_id}": {
+      "get": {
+        "summary": "Listar Os Tecnico",
+        "operationId": "listar_os_tecnico",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}": {
+      "get": {
+        "summary": "Obter Os",
+        "operationId": "obter_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualizar Os",
+        "operationId": "atualizar_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Excluir Os",
+        "operationId": "excluir_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/agendar": {
+      "post": {
+        "summary": "Agendar Os",
+        "operationId": "agendar_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/iniciar-deslocamento": {
+      "post": {
+        "summary": "Iniciar Deslocamento",
+        "operationId": "iniciar_deslocamento",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/checkin": {
+      "post": {
+        "summary": "Fazer Checkin",
+        "operationId": "fazer_checkin",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/checkout": {
+      "post": {
+        "summary": "Fazer Checkout",
+        "operationId": "fazer_checkout",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/pausar": {
+      "post": {
+        "summary": "Pausar Os",
+        "operationId": "pausar_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/retomar": {
+      "post": {
+        "summary": "Retomar Os",
+        "operationId": "retomar_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/concluir": {
+      "post": {
+        "summary": "Concluir Os",
+        "operationId": "concluir_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/cancelar": {
+      "post": {
+        "summary": "Cancelar Os",
+        "operationId": "cancelar_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/reagendar": {
+      "post": {
+        "summary": "Reagendar Os",
+        "operationId": "reagendar_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/avaliacao": {
+      "post": {
+        "summary": "Registrar Avaliacao",
+        "operationId": "registrar_avaliacao",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/assinatura": {
+      "post": {
+        "summary": "Registrar Assinatura",
+        "operationId": "registrar_assinatura",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{os_id}/foto": {
+      "post": {
+        "summary": "Adicionar Foto",
+        "operationId": "adicionar_foto",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/start": {
+      "post": {
+        "summary": "Start Security Audit",
+        "operationId": "start_security_audit",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status/{audit_id}": {
+      "get": {
+        "summary": "Get Audit Status",
+        "operationId": "get_audit_status",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/list": {
+      "get": {
+        "summary": "List Audits",
+        "operationId": "list_audits",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates": {
+      "post": {
+        "summary": "Criar Template",
+        "operationId": "criar_template",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Listar Templates",
+        "operationId": "listar_templates",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/tipo/{tipo_servico}": {
+      "get": {
+        "summary": "Listar Templates Por Tipo",
+        "operationId": "listar_templates_por_tipo",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}": {
+      "get": {
+        "summary": "Obter Template",
+        "operationId": "obter_template",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualizar Template",
+        "operationId": "atualizar_template",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Excluir Template",
+        "operationId": "excluir_template",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/clonar": {
+      "post": {
+        "summary": "Clonar Template",
+        "operationId": "clonar_template",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/itens": {
+      "post": {
+        "summary": "Adicionar Item",
+        "operationId": "adicionar_item",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/itens/{item_id}": {
+      "get": {
+        "summary": "Obter Item",
+        "operationId": "obter_item",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Atualizar Item",
+        "operationId": "atualizar_item",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Excluir Item",
+        "operationId": "excluir_item",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/itens": {
+      "get": {
+        "summary": "Listar Itens Template",
+        "operationId": "listar_itens_template",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/reordenar": {
+      "post": {
+        "summary": "Reordenar Itens",
+        "operationId": "reordenar_itens",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/os/{ordem_servico_id}/iniciar": {
+      "post": {
+        "summary": "Iniciar Checklist",
+        "operationId": "iniciar_checklist",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/os/{ordem_servico_id}/responder": {
+      "post": {
+        "summary": "Responder Item",
+        "operationId": "responder_item",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/os/{ordem_servico_id}/concluir": {
+      "post": {
+        "summary": "Concluir Checklist",
+        "operationId": "concluir_checklist",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/os/{ordem_servico_id}": {
+      "get": {
+        "summary": "Obter Checklist Os",
+        "operationId": "obter_checklist_os",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/os/{ordem_servico_id}/progresso": {
+      "get": {
+        "summary": "Obter Progresso Checklist",
+        "operationId": "obter_progresso_checklist",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Get Sync Stats",
+        "operationId": "get_sync_stats",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/open": {
+      "get": {
+        "summary": "Get Open Occurrences",
+        "operationId": "get_open_occurrences",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/critical-open": {
+      "get": {
+        "summary": "Get Critical Open Occurrences",
+        "operationId": "get_critical_open_occurrences",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/classify": {
+      "post": {
+        "summary": "Classify Occurrence",
+        "operationId": "classify_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/suggest-actions": {
+      "post": {
+        "summary": "Suggest Occurrence Actions",
+        "operationId": "suggest_occurrence_actions",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/check-escalation": {
+      "post": {
+        "summary": "Check Escalation",
+        "operationId": "check_escalation",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{occurrence_id}": {
+      "get": {
+        "summary": "Get Occurrence",
+        "operationId": "get_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Occurrence",
+        "operationId": "delete_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{occurrence_id}/priority": {
+      "get": {
+        "summary": "Get Occurrence Priority",
+        "operationId": "get_occurrence_priority",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{occurrence_id}/acknowledge": {
+      "post": {
+        "summary": "Acknowledge Occurrence",
+        "operationId": "acknowledge_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{occurrence_id}/start": {
+      "post": {
+        "summary": "Start Occurrence",
+        "operationId": "start_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{occurrence_id}/resolve": {
+      "post": {
+        "summary": "Resolve Occurrence",
+        "operationId": "resolve_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{occurrence_id}/escalate": {
+      "post": {
+        "summary": "Escalate Occurrence",
+        "operationId": "escalate_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{occurrence_id}/close": {
+      "post": {
+        "summary": "Close Occurrence",
+        "operationId": "close_occurrence",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/batch": {
+      "post": {
+        "summary": "Create Access Logs Batch",
+        "operationId": "create_access_logs_batch",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/by-person/{person_document}": {
+      "get": {
+        "summary": "Get Logs By Person",
+        "operationId": "get_logs_by_person",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/by-vehicle/{vehicle_plate}": {
+      "get": {
+        "summary": "Get Logs By Vehicle",
+        "operationId": "get_logs_by_vehicle",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{log_id}": {
+      "get": {
+        "summary": "Get Access Log",
+        "operationId": "get_access_log",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Access Log",
+        "operationId": "delete_access_log",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "summary": "Readiness Check",
+        "operationId": "readiness_check",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Get Metrics",
+        "operationId": "get_metrics",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ping": {
+      "get": {
+        "summary": "Ping",
+        "operationId": "ping",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "System Status",
+        "operationId": "system_status",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/offline": {
+      "get": {
+        "summary": "Get Offline Equipment",
+        "operationId": "get_offline_equipment",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/with-alerts": {
+      "get": {
+        "summary": "Get Equipment With Alerts",
+        "operationId": "get_equipment_with_alerts",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/needs-maintenance": {
+      "get": {
+        "summary": "Get Equipment Needs Maintenance",
+        "operationId": "get_equipment_needs_maintenance",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{equipment_id}": {
+      "get": {
+        "summary": "Get Equipment Status",
+        "operationId": "get_equipment_status",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Equipment Status",
+        "operationId": "update_equipment_status",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Equipment Status",
+        "operationId": "delete_equipment_status",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{equipment_id}/set-online": {
+      "post": {
+        "summary": "Set Equipment Online",
+        "operationId": "set_equipment_online",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{equipment_id}/set-offline": {
+      "post": {
+        "summary": "Set Equipment Offline",
+        "operationId": "set_equipment_offline",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{equipment_id}/add-alert": {
+      "post": {
+        "summary": "Add Equipment Alert",
+        "operationId": "add_equipment_alert",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{equipment_id}/clear-alerts": {
+      "post": {
+        "summary": "Clear Equipment Alerts",
+        "operationId": "clear_equipment_alerts",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/pending": {
+      "get": {
+        "summary": "Get Pending Syncs",
+        "operationId": "get_pending_syncs",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/failed-for-retry": {
+      "get": {
+        "summary": "Get Failed For Retry",
+        "operationId": "get_failed_for_retry",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/summary": {
+      "get": {
+        "summary": "Get Sync Summary",
+        "operationId": "get_sync_summary",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{sync_id}": {
+      "get": {
+        "summary": "Get Sync",
+        "operationId": "get_sync",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Sync",
+        "operationId": "delete_sync",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{sync_id}/retry": {
+      "post": {
+        "summary": "Retry Sync",
+        "operationId": "retry_sync",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{sync_id}/mark-completed": {
+      "post": {
+        "summary": "Mark Sync Completed",
+        "operationId": "mark_sync_completed",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{sync_id}/mark-failed": {
+      "post": {
+        "summary": "Mark Sync Failed",
+        "operationId": "mark_sync_failed",
+        "tags": [
+          "Campo"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

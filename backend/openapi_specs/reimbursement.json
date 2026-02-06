@@ -1,0 +1,3123 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - Reimbursement API",
+    "description": "API completa de Reembolso de Despesas",
+    "version": "1.0.0",
+    "x-module": "reimbursement",
+    "x-coverage": "100%"
+  },
+  "paths": {
+    "/api/v1/reimbursements/": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Create Reimbursement",
+        "description": "Cria uma nova solicitação de reembolso.\n\nA solicitação é criada em status RASCUNHO.",
+        "operationId": "create_reimbursement_api_v1_reimbursements__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List Reimbursements",
+        "description": "Lista todas as solicitações de reembolso (para gestores). Admins veem todos.",
+        "operationId": "list_reimbursements_api_v1_reimbursements__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "approval_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Approval Level"
+            }
+          },
+          {
+            "name": "expense_date_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expense Date Start"
+            }
+          },
+          {
+            "name": "expense_date_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Expense Date End"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "cost_center",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cost Center"
+            }
+          },
+          {
+            "name": "project",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReimbursementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/my": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List My Reimbursements",
+        "description": "Lista solicitações do usuário autenticado.",
+        "operationId": "list_my_reimbursements_api_v1_reimbursements_my_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReimbursementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/stats": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Get Stats",
+        "description": "Retorna estatísticas de reembolsos. Admins veem todos.",
+        "operationId": "get_stats_api_v1_reimbursements_stats_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "my_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "My Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestStats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/categories": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List Categories",
+        "description": "Lista categorias de reembolso disponíveis.",
+        "operationId": "list_categories_api_v1_reimbursements_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reimbursements/expense-types": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List Expense Types",
+        "description": "Lista tipos de despesa disponíveis (enum).",
+        "operationId": "list_expense_types_api_v1_reimbursements_expense_types_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/attachment-types": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List Attachment Types",
+        "description": "Lista tipos de anexo disponíveis (enum).",
+        "operationId": "list_attachment_types_api_v1_reimbursements_attachment_types_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Get Reimbursement",
+        "description": "Busca solicitação por ID.",
+        "operationId": "get_reimbursement_api_v1_reimbursements__request_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Update Reimbursement",
+        "description": "Atualiza uma solicitação (apenas em rascunho).",
+        "operationId": "update_reimbursement_api_v1_reimbursements__request_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementRequestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Delete Reimbursement",
+        "description": "Exclui uma solicitação (apenas em rascunho).",
+        "operationId": "delete_reimbursement_api_v1_reimbursements__request_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/submit": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Submit Reimbursement",
+        "description": "Submete solicitação para aprovação.",
+        "operationId": "submit_reimbursement_api_v1_reimbursements__request_id__submit_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReimbursementSubmitRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/cancel": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Cancel Reimbursement",
+        "description": "Cancela uma solicitação.",
+        "operationId": "cancel_reimbursement_api_v1_reimbursements__request_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/items": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Add Item",
+        "description": "Adiciona item a uma solicitação.",
+        "operationId": "add_item_api_v1_reimbursements__request_id__items_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementItemCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/items/{item_id}": {
+      "put": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Update Item",
+        "description": "Atualiza um item.",
+        "operationId": "update_item_api_v1_reimbursements__request_id__items__item_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementItemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementItemResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Delete Item",
+        "description": "Remove um item.",
+        "operationId": "delete_item_api_v1_reimbursements__request_id__items__item_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/attachments": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Upload Attachment",
+        "description": "Upload de comprovante/anexo.",
+        "operationId": "upload_attachment_api_v1_reimbursements__request_id__attachments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_attachment_api_v1_reimbursements__request_id__attachments_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementAttachmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List Attachments",
+        "description": "Lista anexos de uma solicitação.",
+        "operationId": "list_attachments_api_v1_reimbursements__request_id__attachments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          },
+          {
+            "name": "item_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Item Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReimbursementAttachmentResponse"
+                  },
+                  "title": "Response List Attachments Api V1 Reimbursements  Request Id  Attachments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/attachments/{attachment_id}": {
+      "delete": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Delete Attachment",
+        "description": "Remove um anexo.",
+        "operationId": "delete_attachment_api_v1_reimbursements_attachments__attachment_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/attachments/{attachment_id}/download": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Download Attachment",
+        "description": "Download de anexo.",
+        "operationId": "download_attachment_api_v1_reimbursements_attachments__attachment_id__download_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attachment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Attachment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/approvals/pending": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List Pending Approvals",
+        "description": "Lista solicitações pendentes de aprovação.",
+        "operationId": "list_pending_approvals_api_v1_reimbursements_approvals_pending_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "approval_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Approval Level"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReimbursementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/analyze": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Start Analysis",
+        "description": "Inicia análise de uma solicitação.",
+        "operationId": "start_analysis_api_v1_reimbursements__request_id__analyze_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Approve Reimbursement",
+        "description": "Aprova uma solicitação de reembolso.",
+        "operationId": "approve_reimbursement_api_v1_reimbursements__request_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReimbursementApproveRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/reject": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Reject Reimbursement",
+        "description": "Rejeita uma solicitação de reembolso.",
+        "operationId": "reject_reimbursement_api_v1_reimbursements__request_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementRejectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/return": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Return Reimbursement",
+        "description": "Devolve solicitação para rascunho.",
+        "operationId": "return_reimbursement_api_v1_reimbursements__request_id__return_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReimbursementReturnRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/ready-for-payment": {
+      "get": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "List Ready For Payment",
+        "description": "Lista solicitações aprovadas prontas para pagamento.",
+        "operationId": "list_ready_for_payment_api_v1_reimbursements_ready_for_payment_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReimbursementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reimbursements/{request_id}/process": {
+      "post": {
+        "tags": [
+          "Reimbursement"
+        ],
+        "summary": "Process Reimbursement",
+        "description": "Processa reembolso aprovado gerando conta a pagar.\n\nRequer permissão de processamento financeiro.",
+        "operationId": "process_reimbursement_api_v1_reimbursements__request_id__process_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ReimbursementProcessRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReimbursementRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_upload_attachment_api_v1_reimbursements__request_id__attachments_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "attachment_type": {
+            "type": "string",
+            "title": "Attachment Type",
+            "default": "outros"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_attachment_api_v1_reimbursements__request_id__attachments_post"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "PaginatedReimbursementResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReimbursementRequestListResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "total_pages"
+        ],
+        "title": "PaginatedReimbursementResponse",
+        "description": "Schema para resposta paginada."
+      },
+      "ReimbursementApproveRequest": {
+        "properties": {
+          "comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comments"
+          },
+          "approved_items": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Items"
+          },
+          "rejected_items": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejected Items"
+          }
+        },
+        "type": "object",
+        "title": "ReimbursementApproveRequest",
+        "description": "Schema para aprovação de solicitação."
+      },
+      "ReimbursementAttachmentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "item_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Id"
+          },
+          "attachment_type": {
+            "type": "string",
+            "title": "Attachment Type"
+          },
+          "type_label": {
+            "type": "string",
+            "title": "Type Label",
+            "default": ""
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "file_size_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size Bytes"
+          },
+          "file_size_formatted": {
+            "type": "string",
+            "title": "File Size Formatted",
+            "default": ""
+          },
+          "mime_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mime Type"
+          },
+          "thumbnail_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Path"
+          },
+          "is_valid": {
+            "type": "boolean",
+            "title": "Is Valid"
+          },
+          "validation_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation Notes"
+          },
+          "original_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "is_image": {
+            "type": "boolean",
+            "title": "Is Image",
+            "default": false
+          },
+          "is_pdf": {
+            "type": "boolean",
+            "title": "Is Pdf",
+            "default": false
+          },
+          "uploaded_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploaded By"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Uploaded At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "request_id",
+          "item_id",
+          "attachment_type",
+          "file_name",
+          "file_path",
+          "file_size_bytes",
+          "mime_type",
+          "thumbnail_path",
+          "is_valid",
+          "validation_notes",
+          "original_name",
+          "description",
+          "uploaded_by",
+          "uploaded_at",
+          "is_active"
+        ],
+        "title": "ReimbursementAttachmentResponse",
+        "description": "Schema de resposta para anexo de reembolso."
+      },
+      "ReimbursementItemCreate": {
+        "properties": {
+          "category_type": {
+            "type": "string",
+            "maxLength": 30,
+            "title": "Category Type"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Description"
+          },
+          "merchant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant"
+          },
+          "expense_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Amount"
+          },
+          "document_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Type"
+          },
+          "document_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Number"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_type",
+          "description",
+          "expense_date",
+          "amount"
+        ],
+        "title": "ReimbursementItemCreate",
+        "description": "Schema para criação de item de reembolso."
+      },
+      "ReimbursementItemResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "category_type": {
+            "type": "string",
+            "title": "Category Type"
+          },
+          "category_label": {
+            "type": "string",
+            "title": "Category Label",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "merchant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant"
+          },
+          "expense_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "approved_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved Amount"
+          },
+          "document_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Type"
+          },
+          "document_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Number"
+          },
+          "is_approved": {
+            "type": "boolean",
+            "title": "Is Approved"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "has_attachment": {
+            "type": "boolean",
+            "title": "Has Attachment",
+            "default": false
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "request_id",
+          "category_id",
+          "category_type",
+          "description",
+          "merchant",
+          "expense_date",
+          "amount",
+          "approved_amount",
+          "document_type",
+          "document_number",
+          "is_approved",
+          "rejection_reason",
+          "notes",
+          "created_at",
+          "updated_at",
+          "is_active"
+        ],
+        "title": "ReimbursementItemResponse",
+        "description": "Schema de resposta para item de reembolso."
+      },
+      "ReimbursementItemUpdate": {
+        "properties": {
+          "category_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Type"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "merchant": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant"
+          },
+          "expense_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expense Date"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ],
+                "gt": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "document_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Type"
+          },
+          "document_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Number"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "ReimbursementItemUpdate",
+        "description": "Schema para atualização de item de reembolso."
+      },
+      "ReimbursementProcessRequest": {
+        "properties": {
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "ReimbursementProcessRequest",
+        "description": "Schema para processamento (geração de conta a pagar)."
+      },
+      "ReimbursementRejectRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "ReimbursementRejectRequest",
+        "description": "Schema para rejeição de solicitação."
+      },
+      "ReimbursementRequestCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "expense_date_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date Start"
+          },
+          "expense_date_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date End"
+          },
+          "cost_center": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Center"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "bank_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Code"
+          },
+          "bank_agency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Agency"
+          },
+          "bank_account": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account"
+          },
+          "pix_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pix Key"
+          },
+          "items": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ReimbursementItemCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "expense_date_start",
+          "expense_date_end"
+        ],
+        "title": "ReimbursementRequestCreate",
+        "description": "Schema para criação de solicitação de reembolso."
+      },
+      "ReimbursementRequestListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "requester_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Requester Id"
+          },
+          "expense_date_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date Start"
+          },
+          "expense_date_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date End"
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount"
+          },
+          "approved_amount": {
+            "type": "string",
+            "title": "Approved Amount"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "approval_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Level"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted At"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "items_count": {
+            "type": "integer",
+            "title": "Items Count",
+            "default": 0
+          },
+          "attachments_count": {
+            "type": "integer",
+            "title": "Attachments Count",
+            "default": 0
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit",
+            "default": false
+          },
+          "can_submit": {
+            "type": "boolean",
+            "title": "Can Submit",
+            "default": false
+          },
+          "can_approve": {
+            "type": "boolean",
+            "title": "Can Approve",
+            "default": false
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "requester_id",
+          "expense_date_start",
+          "expense_date_end",
+          "total_amount",
+          "approved_amount",
+          "status",
+          "approval_level",
+          "submitted_at",
+          "approved_at",
+          "created_at"
+        ],
+        "title": "ReimbursementRequestListResponse",
+        "description": "Schema de resposta para listagem (sem itens detalhados)."
+      },
+      "ReimbursementRequestResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "requester_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Requester Id"
+          },
+          "expense_date_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date Start"
+          },
+          "expense_date_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Expense Date End"
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount"
+          },
+          "approved_amount": {
+            "type": "string",
+            "title": "Approved Amount"
+          },
+          "paid_amount": {
+            "type": "string",
+            "title": "Paid Amount"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "approval_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approval Level"
+          },
+          "submitted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted At"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "payable_account_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payable Account Id"
+          },
+          "processed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed At"
+          },
+          "processed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed By"
+          },
+          "bank_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Code"
+          },
+          "bank_agency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Agency"
+          },
+          "bank_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account"
+          },
+          "pix_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pix Key"
+          },
+          "cost_center": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Center"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReimbursementItemResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/ReimbursementAttachmentResponse"
+            },
+            "type": "array",
+            "title": "Attachments"
+          },
+          "items_count": {
+            "type": "integer",
+            "title": "Items Count",
+            "default": 0
+          },
+          "attachments_count": {
+            "type": "integer",
+            "title": "Attachments Count",
+            "default": 0
+          },
+          "can_edit": {
+            "type": "boolean",
+            "title": "Can Edit",
+            "default": false
+          },
+          "can_submit": {
+            "type": "boolean",
+            "title": "Can Submit",
+            "default": false
+          },
+          "can_approve": {
+            "type": "boolean",
+            "title": "Can Approve",
+            "default": false
+          },
+          "can_process": {
+            "type": "boolean",
+            "title": "Can Process",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "title",
+          "description",
+          "requester_id",
+          "expense_date_start",
+          "expense_date_end",
+          "total_amount",
+          "approved_amount",
+          "paid_amount",
+          "status",
+          "approval_level",
+          "submitted_at",
+          "approved_by",
+          "approved_at",
+          "rejection_reason",
+          "payable_account_id",
+          "processed_at",
+          "processed_by",
+          "bank_code",
+          "bank_agency",
+          "bank_account",
+          "pix_key",
+          "cost_center",
+          "project",
+          "notes",
+          "created_at",
+          "updated_at",
+          "is_active"
+        ],
+        "title": "ReimbursementRequestResponse",
+        "description": "Schema de resposta para solicitação de reembolso."
+      },
+      "ReimbursementRequestStats": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "by_status": {
+            "type": "object",
+            "title": "By Status"
+          },
+          "by_approval_level": {
+            "type": "object",
+            "title": "By Approval Level"
+          },
+          "total_amount": {
+            "type": "string",
+            "title": "Total Amount",
+            "default": "0.00"
+          },
+          "total_approved": {
+            "type": "string",
+            "title": "Total Approved",
+            "default": "0.00"
+          },
+          "total_paid": {
+            "type": "string",
+            "title": "Total Paid",
+            "default": "0.00"
+          },
+          "pending_count": {
+            "type": "integer",
+            "title": "Pending Count",
+            "default": 0
+          },
+          "pending_amount": {
+            "type": "string",
+            "title": "Pending Amount",
+            "default": "0.00"
+          },
+          "approved_count": {
+            "type": "integer",
+            "title": "Approved Count",
+            "default": 0
+          },
+          "approved_amount": {
+            "type": "string",
+            "title": "Approved Amount",
+            "default": "0.00"
+          }
+        },
+        "type": "object",
+        "title": "ReimbursementRequestStats",
+        "description": "Schema para estatísticas de reembolsos."
+      },
+      "ReimbursementRequestUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "expense_date_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expense Date Start"
+          },
+          "expense_date_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expense Date End"
+          },
+          "cost_center": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Center"
+          },
+          "project": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "bank_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Code"
+          },
+          "bank_agency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Agency"
+          },
+          "bank_account": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bank Account"
+          },
+          "pix_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pix Key"
+          }
+        },
+        "type": "object",
+        "title": "ReimbursementRequestUpdate",
+        "description": "Schema para atualização de solicitação de reembolso."
+      },
+      "ReimbursementReturnRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 10,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "ReimbursementReturnRequest",
+        "description": "Schema para devolução ao rascunho."
+      },
+      "ReimbursementSubmitRequest": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "ReimbursementSubmitRequest",
+        "description": "Schema para submissão de solicitação."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

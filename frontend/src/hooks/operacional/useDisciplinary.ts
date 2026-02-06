@@ -1,0 +1,35 @@
+/**
+ * Disciplinary Hooks - Gestão de Medidas Administrativas/Disciplinares
+ *
+ * Re-exports dos hooks Orval do módulo operacional-medidas-administrativas
+ */
+
+import {
+  useListDisciplinaryActionsApiV1OperacionalMedidasAdministrativasGet,
+  useCreateDisciplinaryActionApiV1OperacionalMedidasAdministrativasPost,
+  useGetDisciplinaryActionApiV1OperacionalMedidasAdministrativasActionIdGet,
+  useUpdateDisciplinaryActionApiV1OperacionalMedidasAdministrativasActionIdPatch,
+  useDeleteDisciplinaryActionApiV1OperacionalMedidasAdministrativasActionIdDelete,
+  useGetPendingApprovalApiV1OperacionalMedidasAdministrativasPendentesGet,
+  useGetEmployeeHistoryApiV1OperacionalMedidasAdministrativasFuncionarioEmployeeIdGet,
+} from '@/types/generated/operacional/operacional-medidas-administrativas/operacional-medidas-administrativas';
+
+// List & Read
+export const useDisciplinaryActions = useListDisciplinaryActionsApiV1OperacionalMedidasAdministrativasGet;
+export const useDisciplinaryAction = useGetDisciplinaryActionApiV1OperacionalMedidasAdministrativasActionIdGet;
+export const useDisciplinaryActionsByEmployee = useGetEmployeeHistoryApiV1OperacionalMedidasAdministrativasFuncionarioEmployeeIdGet;
+export const usePendingDisciplinaryApprovals = useGetPendingApprovalApiV1OperacionalMedidasAdministrativasPendentesGet;
+
+// Mutations
+export const useCreateDisciplinaryAction = useCreateDisciplinaryActionApiV1OperacionalMedidasAdministrativasPost;
+export const useUpdateDisciplinaryAction = useUpdateDisciplinaryActionApiV1OperacionalMedidasAdministrativasActionIdPatch;
+export const useDeleteDisciplinaryAction = useDeleteDisciplinaryActionApiV1OperacionalMedidasAdministrativasActionIdDelete;
+
+// Re-export types
+export type {
+  DisciplinaryActionCreate,
+  DisciplinaryActionUpdate,
+  DisciplinaryActionResponse,
+  DisciplinaryActionListResponse,
+  DisciplinaryStats,
+} from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

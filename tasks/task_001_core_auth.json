@@ -1,0 +1,25 @@
+{
+  "id": "TASK-001",
+  "name": "Core - Autenticacao e Autorizacao",
+  "module": "core",
+  "requirements": [
+    "RF-SEC-001: Login com email e senha",
+    "RF-SEC-002: JWT com access e refresh token",
+    "RF-SEC-003: RBAC com roles e permissions"
+  ],
+  "files_to_create": [
+    "core/auth/security.py",
+    "core/auth/jwt.py",
+    "core/auth/dependencies.py",
+    "core/models/user.py",
+    "core/schemas/user.py"
+  ],
+  "tests_to_create": [
+    "tests/test_auth.py",
+    "tests/test_user.py"
+  ],
+  "priority": "critical",
+  "estimated_hours": 8,
+  "status": "COMPLETED",
+  "notes": "Implementado no Sprint 0"
+}

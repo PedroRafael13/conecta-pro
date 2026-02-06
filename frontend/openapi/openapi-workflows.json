@@ -1,0 +1,910 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - Workflows API",
+    "description": "API de Workflows e Automações",
+    "version": "1.0.0",
+    "x-module": "workflows",
+    "x-category": "automation",
+    "x-generated-at": "2026-01-28"
+  },
+  "paths": {
+    "/api/v1/workflows/": {
+      "get": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "List Workflows",
+        "description": "Lista workflows do tenant.",
+        "operationId": "list_workflows_api_v1_workflows__get",
+        "parameters": [
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do tenant",
+              "title": "Tenant Id"
+            },
+            "description": "ID do tenant"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkflowStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkflowCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkflowResponse"
+                  },
+                  "title": "Response List Workflows Api V1 Workflows  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "Create Workflow",
+        "description": "Cria novo workflow.",
+        "operationId": "create_workflow_api_v1_workflows__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workflows/{workflow_id}": {
+      "get": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "Get Workflow",
+        "description": "Obtem workflow por ID.",
+        "operationId": "get_workflow_api_v1_workflows__workflow_id__get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "Update Workflow",
+        "description": "Atualiza workflow.",
+        "operationId": "update_workflow_api_v1_workflows__workflow_id__patch",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkflowUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "Delete Workflow",
+        "description": "Remove workflow.",
+        "operationId": "delete_workflow_api_v1_workflows__workflow_id__delete",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/activate": {
+      "post": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "Activate Workflow",
+        "description": "Ativa workflow.",
+        "operationId": "activate_workflow_api_v1_workflows__workflow_id__activate_post",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/deactivate": {
+      "post": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "Deactivate Workflow",
+        "description": "Desativa workflow.",
+        "operationId": "deactivate_workflow_api_v1_workflows__workflow_id__deactivate_post",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workflows/{workflow_id}/executions": {
+      "get": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "List Executions",
+        "description": "Lista execucoes do workflow.",
+        "operationId": "list_executions_api_v1_workflows__workflow_id__executions_get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Workflow Id"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ExecutionStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExecutionResponse"
+                  },
+                  "title": "Response List Executions Api V1 Workflows  Workflow Id  Executions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workflows/executions/{execution_id}/cancel": {
+      "post": {
+        "tags": [
+          "Automation - Workflows"
+        ],
+        "summary": "Cancel Execution",
+        "description": "Cancela execucao.",
+        "operationId": "cancel_execution_api_v1_workflows_executions__execution_id__cancel_post",
+        "parameters": [
+          {
+            "name": "execution_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Execution Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExecutionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "workflow_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Workflow Id"
+          },
+          "workflow_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workflow Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExecutionStatus"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "steps_total": {
+            "type": "integer",
+            "title": "Steps Total"
+          },
+          "steps_completed": {
+            "type": "integer",
+            "title": "Steps Completed"
+          },
+          "steps_failed": {
+            "type": "integer",
+            "title": "Steps Failed"
+          },
+          "execution_time_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Execution Time Ms"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workflow_id",
+          "workflow_name",
+          "status",
+          "success",
+          "steps_total",
+          "steps_completed",
+          "steps_failed",
+          "execution_time_ms",
+          "error_message"
+        ],
+        "title": "ExecutionResponse",
+        "description": "Schema de resposta para execucao."
+      },
+      "ExecutionStatus": {
+        "type": "string",
+        "enum": [
+          "PENDING",
+          "QUEUED",
+          "RUNNING",
+          "PAUSED",
+          "WAITING",
+          "RETRYING",
+          "COMPLETED",
+          "FAILED",
+          "CANCELLED",
+          "TIMEOUT"
+        ],
+        "title": "ExecutionStatus",
+        "description": "Status da execucao."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WorkflowCategory": {
+        "type": "string",
+        "enum": [
+          "CRM",
+          "HR",
+          "FINANCE",
+          "OPERATIONS",
+          "ONBOARDING",
+          "MARKETING",
+          "SUPPORT",
+          "COMMUNICATION",
+          "DOCUMENT",
+          "INTEGRATION",
+          "MAINTENANCE",
+          "SECURITY",
+          "ANALYTICS",
+          "CUSTOM"
+        ],
+        "title": "WorkflowCategory",
+        "description": "Categoria do workflow."
+      },
+      "WorkflowCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowCategory"
+              }
+            ],
+            "default": "CUSTOM"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "default": "NORMAL"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "tenant_id"
+        ],
+        "title": "WorkflowCreate",
+        "description": "Schema para criar workflow."
+      },
+      "WorkflowResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowCategory"
+              }
+            ],
+            "default": "CUSTOM"
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "default": "NORMAL"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tenant_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tenant Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkflowStatus"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "total_executions": {
+            "type": "integer",
+            "title": "Total Executions"
+          },
+          "successful_executions": {
+            "type": "integer",
+            "title": "Successful Executions"
+          },
+          "failed_executions": {
+            "type": "integer",
+            "title": "Failed Executions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "tenant_id",
+          "status",
+          "version",
+          "total_executions",
+          "successful_executions",
+          "failed_executions"
+        ],
+        "title": "WorkflowResponse",
+        "description": "Schema de resposta para workflow."
+      },
+      "WorkflowStatus": {
+        "type": "string",
+        "enum": [
+          "DRAFT",
+          "ACTIVE",
+          "INACTIVE",
+          "PAUSED",
+          "ARCHIVED",
+          "ERROR"
+        ],
+        "title": "WorkflowStatus",
+        "description": "Status do workflow."
+      },
+      "WorkflowUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkflowStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "title": "WorkflowUpdate",
+        "description": "Schema para atualizar workflow."
+      }
+    }
+  }
+}

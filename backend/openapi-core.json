@@ -1,0 +1,1017 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - Core Module",
+    "description": "Módulo Core - Autenticação, Usuários e Permissões",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/auth/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication",
+          "Authentication"
+        ],
+        "summary": "Register",
+        "description": "Registra novo usuario.",
+        "operationId": "register_api_v1_auth_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication",
+          "Authentication"
+        ],
+        "summary": "Login",
+        "description": "Autentica usuario e retorna tokens.",
+        "operationId": "login_api_v1_auth_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_api_v1_auth_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication",
+          "Authentication"
+        ],
+        "summary": "Refresh Token",
+        "description": "Renova tokens usando refresh token.",
+        "operationId": "refresh_token_api_v1_auth_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRefreshRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication",
+          "Authentication"
+        ],
+        "summary": "Get Current User Info",
+        "description": "Retorna informacoes do usuario atual.",
+        "operationId": "get_current_user_info_api_v1_auth_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/auth/google": {
+      "get": {
+        "tags": [
+          "Authentication",
+          "Authentication"
+        ],
+        "summary": "Google Login",
+        "description": "Inicia fluxo de autenticacao com Google OAuth2.",
+        "operationId": "google_login_api_v1_auth_auth_google_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/auth/google/callback": {
+      "get": {
+        "tags": [
+          "Authentication",
+          "Authentication"
+        ],
+        "summary": "Google Callback",
+        "description": "Callback do Google OAuth2 - processa autenticacao.",
+        "operationId": "google_callback_api_v1_auth_auth_google_callback_get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/users/": {
+      "get": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "List Users",
+        "description": "Lista todos os usuarios (admin only).",
+        "operationId": "list_users_api_v1_users_users__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por role",
+              "title": "Role"
+            },
+            "description": "Filtrar por role"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Buscar por nome ou email",
+              "title": "Search"
+            },
+            "description": "Buscar por nome ou email"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/users/pending": {
+      "get": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "List Pending Users",
+        "description": "Lista usuarios aguardando aprovacao (admin only).",
+        "operationId": "list_pending_users_api_v1_users_users_pending_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Pending Users Api V1 Users Users Pending Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/users/roles": {
+      "get": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "List Roles",
+        "description": "Lista roles disponiveis no sistema.",
+        "operationId": "list_roles_api_v1_users_users_roles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/users/{user_id}": {
+      "get": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "Get User",
+        "description": "Obtem detalhes de um usuario (admin only).",
+        "operationId": "get_user_api_v1_users_users__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "Delete User",
+        "description": "Exclui um usuario permanentemente (admin only).",
+        "operationId": "delete_user_api_v1_users_users__user_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/users/{user_id}/role": {
+      "patch": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "Update User Role",
+        "description": "Atualiza role de um usuario (admin only).",
+        "operationId": "update_user_role_api_v1_users_users__user_id__role_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRole"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/users/{user_id}/activate": {
+      "patch": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "Activate User",
+        "description": "Ativa um usuario (admin only).",
+        "operationId": "activate_user_api_v1_users_users__user_id__activate_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/users/{user_id}/deactivate": {
+      "patch": {
+        "tags": [
+          "Users",
+          "Users"
+        ],
+        "summary": "Deactivate User",
+        "description": "Desativa um usuario (admin only).",
+        "operationId": "deactivate_user_api_v1_users_users__user_id__deactivate_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_login_api_v1_auth_auth_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "password"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_login_api_v1_auth_auth_login_post"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "TokenRefreshRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "Token de refresh"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "TokenRefreshRequest",
+        "description": "Schema de requisição de refresh de token."
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token",
+            "description": "Token de acesso JWT"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "Token de refresh JWT"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "description": "Tipo do token",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "refresh_token"
+        ],
+        "title": "TokenResponse",
+        "description": "Schema de resposta com tokens."
+      },
+      "UserCreate": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Email do usuário"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Name",
+            "description": "Nome completo"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone",
+            "description": "Telefone"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              }
+            ],
+            "description": "Role do usuário",
+            "default": "operator"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "Senha do usuário"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "name",
+          "password"
+        ],
+        "title": "UserCreate",
+        "description": "Schema para criação de usuário."
+      },
+      "UserListResponse": {
+        "properties": {
+          "users": {
+            "items": {
+              "$ref": "#/components/schemas/UserResponse"
+            },
+            "type": "array",
+            "title": "Users"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "per_page": {
+            "type": "integer",
+            "title": "Per Page"
+          }
+        },
+        "type": "object",
+        "required": [
+          "users",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "UserListResponse",
+        "description": "Schema para lista paginada de usuarios."
+      },
+      "UserResponse": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "Email do usuário"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Name",
+            "description": "Nome completo"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone",
+            "description": "Telefone"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              }
+            ],
+            "description": "Role do usuário",
+            "default": "operator"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "ID do usuário"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "description": "Se o usuário está ativo"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permissions",
+            "description": "Permissões extras"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Data de criação"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At",
+            "description": "Data de atualização"
+          },
+          "last_login": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login",
+            "description": "Último login"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "name",
+          "id",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "UserResponse",
+        "description": "Schema de resposta de usuário."
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "super_admin",
+          "admin",
+          "manager",
+          "supervisor",
+          "operator",
+          "client",
+          "viewer"
+        ],
+        "title": "UserRole",
+        "description": "Roles disponíveis no sistema."
+      },
+      "UserUpdateRole": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role"
+        ],
+        "title": "UserUpdateRole",
+        "description": "Schema para atualizar role do usuario."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

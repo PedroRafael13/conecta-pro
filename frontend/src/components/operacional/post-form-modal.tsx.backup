@@ -1,0 +1,573 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Modal, ModalFooter } from '@/components/ui/modal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Stepper, type Step } from '@/components/ui/stepper';
+import { postsService } from '@/lib/services/posts';
+import { getErrorMessage } from '@/lib/api';
+import type { Post, PostCreate, PostUpdate, PostType, ShiftType } from '@/types/operacional';
+import { POST_TYPE_LABELS, SHIFT_TYPE_LABELS } from '@/types/operacional';
+import { AlertCircle, Loader2, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+
+interface PostFormModalProps {
+  post?: Post | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const STATES = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
+  'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC',
+  'SP', 'SE', 'TO',
+];
+
+const WIZARD_STEPS: Step[] = [
+  { id: 1, label: 'Dados Básicos', description: 'Informações gerais' },
+  { id: 2, label: 'Localização', description: 'Endereço e CEP' },
+  { id: 3, label: 'Configuração', description: 'Turnos e efetivo' },
+  { id: 4, label: 'Requisitos', description: 'Experiência e recursos' },
+  { id: 5, label: 'Financeiro', description: 'Custos e adicionais' },
+  { id: 6, label: 'Contatos', description: 'Supervisor e emergência' },
+];
+
+export function PostFormModal({
+  post,
+  isOpen,
+  onClose,
+  onSuccess,
+}: PostFormModalProps) {
+  const isEditing = !!post;
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  // Form state
+  const [formData, setFormData] = useState<PostCreate>({
+    name: '',
+    description: '',
+    post_type: 'vigilante' as PostType,
+    shift_type: 'diurno' as ShiftType,
+    address: '',
+    city: '',
+    state: '',
+    zip_code: '',
+    required_headcount: 1,
+    hourly_rate: 0,
+    monthly_cost: 0,
+    break_duration_minutes: 60,
+    night_shift_bonus_percent: 20,
+    hazard_pay_percent: 0,
+    requires_experience_months: 0,
+    requires_armed: false,
+    requires_vehicle: false,
+    supervisor_name: '',
+    supervisor_phone: '',
+    emergency_contact: '',
+    emergency_phone: '',
+    notes: '',
+  });
+
+  // Populate form when editing
+  useEffect(() => {
+    if (post) {
+      setFormData({
+        name: post.name,
+        description: post.description || '',
+        post_type: post.post_type as PostType,
+        shift_type: post.shift_type as ShiftType,
+        address: post.address || '',
+        city: post.city || '',
+        state: post.state || '',
+        zip_code: post.zip_code || '',
+        required_headcount: post.required_headcount,
+        hourly_rate: post.hourly_rate,
+        monthly_cost: post.monthly_cost,
+        break_duration_minutes: post.break_duration_minutes,
+        night_shift_bonus_percent: post.night_shift_bonus_percent,
+        hazard_pay_percent: post.hazard_pay_percent,
+        requires_experience_months: post.requires_experience_months,
+        requires_armed: post.requires_armed,
+        requires_vehicle: post.requires_vehicle,
+        supervisor_name: post.supervisor_name || '',
+        supervisor_phone: post.supervisor_phone || '',
+        emergency_contact: post.emergency_contact || '',
+        emergency_phone: post.emergency_phone || '',
+        notes: post.notes || '',
+      });
+    } else {
+      // Reset form when creating new
+      setFormData({
+        name: '',
+        description: '',
+        post_type: 'vigilante' as PostType,
+        shift_type: 'diurno' as ShiftType,
+        address: '',
+        city: '',
+        state: '',
+        zip_code: '',
+        required_headcount: 1,
+        hourly_rate: 0,
+        monthly_cost: 0,
+        break_duration_minutes: 60,
+        night_shift_bonus_percent: 20,
+        hazard_pay_percent: 0,
+        requires_experience_months: 0,
+        requires_armed: false,
+        requires_vehicle: false,
+        supervisor_name: '',
+        supervisor_phone: '',
+        emergency_contact: '',
+        emergency_phone: '',
+        notes: '',
+      });
+    }
+    setCurrentStep(1);
+    setCompletedSteps(new Set());
+    setError(null);
+  }, [post, isOpen]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value, type } = e.target;
+
+    if (type === 'checkbox') {
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else if (type === 'number') {
+      setFormData((prev) => ({ ...prev, [name]: parseFloat(value) || 0 }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const validateStep = (step: number): boolean => {
+    switch (step) {
+      case 1: // Dados Básicos
+        return !!formData.name.trim();
+      case 2: // Localização (todos opcionais)
+        return true;
+      case 3: // Configuração
+        return formData.required_headcount > 0;
+      case 4: // Requisitos (todos opcionais)
+        return true;
+      case 5: // Financeiro (todos opcionais)
+        return true;
+      case 6: // Contatos (todos opcionais)
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCompletedSteps(new Set([...completedSteps, currentStep]));
+      setCurrentStep((prev) => Math.min(prev + 1, WIZARD_STEPS.length));
+      setError(null);
+    } else {
+      setError('Preencha todos os campos obrigatórios antes de continuar');
+    }
+  };
+
+  const handlePrev = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setError(null);
+  };
+
+  const handleStepClick = (stepId: number) => {
+    if (stepId < currentStep || completedSteps.has(stepId)) {
+      setCurrentStep(stepId);
+      setError(null);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Clean up empty strings
+      const cleanData = Object.fromEntries(
+        Object.entries(formData).map(([key, value]) => [
+          key,
+          value === '' ? undefined : value,
+        ])
+      ) as PostCreate;
+
+      if (isEditing && post) {
+        await postsService.update(post.id, cleanData as PostUpdate);
+      } else {
+        await postsService.create(cleanData);
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? 'Editar Posto' : 'Novo Posto'}
+      description={isEditing ? `Editando ${post?.code}` : 'Preencha os dados do novo posto'}
+      size="xl"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-center gap-2 text-red-500 text-sm">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            {error}
+          </div>
+        )}
+
+        {/* Informacoes Basicas */}
+        <div>
+          <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
+            Informacoes Basicas
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Nome do Posto *
+              </label>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Ex: Portaria Principal - Condomínio ABC"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Tipo de Posto *
+              </label>
+              <select
+                name="post_type"
+                value={formData.post_type}
+                onChange={handleChange}
+                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                required
+              >
+                {Object.entries(POST_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Tipo de Turno *
+              </label>
+              <select
+                name="shift_type"
+                value={formData.shift_type}
+                onChange={handleChange}
+                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                required
+              >
+                {Object.entries(SHIFT_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Descricao
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={2}
+                placeholder="Descricao detalhada do posto..."
+                className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Efetivo e Valores */}
+        <div>
+          <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
+            Efetivo e Valores
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Efetivo Necessario *
+              </label>
+              <Input
+                type="number"
+                name="required_headcount"
+                value={formData.required_headcount}
+                onChange={handleChange}
+                min={1}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Valor Hora (R$)
+              </label>
+              <Input
+                type="number"
+                name="hourly_rate"
+                value={formData.hourly_rate}
+                onChange={handleChange}
+                min={0}
+                step={0.01}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Custo Mensal (R$)
+              </label>
+              <Input
+                type="number"
+                name="monthly_cost"
+                value={formData.monthly_cost}
+                onChange={handleChange}
+                min={0}
+                step={0.01}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Intervalo (min)
+              </label>
+              <Input
+                type="number"
+                name="break_duration_minutes"
+                value={formData.break_duration_minutes}
+                onChange={handleChange}
+                min={0}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Adic. Noturno (%)
+              </label>
+              <Input
+                type="number"
+                name="night_shift_bonus_percent"
+                value={formData.night_shift_bonus_percent}
+                onChange={handleChange}
+                min={0}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Periculosidade (%)
+              </label>
+              <Input
+                type="number"
+                name="hazard_pay_percent"
+                value={formData.hazard_pay_percent}
+                onChange={handleChange}
+                min={0}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Exp. Minima (meses)
+              </label>
+              <Input
+                type="number"
+                name="requires_experience_months"
+                value={formData.requires_experience_months}
+                onChange={handleChange}
+                min={0}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Requisitos */}
+        <div>
+          <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
+            Requisitos
+          </h3>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="requires_armed"
+                checked={formData.requires_armed}
+                onChange={handleChange}
+                className="w-4 h-4 rounded border-[hsl(var(--border))]"
+              />
+              <span className="text-sm text-[hsl(var(--foreground))]">Requer Armamento</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                name="requires_vehicle"
+                checked={formData.requires_vehicle}
+                onChange={handleChange}
+                className="w-4 h-4 rounded border-[hsl(var(--border))]"
+              />
+              <span className="text-sm text-[hsl(var(--foreground))]">Requer Veiculo</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Localizacao */}
+        <div>
+          <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
+            Localizacao
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Endereco
+              </label>
+              <Input
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Rua, numero, bairro..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Cidade
+              </label>
+              <Input
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                placeholder="Cidade"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                  UF
+                </label>
+                <select
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))]"
+                >
+                  <option value="">-</option>
+                  {STATES.map((uf) => (
+                    <option key={uf} value={uf}>
+                      {uf}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                  CEP
+                </label>
+                <Input
+                  name="zip_code"
+                  value={formData.zip_code}
+                  onChange={handleChange}
+                  placeholder="00000-000"
+                  maxLength={9}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Contatos */}
+        <div>
+          <h3 className="text-sm font-medium text-[hsl(var(--foreground))] mb-4">
+            Contatos
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Nome do Supervisor
+              </label>
+              <Input
+                name="supervisor_name"
+                value={formData.supervisor_name}
+                onChange={handleChange}
+                placeholder="Nome completo"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Telefone do Supervisor
+              </label>
+              <Input
+                name="supervisor_phone"
+                value={formData.supervisor_phone}
+                onChange={handleChange}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Contato de Emergencia
+              </label>
+              <Input
+                name="emergency_contact"
+                value={formData.emergency_contact}
+                onChange={handleChange}
+                placeholder="Nome completo"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+                Telefone de Emergencia
+              </label>
+              <Input
+                name="emergency_phone"
+                value={formData.emergency_phone}
+                onChange={handleChange}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Observacoes */}
+        <div>
+          <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-1">
+            Observacoes
+          </label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Observacoes adicionais sobre o posto..."
+            className="w-full px-3 py-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--background))] text-[hsl(var(--foreground))] resize-none"
+          />
+        </div>
+
+        <ModalFooter>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={isLoading}>
+            {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {isEditing ? 'Salvar Alteracoes' : 'Criar Posto'}
+          </Button>
+        </ModalFooter>
+      </form>
+    </Modal>
+  );
+}

@@ -1,0 +1,177 @@
+{
+  "id": "TASK-001",
+  "name": "Core - Autenticacao e Autorizacao",
+  "module": "core",
+  "requirements": [
+    "RF-SEC-001: Login com email e senha",
+    "RF-SEC-002: JWT com access e refresh token",
+    "RF-SEC-003: RBAC com roles e permissions"
+  ],
+  "files_to_create": [
+    "core/auth/security.py",
+    "core/auth/jwt.py",
+    "core/auth/dependencies.py",
+    "core/models/user.py",
+    "core/schemas/user.py"
+  ],
+  "tests_to_create": [
+    "tests/test_auth.py",
+    "tests/test_user.py"
+  ],
+  "priority": "critical",
+  "estimated_hours": 8,
+  "status": "COMPLETED",
+  "notes": "Implementado no Sprint 0",
+  "started_at": "2025-12-30T01:09:50.239749",
+  "retry_count": 0,
+  "completed_at": "2025-12-30T01:10:21.610877",
+  "results": {
+    "developer": {
+      "task_id": "TASK-001",
+      "started_at": "2025-12-30T01:09:50.239913",
+      "files_created": [
+        "core/auth/security.py",
+        "core/auth/jwt.py",
+        "core/auth/dependencies.py",
+        "core/models/user.py",
+        "core/schemas/user.py",
+        "tests/test_auth.py",
+        "tests/test_user.py"
+      ],
+      "tests_created": [],
+      "coverage": 29.0,
+      "tests_passed": true,
+      "errors": [
+        "Cobertura 29.0% < 80% minimo"
+      ],
+      "files_missing": [],
+      "test_output": "============================= test session starts ==============================\nplatform linux -- Python 3.12.3, pytest-8.3.4, pluggy-1.6.0 -- /opt/erp-conecta-mais/backend/venv/bin/python\ncachedir: .pytest_cache\nrootdir: /opt/erp-conecta-mais/backend\nplugins: cov-6.0.0, asyncio-0.25.0, anyio-4.12.0\nasyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None\ncollecting ... collected 31 items\n\ntests/test_auth.py::TestPasswordSecurity::test_hash_password PASSED      [  3%]\ntests/test_auth.py::TestPasswordSecurity::test_verify_password_correct PASSED [  6%]\ntests/test_auth.py::TestPasswordSecurity::test_verify_password_incorrect PASSED [  9%]\ntests/test_auth.py::TestPasswordSecurity::test_different_hashes_same_password PASSED [ 12%]\ntests/test_auth.py::TestJWT::test_create_access_token PASSED             [ 16%]\ntests/test_auth.py::TestJWT::test_create_access_token_with_extra_data PASSED [ 19%]\ntests/test_auth.py::TestJWT::test_create_refresh_token PASSED            [ 22%]\ntests/test_auth.py::TestJWT::test_verify_access_token PASSED             [ 25%]\ntests/test_auth.py::TestJWT::test_verify_refresh_token PASSED            [ 29%]\ntests/test_auth.py::TestJWT::test_access_token_as_refresh_fails PASSED   [ 32%]\ntests/test_auth.py::TestJWT::test_refresh_token_as_access_fails PASSED   [ 35%]\ntests/test_auth.py::TestJWT::test_invalid_token_fails PASSED             [ 38%]\ntests/test_auth.py::TestJWT::test_custom_expiration PASSED               [ 41%]\ntests/test_auth.py::TestTokenPayload::test_access_token_payload_structure PASSED [ 45%]\ntests/test_auth.py::TestTokenPayload::test_refresh_token_payload_structure PASSED [ 48%]\ntests/test_user.py::TestUserRole::test_role_values PASSED                [ 51%]\ntests/test_user.py::TestUserRole::test_role_hierarchy PASSED             [ 54%]\ntests/test_user.py::TestUserModel::test_has_role_same_level PASSED       [ 58%]\ntests/test_user.py::TestUserModel::test_has_role_higher_level PASSED     [ 61%]\ntests/test_user.py::TestUserModel::test_has_role_lower_level PASSED      [ 64%]\ntests/test_user.py::TestUserModel::test_has_permission_super_admin PASSED [ 67%]\ntests/test_user.py::TestUserModel::test_has_permission_specific PASSED   [ 70%]\ntests/test_user.py::TestUserModel::test_has_permission_empty PASSED      [ 74%]\ntests/test_user.py::TestUserSchemas::test_user_create_valid PASSED       [ 77%]\ntests/test_user.py::TestUserSchemas::test_user_create_weak_password PASSED [ 80%]\ntests/test_user.py::TestUserSchemas::test_user_create_no_uppercase PASSED [ 83%]\ntests/test_user.py::TestUserSchemas::test_user_create_no_lowercase PASSED [ 87%]\ntests/test_user.py::TestUserSchemas::test_user_create_no_number PASSED   [ 90%]\ntests/test_user.py::TestUserSchemas::test_user_create_invalid_email PASSED [ 93%]\ntests/test_user.py::TestUserSchemas::test_user_update_partial PASSED     [ 96%]\ntests/test_user.py::TestUserSchemas::test_user_update_role PASSED        [100%]\n\n=============================== warnings summary ===============================\nvenv/lib/python3.12/site-packages/passlib/utils/__init__.py:854\n  /opt/erp-conecta-mais/backend/venv/lib/python3.12/site-packages/passlib/utils/__init__.py:854: DeprecationWarning: 'crypt' is deprecated and slated for removal in Python 3.13\n    from crypt import crypt as _crypt\n\ntests/test_auth.py::TestJWT::test_create_access_token_with_extra_data\ntests/test_auth.py::TestJWT::test_verify_access_token\ntests/test_auth.py::TestJWT::test_verify_refresh_token\ntests/test_auth.py::TestJWT::test_access_token_as_refresh_fails\ntests/test_auth.py::TestJWT::test_refresh_token_as_access_fails\ntests/test_auth.py::TestJWT::test_custom_expiration\ntests/test_auth.py::TestTokenPayload::test_access_token_payload_structure\ntests/test_auth.py::TestTokenPayload::test_refresh_token_payload_structure\n  /opt/erp-conecta-mais/backend/venv/lib/python3.12/site-packages/jose/jwt.py:311: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).\n    now = timegm(datetime.utcnow().utctimetuple())\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n\n---------- coverage: platform linux, python 3.12.3-final-0 -----------\nName                               Stmts   Miss  Cover   Missing\n----------------------------------------------------------------\napi/__init__.py                        0      0   100%\napi/v1/__init__.py                     4      4     0%   5-11\napi/v1/endpoints/__init__.py           0      0   100%\napi/v1/endpoints/auth.py              64     64     0%   5-157\ncore/__init__.py                       0      0   100%\ncore/audit/__init__.py                 2      2     0%   3-5\ncore/audit/audit_log.py               80     80     0%   6-247\ncore/auth/__init__.py                  4      0   100%\ncore/auth/dependencies.py             41     28    32%   32-46, 75-91, 113-135\ncore/auth/jwt.py                      35      1    97%   72\ncore/auth/security.py                  7      0   100%\ncore/cache/__init__.py                 2      2     0%   3-12\ncore/cache/redis.py                   66     66     0%   5-178\ncore/config/__init__.py                2      0   100%\ncore/config/settings.py               40      2    95%   62, 70\ncore/database/__init__.py              3      3     0%   3-13\ncore/database/circuit_breaker.py      78     78     0%   6-183\ncore/database/session.py              20     20     0%   5-62\ncore/logging/__init__.py               2      2     0%   3-5\ncore/logging/logger.py                34     34     0%   5-151\ncore/models/__init__.py                3      0   100%\ncore/models/base.py                   14      1    93%   49\ncore/models/user.py                   36      1    97%   122\ncore/monitoring/__init__.py            2      2     0%   3-11\ncore/monitoring/metrics.py           127    127     0%   6-255\ncore/schemas/__init__.py               3      0   100%\ncore/schemas/auth.py                  16      0   100%\ncore/schemas/user.py                  43      1    98%   33\n----------------------------------------------------------------\nTOTAL                                728    518    29%\n\n======================== 31 passed, 9 warnings in 4.27s ========================\n/opt/erp-conecta-mais/backend/venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option \"asyncio_default_fixture_loop_scope\" is unset.\nThe event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: \"function\", \"class\", \"module\", \"package\", \"session\"\n\n  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))\n",
+      "lint_passed": false,
+      "lint_issues": [
+        "Black: codigo nao formatado",
+        "isort: imports nao ordenados"
+      ],
+      "completed_at": "2025-12-30T01:09:55.468219",
+      "status": "SUCCESS"
+    },
+    "auditor": {
+      "started_at": "2025-12-30T01:09:55.468698",
+      "developer_result": "TASK-001",
+      "checks": {
+        "security": {
+          "passed": false,
+          "critical": false,
+          "issues": [
+            "Erro ao parsear output do Bandit"
+          ],
+          "score": 50
+        },
+        "quality": {
+          "passed": false,
+          "pylint_score": 5.0,
+          "score": 50
+        },
+        "typing": {
+          "passed": false,
+          "issues": [
+            "core/logging/logger.py:109: error: Argument \"filter\" to \"add\" of \"Logger\" has incompatible type \"Callable[[dict[Any, Any]], bool]\"; expected \"str | Callable[[Record], bool] | dict[str | None, str | int | bool] | None\"  [arg-type]",
+            "core/logging/logger.py:119: error: Argument \"filter\" to \"add\" of \"Logger\" has incompatible type \"Callable[[dict[Any, Any]], bool]\"; expected \"str | Callable[[Record], bool] | dict[str | None, str | int | bool] | None\"  [arg-type]",
+            "core/logging/logger.py:130: error: Argument \"filter\" to \"add\" of \"Logger\" has incompatible type \"Callable[[dict[Any, Any]], bool]\"; expected \"str | Callable[[Record], bool] | dict[str | None, str | int | bool] | None\"  [arg-type]",
+            "core/monitoring/metrics.py:22: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]",
+            "core/monitoring/metrics.py:25: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]",
+            "core/monitoring/metrics.py:28: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]",
+            "core/monitoring/metrics.py:31: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]",
+            "core/monitoring/metrics.py:107: error: Incompatible types in assignment (expression has type \"dict[str, float]\", variable has type \"dict[str, int]\")  [assignment]",
+            "core/auth/dependencies.py:60: error: Name \"User\" is not defined  [name-defined]",
+            "core/auth/dependencies.py:99: error: Name \"User\" is not defined  [name-defined]"
+          ],
+          "score": 50
+        },
+        "complexity": {
+          "passed": true,
+          "average_complexity": 5.0,
+          "score": 50
+        },
+        "dependencies": {
+          "passed": true,
+          "vulnerabilities": [],
+          "score": 100
+        }
+      },
+      "issues": [
+        "SECURITY: Erro ao parsear output do Bandit",
+        "TYPING: core/logging/logger.py:109: error: Argument \"filter\" to \"add\" of \"Logger\" has incompatible type \"Callable[[dict[Any, Any]], bool]\"; expected \"str | Callable[[Record], bool] | dict[str | None, str | int | bool] | None\"  [arg-type]",
+        "TYPING: core/logging/logger.py:119: error: Argument \"filter\" to \"add\" of \"Logger\" has incompatible type \"Callable[[dict[Any, Any]], bool]\"; expected \"str | Callable[[Record], bool] | dict[str | None, str | int | bool] | None\"  [arg-type]",
+        "TYPING: core/logging/logger.py:130: error: Argument \"filter\" to \"add\" of \"Logger\" has incompatible type \"Callable[[dict[Any, Any]], bool]\"; expected \"str | Callable[[Record], bool] | dict[str | None, str | int | bool] | None\"  [arg-type]",
+        "TYPING: core/monitoring/metrics.py:22: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]",
+        "TYPING: core/monitoring/metrics.py:25: note: By default the bodies of untyped functions are not checked, consider using --check-untyped-defs  [annotation-unchecked]"
+      ],
+      "score": 57,
+      "completed_at": "2025-12-30T01:10:15.092685",
+      "status": "APPROVED"
+    },
+    "validator": {
+      "started_at": "2025-12-30T01:10:15.093336",
+      "auditor_score": 57,
+      "validations": {
+        "api_health": {
+          "running": false,
+          "status": "not_running"
+        },
+        "integration": {
+          "passed": true,
+          "tests_passed": 31,
+          "tests_failed": 0,
+          "output": "ted and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).\n    now = timegm(datetime.utcnow().utctimetuple())\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================== 31 passed, 9 warnings in 2.96s ========================\n/opt/erp-conecta-mais/backend/venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:207: PytestDeprecationWarning: The configuration option \"asyncio_default_fixture_loop_scope\" is unset.\nThe event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: \"function\", \"class\", \"module\", \"package\", \"session\"\n\n  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))\n"
+        },
+        "migrations": {
+          "passed": true,
+          "current": "14f6c2c7eaa2 (head)",
+          "heads": "14f6c2c7eaa2 (head)",
+          "is_up_to_date": true
+        },
+        "external_deps": {
+          "passed": true,
+          "dependencies": {
+            "redis": {
+              "available": false
+            },
+            "postgres": {
+              "available": false,
+              "reason": "DATABASE_URL not set"
+            }
+          }
+        },
+        "smoke_tests": {
+          "passed": true,
+          "tests": [
+            {
+              "name": "import_main",
+              "passed": true
+            },
+            {
+              "name": "import_core",
+              "passed": true
+            },
+            {
+              "name": "pip_check",
+              "passed": true
+            }
+          ],
+          "failed_tests": [],
+          "passed_count": 3,
+          "total_count": 3
+        },
+        "integrity": {
+          "passed": true,
+          "checked_files": 7,
+          "missing_files": []
+        }
+      },
+      "issues": [],
+      "completed_at": "2025-12-30T01:10:21.610797",
+      "passed": true,
+      "status": "APPROVED"
+    }
+  }
+}

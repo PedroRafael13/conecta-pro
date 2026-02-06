@@ -1,0 +1,1070 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Clients API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for clients module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "summary": "Create Client",
+        "operationId": "create_client",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Clients",
+        "operationId": "list_clients",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Get Client Stats",
+        "operationId": "get_client_stats",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}": {
+      "get": {
+        "summary": "Get Client",
+        "operationId": "get_client",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Client",
+        "operationId": "update_client",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Client",
+        "operationId": "delete_client",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/full": {
+      "get": {
+        "summary": "Get Client Full",
+        "operationId": "get_client_full",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/activate": {
+      "post": {
+        "summary": "Activate Client",
+        "operationId": "activate_client",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/suspend": {
+      "post": {
+        "summary": "Suspend Client",
+        "operationId": "suspend_client",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/block": {
+      "post": {
+        "summary": "Block Client",
+        "operationId": "block_client",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/set-defaulter": {
+      "post": {
+        "summary": "Set Defaulter",
+        "operationId": "set_defaulter",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/clear-defaulter": {
+      "post": {
+        "summary": "Clear Defaulter",
+        "operationId": "clear_defaulter",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/enable-guardian": {
+      "post": {
+        "summary": "Enable Guardian",
+        "operationId": "enable_guardian",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/enable-plus": {
+      "post": {
+        "summary": "Enable Plus",
+        "operationId": "enable_plus",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/condominiums": {
+      "post": {
+        "summary": "Create Condominium",
+        "operationId": "create_condominium",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Condominiums",
+        "operationId": "list_condominiums",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}": {
+      "get": {
+        "summary": "Get Condominium",
+        "operationId": "get_condominium",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Condominium",
+        "operationId": "update_condominium",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Condominium",
+        "operationId": "delete_condominium",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/activate": {
+      "post": {
+        "summary": "Activate Condominium",
+        "operationId": "activate_condominium",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/start-implantation": {
+      "post": {
+        "summary": "Start Implantation",
+        "operationId": "start_implantation",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/finish-implantation": {
+      "post": {
+        "summary": "Finish Implantation",
+        "operationId": "finish_implantation",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/stats": {
+      "get": {
+        "summary": "Get Condominium Stats",
+        "operationId": "get_condominium_stats",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/units": {
+      "post": {
+        "summary": "Create Unit",
+        "operationId": "create_unit",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Units",
+        "operationId": "list_units",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unit_id}": {
+      "get": {
+        "summary": "Get Unit",
+        "operationId": "get_unit",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Unit",
+        "operationId": "update_unit",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Unit",
+        "operationId": "delete_unit",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unit_id}/set-owner": {
+      "post": {
+        "summary": "Set Unit Owner",
+        "operationId": "set_unit_owner",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unit_id}/set-resident": {
+      "post": {
+        "summary": "Set Unit Resident",
+        "operationId": "set_unit_resident",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/units/{unit_id}/clear-resident": {
+      "post": {
+        "summary": "Clear Unit Resident",
+        "operationId": "clear_unit_resident",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/units/stats": {
+      "get": {
+        "summary": "Get Unit Stats",
+        "operationId": "get_unit_stats",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/contracts": {
+      "post": {
+        "summary": "Create Contract",
+        "operationId": "create_contract",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Contracts",
+        "operationId": "list_contracts",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}": {
+      "get": {
+        "summary": "Get Contract",
+        "operationId": "get_contract",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Contract",
+        "operationId": "update_contract",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/activate": {
+      "post": {
+        "summary": "Activate Contract",
+        "operationId": "activate_contract",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/suspend": {
+      "post": {
+        "summary": "Suspend Contract",
+        "operationId": "suspend_contract",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/contracts/{contract_id}/cancel": {
+      "post": {
+        "summary": "Cancel Contract",
+        "operationId": "cancel_contract",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/integrations": {
+      "post": {
+        "summary": "Create Integration",
+        "operationId": "create_integration",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Integrations",
+        "operationId": "list_integrations",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integrations/{settings_id}": {
+      "get": {
+        "summary": "Get Integration",
+        "operationId": "get_integration",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Integration",
+        "operationId": "update_integration",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integrations/{settings_id}/enable": {
+      "post": {
+        "summary": "Enable Integration",
+        "operationId": "enable_integration",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/integrations/{settings_id}/disable": {
+      "post": {
+        "summary": "Disable Integration",
+        "operationId": "disable_integration",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/ai/profile": {
+      "get": {
+        "summary": "Analyze Client Profile",
+        "operationId": "analyze_client_profile",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/ai/segmentation": {
+      "get": {
+        "summary": "Suggest Segmentation",
+        "operationId": "suggest_segmentation",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/ai/churn-risk": {
+      "get": {
+        "summary": "Predict Churn Risk",
+        "operationId": "predict_churn_risk",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{client_id}/ai/recommendations": {
+      "get": {
+        "summary": "Recommend Services",
+        "operationId": "recommend_services",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/condominiums/{condominium_id}/ai/health": {
+      "get": {
+        "summary": "Analyze Condominium Health",
+        "operationId": "analyze_condominium_health",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/dashboard": {
+      "get": {
+        "summary": "Get Dashboard Insights",
+        "operationId": "get_dashboard_insights",
+        "tags": [
+          "Clients"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

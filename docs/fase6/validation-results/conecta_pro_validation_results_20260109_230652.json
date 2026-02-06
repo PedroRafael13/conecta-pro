@@ -1,0 +1,201 @@
+{
+  "validation_level": "comprehensive",
+  "start_time": "2026-01-10T03:06:49.421131+00:00",
+  "phase_results": {
+    "fase1": {
+      "name": "fase1",
+      "status": "fully_implemented",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 0.5,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 66.14699999999999,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [
+        "Enhance API integrations (current: 0.5%)"
+      ],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase2": {
+      "name": "fase2",
+      "status": "fully_implemented",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 0.5,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 66.14699999999999,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [
+        "Enhance API integrations (current: 0.5%)"
+      ],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase3": {
+      "name": "fase3",
+      "status": "fully_implemented",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 0.5,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 66.14699999999999,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [
+        "Enhance API integrations (current: 0.5%)"
+      ],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase4": {
+      "name": "fase4",
+      "status": "fully_implemented",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 0.5,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 66.14699999999999,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [
+        "Enhance API integrations (current: 0.5%)"
+      ],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase5": {
+      "name": "fase5",
+      "status": "fully_implemented",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 0.5,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 66.14699999999999,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [
+        "Enhance API integrations (current: 0.5%)"
+      ],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    }
+  },
+  "integration_results": [
+    {
+      "source_phase": "fase1",
+      "target_phase": "fase2",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 101.29213333129883,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase2",
+      "target_phase": "fase3",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 101.27997398376465,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase3",
+      "target_phase": "fase4",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 100.31914710998535,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase4",
+      "target_phase": "fase5",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 101.26399993896484,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase5",
+      "target_phase": "fase1",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 101.21989250183105,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    }
+  ],
+  "system_health": {
+    "overall_health": "unhealthy",
+    "cpu_usage": 25.2,
+    "memory_usage": 72.5,
+    "disk_usage": 3.3,
+    "database_status": "healthy",
+    "redis_status": "healthy",
+    "api_gateway_status": "failed",
+    "phase_health": {
+      "fase1": "healthy",
+      "fase2": "healthy",
+      "fase3": "healthy",
+      "fase4": "healthy",
+      "fase5": "healthy"
+    },
+    "service_response_times": {
+      "fase1": 51.162004470825195,
+      "fase2": 51.216840744018555,
+      "fase3": 51.17630958557129,
+      "fase4": 50.80699920654297,
+      "fase5": 51.171064376831055
+    }
+  },
+  "overall_summary": {
+    "overall_system_score": 66.15,
+    "average_implementation_score": 99.99,
+    "average_integration_score": 0.5,
+    "average_performance_score": 85.0,
+    "average_security_score": 95.0,
+    "phases_production_ready": 0,
+    "total_phases": 5,
+    "working_integrations": 5,
+    "total_integrations": 5
+  },
+  "recommendations": [
+    "Improve overall system score to 95+ (current: 66.1)",
+    "Enhance cross-phase integrations (current: 0.5%)",
+    "Strengthen security measures (current: 95.0%)"
+  ],
+  "production_readiness": false,
+  "status": "NEEDS_IMPROVEMENT",
+  "execution_time_seconds": 2.75,
+  "end_time": "2026-01-10T03:06:52.174965+00:00"
+}

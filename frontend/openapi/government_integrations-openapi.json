@@ -1,0 +1,655 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Government Integrations API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for government_integrations module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/status": {
+      "get": {
+        "summary": "Obter Status Sincronizacao",
+        "operationId": "obter_status_sincronizacao",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/nfe/{chave_acesso}": {
+      "get": {
+        "summary": "Consultar Nfe",
+        "operationId": "consultar_nfe",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cadastro/ie/{inscricao_estadual}": {
+      "get": {
+        "summary": "Consultar Cadastro Ie",
+        "operationId": "consultar_cadastro_ie",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cadastro/cnpj/{cnpj}": {
+      "get": {
+        "summary": "Consultar Cadastro Cnpj",
+        "operationId": "consultar_cadastro_cnpj",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dfe": {
+      "get": {
+        "summary": "Consultar Dfe Destinadas",
+        "operationId": "consultar_dfe_destinadas",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cancelar": {
+      "post": {
+        "summary": "Cancelar Nfe",
+        "operationId": "cancelar_nfe",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/carta-correcao": {
+      "post": {
+        "summary": "Registrar Carta Correcao",
+        "operationId": "registrar_carta_correcao",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/inutilizar": {
+      "post": {
+        "summary": "Inutilizar Numeracao",
+        "operationId": "inutilizar_numeracao",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configuracoes": {
+      "get": {
+        "summary": "Listar Configuracoes Disponiveis",
+        "operationId": "listar_configuracoes_disponiveis",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/registrar-todos": {
+      "post": {
+        "summary": "Registrar Todos Jobs",
+        "operationId": "registrar_todos_jobs",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{tipo}/executar": {
+      "post": {
+        "summary": "Executar Job Agora",
+        "operationId": "executar_job_agora",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{job_id}": {
+      "patch": {
+        "summary": "Atualizar Job",
+        "operationId": "atualizar_job",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{tipo}/pausar": {
+      "post": {
+        "summary": "Pausar Job",
+        "operationId": "pausar_job",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{tipo}/retomar": {
+      "post": {
+        "summary": "Retomar Job",
+        "operationId": "retomar_job",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/iniciar": {
+      "post": {
+        "summary": "Iniciar Extracao",
+        "operationId": "iniciar_extracao",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status/{extracao_id}": {
+      "get": {
+        "summary": "Obter Status Extracao",
+        "operationId": "obter_status_extracao",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/historico": {
+      "get": {
+        "summary": "Listar Historico Extracoes",
+        "operationId": "listar_historico_extracoes",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cancelar/{extracao_id}": {
+      "post": {
+        "summary": "Cancelar Extracao",
+        "operationId": "cancelar_extracao",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/nfe": {
+      "post": {
+        "summary": "Sincronizar Nfe Rapido",
+        "operationId": "sincronizar_nfe_rapido",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/esocial": {
+      "post": {
+        "summary": "Sincronizar Esocial Rapido",
+        "operationId": "sincronizar_esocial_rapido",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/fgts": {
+      "post": {
+        "summary": "Sincronizar Fgts Rapido",
+        "operationId": "sincronizar_fgts_rapido",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/nfse": {
+      "post": {
+        "summary": "Sincronizar Nfse Rapido",
+        "operationId": "sincronizar_nfse_rapido",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/rfb": {
+      "post": {
+        "summary": "Sincronizar Rfb Rapido",
+        "operationId": "sincronizar_rfb_rapido",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync/todos": {
+      "post": {
+        "summary": "Sincronizar Todos Rapido",
+        "operationId": "sincronizar_todos_rapido",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Obter Dashboard",
+        "operationId": "obter_dashboard",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metricas": {
+      "get": {
+        "summary": "Obter Metricas",
+        "operationId": "obter_metricas",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/endpoints": {
+      "get": {
+        "summary": "Listar Status Endpoints",
+        "operationId": "listar_status_endpoints",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/certificados/alertas": {
+      "get": {
+        "summary": "Listar Alertas Certificados",
+        "operationId": "listar_alertas_certificados",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/eventos": {
+      "get": {
+        "summary": "Listar Eventos Recentes",
+        "operationId": "listar_eventos_recentes",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/endpoints/{uf}/{servico}/verificar": {
+      "post": {
+        "summary": "Verificar Endpoint",
+        "operationId": "verificar_endpoint",
+        "tags": [
+          "Government Integrations"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

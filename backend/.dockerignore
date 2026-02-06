@@ -1,0 +1,67 @@
+# ==========================================================================
+# ERP Conecta Mais - Docker Ignore
+# ==========================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+.eggs/
+*.egg-info/
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Local env
+.env
+.env.local
+.env.*.local
+
+# Docker
+Dockerfile
+docker-compose*.yml
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Backups
+backups/
+*.backup
+*.bak
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Tests
+tests/_obsolete/
+tests/_obsolete_phase1/

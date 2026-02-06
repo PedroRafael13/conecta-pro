@@ -1,0 +1,664 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Conecta PRO - Fase 5 Module API",
+    "description": "\n    API completa para Fase 5 - Grand Finale.\n\n    Funcionalidades:\n    - CCT Compliance: Validação de cargos, salários e propostas comerciais (SINDCOND 2026)\n    - Email Intelligence: Análise e classificação de emails com IA\n    - Quality Framework: Validação de qualidade do sistema (target 99+/100)\n\n    Total: 11 endpoints organizados em:\n    - 6 endpoints CCT Compliance\n    - 2 endpoints Email Intelligence\n    - 1 endpoint Quality Framework\n    - 2 endpoints System Status\n    ",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/fase5/cct/cargos": {
+      "get": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Listar Cargos",
+        "description": "Lista todos os cargos com pisos salariais CCT 2026.",
+        "operationId": "listar_cargos_api_v1_fase5_cct_cargos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Listar Cargos Api V1 Fase5 Cct Cargos Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/cct/cargo/{cargo}": {
+      "get": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Obter Cargo",
+        "description": "Obtem detalhes de um cargo especifico.",
+        "operationId": "obter_cargo_api_v1_fase5_cct_cargo__cargo__get",
+        "parameters": [
+          {
+            "name": "cargo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Cargo"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Obter Cargo Api V1 Fase5 Cct Cargo  Cargo  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/cct/validar-salario": {
+      "post": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Validar Salario",
+        "description": "Valida salario contra piso da CCT.",
+        "operationId": "validar_salario_api_v1_fase5_cct_validar_salario_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidarSalarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Validar Salario Api V1 Fase5 Cct Validar Salario Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/cct/validar-completo": {
+      "post": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Validar Completo",
+        "description": "Executa validacao completa de compliance CCT.",
+        "operationId": "validar_completo_api_v1_fase5_cct_validar_completo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidarCompletoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Validar Completo Api V1 Fase5 Cct Validar Completo Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/cct/calcular-custo": {
+      "post": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Calcular Custo",
+        "description": "Calcula custo total de um funcionario.",
+        "operationId": "calcular_custo_api_v1_fase5_cct_calcular_custo_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalcularCustoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Calcular Custo Api V1 Fase5 Cct Calcular Custo Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/cct/gerar-proposta": {
+      "post": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Gerar Proposta",
+        "description": "Gera proposta comercial baseada na CCT.",
+        "operationId": "gerar_proposta_api_v1_fase5_cct_gerar_proposta_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GerarPropostaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Gerar Proposta Api V1 Fase5 Cct Gerar Proposta Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/email/analisar": {
+      "post": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Analisar Email",
+        "description": "Analisa um email e retorna classificacao, entidades e sugestoes.",
+        "operationId": "analisar_email_api_v1_fase5_email_analisar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalisarEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Analisar Email Api V1 Fase5 Email Analisar Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/email/contexto/{email_address}": {
+      "get": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Obter Contexto Email",
+        "description": "Obtem contexto historico de um endereco de email.",
+        "operationId": "obter_contexto_email_api_v1_fase5_email_contexto__email_address__get",
+        "parameters": [
+          {
+            "name": "email_address",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Email Address"
+            }
+          },
+          {
+            "name": "tenant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Tenant Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Obter Contexto Email Api V1 Fase5 Email Contexto  Email Address  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/quality/validate": {
+      "post": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Validar Qualidade",
+        "description": "Executa validacao de qualidade do sistema.",
+        "operationId": "validar_qualidade_api_v1_fase5_quality_validate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QualidadeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Validar Qualidade Api V1 Fase5 Quality Validate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/status": {
+      "get": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Status Fase5",
+        "description": "Retorna status da Fase 5.",
+        "operationId": "status_fase5_api_v1_fase5_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Status Fase5 Api V1 Fase5 Status Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fase5/health": {
+      "get": {
+        "tags": [
+          "Fase 5 - Grand Finale",
+          "Fase 5 - Grand Finale"
+        ],
+        "summary": "Health Fase5",
+        "description": "Health check da Fase 5.",
+        "operationId": "health_fase5_api_v1_fase5_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Health Fase5 Api V1 Fase5 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AnalisarEmailRequest": {
+        "properties": {
+          "from_address": {
+            "type": "string",
+            "format": "email",
+            "title": "From Address"
+          },
+          "to_addresses": {
+            "items": {
+              "type": "string",
+              "format": "email"
+            },
+            "type": "array",
+            "title": "To Addresses"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "body_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body Text"
+          },
+          "tenant_id": {
+            "type": "string",
+            "title": "Tenant Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_address",
+          "to_addresses",
+          "subject",
+          "tenant_id"
+        ],
+        "title": "AnalisarEmailRequest",
+        "description": "Request para analise de email."
+      },
+      "CalcularCustoRequest": {
+        "properties": {
+          "cargo": {
+            "type": "string",
+            "title": "Cargo"
+          },
+          "salario": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Salario"
+          },
+          "jornada": {
+            "type": "string",
+            "title": "Jornada",
+            "default": "44h_semanais"
+          },
+          "incluir_encargos": {
+            "type": "boolean",
+            "title": "Incluir Encargos",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "cargo"
+        ],
+        "title": "CalcularCustoRequest",
+        "description": "Request para calculo de custo."
+      },
+      "GerarPropostaRequest": {
+        "properties": {
+          "cargos": {
+            "items": {
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Cargos"
+          },
+          "margem": {
+            "type": "number",
+            "title": "Margem",
+            "default": 15.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "cargos"
+        ],
+        "title": "GerarPropostaRequest",
+        "description": "Request para geracao de proposta."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "QualidadeRequest": {
+        "properties": {
+          "component": {
+            "type": "string",
+            "title": "Component",
+            "default": "fase5"
+          },
+          "phase": {
+            "type": "string",
+            "title": "Phase",
+            "default": "grand_finale"
+          }
+        },
+        "type": "object",
+        "title": "QualidadeRequest",
+        "description": "Request para validacao de qualidade."
+      },
+      "ValidarCompletoRequest": {
+        "properties": {
+          "cargo": {
+            "type": "string",
+            "title": "Cargo"
+          },
+          "salario": {
+            "type": "number",
+            "title": "Salario"
+          },
+          "jornada": {
+            "type": "string",
+            "title": "Jornada",
+            "default": "44h_semanais"
+          },
+          "beneficios": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Beneficios"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cargo",
+          "salario"
+        ],
+        "title": "ValidarCompletoRequest",
+        "description": "Request para validacao completa CCT."
+      },
+      "ValidarSalarioRequest": {
+        "properties": {
+          "cargo": {
+            "type": "string",
+            "title": "Cargo"
+          },
+          "salario": {
+            "type": "number",
+            "title": "Salario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cargo",
+          "salario"
+        ],
+        "title": "ValidarSalarioRequest",
+        "description": "Request para validacao de salario."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

@@ -1,0 +1,1047 @@
+"""
+Controller REST para sincronização de dados governamentais.
+
+Endpoints para:
+- Execução manual de sincronizações
+- Consulta de status e histórico
+- Configuração de agendamentos
+- Monitoramento de jobs ativos
+"""
+
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Query
+from sqlalchemy.orm import Session
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field
+from datetime import datetime, date
+from enum import Enum
+import logging
+
+from core.database import get_db
+from ..sync.sync_manager import SyncManager, ServicoGov
+from ..sync.base_sync import SyncResult, SyncConfig
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/sync", tags=["Sincronização Governamental"])
+
+
+# =============================================================================
+# SCHEMAS
+# =============================================================================
+
+class ServicoEnum(str, Enum):
+    """Serviços disponíveis para sincronização."""
+    ESOCIAL = "esocial"
+    RECEITA_FEDERAL = "receita_federal"
+    NFE = "nfe"
+    CTE = "cte"
+    MDFE = "mdfe"
+    NFSE = "nfse"
+    SPED = "sped"
+    FGTS = "fgts"
+    INSS = "inss"
+    GOVBR = "govbr"
+
+
+class TipoSyncEnum(str, Enum):
+    """Tipos de sincronização."""
+    INCREMENTAL = "incremental"
+    COMPLETA = "completa"
+
+
+class SyncRequest(BaseModel):
+    """Request para executar sincronização."""
+    cnpj_empresa: str = Field(..., min_length=14, max_length=14, description="CNPJ da empresa (apenas números)")
+    tipo_sync: TipoSyncEnum = Field(default=TipoSyncEnum.INCREMENTAL)
+    data_inicial: Optional[date] = Field(None, description="Data inicial para extração")
+    data_final: Optional[date] = Field(None, description="Data final para extração")
+    parametros_extras: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "cnpj_empresa": "12345678000190",
+                "tipo_sync": "incremental",
+                "data_inicial": "2024-01-01",
+                "data_final": "2024-12-31"
+            }
+        }
+
+
+class SyncAllRequest(BaseModel):
+    """Request para sincronizar todos os serviços."""
+    cnpj_empresa: str = Field(..., min_length=14, max_length=14)
+    servicos: Optional[List[ServicoEnum]] = Field(None, description="Serviços específicos (None = todos)")
+    tipo_sync: TipoSyncEnum = Field(default=TipoSyncEnum.INCREMENTAL)
+
+
+class AgendamentoRequest(BaseModel):
+    """Request para configurar agendamento."""
+    cnpj_empresa: str = Field(..., min_length=14, max_length=14)
+    servico: ServicoEnum
+    intervalo_minutos: int = Field(ge=5, le=1440, description="Intervalo entre execuções (5-1440 min)")
+    ativo: bool = Field(default=True)
+    horario_inicio: Optional[str] = Field(None, description="Horário de início (HH:MM)")
+    horario_fim: Optional[str] = Field(None, description="Horário de fim (HH:MM)")
+
+
+class ConfiguracaoEmpresaRequest(BaseModel):
+    """Request para configurar integração de empresa."""
+    cnpj_empresa: str = Field(..., min_length=14, max_length=14)
+    certificate_id: Optional[str] = None
+    govbr_cpf: Optional[str] = None
+    govbr_token: Optional[str] = None
+    uf_empresa: Optional[str] = Field(None, max_length=2)
+    codigo_municipio: Optional[str] = None
+    ambiente: str = Field(default="producao", pattern="^(producao|homologacao)$")
+
+
+class SyncResultResponse(BaseModel):
+    """Response com resultado de sincronização."""
+    sucesso: bool
+    job_id: Optional[str] = None
+    servico: str
+    registros_processados: int = 0
+    registros_novos: int = 0
+    registros_atualizados: int = 0
+    registros_erro: int = 0
+    mensagem: str = ""
+    duracao_segundos: float = 0
+    erros: List[Dict[str, Any]] = []
+
+    class Config:
+        from_attributes = True
+
+
+class JobStatusResponse(BaseModel):
+    """Response com status de job."""
+    job_id: str
+    servico: str
+    cnpj: str
+    status: str
+    inicio: datetime
+    fim: Optional[datetime] = None
+    resultado: Optional[SyncResultResponse] = None
+
+
+class HistoricoResponse(BaseModel):
+    """Response com histórico de sincronizações."""
+    id: str
+    cnpj_empresa: str
+    servico: str
+    tipo_sync: str
+    status: str
+    inicio_execucao: datetime
+    fim_execucao: Optional[datetime]
+    registros_processados: int
+    registros_novos: int
+    registros_erro: int
+    mensagem: Optional[str]
+    duracao_segundos: Optional[float]
+
+
+class StatusSyncResponse(BaseModel):
+    """Response com status geral de sincronização."""
+    cnpj_empresa: str
+    servicos: Dict[str, Dict[str, Any]]
+    jobs_ativos: int
+    ultima_sincronizacao: Optional[datetime]
+
+
+# =============================================================================
+# DEPENDENCY
+# =============================================================================
+
+_sync_manager: Optional[SyncManager] = None
+
+
+def get_sync_manager(db: Session = Depends(get_db)) -> SyncManager:
+    """Obtém instância do SyncManager."""
+    global _sync_manager
+    if _sync_manager is None:
+        _sync_manager = SyncManager(db)
+    else:
+        _sync_manager.db = db
+    return _sync_manager
+
+
+# =============================================================================
+# ENDPOINTS DE EXECUÇÃO
+# =============================================================================
+
+@router.post(
+    "/{servico}",
+    response_model=SyncResultResponse,
+    summary="Executar sincronização de serviço",
+    description="Executa sincronização manual de um serviço específico"
+)
+async def executar_sync(
+    servico: ServicoEnum,
+    request: SyncRequest,
+    background_tasks: BackgroundTasks,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+):
+    """
+    Executa sincronização de um serviço governamental.
+
+    - **servico**: Serviço a sincronizar (esocial, nfe, receita_federal, etc)
+    - **cnpj_empresa**: CNPJ da empresa (14 dígitos)
+    - **tipo_sync**: incremental ou completa
+    - **data_inicial/final**: Período para extração
+    """
+    try:
+        # Mapear enum
+        servico_gov = ServicoGov(servico.value)
+
+        logger.info(
+            f"[Sync API] Iniciando sync {servico.value} - "
+            f"CNPJ: {request.cnpj_empresa}, Tipo: {request.tipo_sync}"
+        )
+
+        # Executar sincronização
+        result = await sync_manager.sincronizar_servico(
+            servico=servico_gov,
+            cnpj_empresa=request.cnpj_empresa,
+            tipo_sync=request.tipo_sync.value,
+            data_inicial=request.data_inicial,
+            data_final=request.data_final,
+            parametros_extras=request.parametros_extras or {},
+        )
+
+        return SyncResultResponse(
+            sucesso=result.sucesso,
+            servico=servico.value,
+            registros_processados=result.registros_processados,
+            registros_novos=result.registros_novos,
+            registros_atualizados=result.registros_atualizados,
+            registros_erro=result.registros_erro,
+            mensagem=result.mensagem,
+            duracao_segundos=result.duracao_segundos,
+            erros=result.erros[:10],  # Limitar erros retornados
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.exception(f"[Sync API] Erro executando sync {servico.value}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro na sincronização: {str(e)}"
+        )
+
+
+@router.post(
+    "/todos",
+    response_model=Dict[str, SyncResultResponse],
+    summary="Sincronizar todos os serviços",
+    description="Executa sincronização de todos os serviços configurados"
+)
+async def sincronizar_todos(
+    request: SyncAllRequest,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+):
+    """
+    Sincroniza múltiplos serviços governamentais.
+
+    - Se **servicos** for None, sincroniza todos os configurados
+    - Retorna resultado individual de cada serviço
+    """
+    try:
+        # Determinar serviços
+        if request.servicos:
+            servicos = [ServicoGov(s.value) for s in request.servicos]
+        else:
+            servicos = None  # Todos
+
+        logger.info(
+            f"[Sync API] Sincronizando múltiplos serviços - "
+            f"CNPJ: {request.cnpj_empresa}"
+        )
+
+        # Executar
+        resultados = await sync_manager.sincronizar_todos(
+            cnpj_empresa=request.cnpj_empresa,
+            servicos=servicos,
+        )
+
+        # Formatar resposta
+        response = {}
+        for servico, result in resultados.items():
+            response[servico] = SyncResultResponse(
+                sucesso=result.sucesso,
+                servico=servico,
+                registros_processados=result.registros_processados,
+                registros_novos=result.registros_novos,
+                registros_atualizados=result.registros_atualizados,
+                registros_erro=result.registros_erro,
+                mensagem=result.mensagem,
+                duracao_segundos=result.duracao_segundos,
+                erros=result.erros[:5],
+            )
+
+        return response
+
+    except Exception as e:
+        logger.exception("[Sync API] Erro sincronizando todos")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erro na sincronização: {str(e)}"
+        )
+
+
+@router.post(
+    "/{servico}/background",
+    response_model=Dict[str, str],
+    summary="Executar sincronização em background",
+    description="Inicia sincronização assíncrona e retorna imediatamente"
+)
+async def executar_sync_background(
+    servico: ServicoEnum,
+    request: SyncRequest,
+    background_tasks: BackgroundTasks,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+):
+    """
+    Inicia sincronização em background.
+
+    Retorna job_id para acompanhamento posterior via GET /sync/jobs/{job_id}
+    """
+    try:
+        servico_gov = ServicoGov(servico.value)
+
+        # Criar job em background
+        async def run_sync():
+            await sync_manager.sincronizar_servico(
+                servico=servico_gov,
+                cnpj_empresa=request.cnpj_empresa,
+                tipo_sync=request.tipo_sync.value,
+                data_inicial=request.data_inicial,
+                data_final=request.data_final,
+            )
+
+        # Adicionar à fila
+        background_tasks.add_task(run_sync)
+
+        # Gerar job_id (simplificado - em produção usar UUID real)
+        import uuid
+        job_id = str(uuid.uuid4())[:8]
+
+        return {
+            "job_id": job_id,
+            "status": "iniciado",
+            "servico": servico.value,
+            "mensagem": f"Sincronização iniciada em background. Use GET /sync/jobs para acompanhar."
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+# =============================================================================
+# ENDPOINTS DE CONSULTA
+# =============================================================================
+
+@router.get(
+    "/status/{cnpj}",
+    response_model=StatusSyncResponse,
+    summary="Status de sincronização",
+    description="Retorna status geral de sincronização para uma empresa"
+)
+async def obter_status(
+    cnpj: str,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+):
+    """
+    Obtém status de sincronização de todos os serviços para uma empresa.
+
+    Inclui:
+    - Última sincronização de cada serviço
+    - Status atual (idle, running, error)
+    - Quantidade de jobs ativos
+    """
+    try:
+        # Obter status dos sincronizadores
+        servicos_status = {}
+
+        for servico in ServicoGov:
+            sync = sync_manager._synchronizers.get(servico.value)
+            if sync:
+                servicos_status[servico.value] = {
+                    "status": sync.status.value,
+                    "ultima_sync": sync._obter_ultima_sincronizacao(cnpj),
+                    "configurado": True,
+                }
+            else:
+                servicos_status[servico.value] = {
+                    "status": "nao_configurado",
+                    "ultima_sync": None,
+                    "configurado": False,
+                }
+
+        # Contar jobs ativos
+        jobs_ativos = len([
+            j for j in sync_manager._active_jobs.values()
+            if j.get("cnpj") == cnpj and j.get("status") == "running"
+        ])
+
+        # Última sincronização geral
+        ultima_sync = None
+        for info in servicos_status.values():
+            if info.get("ultima_sync"):
+                if not ultima_sync or info["ultima_sync"] > ultima_sync:
+                    ultima_sync = info["ultima_sync"]
+
+        return StatusSyncResponse(
+            cnpj_empresa=cnpj,
+            servicos=servicos_status,
+            jobs_ativos=jobs_ativos,
+            ultima_sincronizacao=ultima_sync,
+        )
+
+    except Exception as e:
+        logger.exception(f"[Sync API] Erro obtendo status para {cnpj}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/historico/{cnpj}",
+    response_model=List[HistoricoResponse],
+    summary="Histórico de sincronizações",
+    description="Retorna histórico de sincronizações de uma empresa"
+)
+async def obter_historico(
+    cnpj: str,
+    servico: Optional[ServicoEnum] = None,
+    limite: int = Query(default=50, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """
+    Obtém histórico de sincronizações.
+
+    - **servico**: Filtrar por serviço específico
+    - **limite**: Quantidade máxima de registros
+    - **offset**: Paginação
+    """
+    try:
+        from ..models.sync_models import SyncLog
+
+        query = db.query(SyncLog).filter(
+            SyncLog.cnpj_empresa == cnpj
+        )
+
+        if servico:
+            query = query.filter(SyncLog.servico == servico.value)
+
+        logs = query.order_by(
+            SyncLog.inicio_execucao.desc()
+        ).offset(offset).limit(limite).all()
+
+        return [
+            HistoricoResponse(
+                id=str(log.id),
+                cnpj_empresa=log.cnpj_empresa,
+                servico=log.servico,
+                tipo_sync=log.tipo_sync.value if hasattr(log.tipo_sync, 'value') else str(log.tipo_sync),
+                status=log.status.value if hasattr(log.status, 'value') else str(log.status),
+                inicio_execucao=log.inicio_execucao,
+                fim_execucao=log.fim_execucao,
+                registros_processados=log.registros_processados or 0,
+                registros_novos=log.registros_novos or 0,
+                registros_erro=log.registros_erro or 0,
+                mensagem=log.mensagem,
+                duracao_segundos=(
+                    (log.fim_execucao - log.inicio_execucao).total_seconds()
+                    if log.fim_execucao and log.inicio_execucao else None
+                ),
+            )
+            for log in logs
+        ]
+
+    except Exception as e:
+        logger.exception(f"[Sync API] Erro obtendo histórico para {cnpj}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/jobs",
+    response_model=List[JobStatusResponse],
+    summary="Jobs ativos",
+    description="Lista todos os jobs de sincronização ativos"
+)
+async def listar_jobs(
+    cnpj: Optional[str] = None,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+):
+    """Lista jobs de sincronização em execução."""
+    try:
+        jobs = []
+
+        for job_id, job_info in sync_manager._active_jobs.items():
+            if cnpj and job_info.get("cnpj") != cnpj:
+                continue
+
+            jobs.append(JobStatusResponse(
+                job_id=job_id,
+                servico=job_info.get("servico", "unknown"),
+                cnpj=job_info.get("cnpj", ""),
+                status=job_info.get("status", "unknown"),
+                inicio=job_info.get("inicio", datetime.utcnow()),
+                fim=job_info.get("fim"),
+                resultado=None,  # Resultado só disponível após conclusão
+            ))
+
+        return jobs
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.delete(
+    "/jobs/{job_id}",
+    summary="Cancelar job",
+    description="Solicita cancelamento de um job em execução"
+)
+async def cancelar_job(
+    job_id: str,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+):
+    """Solicita cancelamento de job de sincronização."""
+    try:
+        if job_id not in sync_manager._active_jobs:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Job {job_id} não encontrado"
+            )
+
+        job_info = sync_manager._active_jobs[job_id]
+        servico = job_info.get("servico")
+
+        if servico and servico in sync_manager._synchronizers:
+            sync_manager._synchronizers[servico].cancelar()
+
+        return {
+            "job_id": job_id,
+            "status": "cancelamento_solicitado",
+            "mensagem": "Cancelamento solicitado. O job será interrompido em breve."
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+# =============================================================================
+# ENDPOINTS DE CONFIGURAÇÃO
+# =============================================================================
+
+@router.post(
+    "/agendamento",
+    summary="Configurar agendamento",
+    description="Configura agendamento automático de sincronização"
+)
+async def configurar_agendamento(
+    request: AgendamentoRequest,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+    db: Session = Depends(get_db),
+):
+    """
+    Configura agendamento automático para um serviço.
+
+    - **intervalo_minutos**: Tempo entre execuções (mínimo 5 min)
+    - **horario_inicio/fim**: Janela de execução (opcional)
+    """
+    try:
+        from ..models.sync_models import SyncAgendamento, TipoSincronizacao
+
+        servico_gov = ServicoGov(request.servico.value)
+
+        # Buscar ou criar agendamento
+        agendamento = db.query(SyncAgendamento).filter(
+            SyncAgendamento.cnpj_empresa == request.cnpj_empresa,
+            SyncAgendamento.servico == request.servico.value,
+        ).first()
+
+        if agendamento:
+            agendamento.intervalo_minutos = request.intervalo_minutos
+            agendamento.ativo = request.ativo
+            agendamento.horario_inicio = request.horario_inicio
+            agendamento.horario_fim = request.horario_fim
+            agendamento.updated_at = datetime.utcnow()
+        else:
+            agendamento = SyncAgendamento(
+                cnpj_empresa=request.cnpj_empresa,
+                servico=request.servico.value,
+                tipo_sync=TipoSincronizacao.INCREMENTAL,
+                intervalo_minutos=request.intervalo_minutos,
+                ativo=request.ativo,
+                horario_inicio=request.horario_inicio,
+                horario_fim=request.horario_fim,
+            )
+            db.add(agendamento)
+
+        db.commit()
+
+        # Atualizar no manager
+        sync_manager._scheduled_jobs[f"{request.cnpj_empresa}_{request.servico.value}"] = {
+            "servico": servico_gov,
+            "cnpj": request.cnpj_empresa,
+            "intervalo": request.intervalo_minutos,
+            "ativo": request.ativo,
+            "proxima_execucao": datetime.utcnow(),
+        }
+
+        return {
+            "status": "configurado",
+            "cnpj": request.cnpj_empresa,
+            "servico": request.servico.value,
+            "intervalo_minutos": request.intervalo_minutos,
+            "ativo": request.ativo,
+        }
+
+    except Exception as e:
+        db.rollback()
+        logger.exception("[Sync API] Erro configurando agendamento")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/agendamentos/{cnpj}",
+    summary="Listar agendamentos",
+    description="Lista agendamentos configurados para uma empresa"
+)
+async def listar_agendamentos(
+    cnpj: str,
+    db: Session = Depends(get_db),
+):
+    """Lista todos os agendamentos de sincronização."""
+    try:
+        from ..models.sync_models import SyncAgendamento
+
+        agendamentos = db.query(SyncAgendamento).filter(
+            SyncAgendamento.cnpj_empresa == cnpj
+        ).all()
+
+        return [
+            {
+                "id": str(a.id),
+                "servico": a.servico,
+                "tipo_sync": a.tipo_sync.value if hasattr(a.tipo_sync, 'value') else str(a.tipo_sync),
+                "intervalo_minutos": a.intervalo_minutos,
+                "ativo": a.ativo,
+                "horario_inicio": a.horario_inicio,
+                "horario_fim": a.horario_fim,
+                "ultima_execucao": a.ultima_execucao,
+                "proxima_execucao": a.proxima_execucao,
+            }
+            for a in agendamentos
+        ]
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.delete(
+    "/agendamento/{cnpj}/{servico}",
+    summary="Remover agendamento",
+    description="Remove agendamento de sincronização"
+)
+async def remover_agendamento(
+    cnpj: str,
+    servico: ServicoEnum,
+    db: Session = Depends(get_db),
+    sync_manager: SyncManager = Depends(get_sync_manager),
+):
+    """Remove agendamento de sincronização."""
+    try:
+        from ..models.sync_models import SyncAgendamento
+
+        agendamento = db.query(SyncAgendamento).filter(
+            SyncAgendamento.cnpj_empresa == cnpj,
+            SyncAgendamento.servico == servico.value,
+        ).first()
+
+        if not agendamento:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Agendamento não encontrado"
+            )
+
+        db.delete(agendamento)
+        db.commit()
+
+        # Remover do manager
+        job_key = f"{cnpj}_{servico.value}"
+        if job_key in sync_manager._scheduled_jobs:
+            del sync_manager._scheduled_jobs[job_key]
+
+        return {"status": "removido", "servico": servico.value}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.post(
+    "/configuracao",
+    summary="Configurar integração",
+    description="Configura dados de integração para uma empresa"
+)
+async def configurar_integracao(
+    request: ConfiguracaoEmpresaRequest,
+    sync_manager: SyncManager = Depends(get_sync_manager),
+    db: Session = Depends(get_db),
+):
+    """
+    Configura integração governamental para uma empresa.
+
+    - **certificate_id**: ID do certificado digital
+    - **govbr_cpf/token**: Credenciais Gov.br
+    - **uf_empresa**: UF para SEFAZ estadual
+    - **ambiente**: producao ou homologacao
+    """
+    try:
+        from ..models.sync_models import ConfiguracaoIntegracao
+
+        # Buscar ou criar configuração
+        config = db.query(ConfiguracaoIntegracao).filter(
+            ConfiguracaoIntegracao.cnpj_empresa == request.cnpj_empresa
+        ).first()
+
+        if config:
+            if request.certificate_id:
+                config.certificate_id = request.certificate_id
+            if request.govbr_cpf:
+                config.govbr_cpf = request.govbr_cpf
+            if request.govbr_token:
+                config.govbr_token = request.govbr_token
+            if request.uf_empresa:
+                config.uf_empresa = request.uf_empresa
+            if request.codigo_municipio:
+                config.codigo_municipio = request.codigo_municipio
+            config.ambiente = request.ambiente
+            config.updated_at = datetime.utcnow()
+        else:
+            config = ConfiguracaoIntegracao(
+                cnpj_empresa=request.cnpj_empresa,
+                certificate_id=request.certificate_id,
+                govbr_cpf=request.govbr_cpf,
+                govbr_token=request.govbr_token,
+                uf_empresa=request.uf_empresa,
+                codigo_municipio=request.codigo_municipio,
+                ambiente=request.ambiente,
+            )
+            db.add(config)
+
+        db.commit()
+
+        # Configurar no manager
+        await sync_manager.configurar_empresa(
+            cnpj=request.cnpj_empresa,
+            certificate_id=request.certificate_id,
+            govbr_token=request.govbr_token,
+        )
+
+        return {
+            "status": "configurado",
+            "cnpj": request.cnpj_empresa,
+            "ambiente": request.ambiente,
+        }
+
+    except Exception as e:
+        db.rollback()
+        logger.exception("[Sync API] Erro configurando integração")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/configuracao/{cnpj}",
+    summary="Obter configuração",
+    description="Retorna configuração de integração de uma empresa"
+)
+async def obter_configuracao(
+    cnpj: str,
+    db: Session = Depends(get_db),
+):
+    """Obtém configuração de integração."""
+    try:
+        from ..models.sync_models import ConfiguracaoIntegracao
+
+        config = db.query(ConfiguracaoIntegracao).filter(
+            ConfiguracaoIntegracao.cnpj_empresa == cnpj
+        ).first()
+
+        if not config:
+            return {
+                "cnpj_empresa": cnpj,
+                "configurado": False,
+            }
+
+        return {
+            "cnpj_empresa": config.cnpj_empresa,
+            "configurado": True,
+            "certificate_id": config.certificate_id,
+            "govbr_cpf": config.govbr_cpf[:3] + "***" if config.govbr_cpf else None,
+            "uf_empresa": config.uf_empresa,
+            "codigo_municipio": config.codigo_municipio,
+            "ambiente": config.ambiente,
+            "created_at": config.created_at,
+            "updated_at": config.updated_at,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+# =============================================================================
+# ENDPOINTS DE DADOS SINCRONIZADOS
+# =============================================================================
+
+@router.get(
+    "/dados/documentos/{cnpj}",
+    summary="Listar documentos fiscais",
+    description="Lista documentos fiscais sincronizados"
+)
+async def listar_documentos(
+    cnpj: str,
+    tipo: Optional[str] = None,
+    data_inicial: Optional[date] = None,
+    data_final: Optional[date] = None,
+    limite: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """Lista documentos fiscais (NF-e, CT-e, NFS-e, etc)."""
+    try:
+        from ..models.sync_models import DocumentoFiscal
+
+        query = db.query(DocumentoFiscal).filter(
+            DocumentoFiscal.cnpj_empresa == cnpj
+        )
+
+        if tipo:
+            query = query.filter(DocumentoFiscal.tipo_documento == tipo)
+        if data_inicial:
+            query = query.filter(DocumentoFiscal.data_emissao >= data_inicial)
+        if data_final:
+            query = query.filter(DocumentoFiscal.data_emissao <= data_final)
+
+        total = query.count()
+        documentos = query.order_by(
+            DocumentoFiscal.data_emissao.desc()
+        ).offset(offset).limit(limite).all()
+
+        return {
+            "total": total,
+            "limite": limite,
+            "offset": offset,
+            "documentos": [
+                {
+                    "id": str(d.id),
+                    "tipo": d.tipo_documento.value if hasattr(d.tipo_documento, 'value') else str(d.tipo_documento),
+                    "chave": d.chave_acesso,
+                    "numero": d.numero,
+                    "serie": d.serie,
+                    "data_emissao": d.data_emissao,
+                    "cnpj_emitente": d.cnpj_emitente,
+                    "nome_emitente": d.nome_emitente,
+                    "valor_total": float(d.valor_total) if d.valor_total else 0,
+                    "status": d.status.value if hasattr(d.status, 'value') else str(d.status),
+                }
+                for d in documentos
+            ]
+        }
+
+    except Exception as e:
+        logger.exception(f"[Sync API] Erro listando documentos para {cnpj}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/dados/eventos-esocial/{cnpj}",
+    summary="Listar eventos eSocial",
+    description="Lista eventos eSocial sincronizados"
+)
+async def listar_eventos_esocial(
+    cnpj: str,
+    tipo_evento: Optional[str] = None,
+    periodo: Optional[str] = None,
+    limite: int = Query(default=100, ge=1, le=1000),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """Lista eventos eSocial."""
+    try:
+        from ..models.sync_models import EventoESocial
+
+        query = db.query(EventoESocial).filter(
+            EventoESocial.cnpj_empresa == cnpj
+        )
+
+        if tipo_evento:
+            query = query.filter(EventoESocial.tipo_evento == tipo_evento)
+        if periodo:
+            query = query.filter(EventoESocial.periodo_apuracao == periodo)
+
+        total = query.count()
+        eventos = query.order_by(
+            EventoESocial.data_evento.desc()
+        ).offset(offset).limit(limite).all()
+
+        return {
+            "total": total,
+            "limite": limite,
+            "offset": offset,
+            "eventos": [
+                {
+                    "id": str(e.id),
+                    "tipo_evento": e.tipo_evento.value if hasattr(e.tipo_evento, 'value') else str(e.tipo_evento),
+                    "id_evento": e.id_evento,
+                    "data_evento": e.data_evento,
+                    "periodo_apuracao": e.periodo_apuracao,
+                    "cpf_funcionario": e.cpf_funcionario,
+                    "matricula": e.matricula,
+                    "status": e.status.value if hasattr(e.status, 'value') else str(e.status),
+                    "recibo": e.recibo,
+                }
+                for e in eventos
+            ]
+        }
+
+    except Exception as e:
+        logger.exception(f"[Sync API] Erro listando eventos eSocial para {cnpj}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/dados/certidoes/{cnpj}",
+    summary="Listar certidões",
+    description="Lista certidões sincronizadas"
+)
+async def listar_certidoes(
+    cnpj: str,
+    db: Session = Depends(get_db),
+):
+    """Lista certidões (CND, CNDT, CRF, etc)."""
+    try:
+        from ..models.sync_models import Certidao
+
+        certidoes = db.query(Certidao).filter(
+            Certidao.cnpj_empresa == cnpj
+        ).order_by(Certidao.data_emissao.desc()).all()
+
+        return [
+            {
+                "id": str(c.id),
+                "tipo": c.tipo_certidao,
+                "orgao": c.orgao_emissor,
+                "numero": c.numero_certidao,
+                "data_emissao": c.data_emissao,
+                "data_validade": c.data_validade,
+                "situacao": c.situacao,
+                "valida": c.data_validade >= date.today() if c.data_validade else False,
+            }
+            for c in certidoes
+        ]
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get(
+    "/dados/guias/{cnpj}",
+    summary="Listar guias de recolhimento",
+    description="Lista guias (DARF, GPS, FGTS) sincronizadas"
+)
+async def listar_guias(
+    cnpj: str,
+    tipo: Optional[str] = None,
+    data_inicial: Optional[date] = None,
+    data_final: Optional[date] = None,
+    limite: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    """Lista guias de recolhimento."""
+    try:
+        from ..models.sync_models import GuiaRecolhimento
+
+        query = db.query(GuiaRecolhimento).filter(
+            GuiaRecolhimento.cnpj_empresa == cnpj
+        )
+
+        if tipo:
+            query = query.filter(GuiaRecolhimento.tipo_guia == tipo)
+        if data_inicial:
+            query = query.filter(GuiaRecolhimento.data_vencimento >= data_inicial)
+        if data_final:
+            query = query.filter(GuiaRecolhimento.data_vencimento <= data_final)
+
+        guias = query.order_by(
+            GuiaRecolhimento.data_vencimento.desc()
+        ).limit(limite).all()
+
+        return [
+            {
+                "id": str(g.id),
+                "tipo": g.tipo_guia.value if hasattr(g.tipo_guia, 'value') else str(g.tipo_guia),
+                "codigo_receita": g.codigo_receita,
+                "competencia": g.competencia,
+                "data_vencimento": g.data_vencimento,
+                "valor_principal": float(g.valor_principal) if g.valor_principal else 0,
+                "valor_total": float(g.valor_total) if g.valor_total else 0,
+                "status": g.status.value if hasattr(g.status, 'value') else str(g.status),
+                "codigo_barras": g.codigo_barras,
+            }
+            for g in guias
+        ]
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )

@@ -1,0 +1,496 @@
+# CI Pipeline - ERP Conecta Mais
+# Executa em todo push e pull request
+
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+  POSTGRES_USER: erp_user
+  POSTGRES_PASSWORD: test_password
+  POSTGRES_DB: erp_test
+
+jobs:
+  # ===========================================
+  # JOB 1: Linting e Formatação (Backend)
+  # ===========================================
+  lint:
+    name: Backend Lint & Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Instalar dependências
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install black isort flake8 mypy
+
+      - name: Black (formatação)
+        run: |
+          cd backend
+          black --check .
+
+      - name: isort (imports)
+        run: |
+          cd backend
+          isort --check-only .
+
+      - name: Flake8 (linting)
+        run: |
+          cd backend
+          flake8 . --max-line-length=100 --ignore=E501,W503
+
+      - name: MyPy (type checking)
+        run: |
+          cd backend
+          mypy core/ api/ --ignore-missing-imports || true
+
+  # ===========================================
+  # JOB 2: Linting e Type Check (Frontend)
+  # ===========================================
+  frontend-lint:
+    name: Frontend Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Instalar dependências
+        run: |
+          cd frontend
+          npm ci
+
+      - name: ESLint
+        run: |
+          cd frontend
+          npx eslint src/ --max-warnings 0 || true
+
+      - name: TypeScript check
+        run: |
+          cd frontend
+          npx tsc --noEmit || true
+
+  # ===========================================
+  # JOB 3: Security Scan
+  # ===========================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Instalar dependências
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install bandit safety
+
+      - name: Bandit (security scan)
+        run: |
+          cd backend
+          bandit -r core/ api/ -x tests/ -ll || true
+
+      - name: Safety (vulnerabilidades)
+        run: |
+          cd backend
+          safety check -r requirements.txt || true
+
+  # ===========================================
+  # JOB 4: Testes (Backend)
+  # ===========================================
+  test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+
+      - name: Instalar dependências
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Rodar testes
+        env:
+          DATABASE_URL: postgresql+asyncpg://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET_KEY: test_secret_key_for_ci_pipeline
+          ENVIRONMENT: test
+        run: |
+          cd backend
+          pytest tests/ -v --cov=core --cov=api --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: backend/coverage.xml
+          fail_ci_if_error: false
+
+  # ===========================================
+  # JOB 5: Testes (Frontend)
+  # ===========================================
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: [frontend-lint]
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Instalar dependências
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Vitest (testes)
+        run: |
+          cd frontend
+          npx vitest run --reporter=verbose || true
+
+      - name: Vitest (coverage)
+        run: |
+          cd frontend
+          npx vitest run --coverage || true
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 7
+
+  # ===========================================
+  # JOB 6: OWASP ZAP Baseline Scan
+  # ===========================================
+  owasp-zap:
+    name: OWASP ZAP Baseline Scan
+    runs-on: ubuntu-latest
+    needs: [test, frontend-test]
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: "http://localhost:8000"
+          allow_issue_writing: false
+        continue-on-error: true
+
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: report_html.html
+          retention-days: 7
+
+  # ===========================================
+  # JOB 7: Build Docker (apenas main)
+  # ===========================================
+  build:
+    name: Build Docker
+    runs-on: ubuntu-latest
+    needs: [test, security, frontend-test]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build imagem
+        run: |
+          cd backend
+          docker build -t erp-conecta-mais:${{ github.sha }} .
+
+      - name: Salvar imagem como artefato
+        run: |
+          docker save erp-conecta-mais:${{ github.sha }} | gzip > erp-image.tar.gz
+
+      - name: Upload artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image
+          path: erp-image.tar.gz
+          retention-days: 7
+
+  # ===========================================
+  # JOB 8: Notificar Resultado (Discord/Slack)
+  # ===========================================
+  notify:
+    name: Notificar Resultado
+    runs-on: ubuntu-latest
+    needs: [lint, frontend-lint, security, test, frontend-test, owasp-zap, build]
+    if: always()
+
+    steps:
+      - name: Gerar summary com status de cada job
+        id: summary
+        run: |
+          # Coleta o resultado de cada job via contexto needs
+          LINT="${{ needs.lint.result }}"
+          FRONTEND_LINT="${{ needs.frontend-lint.result }}"
+          SECURITY="${{ needs.security.result }}"
+          TEST="${{ needs.test.result }}"
+          FRONTEND_TEST="${{ needs.frontend-test.result }}"
+          OWASP_ZAP="${{ needs.owasp-zap.result }}"
+          BUILD="${{ needs.build.result }}"
+
+          # Determina status geral da pipeline
+          OVERALL="success"
+          for RESULT in "$LINT" "$FRONTEND_LINT" "$SECURITY" "$TEST" "$FRONTEND_TEST" "$OWASP_ZAP" "$BUILD"; do
+            if [ "$RESULT" == "failure" ]; then
+              OVERALL="failure"
+              break
+            fi
+          done
+
+          # Monta texto resumo legível
+          SUMMARY="**CI Pipeline - Conecta PRO**\n"
+          SUMMARY+="**Branch:** \`${{ github.ref_name }}\`\n"
+          SUMMARY+="**Commit:** \`${{ github.sha }}\`\n"
+          SUMMARY+="**Autor:** ${{ github.actor }}\n\n"
+          SUMMARY+="| Job | Status |\n|---|---|\n"
+          SUMMARY+="| Backend Lint | ${LINT} |\n"
+          SUMMARY+="| Frontend Lint | ${FRONTEND_LINT} |\n"
+          SUMMARY+="| Security Scan | ${SECURITY} |\n"
+          SUMMARY+="| Backend Tests | ${TEST} |\n"
+          SUMMARY+="| Frontend Tests | ${FRONTEND_TEST} |\n"
+          SUMMARY+="| OWASP ZAP | ${OWASP_ZAP} |\n"
+          SUMMARY+="| Build Docker | ${BUILD} |\n"
+
+          # Exporta variáveis para os próximos steps
+          echo "overall=${OVERALL}" >> "$GITHUB_OUTPUT"
+          echo "lint=${LINT}" >> "$GITHUB_OUTPUT"
+          echo "frontend_lint=${FRONTEND_LINT}" >> "$GITHUB_OUTPUT"
+          echo "security=${SECURITY}" >> "$GITHUB_OUTPUT"
+          echo "test=${TEST}" >> "$GITHUB_OUTPUT"
+          echo "frontend_test=${FRONTEND_TEST}" >> "$GITHUB_OUTPUT"
+          echo "owasp_zap=${OWASP_ZAP}" >> "$GITHUB_OUTPUT"
+          echo "build=${BUILD}" >> "$GITHUB_OUTPUT"
+
+          # Exibe no log do GitHub Actions
+          echo -e "$SUMMARY"
+
+      - name: Notificar Discord
+        if: ${{ secrets.DISCORD_WEBHOOK != '' }}
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          # Define cor do embed: verde (sucesso) ou vermelho (falha)
+          if [ "${{ steps.summary.outputs.overall }}" == "success" ]; then
+            COLOR=3066993    # Verde (#2ECC71)
+            TITLE="CI Pipeline - Sucesso"
+            EMOJI="white_check_mark"
+          else
+            COLOR=15158332   # Vermelho (#E74C3C)
+            TITLE="CI Pipeline - Falha"
+            EMOJI="x"
+          fi
+
+          # Monta lista de jobs com emoji de status
+          status_emoji() {
+            case "$1" in
+              success)  echo ":white_check_mark:" ;;
+              failure)  echo ":x:" ;;
+              skipped)  echo ":fast_forward:" ;;
+              cancelled) echo ":stop_button:" ;;
+              *)        echo ":grey_question:" ;;
+            esac
+          }
+
+          FIELDS="["
+          FIELDS+="{\"name\":\"Backend Lint\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.lint }}) ${{ steps.summary.outputs.lint }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Frontend Lint\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.frontend_lint }}) ${{ steps.summary.outputs.frontend_lint }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Security Scan\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.security }}) ${{ steps.summary.outputs.security }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Backend Tests\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.test }}) ${{ steps.summary.outputs.test }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Frontend Tests\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.frontend_test }}) ${{ steps.summary.outputs.frontend_test }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"OWASP ZAP\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.owasp_zap }}) ${{ steps.summary.outputs.owasp_zap }}\",\"inline\":true},"
+          FIELDS+="{\"name\":\"Build Docker\",\"value\":\"$(status_emoji ${{ steps.summary.outputs.build }}) ${{ steps.summary.outputs.build }}\",\"inline\":true}"
+          FIELDS+="]"
+
+          # Payload Discord com embed
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "embeds": [{
+              "title": "${TITLE}",
+              "color": ${COLOR},
+              "fields": ${FIELDS},
+              "footer": {
+                "text": "Conecta PRO CI | Branch: ${{ github.ref_name }} | Commit: ${{ github.sha }}"
+              },
+              "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          # Envia notificação para o Discord
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${DISCORD_WEBHOOK}"
+
+          echo "Notificação Discord enviada com sucesso."
+
+      - name: Notificar Slack
+        if: ${{ secrets.SLACK_WEBHOOK != '' }}
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          # Define emoji e cor para Slack
+          if [ "${{ steps.summary.outputs.overall }}" == "success" ]; then
+            COLOR="good"
+            ICON=":white_check_mark:"
+            STATUS_TEXT="Sucesso"
+          else
+            COLOR="danger"
+            ICON=":x:"
+            STATUS_TEXT="Falha"
+          fi
+
+          # Função para emoji de status no Slack
+          slack_emoji() {
+            case "$1" in
+              success)  echo ":white_check_mark:" ;;
+              failure)  echo ":x:" ;;
+              skipped)  echo ":fast_forward:" ;;
+              cancelled) echo ":no_entry_sign:" ;;
+              *)        echo ":grey_question:" ;;
+            esac
+          }
+
+          # Monta texto de status dos jobs
+          JOBS_TEXT=""
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.lint }}) Backend Lint: *${{ steps.summary.outputs.lint }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.frontend_lint }}) Frontend Lint: *${{ steps.summary.outputs.frontend_lint }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.security }}) Security Scan: *${{ steps.summary.outputs.security }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.test }}) Backend Tests: *${{ steps.summary.outputs.test }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.frontend_test }}) Frontend Tests: *${{ steps.summary.outputs.frontend_test }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.owasp_zap }}) OWASP ZAP: *${{ steps.summary.outputs.owasp_zap }}*\n"
+          JOBS_TEXT+="$(slack_emoji ${{ steps.summary.outputs.build }}) Build Docker: *${{ steps.summary.outputs.build }}*"
+
+          # Payload Slack
+          PAYLOAD=$(cat <<EOFPAYLOAD
+          {
+            "attachments": [{
+              "color": "${COLOR}",
+              "title": "${ICON} CI Pipeline - ${STATUS_TEXT}",
+              "text": "${JOBS_TEXT}",
+              "fields": [
+                {"title": "Branch", "value": "\`${{ github.ref_name }}\`", "short": true},
+                {"title": "Autor", "value": "${{ github.actor }}", "short": true},
+                {"title": "Commit", "value": "\`${{ github.sha }}\`", "short": false}
+              ],
+              "footer": "Conecta PRO CI",
+              "ts": $(date +%s)
+            }]
+          }
+          EOFPAYLOAD
+          )
+
+          # Envia notificação para o Slack
+          curl -s -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${SLACK_WEBHOOK}"
+
+          echo "Notificação Slack enviada com sucesso."

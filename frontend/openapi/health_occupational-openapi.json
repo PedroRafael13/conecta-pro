@@ -1,0 +1,1347 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Health Occupational API",
+    "version": "1.0.0",
+    "description": "API Reference for health_occupational"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API Server"
+    }
+  ],
+  "paths": {
+    "/mapeamento": {
+      "post": {
+        "summary": "POST /mapeamento",
+        "operationId": "post__mapeamento",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/mapeamento/{mapping_id}": {
+      "get": {
+        "summary": "GET /mapeamento/{mapping_id}",
+        "operationId": "get__mapeamento_mapping_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "mapping_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "PATCH /mapeamento/{mapping_id}",
+        "operationId": "patch__mapeamento_mapping_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "mapping_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/mapeamentos": {
+      "get": {
+        "summary": "GET /mapeamentos",
+        "operationId": "get__mapeamentos",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/riscos/{setor}": {
+      "get": {
+        "summary": "GET /riscos/{setor}",
+        "operationId": "get__riscos_setor",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "setor",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/riscos/funcao/{funcao}": {
+      "get": {
+        "summary": "GET /riscos/funcao/{funcao}",
+        "operationId": "get__riscos_funcao_funcao",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "funcao",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/medidas-controle": {
+      "post": {
+        "summary": "POST /medidas-controle",
+        "operationId": "post__medidas-controle",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/medidas-controle/{measure_id}": {
+      "patch": {
+        "summary": "PATCH /medidas-controle/{measure_id}",
+        "operationId": "patch__medidas-controle_measure_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "measure_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/mapeamento/{mapping_id}/medidas-controle": {
+      "get": {
+        "summary": "GET /mapeamento/{mapping_id}/medidas-controle",
+        "operationId": "get__mapeamento_mapping_id_medidas-controle",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "mapping_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/categorias": {
+      "get": {
+        "summary": "GET /categorias",
+        "operationId": "get__categorias",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/estatisticas": {
+      "get": {
+        "summary": "GET /estatisticas",
+        "operationId": "get__estatisticas",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "GET /status",
+        "operationId": "get__status",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "GET /health",
+        "operationId": "get__health",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/info": {
+      "get": {
+        "summary": "GET /info",
+        "operationId": "get__info",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/exames/agendar": {
+      "post": {
+        "summary": "POST /exames/agendar",
+        "operationId": "post__exames_agendar",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/exames/{exame_id}": {
+      "get": {
+        "summary": "GET /exames/{exame_id}",
+        "operationId": "get__exames_exame_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "PATCH /exames/{exame_id}",
+        "operationId": "patch__exames_exame_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/exames/funcionario/{funcionario_id}": {
+      "get": {
+        "summary": "GET /exames/funcionario/{funcionario_id}",
+        "operationId": "get__exames_funcionario_funcionario_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "funcionario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/exames/{exame_id}/confirmar": {
+      "post": {
+        "summary": "POST /exames/{exame_id}/confirmar",
+        "operationId": "post__exames_exame_id_confirmar",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/exames/{exame_id}/realizar": {
+      "post": {
+        "summary": "POST /exames/{exame_id}/realizar",
+        "operationId": "post__exames_exame_id_realizar",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "exame_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/aso/emitir": {
+      "post": {
+        "summary": "POST /aso/emitir",
+        "operationId": "post__aso_emitir",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/aso/{aso_id}": {
+      "get": {
+        "summary": "GET /aso/{aso_id}",
+        "operationId": "get__aso_aso_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "aso_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/vencimentos": {
+      "get": {
+        "summary": "GET /vencimentos",
+        "operationId": "get__vencimentos",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/aso/{aso_id}/assinar": {
+      "post": {
+        "summary": "POST /aso/{aso_id}/assinar",
+        "operationId": "post__aso_aso_id_assinar",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "aso_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cadastrar": {
+      "post": {
+        "summary": "POST /cadastrar",
+        "operationId": "post__cadastrar",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/{epi_id}": {
+      "get": {
+        "summary": "GET /{epi_id}",
+        "operationId": "get__epi_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "patch": {
+        "summary": "PATCH /{epi_id}",
+        "operationId": "patch__epi_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "DELETE /{epi_id}",
+        "operationId": "delete__epi_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "GET /",
+        "operationId": "get__",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/entregar": {
+      "post": {
+        "summary": "POST /entregar",
+        "operationId": "post__entregar",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/entrega/{delivery_id}": {
+      "get": {
+        "summary": "GET /entrega/{delivery_id}",
+        "operationId": "get__entrega_delivery_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "delivery_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/entrega/{delivery_id}/devolver": {
+      "post": {
+        "summary": "POST /entrega/{delivery_id}/devolver",
+        "operationId": "post__entrega_delivery_id_devolver",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "delivery_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/entrega/{delivery_id}/assinar": {
+      "post": {
+        "summary": "POST /entrega/{delivery_id}/assinar",
+        "operationId": "post__entrega_delivery_id_assinar",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "delivery_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/ficha/{funcionario_id}": {
+      "get": {
+        "summary": "GET /ficha/{funcionario_id}",
+        "operationId": "get__ficha_funcionario_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "funcionario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/estoque": {
+      "get": {
+        "summary": "GET /estoque",
+        "operationId": "get__estoque",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/estoque/{epi_id}": {
+      "patch": {
+        "summary": "PATCH /estoque/{epi_id}",
+        "operationId": "patch__estoque_epi_id",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/estoque/{epi_id}/entrada": {
+      "post": {
+        "summary": "POST /estoque/{epi_id}/entrada",
+        "operationId": "post__estoque_epi_id_entrada",
+        "tags": [
+          "Health Occupational"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "epi_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

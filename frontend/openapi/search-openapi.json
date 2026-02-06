@@ -1,0 +1,46 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Search API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for search module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Global Search",
+        "operationId": "global_search",
+        "tags": [
+          "Search"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

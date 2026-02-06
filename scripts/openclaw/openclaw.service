@@ -1,0 +1,34 @@
+[Unit]
+Description=OpenClaw Quality Monitor - Conecta PRO
+Documentation=https://github.com/conecta-pro/openclaw
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/conecta-pro
+ExecStart=/usr/bin/python3 /opt/conecta-pro/scripts/openclaw/runner.py --daemon --interval 3600
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=60
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Logging
+StandardOutput=append:/opt/conecta-pro/logs/openclaw/daemon.log
+StandardError=append:/opt/conecta-pro/logs/openclaw/daemon.log
+
+# Ambiente
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Limites de recursos
+LimitNOFILE=65536
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

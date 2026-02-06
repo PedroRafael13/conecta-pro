@@ -1,0 +1,398 @@
+"""
+Service PCMSO (NR-7) - Programa de Controle Medico de Saude Ocupacional
+=======================================================================
+
+Logica de negocio para exames medicos e ASO.
+"""
+
+import logging
+from datetime import date, datetime, timedelta
+from typing import List, Optional, Dict, Any
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from modules.health_occupational.models.pcmso import (
+    MedicalExam,
+    ASO,
+    ComplementaryExam,
+    ExamType,
+    ExamStatus,
+    FitnessResult,
+)
+from modules.health_occupational.schemas.pcmso import (
+    MedicalExamRequest,
+    MedicalExamUpdateRequest,
+    ASORequest,
+    ASOUpdateRequest,
+    ComplementaryExamRequest,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class PCMSOService:
+    """Service para gerenciamento de exames medicos (PCMSO - NR-7)."""
+
+    def __init__(self, db: Optional[Session] = None):
+        self.db = db
+
+    # ==========================================================================
+    # Medical Exam Operations
+    # ==========================================================================
+
+    def schedule_exam(self, request: MedicalExamRequest, created_by: Optional[UUID] = None) -> MedicalExam:
+        """
+        Agenda exame medico ocupacional.
+
+        Args:
+            request: Dados do agendamento.
+            created_by: UUID do usuario que criou.
+
+        Returns:
+            MedicalExam: Exame agendado.
+        """
+        exam = MedicalExam(
+            funcionario_id=request.funcionario_id,
+            tipo_exame=request.tipo_exame,
+            status=ExamStatus.AGENDADO.value,
+            funcao=request.funcao,
+            setor=request.setor,
+            riscos=request.riscos,
+            data_agendamento=request.data_agendamento,
+            hora_agendamento=request.hora_agendamento,
+            local_realizacao=request.local_realizacao,
+            exames_complementares=request.exames_complementares,
+            observacoes=request.observacoes,
+            created_by=created_by,
+        )
+
+        self.db.add(exam)
+        self.db.commit()
+        self.db.refresh(exam)
+
+        logger.info(
+            "Exame agendado: funcionario=%s, tipo=%s, data=%s",
+            request.funcionario_id,
+            request.tipo_exame,
+            request.data_agendamento,
+        )
+
+        return exam
+
+    def update_exam(self, exam_id: UUID, request: MedicalExamUpdateRequest) -> Optional[MedicalExam]:
+        """
+        Atualiza exame medico.
+
+        Args:
+            exam_id: ID do exame.
+            request: Dados para atualizacao.
+
+        Returns:
+            MedicalExam atualizado ou None se nao encontrado.
+        """
+        exam = self.db.query(MedicalExam).filter(MedicalExam.id == exam_id).first()
+        if not exam:
+            return None
+
+        update_data = request.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(exam, field, value)
+
+        self.db.commit()
+        self.db.refresh(exam)
+
+        logger.info("Exame atualizado: id=%s", exam_id)
+        return exam
+
+    def get_exam(self, exam_id: UUID) -> Optional[MedicalExam]:
+        """Busca exame por ID."""
+        return self.db.query(MedicalExam).filter(MedicalExam.id == exam_id).first()
+
+    def list_employee_exams(
+        self,
+        funcionario_id: UUID,
+        status_filter: Optional[str] = None,
+        tipo_filter: Optional[str] = None,
+        page: int = 1,
+        size: int = 20,
+    ) -> Dict[str, Any]:
+        """
+        Lista exames de um funcionario.
+
+        Args:
+            funcionario_id: UUID do funcionario.
+            status_filter: Filtro por status.
+            tipo_filter: Filtro por tipo.
+            page: Pagina.
+            size: Itens por pagina.
+
+        Returns:
+            Dict com exames e metadados.
+        """
+        query = self.db.query(MedicalExam).filter(
+            MedicalExam.funcionario_id == funcionario_id
+        )
+
+        if status_filter:
+            query = query.filter(MedicalExam.status == status_filter)
+
+        if tipo_filter:
+            query = query.filter(MedicalExam.tipo_exame == tipo_filter)
+
+        total = query.count()
+        exams = query.order_by(MedicalExam.data_agendamento.desc()).offset(
+            (page - 1) * size
+        ).limit(size).all()
+
+        return {
+            "items": exams,
+            "total": total,
+            "page": page,
+            "size": size,
+        }
+
+    def list_pending_exams(self, days_ahead: int = 30) -> List[MedicalExam]:
+        """Lista exames pendentes nos proximos dias."""
+        limit_date = date.today() + timedelta(days=days_ahead)
+
+        return self.db.query(MedicalExam).filter(
+            MedicalExam.status.in_([ExamStatus.AGENDADO.value, ExamStatus.CONFIRMADO.value]),
+            MedicalExam.data_agendamento <= limit_date,
+        ).order_by(MedicalExam.data_agendamento).all()
+
+    def confirm_exam(self, exam_id: UUID) -> Optional[MedicalExam]:
+        """Confirma agendamento de exame."""
+        exam = self.get_exam(exam_id)
+        if not exam:
+            return None
+
+        exam.status = ExamStatus.CONFIRMADO.value
+        self.db.commit()
+        self.db.refresh(exam)
+        return exam
+
+    def complete_exam(self, exam_id: UUID) -> Optional[MedicalExam]:
+        """Marca exame como realizado."""
+        exam = self.get_exam(exam_id)
+        if not exam:
+            return None
+
+        exam.status = ExamStatus.REALIZADO.value
+        exam.data_realizacao = datetime.utcnow()
+        self.db.commit()
+        self.db.refresh(exam)
+        return exam
+
+    def cancel_exam(self, exam_id: UUID, motivo: Optional[str] = None) -> Optional[MedicalExam]:
+        """Cancela exame."""
+        exam = self.get_exam(exam_id)
+        if not exam:
+            return None
+
+        exam.status = ExamStatus.CANCELADO.value
+        if motivo:
+            exam.observacoes = f"{exam.observacoes or ''}\nCancelado: {motivo}".strip()
+
+        self.db.commit()
+        self.db.refresh(exam)
+        return exam
+
+    # ==========================================================================
+    # ASO Operations
+    # ==========================================================================
+
+    def emit_aso(self, request: ASORequest) -> ASO:
+        """
+        Emite ASO (Atestado de Saude Ocupacional).
+
+        Args:
+            request: Dados do ASO.
+
+        Returns:
+            ASO emitido.
+
+        Raises:
+            ValueError: Se exame nao encontrado ou invalido.
+        """
+        exam = self.get_exam(request.exame_id)
+        if not exam:
+            raise ValueError(f"Exame {request.exame_id} nao encontrado")
+
+        if exam.status != ExamStatus.REALIZADO.value:
+            raise ValueError("Exame deve estar realizado para emitir ASO")
+
+        # Verificar se ja existe ASO para este exame
+        existing = self.db.query(ASO).filter(ASO.exame_id == request.exame_id).first()
+        if existing:
+            raise ValueError("ASO ja emitido para este exame")
+
+        # Calcular data de vencimento
+        data_vencimento = date.today() + timedelta(days=request.validade_dias)
+
+        # Gerar numero do ASO
+        numero_aso = self._generate_aso_number()
+
+        aso = ASO(
+            exame_id=request.exame_id,
+            resultado=request.resultado,
+            restricoes=request.restricoes or [],
+            validade_dias=request.validade_dias,
+            data_vencimento=data_vencimento,
+            medico_responsavel=request.medico_responsavel,
+            crm=request.crm,
+            uf_crm=request.uf_crm,
+            numero_aso=numero_aso,
+            assinatura_medico=True,
+        )
+
+        self.db.add(aso)
+        self.db.commit()
+        self.db.refresh(aso)
+
+        logger.info(
+            "ASO emitido: numero=%s, exame=%s, resultado=%s",
+            numero_aso,
+            request.exame_id,
+            request.resultado,
+        )
+
+        return aso
+
+    def get_aso(self, aso_id: UUID) -> Optional[ASO]:
+        """Busca ASO por ID."""
+        return self.db.query(ASO).filter(ASO.id == aso_id).first()
+
+    def get_aso_by_exam(self, exam_id: UUID) -> Optional[ASO]:
+        """Busca ASO pelo exame."""
+        return self.db.query(ASO).filter(ASO.exame_id == exam_id).first()
+
+    def list_expiring_asos(self, days: int = 30) -> List[Dict[str, Any]]:
+        """
+        Lista ASOs com vencimento proximo.
+
+        Args:
+            days: Dias de antecedencia.
+
+        Returns:
+            Lista de ASOs a vencer.
+        """
+        limit_date = date.today() + timedelta(days=days)
+
+        asos = self.db.query(ASO).filter(
+            ASO.ativo == True,
+            ASO.cancelado == False,
+            ASO.data_vencimento <= limit_date,
+            ASO.data_vencimento >= date.today(),
+        ).all()
+
+        result = []
+        for aso in asos:
+            exam = self.get_exam(aso.exame_id)
+            result.append({
+                "aso_id": str(aso.id),
+                "funcionario_id": str(exam.funcionario_id) if exam else None,
+                "numero_aso": aso.numero_aso,
+                "tipo_exame": exam.tipo_exame if exam else None,
+                "data_vencimento": aso.data_vencimento.isoformat(),
+                "dias_para_vencer": aso.dias_para_vencer,
+                "resultado": aso.resultado,
+            })
+
+        return result
+
+    def update_aso(self, aso_id: UUID, request: ASOUpdateRequest) -> Optional[ASO]:
+        """Atualiza ASO."""
+        aso = self.get_aso(aso_id)
+        if not aso:
+            return None
+
+        update_data = request.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(aso, field, value)
+
+        if request.assinatura_funcionario:
+            aso.data_assinatura_funcionario = datetime.utcnow()
+
+        self.db.commit()
+        self.db.refresh(aso)
+        return aso
+
+    def cancel_aso(self, aso_id: UUID, motivo: str) -> Optional[ASO]:
+        """Cancela ASO."""
+        aso = self.get_aso(aso_id)
+        if not aso:
+            return None
+
+        aso.cancelado = True
+        aso.ativo = False
+        aso.motivo_cancelamento = motivo
+
+        self.db.commit()
+        self.db.refresh(aso)
+
+        logger.info("ASO cancelado: id=%s, motivo=%s", aso_id, motivo)
+        return aso
+
+    def _generate_aso_number(self) -> str:
+        """Gera numero sequencial de ASO."""
+        year = date.today().year
+        count = self.db.query(ASO).filter(
+            ASO.data_emissao >= datetime(year, 1, 1)
+        ).count()
+        return f"ASO-{year}-{count + 1:06d}"
+
+    # ==========================================================================
+    # Complementary Exam Operations
+    # ==========================================================================
+
+    def add_complementary_exam(self, request: ComplementaryExamRequest) -> ComplementaryExam:
+        """Adiciona exame complementar."""
+        exam = ComplementaryExam(
+            exame_principal_id=request.exame_principal_id,
+            nome=request.nome,
+            codigo=request.codigo,
+            laboratorio=request.laboratorio,
+        )
+
+        self.db.add(exam)
+        self.db.commit()
+        self.db.refresh(exam)
+        return exam
+
+    def list_complementary_exams(self, exam_id: UUID) -> List[ComplementaryExam]:
+        """Lista exames complementares de um exame principal."""
+        return self.db.query(ComplementaryExam).filter(
+            ComplementaryExam.exame_principal_id == exam_id
+        ).all()
+
+    # ==========================================================================
+    # Statistics
+    # ==========================================================================
+
+    def get_statistics(self) -> Dict[str, Any]:
+        """Retorna estatisticas do PCMSO."""
+        today = date.today()
+        start_of_year = date(today.year, 1, 1)
+
+        total_exams = self.db.query(MedicalExam).filter(
+            MedicalExam.data_agendamento >= start_of_year
+        ).count()
+
+        pending_exams = self.db.query(MedicalExam).filter(
+            MedicalExam.status.in_([ExamStatus.AGENDADO.value, ExamStatus.CONFIRMADO.value])
+        ).count()
+
+        completed_exams = self.db.query(MedicalExam).filter(
+            MedicalExam.status == ExamStatus.REALIZADO.value,
+            MedicalExam.data_realizacao >= start_of_year,
+        ).count()
+
+        expiring_asos = len(self.list_expiring_asos(days=30))
+
+        return {
+            "total_exames_ano": total_exams,
+            "exames_pendentes": pending_exams,
+            "exames_realizados": completed_exams,
+            "asos_vencendo_30_dias": expiring_asos,
+        }

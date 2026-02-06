@@ -1,0 +1,61 @@
+import { test, expect } from '@playwright/test';
+import { BartoloFloatingChat, goToDashboardWithBartolo } from './helpers/bartolo.helpers';
+
+test.describe('Operacional - Turnos E2E', () => {
+  let chat: BartoloFloatingChat;
+
+  test.beforeEach(async ({ page }) => {
+    chat = new BartoloFloatingChat(page);
+    await goToDashboardWithBartolo(page);
+    await chat.open();
+  });
+
+  test('deve listar turnos cadastrados', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Quais turnos estão cadastrados?');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar lista de turnos ou quantidade
+  });
+
+  test('deve criar novo turno', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Criar novo turno noturno das 22h às 06h');
+
+    if (body.action_preview) {
+      const dialog = page.locator('role=dialog');
+      await expect(dialog).toBeVisible({ timeout: 5000 });
+
+      // Verifica título
+      await expect(dialog).toBeVisible();
+
+      // Cancela
+      await page.locator('button:has-text("Cancelar")').click();
+      await expect(dialog).not.toBeVisible({ timeout: 5000 });
+    }
+  });
+
+  test('deve consultar turnos de um funcionário', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Quais os turnos do funcionário João esta semana?');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar turnos ou informar que não há
+  });
+
+  test('deve validar sobreposição de turnos', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse(
+      'Alocar funcionário em dois turnos simultâneos'
+    );
+
+    // Sistema deve detectar conflito
+    if (body.response) {
+      expect(body.response.toLowerCase()).toMatch(/conflito|sobreposição|simultâneo|já está/);
+    }
+  });
+
+  test('deve calcular horas trabalhadas no turno', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Quantas horas tem o turno diurno?');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar cálculo de horas
+    expect(body.response).toMatch(/\d+\s*hora/i);
+  });
+});

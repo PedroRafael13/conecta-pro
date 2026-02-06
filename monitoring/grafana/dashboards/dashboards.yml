@@ -1,0 +1,14 @@
+# Provisioning de dashboards Grafana
+apiVersion: 1
+
+providers:
+  - name: 'ERP Conecta Mais'
+    orgId: 1
+    folder: 'ERP'
+    folderUid: 'erp-folder'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards

@@ -1,0 +1,158 @@
+# Security Schedule - Varreduras de seguranca semanais
+name: Weekly Security Scan
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'  # Segunda-feira as 03:00 UTC
+  workflow_dispatch:  # Permite execucao manual
+
+env:
+  TARGET_URL: ${{ secrets.APP_URL || 'http://localhost:8080' }}
+
+jobs:
+  # Job 1: OWASP ZAP Full Scan
+  owasp-zap:
+    name: OWASP ZAP Full Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: OWASP ZAP Full Scan
+        uses: zaproxy/action-full-scan@v0.10.0
+        with:
+          target: ${{ env.TARGET_URL }}
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j'
+          allow_issue_writing: true
+          fail_action: false
+          artifact_name: owasp-zap-report
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-report-${{ github.run_number }}
+          path: report_html.html
+          retention-days: 90
+
+  # Job 2: Auditoria de Dependencias
+  dependency-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install safety
+        run: pip install safety pip-audit
+
+      - name: Pip Audit
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip-audit --format=json --output=pip-audit-report.json || true
+          pip-audit
+
+      - name: Safety Check
+        run: |
+          cd backend
+          safety check --json --output=safety-report.json -r requirements.txt || true
+          safety check -r requirements.txt
+
+      - name: Node Audit
+        run: |
+          cd frontend
+          npm audit --json > npm-audit-report.json || true
+          npm audit || true
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-audit-${{ github.run_number }}
+          path: |
+            backend/pip-audit-report.json
+            backend/safety-report.json
+            frontend/npm-audit-report.json
+          retention-days: 90
+
+  # Job 3: Varredura de Secrets
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
+
+  # Job 4: Bandit Deep Scan
+  bandit-deep:
+    name: Bandit Deep Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Bandit
+        run: pip install bandit[toml]
+
+      - name: Bandit Full Scan
+        run: |
+          cd backend
+          bandit -r . -f json -o bandit-full-report.json -ll || true
+          bandit -r . -f html -o bandit-full-report.html -ll || true
+          bandit -r . -ll
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-report-${{ github.run_number }}
+          path: |
+            backend/bandit-full-report.json
+            backend/bandit-full-report.html
+          retention-days: 90
+
+  # Job 5: Notificacao dos Resultados
+  notify:
+    name: Notificar Resultado
+    runs-on: ubuntu-latest
+    needs: [owasp-zap, dependency-audit, secret-scan, bandit-deep]
+    if: always()
+    steps:
+      - name: Resumo
+        run: |
+          echo "## Weekly Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "- OWASP ZAP: ${{ needs.owasp-zap.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dependency Audit: ${{ needs.dependency-audit.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Secret Scan: ${{ needs.secret-scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Bandit Deep: ${{ needs.bandit-deep.result }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Notificar via webhook
+        if: env.DISCORD_WEBHOOK != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          STATUS="Passou"
+          if [ "${{ needs.owasp-zap.result }}" = "failure" ] || [ "${{ needs.dependency-audit.result }}" = "failure" ]; then
+            STATUS="Falhas detectadas"
+          fi
+          curl -H "Content-Type: application/json" \
+            -d "{\"content\": \"**Weekly Security Scan** - ${STATUS}\nOWASP: ${{ needs.owasp-zap.result }}\nDeps: ${{ needs.dependency-audit.result }}\nSecrets: ${{ needs.secret-scan.result }}\nBandit: ${{ needs.bandit-deep.result }}\"}" \
+            $DISCORD_WEBHOOK

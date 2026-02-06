@@ -1,0 +1,57 @@
+import { test, expect } from '@playwright/test';
+import { BartoloFloatingChat, goToDashboardWithBartolo } from './helpers/bartolo.helpers';
+
+test.describe('Operacional - Postos E2E', () => {
+  let chat: BartoloFloatingChat;
+
+  test.beforeEach(async ({ page }) => {
+    chat = new BartoloFloatingChat(page);
+    await goToDashboardWithBartolo(page);
+    await chat.open();
+  });
+
+  test('deve listar postos cadastrados', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Quantos postos temos cadastrados?');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar número de postos
+    expect(body.response).toMatch(/\d+\s+posto/i);
+  });
+
+  test('deve consultar status de um posto', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Status do posto central');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar informações sobre o posto
+  });
+
+  test('deve listar funcionários alocados em posto', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Quem está trabalhando no posto central agora?');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar lista de funcionários ou informar que não há ninguém
+  });
+
+  test('deve criar novo posto via Bartolo', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Criar novo posto de vigilância');
+
+    if (body.action_preview) {
+      const dialog = page.locator('role=dialog');
+      await expect(dialog).toBeVisible({ timeout: 5000 });
+
+      // Verifica botões
+      await expect(page.locator('button:has-text("Confirmar")')).toBeVisible();
+      await expect(page.locator('button:has-text("Cancelar")')).toBeVisible();
+
+      // Cancela para não criar dados de teste
+      await page.locator('button:has-text("Cancelar")').click();
+    }
+  });
+
+  test('deve identificar postos sem cobertura', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Postos sem cobertura hoje');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar lista de postos sem cobertura ou confirmar que todos estão cobertos
+  });
+});

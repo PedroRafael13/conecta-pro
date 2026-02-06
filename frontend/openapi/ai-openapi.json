@@ -1,0 +1,2104 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Ai API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for ai module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/meetings": {
+      "post": {
+        "summary": "Create Meeting",
+        "operationId": "create_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Meetings",
+        "operationId": "list_meetings",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/my": {
+      "get": {
+        "summary": "Get My Meetings",
+        "operationId": "get_my_meetings",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/today": {
+      "get": {
+        "summary": "Get Meetings Today",
+        "operationId": "get_meetings_today",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}": {
+      "get": {
+        "summary": "Get Meeting",
+        "operationId": "get_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Meeting",
+        "operationId": "update_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Meeting",
+        "operationId": "delete_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/start": {
+      "post": {
+        "summary": "Start Meeting",
+        "operationId": "start_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/end": {
+      "post": {
+        "summary": "End Meeting",
+        "operationId": "end_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/cancel": {
+      "post": {
+        "summary": "Cancel Meeting",
+        "operationId": "cancel_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/participants": {
+      "post": {
+        "summary": "Add Participant",
+        "operationId": "add_participant",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/participants/{participant_id}/respond": {
+      "put": {
+        "summary": "Respond To Meeting",
+        "operationId": "respond_to_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/participants/{user_id}": {
+      "delete": {
+        "summary": "Remove Participant",
+        "operationId": "remove_participant",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/notes": {
+      "post": {
+        "summary": "Create Note",
+        "operationId": "create_note",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Notes",
+        "operationId": "get_notes",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/generate-summary": {
+      "post": {
+        "summary": "Generate Summary",
+        "operationId": "generate_summary",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/summary": {
+      "get": {
+        "summary": "Get Summary",
+        "operationId": "get_summary",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/suggest": {
+      "post": {
+        "summary": "Suggest Schedule",
+        "operationId": "suggest_schedule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedule/check-availability": {
+      "post": {
+        "summary": "Check Availability",
+        "operationId": "check_availability",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks": {
+      "post": {
+        "summary": "Create Task",
+        "operationId": "create_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Tasks",
+        "operationId": "list_tasks",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/my": {
+      "get": {
+        "summary": "Get My Tasks",
+        "operationId": "get_my_tasks",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/overdue": {
+      "get": {
+        "summary": "Get Overdue Tasks",
+        "operationId": "get_overdue_tasks",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/blocked": {
+      "get": {
+        "summary": "Get Blocked Tasks",
+        "operationId": "get_blocked_tasks",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}": {
+      "get": {
+        "summary": "Get Task",
+        "operationId": "get_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update Task",
+        "operationId": "update_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Task",
+        "operationId": "delete_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/start": {
+      "post": {
+        "summary": "Start Task",
+        "operationId": "start_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/complete": {
+      "post": {
+        "summary": "Complete Task",
+        "operationId": "complete_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/block": {
+      "post": {
+        "summary": "Block Task",
+        "operationId": "block_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/unblock": {
+      "post": {
+        "summary": "Unblock Task",
+        "operationId": "unblock_task",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/prioritize": {
+      "post": {
+        "summary": "Prioritize Tasks",
+        "operationId": "prioritize_tasks",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}/priority-analysis": {
+      "get": {
+        "summary": "Analyze Task Priority",
+        "operationId": "analyze_task_priority",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/tasks": {
+      "get": {
+        "summary": "Get Meeting Tasks",
+        "operationId": "get_meeting_tasks",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/meetings/{meeting_id}/create-task": {
+      "post": {
+        "summary": "Create Task From Meeting",
+        "operationId": "create_task_from_meeting",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dashboard": {
+      "get": {
+        "summary": "Get Dashboard",
+        "operationId": "get_dashboard",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generate": {
+      "post": {
+        "summary": "Generate Report",
+        "operationId": "generate_report",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{report_id}": {
+      "get": {
+        "summary": "Get Report",
+        "operationId": "get_report",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Report",
+        "operationId": "update_report",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Report",
+        "operationId": "delete_report",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{report_id}/export": {
+      "post": {
+        "summary": "Export Report",
+        "operationId": "export_report",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates": {
+      "post": {
+        "summary": "Create Template",
+        "operationId": "create_template",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Templates",
+        "operationId": "list_templates",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}": {
+      "get": {
+        "summary": "Get Template",
+        "operationId": "get_template",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Template",
+        "operationId": "update_template",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Template",
+        "operationId": "delete_template",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/clone": {
+      "post": {
+        "summary": "Clone Template",
+        "operationId": "clone_template",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/publish": {
+      "post": {
+        "summary": "Publish Template",
+        "operationId": "publish_template",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/{template_id}/validate": {
+      "post": {
+        "summary": "Validate Template",
+        "operationId": "validate_template",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/templates/initialize-defaults": {
+      "post": {
+        "summary": "Initialize Default Templates",
+        "operationId": "initialize_default_templates",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedules": {
+      "post": {
+        "summary": "Create Schedule",
+        "operationId": "create_schedule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Schedules",
+        "operationId": "list_schedules",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedules/{schedule_id}": {
+      "get": {
+        "summary": "Get Schedule",
+        "operationId": "get_schedule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Schedule",
+        "operationId": "update_schedule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Schedule",
+        "operationId": "delete_schedule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedules/{schedule_id}/pause": {
+      "post": {
+        "summary": "Pause Schedule",
+        "operationId": "pause_schedule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedules/{schedule_id}/resume": {
+      "post": {
+        "summary": "Resume Schedule",
+        "operationId": "resume_schedule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedules/process-due": {
+      "post": {
+        "summary": "Process Due Schedules",
+        "operationId": "process_due_schedules",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/executions": {
+      "get": {
+        "summary": "List Executions",
+        "operationId": "list_executions",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/executions/{execution_id}": {
+      "get": {
+        "summary": "Get Execution",
+        "operationId": "get_execution",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Get Intelligence Hub Stats",
+        "operationId": "get_intelligence_hub_stats",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metadata/data-sources": {
+      "get": {
+        "summary": "Get Data Sources",
+        "operationId": "get_data_sources",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metadata/section-types": {
+      "get": {
+        "summary": "Get Section Types",
+        "operationId": "get_section_types",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metadata/chart-types": {
+      "get": {
+        "summary": "Get Chart Types",
+        "operationId": "get_chart_types",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metadata/export-formats": {
+      "get": {
+        "summary": "Get Export Formats",
+        "operationId": "get_export_formats",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rules": {
+      "post": {
+        "summary": "Create Rule",
+        "operationId": "create_rule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Rules",
+        "operationId": "list_rules",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rules/{rule_id}": {
+      "get": {
+        "summary": "Get Rule",
+        "operationId": "get_rule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Rule",
+        "operationId": "update_rule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Rule",
+        "operationId": "delete_rule",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/checks": {
+      "post": {
+        "summary": "Create Check",
+        "operationId": "create_check",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Checks",
+        "operationId": "list_checks",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/checks/{check_id}": {
+      "get": {
+        "summary": "Get Check",
+        "operationId": "get_check",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues": {
+      "get": {
+        "summary": "List Issues",
+        "operationId": "list_issues",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}": {
+      "get": {
+        "summary": "Get Issue",
+        "operationId": "get_issue",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update Issue",
+        "operationId": "update_issue",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/{issue_id}/resolve": {
+      "post": {
+        "summary": "Resolve Issue",
+        "operationId": "resolve_issue",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/issues/bulk-update": {
+      "post": {
+        "summary": "Bulk Update Issues",
+        "operationId": "bulk_update_issues",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/duplicates": {
+      "get": {
+        "summary": "List Duplicates",
+        "operationId": "list_duplicates",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/duplicates/{duplicate_id}": {
+      "get": {
+        "summary": "Get Duplicate",
+        "operationId": "get_duplicate",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/duplicates/{duplicate_id}/merge": {
+      "post": {
+        "summary": "Merge Duplicates",
+        "operationId": "merge_duplicates",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/duplicates/{duplicate_id}/reject": {
+      "post": {
+        "summary": "Reject Duplicate",
+        "operationId": "reject_duplicate",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profiles": {
+      "post": {
+        "summary": "Create Profile",
+        "operationId": "create_profile",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List Profiles",
+        "operationId": "list_profiles",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profiles/{profile_id}": {
+      "get": {
+        "summary": "Get Profile",
+        "operationId": "get_profile",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/validate": {
+      "post": {
+        "summary": "Validate Data",
+        "operationId": "validate_data",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cleanse": {
+      "post": {
+        "summary": "Cleanse Data",
+        "operationId": "cleanse_data",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stats/{entity_type}": {
+      "get": {
+        "summary": "Get Entity Stats",
+        "operationId": "get_entity_stats",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "operationId": "health_check",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/predict": {
+      "post": {
+        "summary": "Make Ai Prediction",
+        "operationId": "make_ai_prediction",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predictions/submit": {
+      "post": {
+        "summary": "Submit Prediction",
+        "operationId": "submit_prediction",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predictions/{prediction_id}/status": {
+      "get": {
+        "summary": "Get Prediction Status",
+        "operationId": "get_prediction_status",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/correlations": {
+      "get": {
+        "summary": "Get Module Correlations",
+        "operationId": "get_module_correlations",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/insights": {
+      "get": {
+        "summary": "Get Integrated Insights",
+        "operationId": "get_integrated_insights",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/insights/distribute": {
+      "post": {
+        "summary": "Distribute Insight",
+        "operationId": "distribute_insight",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/modules/health": {
+      "get": {
+        "summary": "Get Modules Health",
+        "operationId": "get_modules_health",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/modules/{module_name}/health": {
+      "get": {
+        "summary": "Get Module Health",
+        "operationId": "get_module_health",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/modules/discover": {
+      "post": {
+        "summary": "Discover Modules",
+        "operationId": "discover_modules",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/queue/status": {
+      "get": {
+        "summary": "Get Queue Status",
+        "operationId": "get_queue_status",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "startup": {
+      "on_event": {
+        "summary": "Startup Intelligence Hub",
+        "operationId": "startup_intelligence_hub",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "shutdown": {
+      "on_event": {
+        "summary": "Shutdown Intelligence Hub",
+        "operationId": "shutdown_intelligence_hub",
+        "tags": [
+          "Ai"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

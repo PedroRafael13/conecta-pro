@@ -1,0 +1,29 @@
+# Dockerfile para Celery Workers
+# Conecta Plus - Integrações Governamentais
+# Baseado na imagem do backend para evitar rebuild
+
+FROM conecta-pro-backend:latest
+
+# Variáveis de ambiente para Celery
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    TZ=America/Sao_Paulo \
+    C_FORCE_ROOT=true
+
+# Diretório de trabalho
+WORKDIR /app
+
+# Criar diretórios necessários (incluindo /tmp para pip)
+USER root
+RUN mkdir -p /tmp /app/logs /app/tmp && chmod 1777 /tmp
+
+# Instalar Celery e dependências (pip já disponível na imagem base)
+RUN pip install --no-cache-dir celery[redis]==5.4.0 kombu==5.4.2 flower==2.0.1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD celery -A celery_app inspect ping -d celery@$HOSTNAME || exit 1
+
+# Comando padrão (será sobrescrito no docker-compose)
+CMD ["celery", "-A", "celery_app", "worker", "--loglevel=INFO"]

@@ -1,0 +1,76 @@
+# Alertas ERP Conecta Mais
+# ========================
+
+groups:
+  - name: erp_alerts
+    interval: 30s
+    rules:
+      # API Down
+      - alert: ERPAPIDown
+        expr: up{job="erp-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API ERP esta fora do ar"
+          description: "A API do ERP nao esta respondendo ha mais de 1 minuto."
+
+      # Alta latencia
+      - alert: ERPHighLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="erp-backend"}[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta latencia na API"
+          description: "95% das requests estao levando mais de 1 segundo."
+
+      # Taxa de erros alta
+      - alert: ERPHighErrorRate
+        expr: sum(rate(http_requests_total{job="erp-backend",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="erp-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alta taxa de erros na API"
+          description: "Mais de 5% das requests estao retornando erro 5xx."
+
+      # Database connection issues
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL nao acessivel"
+          description: "Exporter do PostgreSQL nao esta respondendo."
+
+      # Redis down
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis nao acessivel"
+          description: "Exporter do Redis nao esta respondendo."
+
+      # Disco cheio
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Espaco em disco baixo"
+          description: "Menos de 10% de espaco livre no disco."
+
+      # Memoria alta
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Uso de memoria alto"
+          description: "Mais de 90% da memoria esta em uso."

@@ -1,0 +1,4 @@
+# ZAP Scanning Rules - Regras de exclusao para ambiente de desenvolvimento
+# Rule ID	Action	Parameter
+10011	IGNORE	# Cookie Without Secure Flag (dev)
+10015	IGNORE	# Incomplete or No Cache-control (esperado)

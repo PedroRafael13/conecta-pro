@@ -1,0 +1,137 @@
+name: Testes - Módulo Licitações
+
+on:
+  pull_request:
+    paths:
+      - 'src/app/modulos/licitacoes/**'
+      - 'src/hooks/bidding/**'
+      - 'e2e/bidding-*.spec.ts'
+      - 'src/test/**'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/app/modulos/licitacoes/**'
+      - 'src/hooks/bidding/**'
+
+jobs:
+  testes-unitarios:
+    name: Testes Unitários
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar testes unitários
+        run: npm run test:run -- src/app/modulos/licitacoes
+
+      - name: Gerar relatório de cobertura
+        run: npm run test:coverage -- src/app/modulos/licitacoes
+
+      - name: Upload coverage para Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          flags: licitacoes
+          name: licitacoes-coverage
+
+      - name: Verificar threshold de cobertura
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          echo "Cobertura: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Cobertura abaixo de 80%"
+            exit 1
+          fi
+          echo "✅ Cobertura OK"
+
+  testes-e2e:
+    name: Testes E2E
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Instalar Playwright
+        run: npx playwright install --with-deps
+
+      - name: Build aplicação
+        run: npm run build
+
+      - name: Executar testes E2E de licitações
+        run: npm run test:e2e:bidding
+
+      - name: Upload relatório Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: reports/playwright/
+          retention-days: 30
+
+  lint-typescript:
+    name: Lint e TypeScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar ESLint
+        run: npm run lint -- src/app/modulos/licitacoes
+
+      - name: Verificar tipos TypeScript
+        run: npx tsc --noEmit --project tsconfig.json
+
+  quality-gate:
+    name: Quality Gate
+    needs: [testes-unitarios, testes-e2e, lint-typescript]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Verificar resultado dos jobs
+        run: |
+          if [ "${{ needs.testes-unitarios.result }}" != "success" ]; then
+            echo "❌ Testes unitários falharam"
+            exit 1
+          fi
+          if [ "${{ needs.testes-e2e.result }}" != "success" ]; then
+            echo "❌ Testes E2E falharam"
+            exit 1
+          fi
+          if [ "${{ needs.lint-typescript.result }}" != "success" ]; then
+            echo "❌ Lint/TypeScript falhou"
+            exit 1
+          fi
+          echo "✅ Todos os checks passaram!"

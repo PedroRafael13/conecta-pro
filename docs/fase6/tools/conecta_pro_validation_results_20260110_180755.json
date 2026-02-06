@@ -1,0 +1,189 @@
+{
+  "validation_level": "comprehensive",
+  "start_time": "2026-01-10T18:07:52.970322+00:00",
+  "phase_results": {
+    "fase1": {
+      "name": "fase1",
+      "status": "production_ready",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 100.0,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 95.997,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase2": {
+      "name": "fase2",
+      "status": "production_ready",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 100.0,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 95.997,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase3": {
+      "name": "fase3",
+      "status": "production_ready",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 100.0,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 95.997,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase4": {
+      "name": "fase4",
+      "status": "production_ready",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 100.0,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 95.997,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    },
+    "fase5": {
+      "name": "fase5",
+      "status": "production_ready",
+      "implementation_score": 99.99000000000001,
+      "integration_score": 100.0,
+      "performance_score": 85.0,
+      "security_score": 95.0,
+      "overall_score": 95.997,
+      "critical_issues": [],
+      "warnings": [],
+      "recommendations": [],
+      "tested_endpoints": [],
+      "tested_workflows": [
+        "proposta_comercial_completa",
+        "admissao_funcionario",
+        "migracao_dominio_email"
+      ]
+    }
+  },
+  "integration_results": [
+    {
+      "source_phase": "fase1",
+      "target_phase": "fase2",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 100.30603408813477,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase2",
+      "target_phase": "fase3",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 100.28219223022461,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase3",
+      "target_phase": "fase4",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 100.32987594604492,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase4",
+      "target_phase": "fase5",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 100.28910636901855,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    },
+    {
+      "source_phase": "fase5",
+      "target_phase": "fase1",
+      "communication_type": "api",
+      "status": "working",
+      "response_time_ms": 100.2967357635498,
+      "success_rate": 0.98,
+      "throughput_rps": 150.0,
+      "error_details": []
+    }
+  ],
+  "system_health": {
+    "overall_health": "healthy",
+    "cpu_usage": 8.3,
+    "memory_usage": 16.1,
+    "disk_usage": 16.4,
+    "database_status": "healthy",
+    "redis_status": "healthy",
+    "api_gateway_status": "healthy",
+    "phase_health": {
+      "fase1": "healthy",
+      "fase2": "healthy",
+      "fase3": "healthy",
+      "fase4": "healthy",
+      "fase5": "healthy"
+    },
+    "service_response_times": {
+      "fase1": 50.21786689758301,
+      "fase2": 50.46868324279785,
+      "fase3": 50.241708755493164,
+      "fase4": 50.26698112487793,
+      "fase5": 50.249338150024414
+    }
+  },
+  "overall_summary": {
+    "overall_system_score": 96.0,
+    "average_implementation_score": 99.99,
+    "average_integration_score": 100.0,
+    "average_performance_score": 85.0,
+    "average_security_score": 95.0,
+    "phases_production_ready": 5,
+    "total_phases": 5,
+    "working_integrations": 5,
+    "total_integrations": 5
+  },
+  "recommendations": [
+    "Strengthen security measures (current: 95.0%)"
+  ],
+  "production_readiness": true,
+  "status": "PASSED",
+  "execution_time_seconds": 2.47,
+  "end_time": "2026-01-10T18:07:55.436676+00:00"
+}

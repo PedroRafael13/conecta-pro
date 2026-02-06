@@ -1,0 +1,167 @@
+"""
+Package: government_integrations
+Description: Modulo de integracoes com sistemas governamentais brasileiros
+             (eSocial, SEFAZ, Receita Federal, FGTS/INSS)
+Author: Claude AI + Human Developer
+Date: 2026-01-10
+Quality Score Target: 99+/100
+Compliance: Legislacao fiscal e trabalhista brasileira
+"""
+
+# eSocial
+from .esocial import (
+    ESocialTransmitter,
+    ESocialEvent,
+    EventType,
+    TransmissionStatus,
+    Environment as ESocialEnvironment,
+    ESocialError,
+    get_esocial_transmitter,
+    init_esocial_transmitter,
+)
+
+# SEFAZ
+from .sefaz import (
+    SEFAZManager,
+    NotaFiscal,
+    Produto,
+    Destinatario,
+    Pagamento,
+    DocumentType,
+    DocumentStatus,
+    SEFAZError,
+    ValidationError as SEFAZValidationError,
+    TransmissionError as SEFAZTransmissionError,
+    NFEXMLBuilder,
+    get_sefaz_manager,
+    init_sefaz_manager,
+)
+
+# Receita Federal
+from .receita_federal import (
+    ReceitaFederalService,
+    DocumentValidator,
+    ConsultaCNPJ,
+    ConsultaCPF,
+    Certidao as RFCertidao,
+    SituacaoCadastral,
+    TipoCertidao as RFTipoCertidao,
+    ReceitaFederalError,
+    DocumentoInvalidoError as RFValidationError,
+    ConsultaError as RFConsultaError,
+    get_receita_service,
+    init_receita_service,
+    validar_cpf,
+    validar_cnpj,
+    formatar_cpf,
+    formatar_cnpj,
+)
+
+# FGTS/INSS
+from .fgts_inss import (
+    FGTSINSSManager,
+    get_fgts_inss_manager,
+    init_fgts_inss_manager,
+    CalculadoraFGTS,
+    CalculadoraINSS,
+    TabelaINSS,
+    Trabalhador,
+    Remuneracao,
+    CalculoFGTS,
+    CalculoINSS,
+    Guia,
+    Certidao as FGTSCertidao,
+    ExtratoFGTS,
+    TipoRecolhimento,
+    CodigoRecolhimento,
+    ModalidadeSaque,
+    CategoriaContribuinte,
+    TipoGuia,
+    StatusGuia,
+    StatusCertidao as FGTSStatusCertidao,
+    TipoCertidao as FGTSTipoCertidao,
+    FGTSINSSError,
+    CalculoError,
+    GuiaError,
+    ConsultaError as FGTSConsultaError,
+    TransmissaoError,
+    validar_pis_pasep,
+    formatar_pis_pasep,
+    calcular_aliquota_efetiva_inss,
+)
+
+__all__ = [
+    # eSocial
+    "ESocialTransmitter",
+    "ESocialEvent",
+    "EventType",
+    "TransmissionStatus",
+    "ESocialEnvironment",
+    "ESocialError",
+    "get_esocial_transmitter",
+    "init_esocial_transmitter",
+    # SEFAZ
+    "SEFAZManager",
+    "NotaFiscal",
+    "Produto",
+    "Destinatario",
+    "Pagamento",
+    "DocumentType",
+    "DocumentStatus",
+    "SEFAZError",
+    "SEFAZValidationError",
+    "SEFAZTransmissionError",
+    "NFEXMLBuilder",
+    "get_sefaz_manager",
+    "init_sefaz_manager",
+    # Receita Federal
+    "ReceitaFederalService",
+    "DocumentValidator",
+    "ConsultaCNPJ",
+    "ConsultaCPF",
+    "RFCertidao",
+    "SituacaoCadastral",
+    "RFTipoCertidao",
+    "ReceitaFederalError",
+    "RFValidationError",
+    "RFConsultaError",
+    "get_receita_service",
+    "init_receita_service",
+    "validar_cpf",
+    "validar_cnpj",
+    "formatar_cpf",
+    "formatar_cnpj",
+    # FGTS/INSS
+    "FGTSINSSManager",
+    "get_fgts_inss_manager",
+    "init_fgts_inss_manager",
+    "CalculadoraFGTS",
+    "CalculadoraINSS",
+    "TabelaINSS",
+    "Trabalhador",
+    "Remuneracao",
+    "CalculoFGTS",
+    "CalculoINSS",
+    "Guia",
+    "FGTSCertidao",
+    "ExtratoFGTS",
+    "TipoRecolhimento",
+    "CodigoRecolhimento",
+    "ModalidadeSaque",
+    "CategoriaContribuinte",
+    "TipoGuia",
+    "StatusGuia",
+    "FGTSStatusCertidao",
+    "FGTSTipoCertidao",
+    "FGTSINSSError",
+    "CalculoError",
+    "GuiaError",
+    "FGTSConsultaError",
+    "TransmissaoError",
+    "validar_pis_pasep",
+    "formatar_pis_pasep",
+    "calcular_aliquota_efetiva_inss",
+]
+
+__version__ = "1.0.0"
+__author__ = "Conecta PRO Team"

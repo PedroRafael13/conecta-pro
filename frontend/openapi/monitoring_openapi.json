@@ -1,0 +1,2170 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Monitoring API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/monitoring/dashboard": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Get Dashboard",
+        "description": "Retorna dashboard completo de monitoramento.\n\nInclui:\n- Saude geral do sistema\n- Metricas em tempo real\n- Alertas recentes\n- Estatisticas",
+        "operationId": "get_dashboard_monitoring_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Dashboard Monitoring Dashboard Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/monitoring/health": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Get System Health",
+        "description": "Retorna saude geral do sistema.\n\nNiveis:\n- green: Operacao normal\n- yellow: Atencao necessaria\n- orange: Acao corretiva em 24-48h\n- red: Intervencao imediata",
+        "operationId": "get_system_health_monitoring_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/monitoring/metrics": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Get Current Metrics",
+        "description": "Retorna metricas coletadas em tempo real.",
+        "operationId": "get_current_metrics_monitoring_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/monitoring/alerts": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "List Alerts",
+        "description": "Lista alertas do sistema.",
+        "operationId": "list_alerts_monitoring_alerts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AlertLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtrar por nivel",
+              "title": "Level"
+            },
+            "description": "Filtrar por nivel"
+          },
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Apenas alertas ativos",
+              "default": true,
+              "title": "Active Only"
+            },
+            "description": "Apenas alertas ativos"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertsListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/alerts/{alert_id}": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Get Alert",
+        "description": "Retorna detalhes de um alerta.",
+        "operationId": "get_alert_monitoring_alerts__alert_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/alerts/{alert_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Acknowledge Alert",
+        "description": "Reconhece um alerta.",
+        "operationId": "acknowledge_alert_monitoring_alerts__alert_id__acknowledge_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertAcknowledge"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/alerts/{alert_id}/resolve": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Resolve Alert",
+        "description": "Resolve um alerta.",
+        "operationId": "resolve_alert_monitoring_alerts__alert_id__resolve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertResolve"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/alerts/statistics": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Get Alert Statistics",
+        "description": "Retorna estatisticas de alertas.",
+        "operationId": "get_alert_statistics_monitoring_alerts_statistics_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "period_hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 720,
+              "minimum": 1,
+              "default": 24,
+              "title": "Period Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertStats"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/thresholds": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "List Thresholds",
+        "description": "Lista todos os thresholds configurados.",
+        "operationId": "list_thresholds_monitoring_thresholds_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "enabled_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Enabled Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ThresholdResponse"
+                  },
+                  "title": "Response List Thresholds Monitoring Thresholds Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Create Threshold",
+        "description": "Cria um novo threshold.",
+        "operationId": "create_threshold_monitoring_thresholds_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThresholdCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/thresholds/{threshold_id}": {
+      "get": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Get Threshold",
+        "description": "Retorna detalhes de um threshold.",
+        "operationId": "get_threshold_monitoring_thresholds__threshold_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "threshold_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Threshold Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Update Threshold",
+        "description": "Atualiza um threshold.",
+        "operationId": "update_threshold_monitoring_thresholds__threshold_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "threshold_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Threshold Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThresholdUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThresholdResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Delete Threshold",
+        "description": "Remove um threshold.",
+        "operationId": "delete_threshold_monitoring_thresholds__threshold_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "threshold_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Threshold Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/monitoring/initialize": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Initialize Thresholds",
+        "description": "Inicializa thresholds padrao do Pre-Mortem Analysis.\n\nEste endpoint cria os thresholds padrao definidos no\nEarly Warning System se ainda nao existirem.",
+        "operationId": "initialize_thresholds_monitoring_initialize_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/monitoring/check-escalations": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Check Escalations",
+        "description": "Verifica e executa escalacoes de alertas.\n\nEscala automaticamente alertas que ultrapassaram\no tempo maximo sem resolucao.",
+        "operationId": "check_escalations_monitoring_check_escalations_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/monitoring/cleanup": {
+      "post": {
+        "tags": [
+          "Monitoring"
+        ],
+        "summary": "Cleanup Old Alerts",
+        "description": "Remove alertas antigos resolvidos.\n\nDesativa alertas resolvidos ha mais de X dias.",
+        "operationId": "cleanup_old_alerts_monitoring_cleanup_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 30,
+              "default": 90,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/metrics": {
+      "post": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Enviar M\u00e9trica",
+        "description": "Envia uma m\u00e9trica para an\u00e1lise em tempo real",
+        "operationId": "send_metric_realtime_metrics_post",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          },
+          {
+            "name": "value",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "title": "Value"
+            }
+          },
+          {
+            "name": "metric_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/MetricType"
+                }
+              ],
+              "default": "gauge",
+              "title": "Metric Type"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Tags"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Send Metric Realtime Metrics Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/metrics/current": {
+      "get": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "M\u00e9tricas Atuais",
+        "description": "Retorna snapshot das m\u00e9tricas em tempo real",
+        "operationId": "get_current_metrics_realtime_metrics_current_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Current Metrics Realtime Metrics Current Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/alerts/active": {
+      "get": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Alertas Ativos",
+        "description": "Retorna todos os alertas ativos no sistema",
+        "operationId": "get_active_alerts_realtime_alerts_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Active Alerts Realtime Alerts Active Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/alerts/{alert_id}/resolve": {
+      "post": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Resolver Alerta",
+        "description": "Marca um alerta como resolvido",
+        "operationId": "resolve_alert_realtime_alerts__alert_id__resolve_post",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ID do alerta",
+              "title": "Alert Id"
+            },
+            "description": "ID do alerta"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Resolve Alert Realtime Alerts  Alert Id  Resolve Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/metrics/{metric_name}/history": {
+      "get": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Hist\u00f3rico da M\u00e9trica",
+        "description": "Retorna hist\u00f3rico de uma m\u00e9trica espec\u00edfica",
+        "operationId": "get_metric_history_realtime_metrics__metric_name__history_get",
+        "parameters": [
+          {
+            "name": "metric_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Nome da m\u00e9trica",
+              "title": "Metric Name"
+            },
+            "description": "Nome da m\u00e9trica"
+          },
+          {
+            "name": "points",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "N\u00famero de pontos (max 1000)",
+              "default": 100,
+              "title": "Points"
+            },
+            "description": "N\u00famero de pontos (max 1000)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Metric History Realtime Metrics  Metric Name  History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/thresholds": {
+      "post": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Configurar Threshold",
+        "description": "Configura threshold customizado para uma m\u00e9trica",
+        "operationId": "set_custom_threshold_realtime_thresholds_post",
+        "parameters": [
+          {
+            "name": "metric_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Metric Name"
+            }
+          },
+          {
+            "name": "min_value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Value"
+            }
+          },
+          {
+            "name": "max_value",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Value"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/AlertSeverity"
+                }
+              ],
+              "default": "medium",
+              "title": "Severity"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Set Custom Threshold Realtime Thresholds Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/anomalies/summary": {
+      "get": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Resumo de Anomalias",
+        "description": "Retorna resumo de anomalias detectadas",
+        "operationId": "get_anomaly_summary_realtime_anomalies_summary_get",
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Per\u00edodo em horas (max 168)",
+              "default": 24,
+              "title": "Hours"
+            },
+            "description": "Per\u00edodo em horas (max 168)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Anomaly Summary Realtime Anomalies Summary Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/dashboard": {
+      "get": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Dashboard em Tempo Real",
+        "description": "Retorna dashboard consolidado em tempo real",
+        "operationId": "get_realtime_dashboard_realtime_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Get Realtime Dashboard Realtime Dashboard Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/realtime/health": {
+      "get": {
+        "tags": [
+          "Real-time Analytics"
+        ],
+        "summary": "Health Check Monitoring",
+        "description": "Verifica sa\u00fade do sistema de monitoramento",
+        "operationId": "monitoring_health_check_realtime_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Monitoring Health Check Realtime Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AlertAcknowledge": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "AlertAcknowledge",
+        "description": "Schema para reconhecer alerta."
+      },
+      "AlertLevel": {
+        "type": "string",
+        "enum": [
+          "green",
+          "yellow",
+          "orange",
+          "red"
+        ],
+        "title": "AlertLevel",
+        "description": "Niveis de alerta do Early Warning System."
+      },
+      "AlertResolve": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "title": "AlertResolve",
+        "description": "Schema para resolver alerta."
+      },
+      "AlertResponse": {
+        "properties": {
+          "metric_name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Metric Name"
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Source",
+            "default": "system"
+          },
+          "level": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AlertLevel"
+              }
+            ],
+            "default": "yellow"
+          },
+          "current_value": {
+            "type": "number",
+            "title": "Current Value"
+          },
+          "threshold_value": {
+            "type": "number",
+            "title": "Threshold Value"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AlertStatus"
+          },
+          "triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Triggered At"
+          },
+          "acknowledged_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "acknowledged_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged By"
+          },
+          "resolved_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By"
+          },
+          "resolution_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolution Notes"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric_name",
+          "current_value",
+          "threshold_value",
+          "title",
+          "id",
+          "status",
+          "triggered_at",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AlertResponse",
+        "description": "Schema de resposta de alerta."
+      },
+      "AlertSeverity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "critical"
+        ],
+        "title": "AlertSeverity",
+        "description": "Severidade dos alertas."
+      },
+      "AlertStats": {
+        "properties": {
+          "total_24h": {
+            "type": "integer",
+            "title": "Total 24H",
+            "default": 0
+          },
+          "total_7d": {
+            "type": "integer",
+            "title": "Total 7D",
+            "default": 0
+          },
+          "by_level": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Level"
+          },
+          "by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Status"
+          },
+          "by_metric": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "By Metric"
+          },
+          "mttr_seconds": {
+            "type": "number",
+            "title": "Mttr Seconds",
+            "default": 0
+          },
+          "escalation_rate": {
+            "type": "number",
+            "title": "Escalation Rate",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "AlertStats",
+        "description": "Estatisticas de alertas."
+      },
+      "AlertStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "acknowledged",
+          "resolved",
+          "escalated",
+          "suppressed"
+        ],
+        "title": "AlertStatus",
+        "description": "Status do alerta."
+      },
+      "AlertsListResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          },
+          "critical": {
+            "type": "integer",
+            "title": "Critical"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            },
+            "type": "array",
+            "title": "Alerts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "active",
+          "critical",
+          "alerts"
+        ],
+        "title": "AlertsListResponse",
+        "description": "Resposta de lista de alertas."
+      },
+      "CategoryHealth": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "overall_level": {
+            "type": "string",
+            "title": "Overall Level"
+          },
+          "metrics_count": {
+            "type": "integer",
+            "title": "Metrics Count"
+          },
+          "green_count": {
+            "type": "integer",
+            "title": "Green Count"
+          },
+          "yellow_count": {
+            "type": "integer",
+            "title": "Yellow Count"
+          },
+          "orange_count": {
+            "type": "integer",
+            "title": "Orange Count"
+          },
+          "red_count": {
+            "type": "integer",
+            "title": "Red Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "display_name",
+          "overall_level",
+          "metrics_count",
+          "green_count",
+          "yellow_count",
+          "orange_count",
+          "red_count"
+        ],
+        "title": "CategoryHealth",
+        "description": "Saude de uma categoria de metricas."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MetricType": {
+        "type": "string",
+        "enum": [
+          "counter",
+          "gauge",
+          "histogram",
+          "rate"
+        ],
+        "title": "MetricType",
+        "description": "Tipos de m\u00e9tricas monitoradas."
+      },
+      "SystemHealthResponse": {
+        "properties": {
+          "overall_level": {
+            "type": "string",
+            "title": "Overall Level"
+          },
+          "overall_score": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Overall Score"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "uptime_seconds": {
+            "type": "number",
+            "title": "Uptime Seconds"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryHealth"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "active_alerts": {
+            "type": "integer",
+            "title": "Active Alerts"
+          },
+          "critical_alerts": {
+            "type": "integer",
+            "title": "Critical Alerts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "overall_level",
+          "overall_score",
+          "timestamp",
+          "uptime_seconds",
+          "categories",
+          "active_alerts",
+          "critical_alerts"
+        ],
+        "title": "SystemHealthResponse",
+        "description": "Resposta de saude geral do sistema."
+      },
+      "ThresholdCreate": {
+        "properties": {
+          "metric_name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Metric Name"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Category",
+            "default": "general"
+          },
+          "threshold_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThresholdType"
+              }
+            ],
+            "default": "upper"
+          },
+          "yellow_threshold": {
+            "type": "number",
+            "title": "Yellow Threshold"
+          },
+          "orange_threshold": {
+            "type": "number",
+            "title": "Orange Threshold"
+          },
+          "red_threshold": {
+            "type": "number",
+            "title": "Red Threshold"
+          },
+          "yellow_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yellow Lower"
+          },
+          "orange_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orange Lower"
+          },
+          "red_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Red Lower"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Unit",
+            "default": ""
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "cooldown_seconds": {
+            "type": "integer",
+            "maximum": 86400.0,
+            "minimum": 0.0,
+            "title": "Cooldown Seconds",
+            "default": 300
+          },
+          "consecutive_breaches": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Consecutive Breaches",
+            "default": 1
+          },
+          "notify_channels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Channels"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric_name",
+          "display_name",
+          "yellow_threshold",
+          "orange_threshold",
+          "red_threshold"
+        ],
+        "title": "ThresholdCreate",
+        "description": "Schema para criacao de threshold."
+      },
+      "ThresholdResponse": {
+        "properties": {
+          "metric_name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Metric Name"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Category",
+            "default": "general"
+          },
+          "threshold_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ThresholdType"
+              }
+            ],
+            "default": "upper"
+          },
+          "yellow_threshold": {
+            "type": "number",
+            "title": "Yellow Threshold"
+          },
+          "orange_threshold": {
+            "type": "number",
+            "title": "Orange Threshold"
+          },
+          "red_threshold": {
+            "type": "number",
+            "title": "Red Threshold"
+          },
+          "yellow_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yellow Lower"
+          },
+          "orange_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orange Lower"
+          },
+          "red_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Red Lower"
+          },
+          "unit": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Unit",
+            "default": ""
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "cooldown_seconds": {
+            "type": "integer",
+            "maximum": 86400.0,
+            "minimum": 0.0,
+            "title": "Cooldown Seconds",
+            "default": 300
+          },
+          "consecutive_breaches": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Consecutive Breaches",
+            "default": 1
+          },
+          "notify_channels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Channels"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "last_alert_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Alert At"
+          },
+          "last_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Value"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "metric_name",
+          "display_name",
+          "yellow_threshold",
+          "orange_threshold",
+          "red_threshold",
+          "id",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ThresholdResponse",
+        "description": "Schema de resposta de threshold."
+      },
+      "ThresholdType": {
+        "type": "string",
+        "enum": [
+          "upper",
+          "lower",
+          "range"
+        ],
+        "title": "ThresholdType",
+        "description": "Tipo de threshold."
+      },
+      "ThresholdUpdate": {
+        "properties": {
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "yellow_threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yellow Threshold"
+          },
+          "orange_threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orange Threshold"
+          },
+          "red_threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Red Threshold"
+          },
+          "yellow_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yellow Lower"
+          },
+          "orange_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Orange Lower"
+          },
+          "red_lower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Red Lower"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "cooldown_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 86400.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cooldown Seconds"
+          },
+          "consecutive_breaches": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consecutive Breaches"
+          },
+          "notify_channels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Channels"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "title": "ThresholdUpdate",
+        "description": "Schema para atualizacao de threshold."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

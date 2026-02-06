@@ -1,0 +1,46 @@
+## ANÁLISE DETALHADA DE USO DOS SERVICES
+
+### ai
+- bartolo.service: 1 imports
+
+### analytics
+
+### audit
+
+### bidding
+
+### campo
+
+### clients
+
+### config
+
+### contracts
+
+### diarists
+
+### document-kits
+
+### documents
+
+### equipment
+
+### financial
+
+### government
+
+### hr
+
+### mobile
+
+### notifications
+
+### reimbursement
+
+### scheduler
+
+### search
+
+### security-lgpd
+
+### workflows

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "TASK-001",
+    "name": "Core - Autenticacao e Autorizacao",
+    "module": "core",
+    "requirements": [
+      "RF-SEC-001: Login",
+      "RF-SEC-002: JWT",
+      "RF-SEC-003: RBAC"
+    ],
+    "priority": "critical",
+    "status": "COMPLETED"
+  }
+]

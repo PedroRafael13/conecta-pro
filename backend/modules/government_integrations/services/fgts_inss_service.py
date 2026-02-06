@@ -1,0 +1,178 @@
+"""
+Service para cálculos de FGTS e INSS.
+"""
+
+import logging
+import sys
+from decimal import Decimal
+from typing import Dict, Any, List
+
+
+
+# Imports relativos do módulo pai
+from modules.government_integrations.utils import CalculoError
+
+logger = logging.getLogger(__name__)
+
+
+class FGTSINSSService:
+    """Service para cálculos trabalhistas (FGTS e INSS)."""
+
+    # Tabela INSS 2026 (progressiva)
+    FAIXAS_INSS_2026: List[Dict[str, Decimal]] = [
+        {"limite": Decimal("1412.00"), "aliquota": Decimal("0.075")},
+        {"limite": Decimal("2666.68"), "aliquota": Decimal("0.09")},
+        {"limite": Decimal("4000.03"), "aliquota": Decimal("0.12")},
+        {"limite": Decimal("7786.02"), "aliquota": Decimal("0.14")},
+    ]
+
+    TETO_INSS_2026 = Decimal("908.86")
+    ALIQUOTA_FGTS = Decimal("0.08")  # 8%
+    MULTA_RESCISORIA = Decimal("0.40")  # 40%
+
+    @classmethod
+    def calcular_fgts(
+        cls,
+        salario_base: Decimal,
+        mes_referencia: str,
+        tipo_recolhimento: str = "mensal",
+        rescisao: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Calcula FGTS.
+
+        Args:
+            salario_base: Salário base mensal.
+            mes_referencia: Mês de referência (YYYY-MM).
+            tipo_recolhimento: Tipo de recolhimento.
+            rescisao: Se é cálculo de rescisão.
+
+        Returns:
+            Dict com cálculo detalhado do FGTS.
+
+        Raises:
+            CalculoError: Se erro no cálculo.
+        """
+        try:
+            # Calcula FGTS localmente
+            valor_fgts = salario_base * cls.ALIQUOTA_FGTS
+            multa_rescisoria = Decimal("0")
+
+            if rescisao:
+                multa_rescisoria = valor_fgts * cls.MULTA_RESCISORIA
+
+            return {
+                "salario_base": str(salario_base),
+                "mes_referencia": mes_referencia,
+                "aliquota": "8%",
+                "valor_fgts": str(valor_fgts.quantize(Decimal("0.01"))),
+                "rescisao": rescisao,
+                "multa_rescisoria": str(multa_rescisoria.quantize(Decimal("0.01"))) if rescisao else None,
+                "valor_total": str((valor_fgts + multa_rescisoria).quantize(Decimal("0.01"))),
+                "tipo_recolhimento": tipo_recolhimento,
+            }
+
+        except CalculoError:
+            raise
+        except Exception as e:
+            logger.error("Erro ao calcular FGTS: %s", str(e))
+            raise CalculoError(f"Erro interno ao calcular FGTS: {str(e)}")
+
+    @classmethod
+    def calcular_inss(
+        cls,
+        salario_bruto: Decimal,
+        categoria: str,
+        mes_referencia: str,
+    ) -> Dict[str, Any]:
+        """
+        Calcula INSS com tabela progressiva.
+
+        Args:
+            salario_bruto: Salário bruto mensal.
+            categoria: Categoria do contribuinte.
+            mes_referencia: Mês de referência.
+
+        Returns:
+            Dict com cálculo detalhado do INSS.
+        """
+        inss_total = Decimal("0")
+        detalhamento = []
+        salario_restante = salario_bruto
+
+        for i, faixa in enumerate(cls.FAIXAS_INSS_2026):
+            if salario_restante <= 0:
+                break
+
+            limite_anterior = cls.FAIXAS_INSS_2026[i - 1]["limite"] if i > 0 else Decimal("0")
+            base_faixa = min(salario_restante, faixa["limite"] - limite_anterior)
+
+            if base_faixa > 0:
+                contribuicao = base_faixa * faixa["aliquota"]
+                inss_total += contribuicao
+                salario_restante -= base_faixa
+
+                detalhamento.append({
+                    "faixa": i + 1,
+                    "base": str(base_faixa.quantize(Decimal("0.01"))),
+                    "aliquota": f"{faixa['aliquota'] * 100}%",
+                    "contribuicao": str(contribuicao.quantize(Decimal("0.01"))),
+                })
+
+        teto_aplicado = False
+        if inss_total > cls.TETO_INSS_2026:
+            inss_total = cls.TETO_INSS_2026
+            teto_aplicado = True
+
+        aliquota_efetiva = (inss_total / salario_bruto * 100).quantize(Decimal("0.01"))
+
+        return {
+            "salario_bruto": str(salario_bruto),
+            "mes_referencia": mes_referencia,
+            "categoria": categoria,
+            "valor_inss": str(inss_total.quantize(Decimal("0.01"))),
+            "aliquota_efetiva": f"{aliquota_efetiva}%",
+            "teto_aplicado": teto_aplicado,
+            "detalhamento_faixas": detalhamento,
+            "tabela_vigencia": "2026",
+        }
+
+    @classmethod
+    def get_tabela_inss(cls) -> Dict[str, Any]:
+        """
+        Retorna tabela INSS vigente.
+
+        Returns:
+            Dict com tabela progressiva.
+        """
+        return {
+            "vigencia": "2026",
+            "faixas": [
+                {
+                    "faixa": 1,
+                    "de": "R$ 0,00",
+                    "ate": "R$ 1.412,00",
+                    "aliquota": "7,5%",
+                },
+                {
+                    "faixa": 2,
+                    "de": "R$ 1.412,01",
+                    "ate": "R$ 2.666,68",
+                    "aliquota": "9%",
+                },
+                {
+                    "faixa": 3,
+                    "de": "R$ 2.666,69",
+                    "ate": "R$ 4.000,03",
+                    "aliquota": "12%",
+                },
+                {
+                    "faixa": 4,
+                    "de": "R$ 4.000,04",
+                    "ate": "R$ 7.786,02",
+                    "aliquota": "14%",
+                },
+            ],
+            "teto_contribuicao": "R$ 908,86",
+            "observacao": "Calculo progressivo - cada faixa tributa apenas a parcela correspondente",
+        }

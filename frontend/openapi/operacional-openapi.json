@@ -1,0 +1,403 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Operacional API",
+    "version": "1.0.0",
+    "description": "OpenAPI specification for operacional module"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "List Diarists",
+        "operationId": "list_diarists",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ws/operacional/alertas": {
+      "websocket": {
+        "summary": "Websocket Alerts",
+        "operationId": "websocket_alerts",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ws/operacional/notifications": {
+      "websocket": {
+        "summary": "Websocket Notifications",
+        "operationId": "websocket_notifications",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/consulta-cpf/{cpf}": {
+      "get": {
+        "summary": "Consulta Cpf",
+        "operationId": "consulta_cpf",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/available": {
+      "get": {
+        "summary": "Get Available Diarists",
+        "operationId": "get_available_diarists",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assignments": {
+      "get": {
+        "summary": "List Assignments",
+        "operationId": "list_assignments",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedules": {
+      "get": {
+        "summary": "List Schedules",
+        "operationId": "list_schedules",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schedules/today": {
+      "get": {
+        "summary": "Get Today Schedules",
+        "operationId": "get_today_schedules",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments": {
+      "get": {
+        "summary": "List Payments",
+        "operationId": "list_payments",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/payments/pending": {
+      "get": {
+        "summary": "Get Pending Payments",
+        "operationId": "get_pending_payments",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/evaluations": {
+      "get": {
+        "summary": "List Evaluations",
+        "operationId": "list_evaluations",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/suggest": {
+      "get": {
+        "summary": "Suggest Diarists",
+        "operationId": "suggest_diarists",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/availability": {
+      "get": {
+        "summary": "Analyze Availability",
+        "operationId": "analyze_availability",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/optimize": {
+      "get": {
+        "summary": "Optimize Schedule",
+        "operationId": "optimize_schedule",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/general": {
+      "get": {
+        "summary": "Get General Statistics",
+        "operationId": "get_general_statistics",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/statistics/ranking": {
+      "get": {
+        "summary": "Get Top Diarists",
+        "operationId": "get_top_diarists",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{diarist_id}": {
+      "get": {
+        "summary": "Get Diarist",
+        "operationId": "get_diarist",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{diarist_id}/metrics": {
+      "get": {
+        "summary": "Get Diarist Metrics",
+        "operationId": "get_diarist_metrics",
+        "tags": [
+          "Operacional"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["core", "modules"]
+skip_gitignore = true
+
+[tool.pylint.messages_control]
+max-line-length = 100
+disable = [
+    "missing-module-docstring",
+    "duplicate-code",
+    "too-many-arguments",
+    "too-many-positional-arguments",
+    "too-many-public-methods",
+    "too-many-instance-attributes",
+    "import-error",
+    "no-name-in-module",
+    "not-callable",
+    "no-member",
+    "too-many-lines",
+    "logging-fstring-interpolation",
+    "raise-missing-from",
+    "no-else-return",
+]

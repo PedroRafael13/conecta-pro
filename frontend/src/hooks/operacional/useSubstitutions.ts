@@ -1,0 +1,41 @@
+/**
+ * Substitutions Hooks - Gestão de Substituições de Funcionários
+ *
+ * Re-exports dos hooks Orval do módulo operacional-substituicoes
+ */
+
+import {
+  useListSubstitutionsApiV1OperacionalSubstitutionsGet,
+  useCreateSubstitutionApiV1OperacionalSubstitutionsPost,
+  useGetSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdGet,
+  useUpdateSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdPatch,
+  useDeleteSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdDelete,
+  useGetPendingSubstitutionsApiV1OperacionalSubstitutionsPendingGet,
+  useGetSubstitutionsByDateApiV1OperacionalSubstitutionsByDateTargetDateGet,
+  useConfirmSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdConfirmPost,
+  useRejectSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdRejectPost,
+  useCompleteSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdCompletePost,
+  useSuggestSubstitutesApiV1OperacionalSubstitutionsSuggestPost,
+} from '@/types/generated/operacional/operacional-substituicoes/operacional-substituicoes';
+
+// List & Read
+export const useSubstitutions = useListSubstitutionsApiV1OperacionalSubstitutionsGet;
+export const useSubstitution = useGetSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdGet;
+export const usePendingSubstitutions = useGetPendingSubstitutionsApiV1OperacionalSubstitutionsPendingGet;
+export const useSubstitutionsByDate = useGetSubstitutionsByDateApiV1OperacionalSubstitutionsByDateTargetDateGet;
+
+// Mutations
+export const useCreateSubstitution = useCreateSubstitutionApiV1OperacionalSubstitutionsPost;
+export const useUpdateSubstitution = useUpdateSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdPatch;
+export const useDeleteSubstitution = useDeleteSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdDelete;
+export const useConfirmSubstitution = useConfirmSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdConfirmPost;
+export const useRejectSubstitution = useRejectSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdRejectPost;
+export const useCompleteSubstitution = useCompleteSubstitutionApiV1OperacionalSubstitutionsSubstitutionIdCompletePost;
+export const useSuggestSubstitutes = useSuggestSubstitutesApiV1OperacionalSubstitutionsSuggestPost;
+
+// Re-export types
+export type {
+  SubstitutionCreate,
+  SubstitutionUpdate,
+  SubstitutionResponse,
+} from '@/types/generated/operacional/conectaPROMóduloOPERACIONAL.schemas';

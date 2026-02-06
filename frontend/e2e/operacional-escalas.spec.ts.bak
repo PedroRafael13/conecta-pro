@@ -1,0 +1,79 @@
+import { test, expect } from '@playwright/test';
+import { BartoloFloatingChat, goToDashboardWithBartolo } from './helpers/bartolo.helpers';
+
+test.describe('Operacional - Escalas E2E', () => {
+  let chat: BartoloFloatingChat;
+
+  test.beforeEach(async ({ page }) => {
+    chat = new BartoloFloatingChat(page);
+    await goToDashboardWithBartolo(page);
+    await chat.open();
+  });
+
+  test('deve criar escala via Bartolo', async ({ page }) => {
+    // Envia comando para criar escala
+    const body = await chat.sendMessageAndWaitResponse('Criar escala para o posto central');
+
+    // Verifica se retornou action_preview
+    if (body.action_preview) {
+      const dialog = page.locator('role=dialog');
+      await expect(dialog).toBeVisible({ timeout: 5000 });
+
+      // Verifica título
+      await expect(dialog.locator('text=Criar Escala')).toBeVisible();
+
+      // Botões de confirmar e cancelar
+      await expect(page.locator('button:has-text("Confirmar")')).toBeVisible();
+      await expect(page.locator('button:has-text("Cancelar")')).toBeVisible();
+    }
+  });
+
+  test('deve listar escalas existentes', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Quais são as escalas ativas?');
+
+    // Verifica se retornou resposta
+    expect(body.response).toBeTruthy();
+    expect(body.response.length).toBeGreaterThan(0);
+  });
+
+  test('deve validar geração automática de escala', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Gerar escala automática para esta semana');
+
+    if (body.action_preview) {
+      const dialog = page.locator('role=dialog');
+      await expect(dialog).toBeVisible({ timeout: 5000 });
+
+      // Verifica resumo das mudanças
+      await expect(dialog.locator('text=O que será feito')).toBeVisible();
+
+      // Cancela para não modificar dados de produção
+      await page.locator('button:has-text("Cancelar")').click();
+      await expect(dialog).not.toBeVisible({ timeout: 5000 });
+    }
+  });
+
+  test('deve consultar funcionários disponíveis para escala', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse('Funcionários disponíveis para escala hoje');
+
+    expect(body.response).toBeTruthy();
+    // Deve retornar lista de funcionários ou mensagem informativa
+  });
+
+  test('deve validar conflitos de escala', async ({ page }) => {
+    const body = await chat.sendMessageAndWaitResponse(
+      'Criar escala duplicada para o mesmo funcionário no mesmo horário'
+    );
+
+    // Sistema deve detectar conflito
+    if (body.action_preview) {
+      const dialog = page.locator('role=dialog');
+      if (await dialog.isVisible()) {
+        // Se mostrar preview, deve ter algum aviso
+        await expect(dialog).toBeVisible();
+      }
+    } else {
+      // Ou deve retornar mensagem de erro/aviso
+      expect(body.response.toLowerCase()).toMatch(/conflito|duplicad|já existe/);
+    }
+  });
+});

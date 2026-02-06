@@ -1,0 +1,31 @@
+# Relatorio de Seguranca - Conecta PRO Backend
+# Data: 2026-02-01
+
+## Bandit - Analise de Codigo
+Arquivos analisados: 462117 linhas
+Total de issues: 97
+  HIGH: 26
+  MEDIUM: 71
+  LOW: 0
+
+### Issues encontradas:
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/bartolo/services/llm_fallback_classifier.py:183)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/knowledge_base/services/semantic_search.py:68)
+  - [MEDIUM] Use of possibly insecure function - consider using safer ast.literal_eval. (modules/ai/report_generator/models/report_section.py:313)
+  - [MEDIUM] Probable insecure usage of temp file/directory. (modules/ai/report_generator/services/report_exporter.py:84)
+  - [MEDIUM] Probable insecure usage of temp file/directory. (modules/ai/report_generator/services/report_exporter.py:104)
+  - [MEDIUM] Probable insecure usage of temp file/directory. (modules/ai/report_generator/services/report_exporter.py:159)
+  - [MEDIUM] Probable insecure usage of temp file/directory. (modules/ai/report_generator/services/report_exporter.py:182)
+  - [MEDIUM] Probable insecure usage of temp file/directory. (modules/ai/report_generator/services/report_exporter.py:218)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/signature/services/extraction_service.py:173)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/signature/services/extraction_service.py:307)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/signature/services/extraction_service.py:435)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/signature/services/extraction_service.py:443)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/signature/services/extraction_service.py:451)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/ai/voice_recognition/services/speech_recognizer.py:107)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/analytics/ml/features/feature_store.py:466)
+  - [MEDIUM] Pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue. (modules/analytics/ml/registry/model_registry.py:289)
+  - [MEDIUM] Use of possibly insecure function - consider using safer ast.literal_eval. (modules/automation/workflow/models/workflow_condition.py:279)
+  - [MEDIUM] Use of possibly insecure function - consider using safer ast.literal_eval. (modules/automation/workflow/services/condition_evaluator.py:276)
+  - [MEDIUM] Use of exec detected. (modules/automation/workflow/services/condition_evaluator.py:337)
+  - [HIGH] Use of weak MD5 hash for security. Consider usedforsecurity=False (modules/config/models/feature_flag.py:276)

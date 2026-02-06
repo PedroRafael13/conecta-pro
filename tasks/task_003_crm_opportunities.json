@@ -1,0 +1,25 @@
+{
+  "id": "TASK-003",
+  "name": "CRM - Gestao de Oportunidades",
+  "module": "commercial",
+  "requirements": [
+    "RF-CRM-005: Pipeline de vendas configuravel",
+    "RF-CRM-006: Previsao de fechamento com ML",
+    "RF-CRM-007: Historico de interacoes"
+  ],
+  "files_to_create": [
+    "modules/commercial/models/opportunity.py",
+    "modules/commercial/schemas/opportunity_schema.py",
+    "modules/commercial/services/opportunity_service.py",
+    "modules/commercial/repositories/opportunity_repository.py",
+    "modules/commercial/controllers/opportunity_controller.py"
+  ],
+  "tests_to_create": [
+    "tests/unit/commercial/test_opportunity_model.py",
+    "tests/unit/commercial/test_opportunity_service.py",
+    "tests/integration/commercial/test_opportunity_api.py"
+  ],
+  "priority": "high",
+  "estimated_hours": 20,
+  "dependencies": ["TASK-002"]
+}

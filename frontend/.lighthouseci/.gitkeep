@@ -1,0 +1,10 @@
+# Lighthouse CI Reports Directory
+
+Este diretório contém relatórios gerados pelo Lighthouse CI.
+
+Arquivos gerados:
+- lhr-*.json: Relatórios completos de cada run
+- manifest.json: Manifesto dos runs
+- summary.json: Resumo agregado das métricas
+
+Os relatórios são regenerados a cada execução e não devem ser commitados.
