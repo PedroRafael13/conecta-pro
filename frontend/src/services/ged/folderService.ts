@@ -32,4 +32,17 @@ export const folderService = {
     });
     return response.data;
   },
+
+  // Aliases for component compatibility
+  async getTree() {
+    const response = await api.get('/api/v1/ged/folders');
+    return response.data;
+  },
+
+  async move(id: string, targetFolderId?: string) {
+    const response = await api.post(`/api/v1/ged/folders/${id}/move`, {
+      target_folder_id: targetFolderId,
+    });
+    return response.data;
+  },
 };

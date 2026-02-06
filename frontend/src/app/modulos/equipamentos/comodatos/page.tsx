@@ -16,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ConfirmModal } from '@/components/ui/modal';
-;
 import {
   useComodatoList,
   useComodatoStats,
@@ -74,13 +73,12 @@ export default function ComodatosPage() {
     error,
     refetch,
   } = useComodatoList({
-    skip: page * limit,
-    limit,
     search: search || undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
   });
 
-  const { data: stats, isLoading: statsLoading } = useComodatoStats();
+  const { data: statsRaw, isLoading: statsLoading } = useComodatoStats();
+  const stats = statsRaw as { total?: number; active?: number; pending_signature?: number; expiring?: number } | undefined;
 
   // Mutations
   const createMutation = useCreateComodato();
@@ -139,7 +137,10 @@ export default function ComodatosPage() {
 
   const confirmSign = async () => {
     if (!selectedComodato) return;
-    await signMutation.mutateAsync({ comodatoId: selectedComodato.id, params: {} });
+    await signMutation.mutateAsync({
+      comodatoId: selectedComodato.id,
+      params: { signed_by_client: 'TODO', signed_by_company: 'TODO' },
+    });
     setSignOpen(false);
     setSelectedComodato(null);
   };
@@ -151,7 +152,10 @@ export default function ComodatosPage() {
 
   const confirmDeliver = async () => {
     if (!selectedComodato) return;
-    await deliverMutation.mutateAsync({ comodatoId: selectedComodato.id, params: {} });
+    await deliverMutation.mutateAsync({
+      comodatoId: selectedComodato.id,
+      params: { delivered_by: 'TODO', received_by: 'TODO' },
+    });
     setDeliverOpen(false);
     setSelectedComodato(null);
   };
@@ -163,7 +167,10 @@ export default function ComodatosPage() {
 
   const confirmTerminate = async () => {
     if (!selectedComodato) return;
-    await terminateMutation.mutateAsync({ comodatoId: selectedComodato.id, params: {} });
+    await terminateMutation.mutateAsync({
+      comodatoId: selectedComodato.id,
+      params: { reason: 'Encerramento solicitado' },
+    });
     setTerminateOpen(false);
     setSelectedComodato(null);
   };
@@ -358,7 +365,7 @@ export default function ComodatosPage() {
               </TableHeader>
               <TableBody>
                 {items.map((item: any) => {
-                  const status = statusConfig[item.status] ?? statusConfig.draft;
+                  const status = statusConfig[item.status] ?? { label: String(item.status), className: 'bg-gray-100 text-gray-800' };
                   return (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">{item.codigo}</TableCell>

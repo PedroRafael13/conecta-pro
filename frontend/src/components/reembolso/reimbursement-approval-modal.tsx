@@ -10,7 +10,7 @@ import {
   EXPENSE_CATEGORY_LABELS,
   APPROVAL_LEVEL_LABELS,
 } from '@/types/reimbursement';
-;
+import { reimbursementService } from '@/services/reembolso/reimbursementService';
 
 interface ReimbursementApprovalModalProps {
   request: ReimbursementRequest | null;

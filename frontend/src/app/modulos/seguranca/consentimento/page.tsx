@@ -34,6 +34,14 @@ import { useConsents, useRegisterConsent, useRevokeConsent } from '@/hooks/secur
 import { ConsentFormModal } from '@/components/seguranca/consent-form-modal';
 import { ConsentDetailModal } from '@/components/seguranca/consent-detail-modal';
 
+const PAGE_SIZE = 20;
+
+/** Shape dos dados internos retornados em StandardResponse.data para consents */
+interface ConsentsData {
+  consents?: unknown[];
+  [key: string]: unknown;
+}
+
 // Labels de finalidade
 const PURPOSE_LABELS: Record<string, string> = {
   marketing: 'Marketing e Publicidade',
@@ -84,8 +92,9 @@ export default function ConsentimentoPage() {
   const registerConsent = useRegisterConsent();
   const revokeConsent = useRevokeConsent();
 
-  // Extrair dados
-  const rawConsents = consentsResponse?.data?.data?.consents || consentsResponse?.data?.data || [];
+  // Extrair dados - cast data para shape esperado
+  const responseData = consentsResponse?.data as ConsentsData | undefined;
+  const rawConsents = responseData?.consents || (Array.isArray(responseData) ? responseData : []);
   const allConsents = Array.isArray(rawConsents) ? rawConsents : [];
 
   // Filtrar localmente

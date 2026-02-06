@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'vitest';
+import { ReactNode } from 'react';
 
 /**
  * Testes para hook useOccurrences

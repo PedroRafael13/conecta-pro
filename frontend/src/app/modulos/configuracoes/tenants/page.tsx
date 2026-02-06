@@ -325,7 +325,7 @@ export default function TenantsPage() {
                           <DropdownMenuSeparator />
                           {tenant.status !== 'active' && (
                             <DropdownMenuItem onClick={() =>
-                              openConfirm('Ativar Tenant', `Deseja ativar "${tenant.nome}"?`, () => activateMutation.mutateAsync(tenant.id), 'info')
+                              openConfirm('Ativar Tenant', `Deseja ativar "${tenant.nome}"?`, () => activateMutation.mutateAsync(tenant.id).then(() => {}), 'info')
                             }>
                               <Play className="h-4 w-4 mr-2" />
                               Ativar
@@ -333,7 +333,7 @@ export default function TenantsPage() {
                           )}
                           {tenant.status === 'active' && (
                             <DropdownMenuItem onClick={() =>
-                              openConfirm('Suspender Tenant', `Deseja suspender "${tenant.nome}"?`, () => suspendMutation.mutateAsync(tenant.id), 'warning')
+                              openConfirm('Suspender Tenant', `Deseja suspender "${tenant.nome}"?`, () => suspendMutation.mutateAsync(tenant.id).then(() => {}), 'warning')
                             }>
                               <Pause className="h-4 w-4 mr-2" />
                               Suspender
@@ -341,7 +341,7 @@ export default function TenantsPage() {
                           )}
                           {tenant.status === 'trial' && (
                             <DropdownMenuItem onClick={() =>
-                              openConfirm('Converter Trial', `Converter "${tenant.nome}" para plano pago?`, () => convertTrialMutation.mutateAsync(tenant.id), 'info')
+                              openConfirm('Converter Trial', `Converter "${tenant.nome}" para plano pago?`, () => convertTrialMutation.mutateAsync(tenant.id).then(() => {}), 'info')
                             }>
                               <Zap className="h-4 w-4 mr-2" />
                               Converter Trial
@@ -349,7 +349,7 @@ export default function TenantsPage() {
                           )}
                           {tenant.status !== 'canceled' && (
                             <DropdownMenuItem onClick={() =>
-                              openConfirm('Cancelar Tenant', `Deseja cancelar "${tenant.nome}"? Esta acao nao pode ser desfeita.`, () => cancelMutation.mutateAsync(tenant.id), 'danger')
+                              openConfirm('Cancelar Tenant', `Deseja cancelar "${tenant.nome}"? Esta acao nao pode ser desfeita.`, () => cancelMutation.mutateAsync(tenant.id).then(() => {}), 'danger')
                             }>
                               <XCircle className="h-4 w-4 mr-2" />
                               Cancelar
@@ -359,7 +359,7 @@ export default function TenantsPage() {
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() =>
-                              openConfirm('Deletar Tenant', `Deletar "${tenant.nome}" permanentemente?`, () => deleteMutation.mutateAsync(tenant.id), 'danger')
+                              openConfirm('Deletar Tenant', `Deletar "${tenant.nome}" permanentemente?`, () => deleteMutation.mutateAsync(tenant.id).then(() => {}), 'danger')
                             }
                           >
                             <Trash2 className="h-4 w-4 mr-2" />

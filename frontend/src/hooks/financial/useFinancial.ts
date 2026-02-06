@@ -29,7 +29,7 @@ export * from '@/types/generated/financial/financial-customers/financial-custome
 export {
   useListCustomersApiV1FinancialCustomersCustomersGet as useCustomers,
   useGetCustomerApiV1FinancialCustomersCustomersCustomerIdGet as useCustomer,
-  useGetDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet as useCustomerStats,
+  useGetCustomerDebtSummaryApiV1FinancialCustomersCustomersCustomerIdDebtSummaryGet as useCustomerStats,
   useCreateCustomerApiV1FinancialCustomersCustomersPost as useCreateCustomer,
   getListCustomersApiV1FinancialCustomersCustomersGetQueryKey as customerKeys,
 } from '@/types/generated/financial/financial-customers/financial-customers';
@@ -54,7 +54,7 @@ export * from '@/types/generated/financial/financial-bank-accounts/financial-ban
 export {
   useListBankAccountsApiV1FinancialBankAccountsBankAccountsGet as useBankAccounts,
   useGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet as useBankAccount,
-  useGetBalanceApiV1FinancialBankAccountsBankAccountsAccountIdBalanceGet as useBankAccountBalance,
+  useGetBankAccountApiV1FinancialBankAccountsBankAccountsAccountIdGet as useBankAccountBalance,
   useCreateBankAccountApiV1FinancialBankAccountsBankAccountsPost as useCreateBankAccount,
   getListBankAccountsApiV1FinancialBankAccountsBankAccountsGetQueryKey as bankAccountKeys,
 } from '@/types/generated/financial/financial-bank-accounts/financial-bank-accounts';

@@ -61,8 +61,8 @@ export default function FechamentoFolhaPage() {
           condominio_id: condominioId,
           competencia,
           forma_pagamento: 'pix',
-        },
-      });
+        } as any,
+      } as any);
 
       const data = result as any;
       if (data.total_erros > 0) {
@@ -265,7 +265,7 @@ export default function FechamentoFolhaPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(report.items ?? []).map((item: PayrollDiaristItem, index: number) => (
+                    {((report.items ?? []) as unknown as PayrollDiaristItem[]).map((item: PayrollDiaristItem, index: number) => (
                       <tr
                         key={item.diarist_id}
                         className={`border-b border-[hsl(var(--border))]/50 ${

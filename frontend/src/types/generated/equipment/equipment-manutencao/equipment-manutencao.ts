@@ -65,8 +65,8 @@ export const createMaintenanceApiV1MaintenancesPost = (
     maintenanceCreate: MaintenanceCreate,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
@@ -74,7 +74,7 @@ export const createMaintenanceApiV1MaintenancesPost = (
     },
       );
     }
-  
+
 
 
 export const getCreateMaintenanceApiV1MaintenancesPostMutationOptions = <TError = HTTPValidationError,
@@ -88,7 +88,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMaintenanceApiV1MaintenancesPost>>, {data: MaintenanceCreate}> = (props) => {
@@ -97,7 +97,7 @@ const {mutation: mutationOptions} = options ?
           return  createMaintenanceApiV1MaintenancesPost(data,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -130,15 +130,15 @@ export const listMaintenancesApiV1MaintenancesGet = (
     params?: ListMaintenancesApiV1MaintenancesGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceListResponse>(
       {url: `/api/v1/maintenances/`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -148,7 +148,7 @@ export const getListMaintenancesApiV1MaintenancesGetQueryKey = (params?: ListMai
     ] as const;
     }
 
-    
+
 export const getListMaintenancesApiV1MaintenancesGetQueryOptions = <TData = Awaited<ReturnType<typeof listMaintenancesApiV1MaintenancesGet>>, TError = HTTPValidationError>(params?: ListMaintenancesApiV1MaintenancesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMaintenancesApiV1MaintenancesGet>>, TError, TData>>, }
 ) => {
 
@@ -156,13 +156,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListMaintenancesApiV1MaintenancesGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof listMaintenancesApiV1MaintenancesGet>>> = ({ signal }) => listMaintenancesApiV1MaintenancesGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMaintenancesApiV1MaintenancesGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -201,7 +201,7 @@ export function useListMaintenancesApiV1MaintenancesGet<TData = Awaited<ReturnTy
 
 export function useListMaintenancesApiV1MaintenancesGet<TData = Awaited<ReturnType<typeof listMaintenancesApiV1MaintenancesGet>>, TError = HTTPValidationError>(
  params?: ListMaintenancesApiV1MaintenancesGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listMaintenancesApiV1MaintenancesGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListMaintenancesApiV1MaintenancesGetQueryOptions(params,options)
@@ -223,15 +223,15 @@ export const getStatsApiV1MaintenancesStatsGet = (
     params?: GetStatsApiV1MaintenancesStatsGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceStats>(
       {url: `/api/v1/maintenances/stats`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -241,7 +241,7 @@ export const getGetStatsApiV1MaintenancesStatsGetQueryKey = (params?: GetStatsAp
     ] as const;
     }
 
-    
+
 export const getGetStatsApiV1MaintenancesStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getStatsApiV1MaintenancesStatsGet>>, TError = HTTPValidationError>(params?: GetStatsApiV1MaintenancesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1MaintenancesStatsGet>>, TError, TData>>, }
 ) => {
 
@@ -249,13 +249,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetStatsApiV1MaintenancesStatsGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getStatsApiV1MaintenancesStatsGet>>> = ({ signal }) => getStatsApiV1MaintenancesStatsGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1MaintenancesStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -294,7 +294,7 @@ export function useGetStatsApiV1MaintenancesStatsGet<TData = Awaited<ReturnType<
 
 export function useGetStatsApiV1MaintenancesStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1MaintenancesStatsGet>>, TError = HTTPValidationError>(
  params?: GetStatsApiV1MaintenancesStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1MaintenancesStatsGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetStatsApiV1MaintenancesStatsGetQueryOptions(params,options)
@@ -313,17 +313,17 @@ export function useGetStatsApiV1MaintenancesStatsGet<TData = Awaited<ReturnType<
  * @summary Get Overdue
  */
 export const getOverdueApiV1MaintenancesOverdueGet = (
-    
+
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse[]>(
       {url: `/api/v1/maintenances/overdue`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -333,7 +333,7 @@ export const getGetOverdueApiV1MaintenancesOverdueGetQueryKey = () => {
     ] as const;
     }
 
-    
+
 export const getGetOverdueApiV1MaintenancesOverdueGetQueryOptions = <TData = Awaited<ReturnType<typeof getOverdueApiV1MaintenancesOverdueGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1MaintenancesOverdueGet>>, TError, TData>>, }
 ) => {
 
@@ -341,13 +341,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetOverdueApiV1MaintenancesOverdueGetQueryKey();
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getOverdueApiV1MaintenancesOverdueGet>>> = ({ signal }) => getOverdueApiV1MaintenancesOverdueGet(signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1MaintenancesOverdueGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -386,7 +386,7 @@ export function useGetOverdueApiV1MaintenancesOverdueGet<TData = Awaited<ReturnT
 
 export function useGetOverdueApiV1MaintenancesOverdueGet<TData = Awaited<ReturnType<typeof getOverdueApiV1MaintenancesOverdueGet>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOverdueApiV1MaintenancesOverdueGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetOverdueApiV1MaintenancesOverdueGetQueryOptions(options)
@@ -405,17 +405,17 @@ export function useGetOverdueApiV1MaintenancesOverdueGet<TData = Awaited<ReturnT
  * @summary Get Waiting Parts
  */
 export const getWaitingPartsApiV1MaintenancesWaitingPartsGet = (
-    
+
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse[]>(
       {url: `/api/v1/maintenances/waiting-parts`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -425,7 +425,7 @@ export const getGetWaitingPartsApiV1MaintenancesWaitingPartsGetQueryKey = () => 
     ] as const;
     }
 
-    
+
 export const getGetWaitingPartsApiV1MaintenancesWaitingPartsGetQueryOptions = <TData = Awaited<ReturnType<typeof getWaitingPartsApiV1MaintenancesWaitingPartsGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWaitingPartsApiV1MaintenancesWaitingPartsGet>>, TError, TData>>, }
 ) => {
 
@@ -433,13 +433,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetWaitingPartsApiV1MaintenancesWaitingPartsGetQueryKey();
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getWaitingPartsApiV1MaintenancesWaitingPartsGet>>> = ({ signal }) => getWaitingPartsApiV1MaintenancesWaitingPartsGet(signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWaitingPartsApiV1MaintenancesWaitingPartsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -478,7 +478,7 @@ export function useGetWaitingPartsApiV1MaintenancesWaitingPartsGet<TData = Await
 
 export function useGetWaitingPartsApiV1MaintenancesWaitingPartsGet<TData = Awaited<ReturnType<typeof getWaitingPartsApiV1MaintenancesWaitingPartsGet>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getWaitingPartsApiV1MaintenancesWaitingPartsGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetWaitingPartsApiV1MaintenancesWaitingPartsGetQueryOptions(options)
@@ -497,17 +497,17 @@ export function useGetWaitingPartsApiV1MaintenancesWaitingPartsGet<TData = Await
  * @summary Get Needing Followup
  */
 export const getNeedingFollowupApiV1MaintenancesNeedingFollowupGet = (
-    
+
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse[]>(
       {url: `/api/v1/maintenances/needing-followup`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -517,7 +517,7 @@ export const getGetNeedingFollowupApiV1MaintenancesNeedingFollowupGetQueryKey = 
     ] as const;
     }
 
-    
+
 export const getGetNeedingFollowupApiV1MaintenancesNeedingFollowupGetQueryOptions = <TData = Awaited<ReturnType<typeof getNeedingFollowupApiV1MaintenancesNeedingFollowupGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNeedingFollowupApiV1MaintenancesNeedingFollowupGet>>, TError, TData>>, }
 ) => {
 
@@ -525,13 +525,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetNeedingFollowupApiV1MaintenancesNeedingFollowupGetQueryKey();
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getNeedingFollowupApiV1MaintenancesNeedingFollowupGet>>> = ({ signal }) => getNeedingFollowupApiV1MaintenancesNeedingFollowupGet(signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getNeedingFollowupApiV1MaintenancesNeedingFollowupGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -570,7 +570,7 @@ export function useGetNeedingFollowupApiV1MaintenancesNeedingFollowupGet<TData =
 
 export function useGetNeedingFollowupApiV1MaintenancesNeedingFollowupGet<TData = Awaited<ReturnType<typeof getNeedingFollowupApiV1MaintenancesNeedingFollowupGet>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getNeedingFollowupApiV1MaintenancesNeedingFollowupGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetNeedingFollowupApiV1MaintenancesNeedingFollowupGetQueryOptions(options)
@@ -592,14 +592,14 @@ export const getByDateApiV1MaintenancesByDateDateGet = (
     date: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse[]>(
       {url: `/api/v1/maintenances/by-date/${date}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -609,7 +609,7 @@ export const getGetByDateApiV1MaintenancesByDateDateGetQueryKey = (date?: string
     ] as const;
     }
 
-    
+
 export const getGetByDateApiV1MaintenancesByDateDateGetQueryOptions = <TData = Awaited<ReturnType<typeof getByDateApiV1MaintenancesByDateDateGet>>, TError = HTTPValidationError>(date: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByDateApiV1MaintenancesByDateDateGet>>, TError, TData>>, }
 ) => {
 
@@ -617,13 +617,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetByDateApiV1MaintenancesByDateDateGetQueryKey(date);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getByDateApiV1MaintenancesByDateDateGet>>> = ({ signal }) => getByDateApiV1MaintenancesByDateDateGet(date, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(date), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByDateApiV1MaintenancesByDateDateGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -662,7 +662,7 @@ export function useGetByDateApiV1MaintenancesByDateDateGet<TData = Awaited<Retur
 
 export function useGetByDateApiV1MaintenancesByDateDateGet<TData = Awaited<ReturnType<typeof getByDateApiV1MaintenancesByDateDateGet>>, TError = HTTPValidationError>(
  date: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByDateApiV1MaintenancesByDateDateGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetByDateApiV1MaintenancesByDateDateGetQueryOptions(date,options)
@@ -684,14 +684,14 @@ export const getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet = (
     equipmentId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse[]>(
       {url: `/api/v1/maintenances/by-equipment/${equipmentId}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -701,7 +701,7 @@ export const getGetByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGetQueryKey
     ] as const;
     }
 
-    
+
 export const getGetByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet>>, TError = HTTPValidationError>(equipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet>>, TError, TData>>, }
 ) => {
 
@@ -709,13 +709,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGetQueryKey(equipmentId);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet>>> = ({ signal }) => getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet(equipmentId, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(equipmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -754,7 +754,7 @@ export function useGetByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet<TDat
 
 export function useGetByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet<TData = Awaited<ReturnType<typeof getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet>>, TError = HTTPValidationError>(
  equipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetByEquipmentApiV1MaintenancesByEquipmentEquipmentIdGetQueryOptions(equipmentId,options)
@@ -776,14 +776,14 @@ export const getByClientApiV1MaintenancesByClientClientIdGet = (
     clientId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse[]>(
       {url: `/api/v1/maintenances/by-client/${clientId}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -793,7 +793,7 @@ export const getGetByClientApiV1MaintenancesByClientClientIdGetQueryKey = (clien
     ] as const;
     }
 
-    
+
 export const getGetByClientApiV1MaintenancesByClientClientIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getByClientApiV1MaintenancesByClientClientIdGet>>, TError = HTTPValidationError>(clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByClientApiV1MaintenancesByClientClientIdGet>>, TError, TData>>, }
 ) => {
 
@@ -801,13 +801,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetByClientApiV1MaintenancesByClientClientIdGetQueryKey(clientId);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getByClientApiV1MaintenancesByClientClientIdGet>>> = ({ signal }) => getByClientApiV1MaintenancesByClientClientIdGet(clientId, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(clientId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByClientApiV1MaintenancesByClientClientIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -846,7 +846,7 @@ export function useGetByClientApiV1MaintenancesByClientClientIdGet<TData = Await
 
 export function useGetByClientApiV1MaintenancesByClientClientIdGet<TData = Awaited<ReturnType<typeof getByClientApiV1MaintenancesByClientClientIdGet>>, TError = HTTPValidationError>(
  clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByClientApiV1MaintenancesByClientClientIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetByClientApiV1MaintenancesByClientClientIdGetQueryOptions(clientId,options)
@@ -869,15 +869,15 @@ export const getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet = (
     params?: GetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse[]>(
       {url: `/api/v1/maintenances/by-technician/${technicianId}`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -888,7 +888,7 @@ export const getGetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetQuery
     ] as const;
     }
 
-    
+
 export const getGetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet>>, TError = HTTPValidationError>(technicianId: string,
     params?: GetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet>>, TError, TData>>, }
 ) => {
@@ -897,13 +897,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetQueryKey(technicianId,params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet>>> = ({ signal }) => getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet(technicianId,params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(technicianId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -946,7 +946,7 @@ export function useGetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet<T
 export function useGetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet<TData = Awaited<ReturnType<typeof getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet>>, TError = HTTPValidationError>(
  technicianId: string,
     params?: GetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetByTechnicianApiV1MaintenancesByTechnicianTechnicianIdGetQueryOptions(technicianId,params,options)
@@ -968,14 +968,14 @@ export const analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet = (
     equipmentId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<AnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet200>(
       {url: `/api/v1/maintenances/ai/health/${equipmentId}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -985,7 +985,7 @@ export const getAnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGetQueryKey = (
     ] as const;
     }
 
-    
+
 export const getAnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet>>, TError = HTTPValidationError>(equipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet>>, TError, TData>>, }
 ) => {
 
@@ -993,13 +993,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getAnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGetQueryKey(equipmentId);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet>>> = ({ signal }) => analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet(equipmentId, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(equipmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1038,7 +1038,7 @@ export function useAnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet<TData = 
 
 export function useAnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet<TData = Awaited<ReturnType<typeof analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet>>, TError = HTTPValidationError>(
  equipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzeHealthApiV1MaintenancesAiHealthEquipmentIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getAnalyzeHealthApiV1MaintenancesAiHealthEquipmentIdGetQueryOptions(equipmentId,options)
@@ -1060,14 +1060,14 @@ export const predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet = (
     equipmentId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<PredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet200>(
       {url: `/api/v1/maintenances/ai/predict-failure/${equipmentId}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -1077,7 +1077,7 @@ export const getPredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGetQue
     ] as const;
     }
 
-    
+
 export const getPredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet>>, TError = HTTPValidationError>(equipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet>>, TError, TData>>, }
 ) => {
 
@@ -1085,13 +1085,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getPredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGetQueryKey(equipmentId);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet>>> = ({ signal }) => predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet(equipmentId, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(equipmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1130,7 +1130,7 @@ export function usePredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet
 
 export function usePredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet<TData = Awaited<ReturnType<typeof predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet>>, TError = HTTPValidationError>(
  equipmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof predictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getPredictFailureApiV1MaintenancesAiPredictFailureEquipmentIdGetQueryOptions(equipmentId,options)
@@ -1152,15 +1152,15 @@ export const recommendScheduleApiV1MaintenancesAiRecommendScheduleGet = (
     params?: RecommendScheduleApiV1MaintenancesAiRecommendScheduleGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<RecommendScheduleApiV1MaintenancesAiRecommendScheduleGet200Item[]>(
       {url: `/api/v1/maintenances/ai/recommend-schedule`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -1170,7 +1170,7 @@ export const getRecommendScheduleApiV1MaintenancesAiRecommendScheduleGetQueryKey
     ] as const;
     }
 
-    
+
 export const getRecommendScheduleApiV1MaintenancesAiRecommendScheduleGetQueryOptions = <TData = Awaited<ReturnType<typeof recommendScheduleApiV1MaintenancesAiRecommendScheduleGet>>, TError = HTTPValidationError>(params?: RecommendScheduleApiV1MaintenancesAiRecommendScheduleGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof recommendScheduleApiV1MaintenancesAiRecommendScheduleGet>>, TError, TData>>, }
 ) => {
 
@@ -1178,13 +1178,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getRecommendScheduleApiV1MaintenancesAiRecommendScheduleGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof recommendScheduleApiV1MaintenancesAiRecommendScheduleGet>>> = ({ signal }) => recommendScheduleApiV1MaintenancesAiRecommendScheduleGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof recommendScheduleApiV1MaintenancesAiRecommendScheduleGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1223,7 +1223,7 @@ export function useRecommendScheduleApiV1MaintenancesAiRecommendScheduleGet<TDat
 
 export function useRecommendScheduleApiV1MaintenancesAiRecommendScheduleGet<TData = Awaited<ReturnType<typeof recommendScheduleApiV1MaintenancesAiRecommendScheduleGet>>, TError = HTTPValidationError>(
  params?: RecommendScheduleApiV1MaintenancesAiRecommendScheduleGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof recommendScheduleApiV1MaintenancesAiRecommendScheduleGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getRecommendScheduleApiV1MaintenancesAiRecommendScheduleGetQueryOptions(params,options)
@@ -1246,15 +1246,15 @@ export const optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet = (
     params: OptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<OptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet200Item[]>(
       {url: `/api/v1/maintenances/ai/optimize-route/${technicianId}`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -1265,7 +1265,7 @@ export const getOptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetQuer
     ] as const;
     }
 
-    
+
 export const getOptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetQueryOptions = <TData = Awaited<ReturnType<typeof optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet>>, TError = HTTPValidationError>(technicianId: string,
     params: OptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet>>, TError, TData>>, }
 ) => {
@@ -1274,13 +1274,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getOptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetQueryKey(technicianId,params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet>>> = ({ signal }) => optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet(technicianId,params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(technicianId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1323,7 +1323,7 @@ export function useOptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet<
 export function useOptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet<TData = Awaited<ReturnType<typeof optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet>>, TError = HTTPValidationError>(
  technicianId: string,
     params: OptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof optimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getOptimizeRouteApiV1MaintenancesAiOptimizeRouteTechnicianIdGetQueryOptions(technicianId,params,options)
@@ -1345,15 +1345,15 @@ export const analyzePatternsApiV1MaintenancesAiPatternsGet = (
     params?: AnalyzePatternsApiV1MaintenancesAiPatternsGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<AnalyzePatternsApiV1MaintenancesAiPatternsGet200>(
       {url: `/api/v1/maintenances/ai/patterns`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -1363,7 +1363,7 @@ export const getAnalyzePatternsApiV1MaintenancesAiPatternsGetQueryKey = (params?
     ] as const;
     }
 
-    
+
 export const getAnalyzePatternsApiV1MaintenancesAiPatternsGetQueryOptions = <TData = Awaited<ReturnType<typeof analyzePatternsApiV1MaintenancesAiPatternsGet>>, TError = HTTPValidationError>(params?: AnalyzePatternsApiV1MaintenancesAiPatternsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzePatternsApiV1MaintenancesAiPatternsGet>>, TError, TData>>, }
 ) => {
 
@@ -1371,13 +1371,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getAnalyzePatternsApiV1MaintenancesAiPatternsGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof analyzePatternsApiV1MaintenancesAiPatternsGet>>> = ({ signal }) => analyzePatternsApiV1MaintenancesAiPatternsGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof analyzePatternsApiV1MaintenancesAiPatternsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1416,7 +1416,7 @@ export function useAnalyzePatternsApiV1MaintenancesAiPatternsGet<TData = Awaited
 
 export function useAnalyzePatternsApiV1MaintenancesAiPatternsGet<TData = Awaited<ReturnType<typeof analyzePatternsApiV1MaintenancesAiPatternsGet>>, TError = HTTPValidationError>(
  params?: AnalyzePatternsApiV1MaintenancesAiPatternsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof analyzePatternsApiV1MaintenancesAiPatternsGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getAnalyzePatternsApiV1MaintenancesAiPatternsGetQueryOptions(params,options)
@@ -1439,15 +1439,15 @@ export const estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet = (
     params?: EstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<EstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet200>(
       {url: `/api/v1/maintenances/ai/estimate-cost/${equipmentId}`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -1458,7 +1458,7 @@ export const getEstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetQueryKe
     ] as const;
     }
 
-    
+
 export const getEstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetQueryOptions = <TData = Awaited<ReturnType<typeof estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet>>, TError = HTTPValidationError>(equipmentId: string,
     params?: EstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet>>, TError, TData>>, }
 ) => {
@@ -1467,13 +1467,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getEstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetQueryKey(equipmentId,params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet>>> = ({ signal }) => estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet(equipmentId,params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(equipmentId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1516,7 +1516,7 @@ export function useEstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet<TDa
 export function useEstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet<TData = Awaited<ReturnType<typeof estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet>>, TError = HTTPValidationError>(
  equipmentId: string,
     params?: EstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof estimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getEstimateCostApiV1MaintenancesAiEstimateCostEquipmentIdGetQueryOptions(equipmentId,params,options)
@@ -1538,14 +1538,14 @@ export const getByCodeApiV1MaintenancesCodeCodeGet = (
     code: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/code/${code}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -1555,7 +1555,7 @@ export const getGetByCodeApiV1MaintenancesCodeCodeGetQueryKey = (code?: string,)
     ] as const;
     }
 
-    
+
 export const getGetByCodeApiV1MaintenancesCodeCodeGetQueryOptions = <TData = Awaited<ReturnType<typeof getByCodeApiV1MaintenancesCodeCodeGet>>, TError = HTTPValidationError>(code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByCodeApiV1MaintenancesCodeCodeGet>>, TError, TData>>, }
 ) => {
 
@@ -1563,13 +1563,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetByCodeApiV1MaintenancesCodeCodeGetQueryKey(code);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getByCodeApiV1MaintenancesCodeCodeGet>>> = ({ signal }) => getByCodeApiV1MaintenancesCodeCodeGet(code, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(code), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByCodeApiV1MaintenancesCodeCodeGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1608,7 +1608,7 @@ export function useGetByCodeApiV1MaintenancesCodeCodeGet<TData = Awaited<ReturnT
 
 export function useGetByCodeApiV1MaintenancesCodeCodeGet<TData = Awaited<ReturnType<typeof getByCodeApiV1MaintenancesCodeCodeGet>>, TError = HTTPValidationError>(
  code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByCodeApiV1MaintenancesCodeCodeGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetByCodeApiV1MaintenancesCodeCodeGetQueryOptions(code,options)
@@ -1630,14 +1630,14 @@ export const getMaintenanceApiV1MaintenancesMaintenanceIdGet = (
     maintenanceId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -1647,7 +1647,7 @@ export const getGetMaintenanceApiV1MaintenancesMaintenanceIdGetQueryKey = (maint
     ] as const;
     }
 
-    
+
 export const getGetMaintenanceApiV1MaintenancesMaintenanceIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getMaintenanceApiV1MaintenancesMaintenanceIdGet>>, TError = HTTPValidationError>(maintenanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMaintenanceApiV1MaintenancesMaintenanceIdGet>>, TError, TData>>, }
 ) => {
 
@@ -1655,13 +1655,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetMaintenanceApiV1MaintenancesMaintenanceIdGetQueryKey(maintenanceId);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getMaintenanceApiV1MaintenancesMaintenanceIdGet>>> = ({ signal }) => getMaintenanceApiV1MaintenancesMaintenanceIdGet(maintenanceId, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(maintenanceId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMaintenanceApiV1MaintenancesMaintenanceIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1700,7 +1700,7 @@ export function useGetMaintenanceApiV1MaintenancesMaintenanceIdGet<TData = Await
 
 export function useGetMaintenanceApiV1MaintenancesMaintenanceIdGet<TData = Awaited<ReturnType<typeof getMaintenanceApiV1MaintenancesMaintenanceIdGet>>, TError = HTTPValidationError>(
  maintenanceId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getMaintenanceApiV1MaintenancesMaintenanceIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMaintenanceApiV1MaintenancesMaintenanceIdGetQueryOptions(maintenanceId,options)
@@ -1722,8 +1722,8 @@ export const updateMaintenanceApiV1MaintenancesMaintenanceIdPut = (
     maintenanceId: string,
     maintenanceUpdate: MaintenanceUpdate,
  ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
@@ -1731,7 +1731,7 @@ export const updateMaintenanceApiV1MaintenancesMaintenanceIdPut = (
     },
       );
     }
-  
+
 
 
 export const getUpdateMaintenanceApiV1MaintenancesMaintenanceIdPutMutationOptions = <TError = HTTPValidationError,
@@ -1745,7 +1745,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMaintenanceApiV1MaintenancesMaintenanceIdPut>>, {maintenanceId: string;data: MaintenanceUpdate}> = (props) => {
@@ -1754,7 +1754,7 @@ const {mutation: mutationOptions} = options ?
           return  updateMaintenanceApiV1MaintenancesMaintenanceIdPut(maintenanceId,data,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1786,14 +1786,14 @@ export const useUpdateMaintenanceApiV1MaintenancesMaintenanceIdPut = <TError = H
 export const deleteMaintenanceApiV1MaintenancesMaintenanceIdDelete = (
     maintenanceId: string,
  ) => {
-      
-      
+
+
       return customInstance<void>(
       {url: `/api/v1/maintenances/${maintenanceId}`, method: 'DELETE'
     },
       );
     }
-  
+
 
 
 export const getDeleteMaintenanceApiV1MaintenancesMaintenanceIdDeleteMutationOptions = <TError = HTTPValidationError,
@@ -1807,7 +1807,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMaintenanceApiV1MaintenancesMaintenanceIdDelete>>, {maintenanceId: string}> = (props) => {
@@ -1816,13 +1816,13 @@ const {mutation: mutationOptions} = options ?
           return  deleteMaintenanceApiV1MaintenancesMaintenanceIdDelete(maintenanceId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type DeleteMaintenanceApiV1MaintenancesMaintenanceIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMaintenanceApiV1MaintenancesMaintenanceIdDelete>>>
-    
+
     export type DeleteMaintenanceApiV1MaintenancesMaintenanceIdDeleteMutationError = HTTPValidationError
 
     /**
@@ -1849,14 +1849,14 @@ export const startMaintenanceApiV1MaintenancesMaintenanceIdStartPost = (
     maintenanceId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/start`, method: 'POST', signal
     },
       );
     }
-  
+
 
 
 export const getStartMaintenanceApiV1MaintenancesMaintenanceIdStartPostMutationOptions = <TError = HTTPValidationError,
@@ -1870,7 +1870,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof startMaintenanceApiV1MaintenancesMaintenanceIdStartPost>>, {maintenanceId: string}> = (props) => {
@@ -1879,13 +1879,13 @@ const {mutation: mutationOptions} = options ?
           return  startMaintenanceApiV1MaintenancesMaintenanceIdStartPost(maintenanceId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type StartMaintenanceApiV1MaintenancesMaintenanceIdStartPostMutationResult = NonNullable<Awaited<ReturnType<typeof startMaintenanceApiV1MaintenancesMaintenanceIdStartPost>>>
-    
+
     export type StartMaintenanceApiV1MaintenancesMaintenanceIdStartPostMutationError = HTTPValidationError
 
     /**
@@ -1913,15 +1913,15 @@ export const completeMaintenanceApiV1MaintenancesMaintenanceIdCompletePost = (
     params?: CompleteMaintenanceApiV1MaintenancesMaintenanceIdCompletePostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/complete`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getCompleteMaintenanceApiV1MaintenancesMaintenanceIdCompletePostMutationOptions = <TError = HTTPValidationError,
@@ -1935,7 +1935,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof completeMaintenanceApiV1MaintenancesMaintenanceIdCompletePost>>, {maintenanceId: string;params?: CompleteMaintenanceApiV1MaintenancesMaintenanceIdCompletePostParams}> = (props) => {
@@ -1944,13 +1944,13 @@ const {mutation: mutationOptions} = options ?
           return  completeMaintenanceApiV1MaintenancesMaintenanceIdCompletePost(maintenanceId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type CompleteMaintenanceApiV1MaintenancesMaintenanceIdCompletePostMutationResult = NonNullable<Awaited<ReturnType<typeof completeMaintenanceApiV1MaintenancesMaintenanceIdCompletePost>>>
-    
+
     export type CompleteMaintenanceApiV1MaintenancesMaintenanceIdCompletePostMutationError = HTTPValidationError
 
     /**
@@ -1977,14 +1977,14 @@ export const cancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPost = (
     maintenanceId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/cancel`, method: 'POST', signal
     },
       );
     }
-  
+
 
 
 export const getCancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPostMutationOptions = <TError = HTTPValidationError,
@@ -1998,7 +1998,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPost>>, {maintenanceId: string}> = (props) => {
@@ -2007,13 +2007,13 @@ const {mutation: mutationOptions} = options ?
           return  cancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPost(maintenanceId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type CancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPostMutationResult = NonNullable<Awaited<ReturnType<typeof cancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPost>>>
-    
+
     export type CancelMaintenanceApiV1MaintenancesMaintenanceIdCancelPostMutationError = HTTPValidationError
 
     /**
@@ -2041,9 +2041,9 @@ export const markWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost = (
     bodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost: BodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost,
  signal?: AbortSignal
 ) => {
-      
+
       const formData = new FormData();
-bodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost.parts_requested.forEach(value => formData.append(`parts_requested`, value));
+bodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost.parts_requested.forEach(value => formData.append(`parts_requested`, value as unknown as Blob));
 
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/waiting-parts`, method: 'POST',
@@ -2052,7 +2052,7 @@ bodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost.parts_request
     },
       );
     }
-  
+
 
 
 export const getMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPostMutationOptions = <TError = HTTPValidationError,
@@ -2066,7 +2066,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof markWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost>>, {maintenanceId: string;data: BodyMarkWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost}> = (props) => {
@@ -2075,7 +2075,7 @@ const {mutation: mutationOptions} = options ?
           return  markWaitingPartsApiV1MaintenancesMaintenanceIdWaitingPartsPost(maintenanceId,data,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -2109,15 +2109,15 @@ export const addPartReplacedApiV1MaintenancesMaintenanceIdAddPartPost = (
     params: AddPartReplacedApiV1MaintenancesMaintenanceIdAddPartPostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/add-part`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getAddPartReplacedApiV1MaintenancesMaintenanceIdAddPartPostMutationOptions = <TError = HTTPValidationError,
@@ -2131,7 +2131,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof addPartReplacedApiV1MaintenancesMaintenanceIdAddPartPost>>, {maintenanceId: string;params: AddPartReplacedApiV1MaintenancesMaintenanceIdAddPartPostParams}> = (props) => {
@@ -2140,13 +2140,13 @@ const {mutation: mutationOptions} = options ?
           return  addPartReplacedApiV1MaintenancesMaintenanceIdAddPartPost(maintenanceId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type AddPartReplacedApiV1MaintenancesMaintenanceIdAddPartPostMutationResult = NonNullable<Awaited<ReturnType<typeof addPartReplacedApiV1MaintenancesMaintenanceIdAddPartPost>>>
-    
+
     export type AddPartReplacedApiV1MaintenancesMaintenanceIdAddPartPostMutationError = HTTPValidationError
 
     /**
@@ -2174,15 +2174,15 @@ export const signMaintenanceApiV1MaintenancesMaintenanceIdSignPost = (
     params: SignMaintenanceApiV1MaintenancesMaintenanceIdSignPostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/sign`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getSignMaintenanceApiV1MaintenancesMaintenanceIdSignPostMutationOptions = <TError = HTTPValidationError,
@@ -2196,7 +2196,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof signMaintenanceApiV1MaintenancesMaintenanceIdSignPost>>, {maintenanceId: string;params: SignMaintenanceApiV1MaintenancesMaintenanceIdSignPostParams}> = (props) => {
@@ -2205,13 +2205,13 @@ const {mutation: mutationOptions} = options ?
           return  signMaintenanceApiV1MaintenancesMaintenanceIdSignPost(maintenanceId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type SignMaintenanceApiV1MaintenancesMaintenanceIdSignPostMutationResult = NonNullable<Awaited<ReturnType<typeof signMaintenanceApiV1MaintenancesMaintenanceIdSignPost>>>
-    
+
     export type SignMaintenanceApiV1MaintenancesMaintenanceIdSignPostMutationError = HTTPValidationError
 
     /**
@@ -2239,15 +2239,15 @@ export const assignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPost 
     params: AssignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/${maintenanceId}/assign-technician`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getAssignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPostMutationOptions = <TError = HTTPValidationError,
@@ -2261,7 +2261,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof assignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPost>>, {maintenanceId: string;params: AssignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPostParams}> = (props) => {
@@ -2270,13 +2270,13 @@ const {mutation: mutationOptions} = options ?
           return  assignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPost(maintenanceId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type AssignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPostMutationResult = NonNullable<Awaited<ReturnType<typeof assignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPost>>>
-    
+
     export type AssignTechnicianApiV1MaintenancesMaintenanceIdAssignTechnicianPostMutationError = HTTPValidationError
 
     /**
@@ -2304,15 +2304,15 @@ export const schedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPos
     params?: SchedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<MaintenanceResponse>(
       {url: `/api/v1/maintenances/schedule-preventive/${equipmentId}`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getSchedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPostMutationOptions = <TError = HTTPValidationError,
@@ -2326,7 +2326,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof schedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPost>>, {equipmentId: string;params?: SchedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPostParams}> = (props) => {
@@ -2335,13 +2335,13 @@ const {mutation: mutationOptions} = options ?
           return  schedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPost(equipmentId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type SchedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPostMutationResult = NonNullable<Awaited<ReturnType<typeof schedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPost>>>
-    
+
     export type SchedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentIdPostMutationError = HTTPValidationError
 
     /**
@@ -2360,4 +2360,3 @@ export const useSchedulePreventiveApiV1MaintenancesSchedulePreventiveEquipmentId
 
       return useMutation(mutationOptions, queryClient);
     }
-    

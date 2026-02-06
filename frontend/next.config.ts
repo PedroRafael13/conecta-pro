@@ -8,10 +8,9 @@ const bundleAnalyzer = withBundleAnalyzer({
 const nextConfig: NextConfig = {
   output: 'standalone',
 
-  // TypeScript: ignorar erros de tipo no build (644 erros pré-existentes)
-  // TODO: resolver gradualmente e remover esta flag
+  // TypeScript: validação de tipos ativa (0 erros - migração completa)
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   // Configuração de ambiente

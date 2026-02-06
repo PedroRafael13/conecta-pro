@@ -47,8 +47,8 @@ export function ComodatoDetailModal({
       <div className="space-y-6">
         {/* Status */}
         <div className="flex items-start justify-between">
-          <Badge className={cn('border-0', status.className)}>
-            {status.label}
+          <Badge className={cn('border-0', status?.className)}>
+            {status?.label}
           </Badge>
           <span className="text-xs text-[hsl(var(--muted-foreground))]">
             ID: {comodato.id}

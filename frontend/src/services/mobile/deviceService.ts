@@ -137,5 +137,5 @@ function extractOSVersion(userAgent: string): string {
   const match = userAgent.match(
     /(?:Android|iPhone OS|iPad OS|Mac OS X)\s([\d._]+)/
   );
-  return match ? match[1].replace(/_/g, '.') : 'Unknown';
+  return match?.[1] ? match[1].replace(/_/g, '.') : 'Unknown';
 }

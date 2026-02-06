@@ -49,4 +49,20 @@ export const occurrencesService = {
     });
     return response.data;
   },
+
+  // Aliases for component compatibility
+  async create(data: unknown) {
+    const response = await api.post('/api/v1/operacional/occurrences', data);
+    return response.data;
+  },
+
+  async update(id: string, data: unknown) {
+    const response = await api.put(`/api/v1/operacional/occurrences/${id}`, data);
+    return response.data;
+  },
+
+  async resolve(id: string, data: unknown) {
+    const response = await api.post(`/api/v1/operacional/occurrences/${id}/resolve`, data);
+    return response.data;
+  },
 };

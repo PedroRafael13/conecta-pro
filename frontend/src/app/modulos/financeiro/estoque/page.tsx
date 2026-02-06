@@ -165,7 +165,7 @@ export default function EstoquePage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-500">
-                  {dashboard?.below_minimum ?? 0}
+                  {(dashboard as any)?.below_minimum ?? dashboard?.warehouses_near_capacity ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Abaixo do Minimo</p>
               </div>
@@ -271,7 +271,7 @@ export default function EstoquePage() {
                         <div className="flex items-center gap-2">
                           {item.name || '-'}
                           {belowMinimum && (
-                            <AlertCircle className="w-4 h-4 text-red-500" title="Abaixo do minimo" />
+                            <span title="Abaixo do minimo"><AlertCircle className="w-4 h-4 text-red-500" /></span>
                           )}
                         </div>
                       </TableCell>

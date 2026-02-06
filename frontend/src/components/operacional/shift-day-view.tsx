@@ -1,6 +1,5 @@
 'use client';
 
-;
 import { Clock, User, MapPin, AlertCircle, CheckCircle, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Shift, ShiftStatus } from '@/types/operacional';
@@ -37,8 +36,8 @@ const getStatusBadge = (status: ShiftStatus) => {
 
 const formatTime = (value?: string | null) => {
   if (!value) return '-';
-  const timePart = value.includes('T') ? value.split('T')[1] : value;
-  const clean = timePart.split(/[Z+-]/)[0];
+  const timePart = value.includes('T') ? (value.split('T')[1] ?? value) : value;
+  const clean = timePart.split(/[Z+-]/)[0] ?? timePart;
   const [hours, minutes] = clean.split(':');
   if (!hours || !minutes) return value;
   return `${hours}:${minutes}`;

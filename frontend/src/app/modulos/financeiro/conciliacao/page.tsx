@@ -39,7 +39,7 @@ export default function ConciliacaoPage() {
     isError: accountsError,
     error: accountsErr,
     refetch: refetchAccounts,
-  } = useBankAccounts();
+  } = useBankAccounts({ condominio_id: '' });
 
   const {
     data: transactionsData,
@@ -47,13 +47,13 @@ export default function ConciliacaoPage() {
     isError: transactionsError,
     error: transactionsErr,
     refetch: refetchTransactions,
-  } = useBankTransactions();
+  } = useBankTransactions({ bank_account_id: '' });
 
   const createBankAccount = useCreateBankAccount();
   const importOFX = useImportOFX();
 
-  const accounts = accountsData?.data || accountsData?.items || [];
-  const transactions = transactionsData?.data || transactionsData?.items || [];
+  const accounts = Array.isArray(accountsData) ? accountsData : [];
+  const transactions = Array.isArray(transactionsData) ? transactionsData : [];
 
   const isLoading = activeTab === 'accounts' ? loadingAccounts : loadingTransactions;
   const isError = activeTab === 'accounts' ? accountsError : transactionsError;
@@ -81,7 +81,7 @@ export default function ConciliacaoPage() {
       try {
         const formData = new FormData();
         formData.append('file', file);
-        await importOFX.mutateAsync({ data: formData as any });
+        await importOFX.mutateAsync({ data: { file } as any, params: { bank_account_id: '' } });
         // refetch() removido - mutation já invalida queries automaticamente
       } catch (err) {
         console.error('Erro ao importar OFX:', err);

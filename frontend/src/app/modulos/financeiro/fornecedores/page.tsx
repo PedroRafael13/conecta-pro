@@ -44,24 +44,25 @@ export default function FornecedoresPage() {
     error,
     refetch,
   } = useSuppliers({
+    condominio_id: '',
     ...(search && { search }),
     ...(statusFilter && { status: statusFilter }),
   });
 
-  const { data: stats, refetch: refetchStats } = useSupplierStats();
+  const { data: stats, refetch: refetchStats } = useSupplierStats({ condominio_id: '' });
   const createSupplier = useCreateSupplier();
   const updateSupplier = useUpdateSupplier();
   const deleteSupplierMutation = useDeleteSupplier();
   const blockSupplier = useBlockSupplier();
   const unblockSupplier = useUnblockSupplier();
 
-  const suppliers = suppliersData?.data || suppliersData?.items || [];
-  const total = suppliersData?.total || suppliers.length;
+  const suppliers = Array.isArray(suppliersData) ? suppliersData : [];
+  const total = suppliers.length;
 
   // Stats
   const totalSuppliers = stats?.total || total;
-  const activeSuppliers = stats?.active || suppliers.filter((s: any) => s.status === 'active').length;
-  const blockedSuppliers = stats?.blocked || suppliers.filter((s: any) => s.status === 'blocked').length;
+  const activeSuppliers = stats?.ativos || suppliers.filter((s: any) => s.status === 'active').length;
+  const blockedSuppliers = stats?.bloqueados || suppliers.filter((s: any) => s.status === 'blocked').length;
 
   const handleView = (supplier: any) => {
     setSelectedSupplier(supplier);
@@ -102,7 +103,7 @@ export default function FornecedoresPage() {
 
   const handleBlock = async (supplier: any) => {
     try {
-      await blockSupplier.mutateAsync({ supplierId: supplier.id });
+      await blockSupplier.mutateAsync({ supplierId: supplier.id, data: { reason: 'Bloqueado pelo usuario' } });
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (err) {
       console.error('Erro ao bloquear fornecedor:', err);

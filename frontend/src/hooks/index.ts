@@ -13,7 +13,44 @@
 // ============================================================================
 
 export { useAuth } from './useAuth';
-export { usePermission } from './usePermission';
+export { usePermission, Permission, OperacionalRole } from './usePermission';
+
+// ============================================================================
+// HOOKS UTILITÁRIOS (CORE)
+// ============================================================================
+
+/**
+ * LocalStorage
+ * Hook para gerenciar localStorage com sincronização entre abas
+ */
+export { useLocalStorage } from './useLocalStorage';
+
+/**
+ * Fetch
+ * Hook para requisições HTTP com cache, polling e estados
+ */
+export { useFetch, invalidateCache, clearCache } from './useFetch';
+export type { UseFetchOptions, UseFetchReturn } from './useFetch';
+
+/**
+ * Form
+ * Hook para gerenciamento de formulários com validação
+ */
+export { useForm } from './useForm';
+export type { ValidationRule, ValidationRules, UseFormOptions, UseFormReturn } from './useForm';
+
+/**
+ * Pagination
+ * Hook para paginação de dados em memória
+ */
+export { usePagination } from './usePagination';
+export type { UsePaginationOptions, UsePaginationReturn } from './usePagination';
+
+/**
+ * Debounce
+ * Hook para debounce de valores
+ */
+export { useDebounce } from './useDebounce';
 
 // ============================================================================
 // MÓDULO OPERACIONAL - GESTÃO DE OPERAÇÕES

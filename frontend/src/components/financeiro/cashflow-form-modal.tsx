@@ -47,7 +47,7 @@ export function CashflowFormModal({
     description: '',
     entry_type: 'income',
     amount: 0,
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toISOString().split('T')[0] ?? '',
     category: '',
     observacoes: '',
   });
@@ -59,7 +59,7 @@ export function CashflowFormModal({
         description: '',
         entry_type: 'income',
         amount: 0,
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] ?? '',
         category: '',
         observacoes: '',
       });

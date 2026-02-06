@@ -89,9 +89,9 @@ export default function ComprasPage() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [formType, setFormType] = useState<'requisition' | 'order'>('requisition');
 
-  const { data: requisitions = [], isLoading: loadingRequisitions, refetch: refetchRequisitions } = usePurchaseRequisitions();
-  const { data: orders = [], isLoading: loadingOrders, refetch: refetchOrders } = usePurchaseOrders();
-  const { data: dashboard, isLoading: loadingDashboard } = usePurchaseDashboard();
+  const { data: requisitions = [], isLoading: loadingRequisitions, refetch: refetchRequisitions } = usePurchaseRequisitions({ condominio_id: '' });
+  const { data: orders = [], isLoading: loadingOrders, refetch: refetchOrders } = usePurchaseOrders({ condominio_id: '' });
+  const { data: dashboard, isLoading: loadingDashboard } = usePurchaseDashboard({ condominio_id: '' });
   const createRequisition = useCreatePurchaseRequisition();
   const createOrder = useCreatePurchaseOrder();
 
@@ -194,7 +194,7 @@ export default function ComprasPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {dashboard?.total_requisitions ?? 0}
+                  {dashboard?.total ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Total Requisicoes</p>
               </div>
@@ -208,7 +208,7 @@ export default function ComprasPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {dashboard?.total_orders ?? 0}
+                  {(dashboard as any)?.total_orders ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Total Ordens</p>
               </div>
@@ -222,7 +222,7 @@ export default function ComprasPage() {
               </div>
               <div>
                 <p className="text-xl font-bold text-green-500 truncate">
-                  {formatCurrency(dashboard?.total_value)}
+                  {formatCurrency(dashboard?.total_estimated ? parseFloat(dashboard.total_estimated) : undefined)}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Valor Total</p>
               </div>
@@ -236,7 +236,7 @@ export default function ComprasPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-yellow-500">
-                  {dashboard?.pending_count ?? 0}
+                  {dashboard?.pending_approval ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Pendentes</p>
               </div>

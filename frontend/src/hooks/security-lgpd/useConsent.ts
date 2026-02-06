@@ -85,7 +85,7 @@ export function useActiveConsents(titularId: string) {
     queryKey: ['lgpd', 'consents', 'active', titularId],
     queryFn: async () => {
       const response = await ConsentService.getConsents(titularId);
-      const consentsData = response.data.data?.consents;
+      const consentsData = (response.data as Record<string, unknown> | undefined)?.consents;
       const consents = Array.isArray(consentsData) ? consentsData : [];
       return consents.filter((consent: any) =>
         ConsentService.isConsentActive(consent)
@@ -104,7 +104,7 @@ export function useExpiringConsents(titularId: string, daysThreshold: number = 3
     queryKey: ['lgpd', 'consents', 'expiring', titularId, daysThreshold],
     queryFn: async () => {
       const response = await ConsentService.getConsents(titularId);
-      const consentsData = response.data.data?.consents;
+      const consentsData = (response.data as Record<string, unknown> | undefined)?.consents;
       const consents = Array.isArray(consentsData) ? consentsData : [];
 
       return consents.filter((consent: any) => {

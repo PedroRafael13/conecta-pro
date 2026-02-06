@@ -30,7 +30,7 @@ export const useJobPosition = (positionId: string) =>
   useQuery(getGetPositionApiV1RecruitmentJobPositionsPositionIdGetQueryOptions(positionId));
 
 export const useActivePositions = (params?: ListPositionsApiV1RecruitmentJobPositionsGetParams) =>
-  useQuery(getListPositionsApiV1RecruitmentJobPositionsGetQueryOptions({ ...params, status: 'active' }));
+  useQuery(getListPositionsApiV1RecruitmentJobPositionsGetQueryOptions({ ...params, status: 'aberta' as const }));
 
 export const useOpenPositions = (params?: ListOpenPositionsApiV1RecruitmentJobPositionsOpenGetParams) =>
   useQuery(getListOpenPositionsApiV1RecruitmentJobPositionsOpenGetQueryOptions(params));

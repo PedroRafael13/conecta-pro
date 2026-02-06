@@ -49,7 +49,7 @@ describe('Listagem de Editais', () => {
 
   describe('Renderização', () => {
     it('deve renderizar título e botão novo edital', () => {
-      vi.spyOn(tendersHooks, 'useTenders').mockReturnValue({
+      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
         data: [],
         isLoading: false,
       } as never);
@@ -61,7 +61,7 @@ describe('Listagem de Editais', () => {
     });
 
     it('deve mostrar loading state', () => {
-      vi.spyOn(tendersHooks, 'useTenders').mockReturnValue({
+      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
         data: undefined,
         isLoading: true,
       } as never);
@@ -72,7 +72,7 @@ describe('Listagem de Editais', () => {
     });
 
     it('deve renderizar lista de editais', () => {
-      vi.spyOn(tendersHooks, 'useTenders').mockReturnValue({
+      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
         data: mockEditais,
         isLoading: false,
       } as never);
@@ -87,7 +87,7 @@ describe('Listagem de Editais', () => {
 
   describe('Dados exibidos', () => {
     beforeEach(() => {
-      vi.spyOn(tendersHooks, 'useTenders').mockReturnValue({
+      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
         data: [mockEdital],
         isLoading: false,
       } as never);
@@ -114,11 +114,11 @@ describe('Listagem de Editais', () => {
   describe('Ações CRUD', () => {
     it('deve permitir deletar edital', async () => {
       const mockDelete = vi.fn();
-      vi.spyOn(tendersHooks, 'useTenders').mockReturnValue({
+      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
         data: [mockEdital],
         isLoading: false,
       } as never);
-      vi.spyOn(tendersHooks, 'useDeleteTender').mockReturnValue({
+      vi.spyOn(tendersHooks, 'useRemoverEdital').mockReturnValue({
         mutate: mockDelete,
       } as never);
 
@@ -134,7 +134,7 @@ describe('Listagem de Editais', () => {
 
   describe('Estados vazios', () => {
     it('deve lidar com lista vazia', () => {
-      vi.spyOn(tendersHooks, 'useTenders').mockReturnValue({
+      vi.spyOn(tendersHooks, 'useListarEditais').mockReturnValue({
         data: [],
         isLoading: false,
       } as never);

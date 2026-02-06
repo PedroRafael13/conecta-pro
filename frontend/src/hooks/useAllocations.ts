@@ -74,7 +74,7 @@ export function useAllocations(options: UseAllocationsOptions = {}): UseAllocati
     pageSize,
     totalPages,
     isLoading: query.isLoading,
-    error: query.error?.message ?? (query.isError ? 'Erro ao carregar alocacoes' : null),
+    error: (query.error as Error | null)?.message ?? (query.isError ? 'Erro ao carregar alocacoes' : null),
     filters,
     setFilters,
     setPage,

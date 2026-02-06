@@ -46,8 +46,8 @@ export default function WebhooksPage() {
 
   const { data: webhooksData, isLoading, error, refetch } = useWebhooks({
     search: search || undefined,
-    status: statusFilter !== 'all' ? statusFilter : undefined,
-  });
+    status: statusFilter !== 'all' ? statusFilter as 'active' | 'paused' | 'disabled' | 'failing' : undefined,
+  } as any);
 
   const createMutation = useCreateWebhook();
   const updateMutation = useUpdateWebhook();
@@ -68,7 +68,7 @@ export default function WebhooksPage() {
     variant: 'danger' | 'warning' | 'info';
   } | null>(null);
 
-  const webhooks = webhooksData?.data || [];
+  const webhooks = webhooksData?.items || [];
 
   const stats = {
     total: webhooks.length,
@@ -281,7 +281,7 @@ export default function WebhooksPage() {
                             openConfirm(
                               'Testar Webhook',
                               `Enviar requisicao de teste para "${webhook.name}"?`,
-                              () => testMutation.mutateAsync({ webhookId: webhook.id, data: { event_type: 'test' } }),
+                              async () => { await testMutation.mutateAsync({ webhookId: webhook.id, data: { event: 'test' } }); },
                               'info'
                             )
                           }>
@@ -292,7 +292,7 @@ export default function WebhooksPage() {
                             openConfirm(
                               'Regenerar Secret',
                               `Regenerar o secret de "${webhook.name}"? O secret atual sera invalidado.`,
-                              () => regenerateSecretMutation.mutateAsync(webhook.id),
+                              async () => { await regenerateSecretMutation.mutateAsync(webhook.id); },
                               'warning'
                             )
                           }>
@@ -307,7 +307,7 @@ export default function WebhooksPage() {
                                 'Deletar Webhook',
                                 `Deletar "${webhook.name}" permanentemente? Esta acao nao pode ser desfeita.`,
                                 async () => {
-                                  await updateMutation.mutateAsync({ webhookId: webhook.id, data: { status: 'deleted' } });
+                                  await updateMutation.mutateAsync({ webhookId: webhook.id, data: { status: 'disabled' as const } });
                                 },
                                 'danger'
                               )

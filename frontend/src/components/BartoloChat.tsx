@@ -188,13 +188,13 @@ export function BartoloChat() {
   useEffect(() => {
     if (lastResponse) {
       const assistantMessage: BartoloMessage = {
-        id: lastResponse.message_id,
+        id: (lastResponse as any).message_id,
         role: 'assistant',
-        content: lastResponse.response,
-        contentHtml: lastResponse.response_html,
+        content: (lastResponse as any).response,
+        contentHtml: (lastResponse as any).response_html,
         timestamp: new Date(),
-        suggestions: (lastResponse.suggestions as string[]) || [],
-        actions: lastResponse.actions as BartoloAction[] | undefined,
+        suggestions: ((lastResponse as any).suggestions as string[]) || [],
+        actions: (lastResponse as any).actions as BartoloAction[] | undefined,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -308,9 +308,9 @@ export function BartoloChat() {
 
       // Adiciona resultado da execução nas mensagens
       const resultMessage: BartoloMessage = {
-        id: result.message_id,
+        id: (result as any).message_id,
         role: 'assistant',
-        content: result.response,
+        content: (result as any).response,
         timestamp: new Date(),
       };
 

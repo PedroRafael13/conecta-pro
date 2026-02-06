@@ -86,6 +86,7 @@ export default function ContasReceberPage() {
     error: queryError,
     refetch,
   } = useReceivables({
+    condominio_id: '',
     skip,
     limit,
     ...(search ? { search } : {}),

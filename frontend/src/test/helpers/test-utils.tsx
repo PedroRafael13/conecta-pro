@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 /**
  * Helpers e utilitários para testes
  */

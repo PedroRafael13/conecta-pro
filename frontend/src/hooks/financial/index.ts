@@ -104,8 +104,6 @@ export {
   useBIDashboards,
   useBIDashboard,
   useFinancialOverview,
-  useRevenueAnalysis,
-  useExpenseAnalysis,
   biDashboardKeys,
   // Costing
   useCostDrivers,
@@ -113,7 +111,7 @@ export {
   useCostPools,
   useCostObjects,
   useCostingDashboard,
-  useCostAnalysis,
+  useCostAnalyses,
   useCreateCostDriver,
   costingKeys,
 } from './useFinancial';

@@ -49,7 +49,7 @@ export const useInterviewStats = (params?: GetInterviewStatsApiV1RecruitmentInte
 export const useAvailableSlots = (params: GetAvailableSlotsApiV1RecruitmentInterviewsAvailableSlotsGetParams) =>
   useQuery(getGetAvailableSlotsApiV1RecruitmentInterviewsAvailableSlotsGetQueryOptions(params));
 
-export const useInterviewCalendar = (interviewerId: string, params?: GetCalendarApiV1RecruitmentInterviewsCalendarInterviewerIdGetParams) =>
+export const useInterviewCalendar = (interviewerId: string, params: GetCalendarApiV1RecruitmentInterviewsCalendarInterviewerIdGetParams) =>
   useQuery(getGetCalendarApiV1RecruitmentInterviewsCalendarInterviewerIdGetQueryOptions(interviewerId, params));
 
 export const useSuggestedQuestions = (interviewId: string) =>

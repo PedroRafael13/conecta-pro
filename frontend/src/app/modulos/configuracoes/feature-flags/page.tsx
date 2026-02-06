@@ -314,14 +314,14 @@ export default function FeatureFlagsPage() {
                           <DropdownMenuSeparator />
                           {flag.ativo ? (
                             <DropdownMenuItem onClick={() =>
-                              openConfirm('Desabilitar Flag', `Desabilitar "${flag.nome}"?`, () => disableMutation.mutateAsync(flag.id), 'warning')
+                              openConfirm('Desabilitar Flag', `Desabilitar "${flag.nome}"?`, () => disableMutation.mutateAsync(flag.id).then(() => {}), 'warning')
                             }>
                               <PowerOff className="h-4 w-4 mr-2" />
                               Desabilitar
                             </DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem onClick={() =>
-                              openConfirm('Habilitar Flag', `Habilitar "${flag.nome}"?`, () => enableMutation.mutateAsync(flag.id), 'info')
+                              openConfirm('Habilitar Flag', `Habilitar "${flag.nome}"?`, () => enableMutation.mutateAsync(flag.id).then(() => {}), 'info')
                             }>
                               <Power className="h-4 w-4 mr-2" />
                               Habilitar
@@ -331,7 +331,7 @@ export default function FeatureFlagsPage() {
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() =>
-                              openConfirm('Deletar Flag', `Deletar "${flag.nome}" permanentemente?`, () => deleteMutation.mutateAsync(flag.id), 'danger')
+                              openConfirm('Deletar Flag', `Deletar "${flag.nome}" permanentemente?`, () => deleteMutation.mutateAsync(flag.id).then(() => {}), 'danger')
                             }
                           >
                             <Trash2 className="h-4 w-4 mr-2" />

@@ -32,8 +32,8 @@ export default function ConectoresPage() {
   const { data: connectorsData, isLoading, error, refetch } = useConnectors();
   const { data: accountsData } = useIntegrationAccounts();
 
-  const connectors = connectorsData?.data || connectorsData || [];
-  const accounts = accountsData?.data || accountsData?.items || [];
+  const connectors = connectorsData?.connectors || [];
+  const accounts = accountsData?.items || [];
 
   const filteredConnectors = Array.isArray(connectors)
     ? connectors.filter((c: any) =>

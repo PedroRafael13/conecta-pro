@@ -7,11 +7,33 @@ import { Button } from '@/components/ui/button';
 ;
 import { useCampoDashboard, useMonitoringHealth } from '@/hooks/campo/useCampo';
 
+/** Shape dos dados retornados pelo dashboard do campo */
+interface CampoDashboardData {
+  checkins_hoje?: number;
+  checkins?: number;
+  agentes_em_campo?: number;
+  agentes?: number;
+  ocorrencias?: number;
+  alertas?: number;
+  [key: string]: unknown;
+}
+
+/** Extensao do HealthStatus para campos opcionais de alerta */
+interface HealthDataWithAlerts {
+  status?: string;
+  alertas?: number;
+  [key: string]: unknown;
+}
+
 export default function CampoPage() {
   const router = useRouter();
-  const { data: dashboard, isLoading: dashLoading, refetch: refetchDash } = useCampoDashboard();
-  const { data: health, isLoading: healthLoading } = useMonitoringHealth();
+  const { data: dashboardRaw, isLoading: dashLoading, refetch: refetchDash } = useCampoDashboard();
+  const { data: healthRaw, isLoading: healthLoading } = useMonitoringHealth();
   const isLoading = dashLoading || healthLoading;
+
+  // Cast para interfaces que refletem os dados reais do backend
+  const dashboard = dashboardRaw as CampoDashboardData | undefined;
+  const health = healthRaw as HealthDataWithAlerts | undefined;
 
   const stats = {
     checkinsHoje: dashboard?.checkins_hoje ?? dashboard?.checkins ?? 0,

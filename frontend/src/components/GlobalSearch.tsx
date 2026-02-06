@@ -88,7 +88,7 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     if (!acc[result.type]) {
       acc[result.type] = [];
     }
-    acc[result.type].push(result);
+    acc[result.type]!.push(result);
     return acc;
   }, {} as Record<string, SearchResult[]>);
 

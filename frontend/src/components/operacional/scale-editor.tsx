@@ -2,7 +2,7 @@
 
 import { Calendar, Plus, Edit2, Trash2, User, Clock, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useMemo, useCallback } from 'react';
-;
+
 import { Button } from '@/components/ui/button';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
@@ -79,13 +79,13 @@ export function ScaleEditor({ scale, shifts, employees, onRefresh }: ScaleEditor
 
   // Função para obter turno
   const getShift = (employeeId: string, date: Date): Shift | undefined => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split('T')[0]!;
     return shiftsMap.get(`${employeeId}_${dateStr}`);
   };
 
   // Função para formatar data
   const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0] ?? '';
   };
 
   // Função para obter cor do status

@@ -51,7 +51,7 @@ export default function APIKeysPage() {
   const createMutation = useCreateAPIKey();
   const revokeMutation = useRevokeAPIKey();
 
-  const keys = keysData?.items || keysData?.data || [];
+  const keys = keysData?.items || [];
   const allKeys = Array.isArray(keys) ? keys : [];
 
   const filteredKeys = allKeys.filter((k: any) => {
@@ -294,11 +294,12 @@ export default function APIKeysPage() {
                                   openConfirm(
                                     'Revogar API Key',
                                     `Deseja revogar a key "${key.name}"? Ela nao podera mais ser utilizada.`,
-                                    () =>
-                                      revokeMutation.mutateAsync({
+                                    async () => {
+                                      await revokeMutation.mutateAsync({
                                         keyId: key.id,
                                         data: { reason: 'Revogada manualmente' },
-                                      }),
+                                      });
+                                    },
                                     'warning'
                                   )
                                 }

@@ -13,7 +13,7 @@ import {
   type DisciplinaryActionType,
   type ReasonCategory,
 } from '@/types/disciplinary';
-;
+import { disciplinaryService } from '@/services/disciplinary';
 
 interface DisciplinaryFormModalProps {
   isOpen: boolean;
@@ -43,7 +43,7 @@ const initialFormData: FormData = {
   employee_position: '',
   reason_category: 'indisciplina',
   reason_description: '',
-  incident_date: new Date().toISOString().split('T')[0],
+  incident_date: new Date().toISOString().split('T')[0] ?? '',
 };
 
 export function DisciplinaryFormModal({

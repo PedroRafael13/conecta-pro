@@ -66,9 +66,9 @@ export default function FiscalPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedNFe, setSelectedNFe] = useState<any>(null);
 
-  const { data: nfes = [], isLoading: loadingNFes, refetch: refetchNFes } = useNFes();
-  const { data: nfses = [], isLoading: loadingNFSes, refetch: refetchNFSes } = useNFSes();
-  const { data: dashboard, isLoading: loadingDashboard } = useFiscalDashboard();
+  const { data: nfes = [], isLoading: loadingNFes, refetch: refetchNFes } = useNFes({ condominio_id: '' });
+  const { data: nfses = [], isLoading: loadingNFSes, refetch: refetchNFSes } = useNFSes({ condominio_id: '' });
+  const { data: dashboard, isLoading: loadingDashboard } = useFiscalDashboard({ condominio_id: '' });
   const createNFe = useCreateNFe();
   const authorizeNFe = useAuthorizeNFe();
 
@@ -86,7 +86,7 @@ export default function FiscalPage() {
 
   const handleAuthorize = async (nfe: any) => {
     try {
-      await authorizeNFe.mutateAsync({ nfeId: nfe.id });
+      await authorizeNFe.mutateAsync({ data: { nfe_id: nfe.id } });
       // refetch() removido - mutation já invalida queries automaticamente
     } catch (error) {
       console.error('Erro ao autorizar NF-e:', error);
@@ -162,7 +162,7 @@ export default function FiscalPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {dashboard?.total_nfe ?? 0}
+                  {dashboard?.stats?.total_nfe_emitidas ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Total NF-e</p>
               </div>
@@ -176,7 +176,7 @@ export default function FiscalPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
-                  {dashboard?.total_nfse ?? 0}
+                  {dashboard?.stats?.total_nfse_emitidas ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Total NFS-e</p>
               </div>
@@ -190,7 +190,7 @@ export default function FiscalPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-green-500">
-                  {dashboard?.authorized_count ?? 0}
+                  {dashboard?.stats?.total_nfe_mes ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Autorizadas</p>
               </div>
@@ -204,7 +204,7 @@ export default function FiscalPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-yellow-500">
-                  {dashboard?.pending_count ?? 0}
+                  {dashboard?.stats?.obrigacoes_pendentes ?? 0}
                 </p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Pendentes</p>
               </div>

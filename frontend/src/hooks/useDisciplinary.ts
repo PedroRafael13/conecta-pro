@@ -73,7 +73,7 @@ export function useDisciplinary(options: UseDisciplinaryOptions = {}): UseDiscip
   }, []);
 
   return {
-    actions: (data?.items ?? []) as DisciplinaryAction[],
+    actions: (data?.items ?? []) as unknown as DisciplinaryAction[],
     total: data?.total ?? 0,
     page,
     pageSize,
@@ -114,7 +114,7 @@ export function useDisciplinaryDetail(id: string | null) {
 export function usePendingApprovals() {
   const { data, isLoading, error, refetch } = useOrvalPendingApprovals();
 
-  const actions = (data ?? []) as DisciplinaryAction[];
+  const actions = (data ?? []) as unknown as DisciplinaryAction[];
 
   return {
     actions,
@@ -131,7 +131,7 @@ export function useEmployeeDisciplinary(employeeId: string | null) {
     { query: { enabled: !!employeeId } }
   );
 
-  const actions = (data ?? []) as DisciplinaryAction[];
+  const actions = (data ?? []) as unknown as DisciplinaryAction[];
 
   return {
     actions,

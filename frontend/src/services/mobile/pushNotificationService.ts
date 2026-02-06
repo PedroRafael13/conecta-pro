@@ -157,7 +157,7 @@ export async function markMultipleAsRead(
   );
 
   return results.map((result, index) => ({
-    id: notificationIds[index],
+    id: notificationIds[index] ?? '',
     success: result.status === 'fulfilled',
     error: result.status === 'rejected' ? result.reason.message : undefined,
   }));

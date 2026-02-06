@@ -190,7 +190,9 @@ export function useSubmitFeedback() {
 
   return useMutation({
     mutationFn: (feedback: FeedbackRequest) =>
-      BartoloService.submitFeedback(feedback),
+      BartoloService.submitFeedback(
+        feedback as unknown as Parameters<typeof BartoloService.submitFeedback>[0]
+      ),
     onSuccess: () => {
       toast.success('Feedback enviado com sucesso');
       // Invalida stats para atualizar
@@ -214,7 +216,7 @@ export function useStartWizard() {
 
   return useMutation({
     mutationFn: (request: WizardStartRequest) =>
-      BartoloService.startWizard(userId, request),
+      BartoloService.startWizard(userId, { ...request } as Record<string, unknown>),
     onSuccess: () => {
       toast.success('Wizard iniciado');
       // Invalida wizards para atualizar lista
@@ -237,7 +239,7 @@ export function useSendWizardInput() {
 
   return useMutation({
     mutationFn: (request: WizardInputRequest) =>
-      BartoloService.sendWizardInput(userId, request),
+      BartoloService.sendWizardInput(userId, { ...request } as Record<string, unknown>),
     onError: (error: any) => {
       toast.error('Erro ao processar input', {
         description: error?.message || 'Tente novamente',

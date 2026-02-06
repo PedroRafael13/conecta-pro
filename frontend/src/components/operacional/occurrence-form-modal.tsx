@@ -18,7 +18,7 @@ import {
   type OccurrenceCategory,
   type OccurrenceCreate,
 } from '@/types/operacional';
-;
+import { occurrencesService } from '@/services/occurrences';
 import { usePosts } from '@/hooks/usePosts';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAutoSave } from '@/hooks/useAutoSave';

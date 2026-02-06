@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, Plus, Search, RefreshCw, AlertCircle, Clock, CheckCircle, XCircle, Star, CalendarClock, Video, MapPin, Phone } from 'lucide-react';
+import { Calendar, Plus, Search, RefreshCw, AlertCircle, Clock, CheckCircle, XCircle, Star, CalendarClock, Video, MapPin, Phone as PhoneIcon } from 'lucide-react';
 import { useState } from 'react';
 ;
 import { Button } from '@/components/ui/button';

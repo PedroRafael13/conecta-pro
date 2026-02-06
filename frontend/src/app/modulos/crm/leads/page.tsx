@@ -41,9 +41,10 @@ export default function LeadsPage() {
   const total = leadsData?.total || 0;
 
   // Métricas (do stats ou calculadas)
-  const totalLeads = stats?.total || total;
-  const leadsNovos = stats?.novos || leads.filter(l => l.status === 'novo').length;
-  const valorTotal = stats?.valor_pipeline || leads.reduce((acc, lead) => acc + (lead.valor_estimado || 0), 0);
+  const statsAny = stats as Record<string, number> | undefined;
+  const totalLeads = statsAny?.total || total;
+  const leadsNovos = statsAny?.novos || leads.filter(l => l.status === 'novo').length;
+  const valorTotal = statsAny?.valor_pipeline || leads.reduce((acc, lead) => acc + (lead.valor_estimado || 0), 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -216,7 +217,7 @@ export default function LeadsPage() {
                 </thead>
                 <tbody className="divide-y divide-[hsl(var(--border))]">
                   {leads.map((lead) => {
-                    const status = statusConfig[lead.status] || statusConfig.novo;
+                    const status = statusConfig[lead.status] ?? statusConfig.novo;
                     return (
                       <tr
                         key={lead.id}
@@ -256,9 +257,9 @@ export default function LeadsPage() {
                         <td className="p-4">
                           <span className={cn(
                             'inline-flex px-2 py-1 text-xs font-medium rounded-full border',
-                            status.color
+                            status?.color
                           )}>
-                            {status.label}
+                            {status?.label}
                           </span>
                         </td>
                         <td className="p-4 text-right">

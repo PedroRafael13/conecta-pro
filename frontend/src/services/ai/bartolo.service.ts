@@ -277,8 +277,8 @@ export class BartoloService {
       ],
     };
 
-    const normalizedModule = module.toLowerCase().split('/')[0];
-    return suggestions[normalizedModule] || suggestions.default;
+    const normalizedModule = module.toLowerCase().split("/")[0] ?? "default";
+    return suggestions[normalizedModule] ?? suggestions.default ?? [];
   }
 }
 

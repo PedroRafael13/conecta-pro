@@ -42,7 +42,7 @@ export class StatusService {
   static async isHealthy(): Promise<boolean> {
     try {
       const response = await this.healthCheck();
-      return response.data.status === 'healthy';
+      return (response as Record<string, unknown>).status === 'healthy';
     } catch (error) {
       return false;
     }
@@ -61,7 +61,7 @@ export class StatusService {
   }> {
     try {
       const response = await this.getLGPDStatus();
-      const data = response.data.data as any;
+      const data = response.data as any;
 
       return {
         consent: data?.components?.consent?.status === 'operational',

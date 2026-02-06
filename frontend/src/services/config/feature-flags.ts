@@ -286,7 +286,7 @@ export const getCategoryLabel = (category: string): string => {
 export const getStatusLabel = (flag: FeatureFlagResponse): string => {
   if (!flag.ativo) return 'Desabilitado';
   if (flag.rollout_percentage === 100) return 'Habilitado (100%)';
-  if (flag.rollout_percentage > 0) {
+  if (flag.rollout_percentage != null && flag.rollout_percentage > 0) {
     return `Rollout (${flag.rollout_percentage}%)`;
   }
   return 'Habilitado';
@@ -298,7 +298,7 @@ export const getStatusLabel = (flag: FeatureFlagResponse): string => {
 export const getStatusColor = (flag: FeatureFlagResponse): string => {
   if (!flag.ativo) return 'gray';
   if (flag.rollout_percentage === 100) return 'green';
-  if (flag.rollout_percentage > 0) {
+  if (flag.rollout_percentage != null && flag.rollout_percentage > 0) {
     return 'yellow';
   }
   return 'blue';

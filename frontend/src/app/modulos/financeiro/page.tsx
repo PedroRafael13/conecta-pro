@@ -88,7 +88,7 @@ const navigationCards = [
 
 export default function FinanceiroPage() {
   const router = useRouter();
-  const { data: overview, isLoading } = useFinancialOverview();
+  const { data: overview, isLoading } = useFinancialOverview({ condominio_id: '' });
 
   if (isLoading) {
     return (
@@ -139,7 +139,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Receita</p>
                     <p className="text-xl font-bold text-green-500 truncate">
-                      {formatCurrency(overview?.receita_total)}
+                      {formatCurrency((overview as any)?.receita_total)}
                     </p>
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Despesa</p>
                     <p className="text-xl font-bold text-red-500 truncate">
-                      {formatCurrency(overview?.despesa_total)}
+                      {formatCurrency((overview as any)?.despesa_total)}
                     </p>
                   </div>
                 </div>
@@ -173,7 +173,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Saldo</p>
                     <p className="text-xl font-bold text-blue-500 truncate">
-                      {formatCurrency(overview?.saldo)}
+                      {formatCurrency((overview as any)?.saldo)}
                     </p>
                   </div>
                 </div>
@@ -190,7 +190,7 @@ export default function FinanceiroPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">Inadimplência</p>
                     <p className="text-xl font-bold text-yellow-500 truncate">
-                      {formatCurrency(overview?.inadimplencia)}
+                      {formatCurrency((overview as any)?.inadimplencia)}
                     </p>
                   </div>
                 </div>

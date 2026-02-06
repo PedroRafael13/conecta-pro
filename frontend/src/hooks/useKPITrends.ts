@@ -26,7 +26,7 @@ export function useKPITrends(options: UseKPITrendsOptions = {}) {
   return {
     data,
     isLoading: query.isLoading,
-    error: query.error?.message ?? (query.isError ? 'Erro ao carregar tendencias' : null),
+    error: (query.error as Error | null)?.message ?? (query.isError ? 'Erro ao carregar tendencias' : null),
     refresh: query.refetch,
   };
 }

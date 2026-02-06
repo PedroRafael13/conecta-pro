@@ -608,7 +608,7 @@ test.describe('Operacional - Fluxo Completo', () => {
 
       if (id) {
         const label = await page.locator(`label[for="${id}"]`).count();
-        hasLabel = hasLabel || label > 0;
+        hasLabel = hasLabel || (label > 0 ? "has-label" : null);
       }
 
       if (!hasLabel) {

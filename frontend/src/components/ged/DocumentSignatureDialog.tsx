@@ -22,8 +22,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-;
 import { toast } from 'sonner';
+import { documentSignatureService } from '@/services/ged/documentSignatureService';
+import type { SignatureRole } from '@/types/generated/ged/schemas/signatureRole';
+import type { SignatureType } from '@/types/generated/ged/schemas/signatureType';
 
 interface DocumentSignatureDialogProps {
   documentId: string;
@@ -104,7 +106,10 @@ export function DocumentSignatureDialog({
 
   const handleSignerChange = (index: number, field: keyof Signer, value: any) => {
     const updated = [...signers];
-    updated[index] = { ...updated[index], [field]: value };
+    const current = updated[index];
+    if (current) {
+      updated[index] = { ...current, [field]: value };
+    }
     setSigners(updated);
   };
 
@@ -118,7 +123,7 @@ export function DocumentSignatureDialog({
 
     setLoading(true);
     try {
-      await documentSignatureService.request({
+      await documentSignatureService.requestSignature(documentId, {
         document_id: documentId,
         signers: signers.map((s) => ({
           signer_name: s.name,
@@ -206,7 +211,7 @@ export function DocumentSignatureDialog({
 
     setLoading(true);
     try {
-      await documentSignatureService.sign(signatureId, {
+      await documentSignatureService.sign(documentId, signatureId, {
         signature_data: signatureData,
       });
 

@@ -21,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-;
+import { Link as LinkIcon } from 'lucide-react';
+import { ShareType } from '@/types/generated/ged/schemas/shareType';
+import { documentShareService } from '@/services/ged/documentShareService';
 import { toast } from 'sonner';
 
 interface DocumentShareDialogProps {

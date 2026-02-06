@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, Send, FileSignature, Loader2, Calendar, User, Ale
 import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
-;
+import { disciplinaryService } from '@/services/disciplinary';
 import { getErrorMessage } from '@/lib/api';
 import {
   ACTION_TYPE_LABELS,

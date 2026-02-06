@@ -48,8 +48,8 @@ export default function PatrimonioPage() {
   const pageSize = 20;
 
   const { data: equipmentData, isLoading, error, refetch } = useEquipmentList({
-    skip: page * pageSize,
-    limit: pageSize,
+    page: page + 1,
+    page_size: pageSize,
     search: search || undefined,
     status: statusFilter !== 'all' ? statusFilter : undefined,
     equipment_type: typeFilter !== 'all' ? typeFilter : undefined,
@@ -80,9 +80,9 @@ export default function PatrimonioPage() {
 
   const stats = {
     total: statsData?.total ?? total,
-    em_estoque: statsData?.em_estoque ?? 0,
-    em_campo: statsData?.em_campo ?? 0,
-    em_manutencao: statsData?.em_manutencao ?? 0,
+    em_estoque: statsData?.in_stock ?? 0,
+    em_campo: statsData?.installed ?? 0,
+    em_manutencao: statsData?.in_maintenance ?? 0,
   };
 
   const openConfirm = (title: string, message: string, action: () => Promise<void>, variant: 'danger' | 'warning' | 'info' = 'warning') => {

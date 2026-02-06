@@ -230,8 +230,8 @@ export const extractTemplateVariables = (content: string): string[] => {
   const variables = new Set<string>();
 
   for (const match of matches) {
-    const variable = match[1].trim();
-    variables.add(variable);
+    const variable = match[1]?.trim();
+    if (variable) variables.add(variable);
   }
 
   return Array.from(variables);

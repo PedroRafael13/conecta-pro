@@ -43,7 +43,7 @@ export const exportToExcel = (data: any[], filename: string): void => {
     XLSX.utils.book_append_sheet(wb, ws, 'Dados');
 
     // Gerar arquivo
-    const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const timestamp = (new Date().toISOString().split('T')[0] ?? '').replace(/-/g, '');
     XLSX.writeFile(wb, `${filename}_${timestamp}.xlsx`);
   } catch (error) {
     console.error('Erro ao exportar para Excel:', error);
@@ -149,7 +149,7 @@ export const exportToPDF = async (
     });
 
     // Salvar arquivo
-    const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const timestamp = (new Date().toISOString().split('T')[0] ?? '').replace(/-/g, '');
     doc.save(`${filename}_${timestamp}.pdf`);
   } catch (error) {
     console.error('Erro ao exportar para PDF:', error);
@@ -180,7 +180,7 @@ export const exportToCSV = (data: any[], filename: string): void => {
     // Criar link temporário e fazer download
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    const timestamp = (new Date().toISOString().split('T')[0] ?? '').replace(/-/g, '');
     link.download = `${filename}_${timestamp}.csv`;
     link.click();
 

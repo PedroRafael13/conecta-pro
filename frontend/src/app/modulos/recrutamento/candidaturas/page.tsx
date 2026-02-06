@@ -20,7 +20,7 @@ import {
   useApplicationStats,
   useAdvanceApplication,
   useRejectApplication,
-  useSendProposal,
+  useSendApplicationProposal as useSendProposal,
 } from '@/hooks/recruitment';
 import { useQueryClient } from '@tanstack/react-query';
 

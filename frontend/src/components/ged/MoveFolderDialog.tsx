@@ -11,6 +11,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { FolderTree } from './FolderTree';
 import { toast } from 'sonner';
+import type { FolderResponse } from '@/types/generated/ged/schemas/folderResponse';
+import { folderService } from '@/services/ged/folderService';
+
+type Folder = FolderResponse;
 
 interface MoveFolderDialogProps {
   folder: Folder | null;

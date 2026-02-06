@@ -2,13 +2,79 @@
  * Fixtures de dados de teste para módulo de Licitações
  */
 
-import type {
-  EditalResponse,
-  PropostaResponse,
-  ContratoResponse,
-  CertidaoResponse,
-  DocumentoLicitacaoResponse,
-} from '@/api/generated/bidding';
+// Type aliases locais - tipos PT-BR não exportados pelo módulo bidding
+type EditalResponse = {
+  id: string;
+  numero: string;
+  objeto: string;
+  modalidade: string;
+  tipo: string;
+  valor_estimado: number;
+  data_abertura: string;
+  data_encerramento: string;
+  status: string;
+  orgao: string;
+  edital_url: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+};
+
+type PropostaResponse = {
+  id: string;
+  edital_id: string;
+  edital_numero: string;
+  valor_proposto: number;
+  prazo_execucao: number;
+  observacoes: string;
+  status: string;
+  data_envio: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+};
+
+type ContratoResponse = {
+  id: string;
+  numero: string;
+  proposta_id: string;
+  fornecedor: string;
+  valor_total: number;
+  valor_executado: number;
+  data_inicio: string;
+  data_fim: string;
+  status: string;
+  objeto: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+};
+
+type CertidaoResponse = {
+  id: string;
+  tipo: string;
+  numero: string;
+  orgao_emissor: string;
+  data_emissao: string;
+  data_validade: string;
+  status: string;
+  arquivo_url: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+};
+
+type DocumentoLicitacaoResponse = {
+  id: string;
+  nome: string;
+  tipo: string;
+  categoria: string;
+  tamanho: number;
+  arquivo_url: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+};
 
 // Mock de Edital
 export const mockEdital: EditalResponse = {

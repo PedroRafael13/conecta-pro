@@ -59,11 +59,13 @@ export default function SegurancaPage() {
 
   const isLoading = lgpdLoading || healthLoading;
 
-  const activeConsents = lgpdData?.active_consents ?? lgpdData?.consentimentos_ativos ?? 0;
-  const piasCompleted = lgpdData?.pias_completed ?? lgpdData?.pias_realizadas ?? 0;
-  const erasureRequests = lgpdData?.erasure_requests ?? lgpdData?.solicitacoes_esquecimento ?? 0;
+  // Cast data para acessar propriedades dinamicas do backend
+  const lgpdStatus = lgpdData?.data as Record<string, unknown> | undefined;
+  const activeConsents = (lgpdStatus?.active_consents ?? lgpdStatus?.consentimentos_ativos ?? 0) as number;
+  const piasCompleted = (lgpdStatus?.pias_completed ?? lgpdStatus?.pias_realizadas ?? 0) as number;
+  const erasureRequests = (lgpdStatus?.erasure_requests ?? lgpdStatus?.solicitacoes_esquecimento ?? 0) as number;
 
-  const isHealthy = healthData?.status === 'healthy' || healthData?.healthy === true;
+  const isHealthy = healthData?.status === 'healthy' || (healthData as Record<string, unknown> | undefined)?.healthy === true;
   const healthLabel = isHealthy ? 'Saudavel' : 'Degradado';
   const healthVariant = isHealthy ? 'default' : 'destructive';
 

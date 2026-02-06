@@ -43,7 +43,9 @@ export function useBartoloGreeting(userId: number, sessionId: string) {
 export function useSubmitFeedback() {
   return useMutation({
     mutationFn: (feedback: FeedbackRequest) =>
-      BartoloService.submitFeedback(feedback),
+      BartoloService.submitFeedback(
+        feedback as unknown as Parameters<typeof BartoloService.submitFeedback>[0]
+      ),
   });
 }
 
@@ -58,7 +60,7 @@ export function useStartWizard() {
     }: {
       userId: number;
       request: WizardStartRequest;
-    }) => BartoloService.startWizard(userId, request),
+    }) => BartoloService.startWizard(userId, { ...request } as Record<string, unknown>),
   });
 }
 
@@ -73,7 +75,7 @@ export function useSendWizardInput() {
     }: {
       userId: number;
       request: WizardInputRequest;
-    }) => BartoloService.sendWizardInput(userId, request),
+    }) => BartoloService.sendWizardInput(userId, { ...request } as Record<string, unknown>),
   });
 }
 

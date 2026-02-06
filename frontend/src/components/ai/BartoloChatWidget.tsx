@@ -7,7 +7,7 @@
 
 import { MessageSquare, X, Send, ThumbsUp, ThumbsDown, Loader2, User } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
-;
+import { BartoloService } from '@/services/ai/bartolo.service';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -133,12 +133,12 @@ export function BartoloChatWidget({
       setMessages((prev) => [
         ...prev,
         {
-          id: lastResponse.message_id,
+          id: (lastResponse as any).message_id,
           role: 'assistant',
-          content: lastResponse.response,
+          content: (lastResponse as any).response,
           timestamp: new Date(),
-          data_results: lastResponse.data_results,
-          suggestions: (lastResponse.suggestions as string[]) || undefined,
+          data_results: (lastResponse as any).data_results,
+          suggestions: ((lastResponse as any).suggestions as string[]) || undefined,
         },
       ]);
     }
@@ -210,9 +210,9 @@ export function BartoloChatWidget({
       setMessages((prev) => [
         ...prev,
         {
-          id: result.message_id,
+          id: (result as any).message_id,
           role: 'assistant',
-          content: result.response,
+          content: (result as any).response,
           timestamp: new Date(),
         },
       ]);

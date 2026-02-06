@@ -1,9 +1,12 @@
 'use client';
 
-import { ChevronRight, ChevronDown, Folder, FolderOpen, Lock, Settings } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder as FolderIcon, FolderOpen, Lock, Settings } from 'lucide-react';
 import { useState, useEffect } from 'react';
-;
+import type { FolderResponse } from '@/types/generated/ged/schemas/folderResponse';
+import { folderService } from '@/services/ged/folderService';
 import { cn } from '@/lib/utils';
+
+type Folder = FolderResponse;
 
 interface FolderTreeProps {
   onFolderSelect?: (folder: Folder) => void;

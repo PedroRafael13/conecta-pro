@@ -12,7 +12,7 @@ import {
   STATUS_COLORS,
   APPROVAL_LEVEL_LABELS,
 } from '@/types/reimbursement';
-;
+import { reimbursementService } from '@/services/reembolso/reimbursementService';
 import { AttachmentUpload } from './attachment-upload';
 
 interface ReimbursementDetailModalProps {
@@ -87,7 +87,7 @@ export function ReimbursementDetailModal({
 
   const handleAttachmentUpload = async (file: File) => {
     await reimbursementService.uploadAttachment(request.id, file, {
-      attachment_type: 'outros',
+      description: 'outros',
     });
     onRefresh();
   };

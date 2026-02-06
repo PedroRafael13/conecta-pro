@@ -58,8 +58,8 @@ export default function ManutencoesPage() {
 
   // Queries
   const { data: listData, isLoading, refetch } = useMaintenanceList({
-    skip,
-    limit,
+    page: Math.floor(skip / limit) + 1,
+    page_size: limit,
     search: search || undefined,
     maintenance_type: filterType !== 'all' ? filterType : undefined,
     status: filterStatus !== 'all' ? filterStatus : undefined,

@@ -33,7 +33,7 @@ const EditalDetail = ({ id }: { id: string }) => {
 
 describe('Detalhe de Edital', () => {
   it('deve renderizar informações do edital', () => {
-    vi.spyOn(tendersHooks, 'useTender').mockReturnValue({
+    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
       data: mockEdital,
       isLoading: false,
     } as never);
@@ -47,7 +47,7 @@ describe('Detalhe de Edital', () => {
   });
 
   it('deve mostrar loading state', () => {
-    vi.spyOn(tendersHooks, 'useTender').mockReturnValue({
+    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
       data: undefined,
       isLoading: true,
     } as never);
@@ -58,7 +58,7 @@ describe('Detalhe de Edital', () => {
   });
 
   it('deve mostrar mensagem quando edital não existe', () => {
-    vi.spyOn(tendersHooks, 'useTender').mockReturnValue({
+    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
       data: null,
       isLoading: false,
     } as never);
@@ -69,7 +69,7 @@ describe('Detalhe de Edital', () => {
   });
 
   it('deve renderizar botões de ação', () => {
-    vi.spyOn(tendersHooks, 'useTender').mockReturnValue({
+    vi.spyOn(tendersHooks, 'useBuscarEdital').mockReturnValue({
       data: mockEdital,
       isLoading: false,
     } as never);

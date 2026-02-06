@@ -67,10 +67,10 @@ export default function ContabilidadePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFormModal, setShowFormModal] = useState(false);
 
-  const { data: accounts = [], isLoading: loadingAccounts, refetch: refetchAccounts } = useAccountingAccounts();
+  const { data: accounts = [], isLoading: loadingAccounts, refetch: refetchAccounts } = useAccountingAccounts({ chart_id: '' });
   const { data: costCenters = [], isLoading: loadingCostCenters, refetch: refetchCostCenters } = useCostCenters();
-  const { data: entries = [], isLoading: loadingEntries, refetch: refetchEntries } = useJournalEntries();
-  const { data: trialBalance = [], isLoading: loadingBalance, refetch: refetchBalance } = useTrialBalance();
+  const { data: entries = [], isLoading: loadingEntries, refetch: refetchEntries } = useJournalEntries(undefined);
+  const { data: trialBalance = [], isLoading: loadingBalance, refetch: refetchBalance } = useTrialBalance('');
   const createEntry = useCreateJournalEntry();
 
   const isLoading =

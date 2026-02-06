@@ -3,7 +3,6 @@
 import { Eraser, Download, Check, RotateCcw } from 'lucide-react';
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-;
 
 interface SignaturePadProps {
   onSign: (signatureData: string, location?: { latitude: number; longitude: number }) => void;
@@ -111,8 +110,8 @@ export function SignaturePad({
 
     if ('touches' in e) {
       return {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top,
+        x: e.touches[0]!.clientX - rect.left,
+        y: e.touches[0]!.clientY - rect.top,
       };
     }
 

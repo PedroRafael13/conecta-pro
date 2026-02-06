@@ -159,7 +159,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     if (!acc[cmd.category]) {
       acc[cmd.category] = [];
     }
-    acc[cmd.category].push(cmd);
+    acc[cmd.category]!.push(cmd);
     return acc;
   }, {} as Record<string, Command[]>);
 

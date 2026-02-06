@@ -10,7 +10,7 @@ import {
   OCCURRENCE_SEVERITY_LABELS,
   type Occurrence,
 } from '@/types/operacional';
-;
+import { occurrencesService } from '@/services/occurrences';
 
 interface OccurrenceResolveModalProps {
   isOpen: boolean;

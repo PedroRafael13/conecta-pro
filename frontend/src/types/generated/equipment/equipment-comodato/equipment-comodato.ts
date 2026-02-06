@@ -62,8 +62,8 @@ export const createComodatoApiV1ComodatosPost = (
     comodatoCreate: ComodatoCreate,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
@@ -71,7 +71,7 @@ export const createComodatoApiV1ComodatosPost = (
     },
       );
     }
-  
+
 
 
 export const getCreateComodatoApiV1ComodatosPostMutationOptions = <TError = HTTPValidationError,
@@ -85,7 +85,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof createComodatoApiV1ComodatosPost>>, {data: ComodatoCreate}> = (props) => {
@@ -94,7 +94,7 @@ const {mutation: mutationOptions} = options ?
           return  createComodatoApiV1ComodatosPost(data,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -127,15 +127,15 @@ export const listComodatosApiV1ComodatosGet = (
     params?: ListComodatosApiV1ComodatosGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoListResponse>(
       {url: `/api/v1/comodatos/`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -145,7 +145,7 @@ export const getListComodatosApiV1ComodatosGetQueryKey = (params?: ListComodatos
     ] as const;
     }
 
-    
+
 export const getListComodatosApiV1ComodatosGetQueryOptions = <TData = Awaited<ReturnType<typeof listComodatosApiV1ComodatosGet>>, TError = HTTPValidationError>(params?: ListComodatosApiV1ComodatosGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComodatosApiV1ComodatosGet>>, TError, TData>>, }
 ) => {
 
@@ -153,13 +153,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getListComodatosApiV1ComodatosGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof listComodatosApiV1ComodatosGet>>> = ({ signal }) => listComodatosApiV1ComodatosGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listComodatosApiV1ComodatosGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -198,7 +198,7 @@ export function useListComodatosApiV1ComodatosGet<TData = Awaited<ReturnType<typ
 
 export function useListComodatosApiV1ComodatosGet<TData = Awaited<ReturnType<typeof listComodatosApiV1ComodatosGet>>, TError = HTTPValidationError>(
  params?: ListComodatosApiV1ComodatosGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listComodatosApiV1ComodatosGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getListComodatosApiV1ComodatosGetQueryOptions(params,options)
@@ -220,15 +220,15 @@ export const getStatsApiV1ComodatosStatsGet = (
     params?: GetStatsApiV1ComodatosStatsGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<GetStatsApiV1ComodatosStatsGet200>(
       {url: `/api/v1/comodatos/stats`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -238,7 +238,7 @@ export const getGetStatsApiV1ComodatosStatsGetQueryKey = (params?: GetStatsApiV1
     ] as const;
     }
 
-    
+
 export const getGetStatsApiV1ComodatosStatsGetQueryOptions = <TData = Awaited<ReturnType<typeof getStatsApiV1ComodatosStatsGet>>, TError = HTTPValidationError>(params?: GetStatsApiV1ComodatosStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1ComodatosStatsGet>>, TError, TData>>, }
 ) => {
 
@@ -246,13 +246,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetStatsApiV1ComodatosStatsGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getStatsApiV1ComodatosStatsGet>>> = ({ signal }) => getStatsApiV1ComodatosStatsGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1ComodatosStatsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -291,7 +291,7 @@ export function useGetStatsApiV1ComodatosStatsGet<TData = Awaited<ReturnType<typ
 
 export function useGetStatsApiV1ComodatosStatsGet<TData = Awaited<ReturnType<typeof getStatsApiV1ComodatosStatsGet>>, TError = HTTPValidationError>(
  params?: GetStatsApiV1ComodatosStatsGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStatsApiV1ComodatosStatsGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetStatsApiV1ComodatosStatsGetQueryOptions(params,options)
@@ -313,15 +313,15 @@ export const getActiveApiV1ComodatosActiveGet = (
     params?: GetActiveApiV1ComodatosActiveGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse[]>(
       {url: `/api/v1/comodatos/active`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -331,7 +331,7 @@ export const getGetActiveApiV1ComodatosActiveGetQueryKey = (params?: GetActiveAp
     ] as const;
     }
 
-    
+
 export const getGetActiveApiV1ComodatosActiveGetQueryOptions = <TData = Awaited<ReturnType<typeof getActiveApiV1ComodatosActiveGet>>, TError = HTTPValidationError>(params?: GetActiveApiV1ComodatosActiveGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveApiV1ComodatosActiveGet>>, TError, TData>>, }
 ) => {
 
@@ -339,13 +339,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetActiveApiV1ComodatosActiveGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveApiV1ComodatosActiveGet>>> = ({ signal }) => getActiveApiV1ComodatosActiveGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActiveApiV1ComodatosActiveGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -384,7 +384,7 @@ export function useGetActiveApiV1ComodatosActiveGet<TData = Awaited<ReturnType<t
 
 export function useGetActiveApiV1ComodatosActiveGet<TData = Awaited<ReturnType<typeof getActiveApiV1ComodatosActiveGet>>, TError = HTTPValidationError>(
  params?: GetActiveApiV1ComodatosActiveGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getActiveApiV1ComodatosActiveGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetActiveApiV1ComodatosActiveGetQueryOptions(params,options)
@@ -403,17 +403,17 @@ export function useGetActiveApiV1ComodatosActiveGet<TData = Awaited<ReturnType<t
  * @summary Get Pending Signature
  */
 export const getPendingSignatureApiV1ComodatosPendingSignatureGet = (
-    
+
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse[]>(
       {url: `/api/v1/comodatos/pending-signature`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -423,7 +423,7 @@ export const getGetPendingSignatureApiV1ComodatosPendingSignatureGetQueryKey = (
     ] as const;
     }
 
-    
+
 export const getGetPendingSignatureApiV1ComodatosPendingSignatureGetQueryOptions = <TData = Awaited<ReturnType<typeof getPendingSignatureApiV1ComodatosPendingSignatureGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingSignatureApiV1ComodatosPendingSignatureGet>>, TError, TData>>, }
 ) => {
 
@@ -431,13 +431,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetPendingSignatureApiV1ComodatosPendingSignatureGetQueryKey();
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingSignatureApiV1ComodatosPendingSignatureGet>>> = ({ signal }) => getPendingSignatureApiV1ComodatosPendingSignatureGet(signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingSignatureApiV1ComodatosPendingSignatureGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -476,7 +476,7 @@ export function useGetPendingSignatureApiV1ComodatosPendingSignatureGet<TData = 
 
 export function useGetPendingSignatureApiV1ComodatosPendingSignatureGet<TData = Awaited<ReturnType<typeof getPendingSignatureApiV1ComodatosPendingSignatureGet>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingSignatureApiV1ComodatosPendingSignatureGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPendingSignatureApiV1ComodatosPendingSignatureGetQueryOptions(options)
@@ -495,17 +495,17 @@ export function useGetPendingSignatureApiV1ComodatosPendingSignatureGet<TData = 
  * @summary Get Pending Delivery
  */
 export const getPendingDeliveryApiV1ComodatosPendingDeliveryGet = (
-    
+
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse[]>(
       {url: `/api/v1/comodatos/pending-delivery`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -515,7 +515,7 @@ export const getGetPendingDeliveryApiV1ComodatosPendingDeliveryGetQueryKey = () 
     ] as const;
     }
 
-    
+
 export const getGetPendingDeliveryApiV1ComodatosPendingDeliveryGetQueryOptions = <TData = Awaited<ReturnType<typeof getPendingDeliveryApiV1ComodatosPendingDeliveryGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingDeliveryApiV1ComodatosPendingDeliveryGet>>, TError, TData>>, }
 ) => {
 
@@ -523,13 +523,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetPendingDeliveryApiV1ComodatosPendingDeliveryGetQueryKey();
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingDeliveryApiV1ComodatosPendingDeliveryGet>>> = ({ signal }) => getPendingDeliveryApiV1ComodatosPendingDeliveryGet(signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingDeliveryApiV1ComodatosPendingDeliveryGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -568,7 +568,7 @@ export function useGetPendingDeliveryApiV1ComodatosPendingDeliveryGet<TData = Aw
 
 export function useGetPendingDeliveryApiV1ComodatosPendingDeliveryGet<TData = Awaited<ReturnType<typeof getPendingDeliveryApiV1ComodatosPendingDeliveryGet>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingDeliveryApiV1ComodatosPendingDeliveryGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPendingDeliveryApiV1ComodatosPendingDeliveryGetQueryOptions(options)
@@ -587,17 +587,17 @@ export function useGetPendingDeliveryApiV1ComodatosPendingDeliveryGet<TData = Aw
  * @summary Get Pending Return
  */
 export const getPendingReturnApiV1ComodatosPendingReturnGet = (
-    
+
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse[]>(
       {url: `/api/v1/comodatos/pending-return`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -607,7 +607,7 @@ export const getGetPendingReturnApiV1ComodatosPendingReturnGetQueryKey = () => {
     ] as const;
     }
 
-    
+
 export const getGetPendingReturnApiV1ComodatosPendingReturnGetQueryOptions = <TData = Awaited<ReturnType<typeof getPendingReturnApiV1ComodatosPendingReturnGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReturnApiV1ComodatosPendingReturnGet>>, TError, TData>>, }
 ) => {
 
@@ -615,13 +615,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetPendingReturnApiV1ComodatosPendingReturnGetQueryKey();
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingReturnApiV1ComodatosPendingReturnGet>>> = ({ signal }) => getPendingReturnApiV1ComodatosPendingReturnGet(signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingReturnApiV1ComodatosPendingReturnGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -660,7 +660,7 @@ export function useGetPendingReturnApiV1ComodatosPendingReturnGet<TData = Awaite
 
 export function useGetPendingReturnApiV1ComodatosPendingReturnGet<TData = Awaited<ReturnType<typeof getPendingReturnApiV1ComodatosPendingReturnGet>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getPendingReturnApiV1ComodatosPendingReturnGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetPendingReturnApiV1ComodatosPendingReturnGetQueryOptions(options)
@@ -682,15 +682,15 @@ export const getExpiringApiV1ComodatosExpiringGet = (
     params?: GetExpiringApiV1ComodatosExpiringGetParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse[]>(
       {url: `/api/v1/comodatos/expiring`, method: 'GET',
         params, signal
     },
       );
     }
-  
+
 
 
 
@@ -700,7 +700,7 @@ export const getGetExpiringApiV1ComodatosExpiringGetQueryKey = (params?: GetExpi
     ] as const;
     }
 
-    
+
 export const getGetExpiringApiV1ComodatosExpiringGetQueryOptions = <TData = Awaited<ReturnType<typeof getExpiringApiV1ComodatosExpiringGet>>, TError = HTTPValidationError>(params?: GetExpiringApiV1ComodatosExpiringGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpiringApiV1ComodatosExpiringGet>>, TError, TData>>, }
 ) => {
 
@@ -708,13 +708,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetExpiringApiV1ComodatosExpiringGetQueryKey(params);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getExpiringApiV1ComodatosExpiringGet>>> = ({ signal }) => getExpiringApiV1ComodatosExpiringGet(params, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExpiringApiV1ComodatosExpiringGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -753,7 +753,7 @@ export function useGetExpiringApiV1ComodatosExpiringGet<TData = Awaited<ReturnTy
 
 export function useGetExpiringApiV1ComodatosExpiringGet<TData = Awaited<ReturnType<typeof getExpiringApiV1ComodatosExpiringGet>>, TError = HTTPValidationError>(
  params?: GetExpiringApiV1ComodatosExpiringGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpiringApiV1ComodatosExpiringGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetExpiringApiV1ComodatosExpiringGetQueryOptions(params,options)
@@ -772,17 +772,17 @@ export function useGetExpiringApiV1ComodatosExpiringGet<TData = Awaited<ReturnTy
  * @summary Get Expired
  */
 export const getExpiredApiV1ComodatosExpiredGet = (
-    
+
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse[]>(
       {url: `/api/v1/comodatos/expired`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -792,7 +792,7 @@ export const getGetExpiredApiV1ComodatosExpiredGetQueryKey = () => {
     ] as const;
     }
 
-    
+
 export const getGetExpiredApiV1ComodatosExpiredGetQueryOptions = <TData = Awaited<ReturnType<typeof getExpiredApiV1ComodatosExpiredGet>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpiredApiV1ComodatosExpiredGet>>, TError, TData>>, }
 ) => {
 
@@ -800,13 +800,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetExpiredApiV1ComodatosExpiredGetQueryKey();
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getExpiredApiV1ComodatosExpiredGet>>> = ({ signal }) => getExpiredApiV1ComodatosExpiredGet(signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getExpiredApiV1ComodatosExpiredGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -845,7 +845,7 @@ export function useGetExpiredApiV1ComodatosExpiredGet<TData = Awaited<ReturnType
 
 export function useGetExpiredApiV1ComodatosExpiredGet<TData = Awaited<ReturnType<typeof getExpiredApiV1ComodatosExpiredGet>>, TError = unknown>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getExpiredApiV1ComodatosExpiredGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetExpiredApiV1ComodatosExpiredGetQueryOptions(options)
@@ -867,14 +867,14 @@ export const getByClientApiV1ComodatosByClientClientIdGet = (
     clientId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse[]>(
       {url: `/api/v1/comodatos/by-client/${clientId}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -884,7 +884,7 @@ export const getGetByClientApiV1ComodatosByClientClientIdGetQueryKey = (clientId
     ] as const;
     }
 
-    
+
 export const getGetByClientApiV1ComodatosByClientClientIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getByClientApiV1ComodatosByClientClientIdGet>>, TError = HTTPValidationError>(clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByClientApiV1ComodatosByClientClientIdGet>>, TError, TData>>, }
 ) => {
 
@@ -892,13 +892,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetByClientApiV1ComodatosByClientClientIdGetQueryKey(clientId);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getByClientApiV1ComodatosByClientClientIdGet>>> = ({ signal }) => getByClientApiV1ComodatosByClientClientIdGet(clientId, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(clientId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByClientApiV1ComodatosByClientClientIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -937,7 +937,7 @@ export function useGetByClientApiV1ComodatosByClientClientIdGet<TData = Awaited<
 
 export function useGetByClientApiV1ComodatosByClientClientIdGet<TData = Awaited<ReturnType<typeof getByClientApiV1ComodatosByClientClientIdGet>>, TError = HTTPValidationError>(
  clientId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByClientApiV1ComodatosByClientClientIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetByClientApiV1ComodatosByClientClientIdGetQueryOptions(clientId,options)
@@ -959,14 +959,14 @@ export const getByCodeApiV1ComodatosCodeCodeGet = (
     code: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/code/${code}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -976,7 +976,7 @@ export const getGetByCodeApiV1ComodatosCodeCodeGetQueryKey = (code?: string,) =>
     ] as const;
     }
 
-    
+
 export const getGetByCodeApiV1ComodatosCodeCodeGetQueryOptions = <TData = Awaited<ReturnType<typeof getByCodeApiV1ComodatosCodeCodeGet>>, TError = HTTPValidationError>(code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByCodeApiV1ComodatosCodeCodeGet>>, TError, TData>>, }
 ) => {
 
@@ -984,13 +984,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetByCodeApiV1ComodatosCodeCodeGetQueryKey(code);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getByCodeApiV1ComodatosCodeCodeGet>>> = ({ signal }) => getByCodeApiV1ComodatosCodeCodeGet(code, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(code), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getByCodeApiV1ComodatosCodeCodeGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1029,7 +1029,7 @@ export function useGetByCodeApiV1ComodatosCodeCodeGet<TData = Awaited<ReturnType
 
 export function useGetByCodeApiV1ComodatosCodeCodeGet<TData = Awaited<ReturnType<typeof getByCodeApiV1ComodatosCodeCodeGet>>, TError = HTTPValidationError>(
  code: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getByCodeApiV1ComodatosCodeCodeGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetByCodeApiV1ComodatosCodeCodeGetQueryOptions(code,options)
@@ -1051,14 +1051,14 @@ export const getComodatoApiV1ComodatosComodatoIdGet = (
     comodatoId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}`, method: 'GET', signal
     },
       );
     }
-  
+
 
 
 
@@ -1068,7 +1068,7 @@ export const getGetComodatoApiV1ComodatosComodatoIdGetQueryKey = (comodatoId?: s
     ] as const;
     }
 
-    
+
 export const getGetComodatoApiV1ComodatosComodatoIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getComodatoApiV1ComodatosComodatoIdGet>>, TError = HTTPValidationError>(comodatoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getComodatoApiV1ComodatosComodatoIdGet>>, TError, TData>>, }
 ) => {
 
@@ -1076,13 +1076,13 @@ const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGetComodatoApiV1ComodatosComodatoIdGetQueryKey(comodatoId);
 
-  
+
 
     const queryFn: QueryFunction<Awaited<ReturnType<typeof getComodatoApiV1ComodatosComodatoIdGet>>> = ({ signal }) => getComodatoApiV1ComodatosComodatoIdGet(comodatoId, signal);
 
-      
 
-      
+
+
 
    return  { queryKey, queryFn, enabled: !!(comodatoId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getComodatoApiV1ComodatosComodatoIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
@@ -1121,7 +1121,7 @@ export function useGetComodatoApiV1ComodatosComodatoIdGet<TData = Awaited<Return
 
 export function useGetComodatoApiV1ComodatosComodatoIdGet<TData = Awaited<ReturnType<typeof getComodatoApiV1ComodatosComodatoIdGet>>, TError = HTTPValidationError>(
  comodatoId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getComodatoApiV1ComodatosComodatoIdGet>>, TError, TData>>, }
- , queryClient?: QueryClient 
+ , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetComodatoApiV1ComodatosComodatoIdGetQueryOptions(comodatoId,options)
@@ -1143,8 +1143,8 @@ export const updateComodatoApiV1ComodatosComodatoIdPut = (
     comodatoId: string,
     comodatoUpdate: ComodatoUpdate,
  ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
@@ -1152,7 +1152,7 @@ export const updateComodatoApiV1ComodatosComodatoIdPut = (
     },
       );
     }
-  
+
 
 
 export const getUpdateComodatoApiV1ComodatosComodatoIdPutMutationOptions = <TError = HTTPValidationError,
@@ -1166,7 +1166,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateComodatoApiV1ComodatosComodatoIdPut>>, {comodatoId: string;data: ComodatoUpdate}> = (props) => {
@@ -1175,7 +1175,7 @@ const {mutation: mutationOptions} = options ?
           return  updateComodatoApiV1ComodatosComodatoIdPut(comodatoId,data,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1207,14 +1207,14 @@ export const useUpdateComodatoApiV1ComodatosComodatoIdPut = <TError = HTTPValida
 export const deleteComodatoApiV1ComodatosComodatoIdDelete = (
     comodatoId: string,
  ) => {
-      
-      
+
+
       return customInstance<void>(
       {url: `/api/v1/comodatos/${comodatoId}`, method: 'DELETE'
     },
       );
     }
-  
+
 
 
 export const getDeleteComodatoApiV1ComodatosComodatoIdDeleteMutationOptions = <TError = HTTPValidationError,
@@ -1228,7 +1228,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteComodatoApiV1ComodatosComodatoIdDelete>>, {comodatoId: string}> = (props) => {
@@ -1237,13 +1237,13 @@ const {mutation: mutationOptions} = options ?
           return  deleteComodatoApiV1ComodatosComodatoIdDelete(comodatoId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type DeleteComodatoApiV1ComodatosComodatoIdDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof deleteComodatoApiV1ComodatosComodatoIdDelete>>>
-    
+
     export type DeleteComodatoApiV1ComodatosComodatoIdDeleteMutationError = HTTPValidationError
 
     /**
@@ -1271,15 +1271,15 @@ export const signComodatoApiV1ComodatosComodatoIdSignPost = (
     params: SignComodatoApiV1ComodatosComodatoIdSignPostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}/sign`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getSignComodatoApiV1ComodatosComodatoIdSignPostMutationOptions = <TError = HTTPValidationError,
@@ -1293,7 +1293,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof signComodatoApiV1ComodatosComodatoIdSignPost>>, {comodatoId: string;params: SignComodatoApiV1ComodatosComodatoIdSignPostParams}> = (props) => {
@@ -1302,13 +1302,13 @@ const {mutation: mutationOptions} = options ?
           return  signComodatoApiV1ComodatosComodatoIdSignPost(comodatoId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type SignComodatoApiV1ComodatosComodatoIdSignPostMutationResult = NonNullable<Awaited<ReturnType<typeof signComodatoApiV1ComodatosComodatoIdSignPost>>>
-    
+
     export type SignComodatoApiV1ComodatosComodatoIdSignPostMutationError = HTTPValidationError
 
     /**
@@ -1337,10 +1337,10 @@ export const deliverComodatoApiV1ComodatosComodatoIdDeliverPost = (
     params: DeliverComodatoApiV1ComodatosComodatoIdDeliverPostParams,
  signal?: AbortSignal
 ) => {
-      
+
       const formData = new FormData();
 if(bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos !== undefined && bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos !== null) {
- formData.append(`photos`, bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos)
+ formData.append(`photos`, bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos as unknown as Blob)
  }
 
       return customInstance<ComodatoResponse>(
@@ -1351,7 +1351,7 @@ if(bodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost.photos !== undefined &
     },
       );
     }
-  
+
 
 
 export const getDeliverComodatoApiV1ComodatosComodatoIdDeliverPostMutationOptions = <TError = HTTPValidationError,
@@ -1365,7 +1365,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof deliverComodatoApiV1ComodatosComodatoIdDeliverPost>>, {comodatoId: string;data: BodyDeliverComodatoApiV1ComodatosComodatoIdDeliverPost;params: DeliverComodatoApiV1ComodatosComodatoIdDeliverPostParams}> = (props) => {
@@ -1374,7 +1374,7 @@ const {mutation: mutationOptions} = options ?
           return  deliverComodatoApiV1ComodatosComodatoIdDeliverPost(comodatoId,data,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1407,14 +1407,14 @@ export const requestReturnApiV1ComodatosComodatoIdRequestReturnPost = (
     comodatoId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}/request-return`, method: 'POST', signal
     },
       );
     }
-  
+
 
 
 export const getRequestReturnApiV1ComodatosComodatoIdRequestReturnPostMutationOptions = <TError = HTTPValidationError,
@@ -1428,7 +1428,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestReturnApiV1ComodatosComodatoIdRequestReturnPost>>, {comodatoId: string}> = (props) => {
@@ -1437,13 +1437,13 @@ const {mutation: mutationOptions} = options ?
           return  requestReturnApiV1ComodatosComodatoIdRequestReturnPost(comodatoId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type RequestReturnApiV1ComodatosComodatoIdRequestReturnPostMutationResult = NonNullable<Awaited<ReturnType<typeof requestReturnApiV1ComodatosComodatoIdRequestReturnPost>>>
-    
+
     export type RequestReturnApiV1ComodatosComodatoIdRequestReturnPostMutationError = HTTPValidationError
 
     /**
@@ -1471,15 +1471,15 @@ export const scheduleReturnApiV1ComodatosComodatoIdScheduleReturnPost = (
     params: ScheduleReturnApiV1ComodatosComodatoIdScheduleReturnPostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}/schedule-return`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getScheduleReturnApiV1ComodatosComodatoIdScheduleReturnPostMutationOptions = <TError = HTTPValidationError,
@@ -1493,7 +1493,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof scheduleReturnApiV1ComodatosComodatoIdScheduleReturnPost>>, {comodatoId: string;params: ScheduleReturnApiV1ComodatosComodatoIdScheduleReturnPostParams}> = (props) => {
@@ -1502,13 +1502,13 @@ const {mutation: mutationOptions} = options ?
           return  scheduleReturnApiV1ComodatosComodatoIdScheduleReturnPost(comodatoId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type ScheduleReturnApiV1ComodatosComodatoIdScheduleReturnPostMutationResult = NonNullable<Awaited<ReturnType<typeof scheduleReturnApiV1ComodatosComodatoIdScheduleReturnPost>>>
-    
+
     export type ScheduleReturnApiV1ComodatosComodatoIdScheduleReturnPostMutationError = HTTPValidationError
 
     /**
@@ -1537,10 +1537,10 @@ export const registerReturnApiV1ComodatosComodatoIdReturnPost = (
     params: RegisterReturnApiV1ComodatosComodatoIdReturnPostParams,
  signal?: AbortSignal
 ) => {
-      
+
       const formData = new FormData();
 if(bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos !== undefined && bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos !== null) {
- formData.append(`photos`, bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos)
+ formData.append(`photos`, bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos as unknown as Blob)
  }
 
       return customInstance<ComodatoResponse>(
@@ -1551,7 +1551,7 @@ if(bodyRegisterReturnApiV1ComodatosComodatoIdReturnPost.photos !== undefined && 
     },
       );
     }
-  
+
 
 
 export const getRegisterReturnApiV1ComodatosComodatoIdReturnPostMutationOptions = <TError = HTTPValidationError,
@@ -1565,7 +1565,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerReturnApiV1ComodatosComodatoIdReturnPost>>, {comodatoId: string;data: BodyRegisterReturnApiV1ComodatosComodatoIdReturnPost;params: RegisterReturnApiV1ComodatosComodatoIdReturnPostParams}> = (props) => {
@@ -1574,7 +1574,7 @@ const {mutation: mutationOptions} = options ?
           return  registerReturnApiV1ComodatosComodatoIdReturnPost(comodatoId,data,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
@@ -1608,15 +1608,15 @@ export const registerDamageApiV1ComodatosComodatoIdDamagePost = (
     params: RegisterDamageApiV1ComodatosComodatoIdDamagePostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}/damage`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getRegisterDamageApiV1ComodatosComodatoIdDamagePostMutationOptions = <TError = HTTPValidationError,
@@ -1630,7 +1630,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerDamageApiV1ComodatosComodatoIdDamagePost>>, {comodatoId: string;params: RegisterDamageApiV1ComodatosComodatoIdDamagePostParams}> = (props) => {
@@ -1639,13 +1639,13 @@ const {mutation: mutationOptions} = options ?
           return  registerDamageApiV1ComodatosComodatoIdDamagePost(comodatoId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type RegisterDamageApiV1ComodatosComodatoIdDamagePostMutationResult = NonNullable<Awaited<ReturnType<typeof registerDamageApiV1ComodatosComodatoIdDamagePost>>>
-    
+
     export type RegisterDamageApiV1ComodatosComodatoIdDamagePostMutationError = HTTPValidationError
 
     /**
@@ -1672,14 +1672,14 @@ export const markAsLostApiV1ComodatosComodatoIdMarkLostPost = (
     comodatoId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}/mark-lost`, method: 'POST', signal
     },
       );
     }
-  
+
 
 
 export const getMarkAsLostApiV1ComodatosComodatoIdMarkLostPostMutationOptions = <TError = HTTPValidationError,
@@ -1693,7 +1693,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof markAsLostApiV1ComodatosComodatoIdMarkLostPost>>, {comodatoId: string}> = (props) => {
@@ -1702,13 +1702,13 @@ const {mutation: mutationOptions} = options ?
           return  markAsLostApiV1ComodatosComodatoIdMarkLostPost(comodatoId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type MarkAsLostApiV1ComodatosComodatoIdMarkLostPostMutationResult = NonNullable<Awaited<ReturnType<typeof markAsLostApiV1ComodatosComodatoIdMarkLostPost>>>
-    
+
     export type MarkAsLostApiV1ComodatosComodatoIdMarkLostPostMutationError = HTTPValidationError
 
     /**
@@ -1736,15 +1736,15 @@ export const terminateComodatoApiV1ComodatosComodatoIdTerminatePost = (
     params: TerminateComodatoApiV1ComodatosComodatoIdTerminatePostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}/terminate`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getTerminateComodatoApiV1ComodatosComodatoIdTerminatePostMutationOptions = <TError = HTTPValidationError,
@@ -1758,7 +1758,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof terminateComodatoApiV1ComodatosComodatoIdTerminatePost>>, {comodatoId: string;params: TerminateComodatoApiV1ComodatosComodatoIdTerminatePostParams}> = (props) => {
@@ -1767,13 +1767,13 @@ const {mutation: mutationOptions} = options ?
           return  terminateComodatoApiV1ComodatosComodatoIdTerminatePost(comodatoId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type TerminateComodatoApiV1ComodatosComodatoIdTerminatePostMutationResult = NonNullable<Awaited<ReturnType<typeof terminateComodatoApiV1ComodatosComodatoIdTerminatePost>>>
-    
+
     export type TerminateComodatoApiV1ComodatosComodatoIdTerminatePostMutationError = HTTPValidationError
 
     /**
@@ -1801,15 +1801,15 @@ export const transferComodatoApiV1ComodatosComodatoIdTransferPost = (
     params: TransferComodatoApiV1ComodatosComodatoIdTransferPostParams,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<ComodatoResponse>(
       {url: `/api/v1/comodatos/${comodatoId}/transfer`, method: 'POST',
         params, signal
     },
       );
     }
-  
+
 
 
 export const getTransferComodatoApiV1ComodatosComodatoIdTransferPostMutationOptions = <TError = HTTPValidationError,
@@ -1823,7 +1823,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof transferComodatoApiV1ComodatosComodatoIdTransferPost>>, {comodatoId: string;params: TransferComodatoApiV1ComodatosComodatoIdTransferPostParams}> = (props) => {
@@ -1832,13 +1832,13 @@ const {mutation: mutationOptions} = options ?
           return  transferComodatoApiV1ComodatosComodatoIdTransferPost(comodatoId,params,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type TransferComodatoApiV1ComodatosComodatoIdTransferPostMutationResult = NonNullable<Awaited<ReturnType<typeof transferComodatoApiV1ComodatosComodatoIdTransferPost>>>
-    
+
     export type TransferComodatoApiV1ComodatosComodatoIdTransferPostMutationError = HTTPValidationError
 
     /**
@@ -1865,14 +1865,14 @@ export const generateContractPdfApiV1ComodatosComodatoIdContractPdfPost = (
     comodatoId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<GenerateContractPdfApiV1ComodatosComodatoIdContractPdfPost200>(
       {url: `/api/v1/comodatos/${comodatoId}/contract-pdf`, method: 'POST', signal
     },
       );
     }
-  
+
 
 
 export const getGenerateContractPdfApiV1ComodatosComodatoIdContractPdfPostMutationOptions = <TError = HTTPValidationError,
@@ -1886,7 +1886,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateContractPdfApiV1ComodatosComodatoIdContractPdfPost>>, {comodatoId: string}> = (props) => {
@@ -1895,13 +1895,13 @@ const {mutation: mutationOptions} = options ?
           return  generateContractPdfApiV1ComodatosComodatoIdContractPdfPost(comodatoId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type GenerateContractPdfApiV1ComodatosComodatoIdContractPdfPostMutationResult = NonNullable<Awaited<ReturnType<typeof generateContractPdfApiV1ComodatosComodatoIdContractPdfPost>>>
-    
+
     export type GenerateContractPdfApiV1ComodatosComodatoIdContractPdfPostMutationError = HTTPValidationError
 
     /**
@@ -1928,14 +1928,14 @@ export const generateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost = (
     comodatoId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<GenerateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost200>(
       {url: `/api/v1/comodatos/${comodatoId}/delivery-term`, method: 'POST', signal
     },
       );
     }
-  
+
 
 
 export const getGenerateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPostMutationOptions = <TError = HTTPValidationError,
@@ -1949,7 +1949,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost>>, {comodatoId: string}> = (props) => {
@@ -1958,13 +1958,13 @@ const {mutation: mutationOptions} = options ?
           return  generateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost(comodatoId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type GenerateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPostMutationResult = NonNullable<Awaited<ReturnType<typeof generateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPost>>>
-    
+
     export type GenerateDeliveryTermApiV1ComodatosComodatoIdDeliveryTermPostMutationError = HTTPValidationError
 
     /**
@@ -1991,14 +1991,14 @@ export const generateReturnTermApiV1ComodatosComodatoIdReturnTermPost = (
     comodatoId: string,
  signal?: AbortSignal
 ) => {
-      
-      
+
+
       return customInstance<GenerateReturnTermApiV1ComodatosComodatoIdReturnTermPost200>(
       {url: `/api/v1/comodatos/${comodatoId}/return-term`, method: 'POST', signal
     },
       );
     }
-  
+
 
 
 export const getGenerateReturnTermApiV1ComodatosComodatoIdReturnTermPostMutationOptions = <TError = HTTPValidationError,
@@ -2012,7 +2012,7 @@ const {mutation: mutationOptions} = options ?
       : {...options, mutation: {...options.mutation, mutationKey}}
       : {mutation: { mutationKey, }};
 
-      
+
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof generateReturnTermApiV1ComodatosComodatoIdReturnTermPost>>, {comodatoId: string}> = (props) => {
@@ -2021,13 +2021,13 @@ const {mutation: mutationOptions} = options ?
           return  generateReturnTermApiV1ComodatosComodatoIdReturnTermPost(comodatoId,)
         }
 
-        
+
 
 
   return  { mutationFn, ...mutationOptions }}
 
     export type GenerateReturnTermApiV1ComodatosComodatoIdReturnTermPostMutationResult = NonNullable<Awaited<ReturnType<typeof generateReturnTermApiV1ComodatosComodatoIdReturnTermPost>>>
-    
+
     export type GenerateReturnTermApiV1ComodatosComodatoIdReturnTermPostMutationError = HTTPValidationError
 
     /**
@@ -2046,4 +2046,3 @@ export const useGenerateReturnTermApiV1ComodatosComodatoIdReturnTermPost = <TErr
 
       return useMutation(mutationOptions, queryClient);
     }
-    

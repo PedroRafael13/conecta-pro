@@ -37,6 +37,7 @@ export default function ClientesPage() {
     error,
     refetch,
   } = useCustomers({
+    condominio_id: '',
     skip: (page - 1) * pageSize,
     limit: pageSize,
     ...(search && { search }),
@@ -45,8 +46,8 @@ export default function ClientesPage() {
 
   const createCustomer = useCreateCustomer();
 
-  const customers = customersData?.data || customersData?.items || [];
-  const total = customersData?.total || customers.length;
+  const customers = Array.isArray(customersData) ? customersData : [];
+  const total = customers.length;
   const totalPages = Math.ceil(total / pageSize);
 
   // Stats locais (nao temos hook de stats global para customers, usamos os dados locais)

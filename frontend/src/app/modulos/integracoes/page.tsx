@@ -59,19 +59,20 @@ export default function IntegracoesPage() {
   const isLoading = dashboardLoading || connectorsLoading || apiKeysLoading || webhooksLoading;
 
   // Contagens derivadas dos hooks com optional chaining
+  const dashboardExt = dashboard as (typeof dashboard & { active_connectors?: number; errors_count?: number }) | undefined;
   const activeConnectors =
-    dashboard?.active_connectors ??
-    (Array.isArray(connectorsData) ? connectorsData.filter((c: any) => c.is_active || c.ativo).length : connectorsData?.items?.filter((c: any) => c.is_active || c.ativo)?.length ?? 0);
+    dashboardExt?.active_connectors ??
+    (connectorsData?.connectors?.filter((c) => (c as any).is_active || (c as any).ativo)?.length ?? 0);
 
   const totalApiKeys =
     dashboard?.total_api_keys ??
-    (Array.isArray(apiKeysData) ? apiKeysData.length : apiKeysData?.items?.length ?? apiKeysData?.total ?? 0);
+    (apiKeysData?.items?.length ?? apiKeysData?.total ?? 0);
 
   const totalWebhooks =
     dashboard?.total_webhooks ??
-    (Array.isArray(webhooksData) ? webhooksData.length : webhooksData?.items?.length ?? webhooksData?.total ?? 0);
+    (webhooksData?.items?.length ?? webhooksData?.total ?? 0);
 
-  const recentErrors = dashboard?.recent_errors ?? dashboard?.errors_count ?? 0;
+  const recentErrors = dashboard?.recent_errors?.length ?? dashboardExt?.errors_count ?? 0;
 
   return (
     <div className="space-y-6">

@@ -180,7 +180,7 @@ export function useRenovarCertidoes() {
       certificatesService.renovarCertidoes(params),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() });
-      toast.success(data.mensagem || 'Certidão renovada com sucesso');
+      toast.success(data.message || 'Certidão renovada com sucesso');
     },
     onError: (error: any) => {
       toast.error(

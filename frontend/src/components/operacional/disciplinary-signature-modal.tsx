@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Modal, ModalFooter } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-;
+import { disciplinaryService } from '@/services/disciplinary';
 import { SignaturePad } from './signature-pad';
 import { getErrorMessage } from '@/lib/api';
 import {

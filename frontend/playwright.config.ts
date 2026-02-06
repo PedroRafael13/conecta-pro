@@ -6,6 +6,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  timeout: 30000, // Timeout para cada teste
   reporter: [
     ['html', { outputFolder: '../reports/playwright' }],
     ['list'],
@@ -15,7 +16,6 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     actionTimeout: 15000,
-    timeout: 30000, // Timeout para cada teste
   },
   projects: [
     {

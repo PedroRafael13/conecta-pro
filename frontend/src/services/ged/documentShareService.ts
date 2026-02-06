@@ -25,4 +25,19 @@ export const documentShareService = {
     const response = await api.post(`/api/v1/ged/documents/${documentId}/shares/public-link`);
     return response.data;
   },
+
+  // Convenience methods used by components
+  async create(data: { document_id: string; [key: string]: unknown }) {
+    const { document_id, ...rest } = data;
+    const response = await api.post(`/api/v1/ged/documents/${document_id}/shares`, rest);
+    return response.data;
+  },
+
+  async createPublicLink(data: { [key: string]: unknown } & { document_id?: string }) {
+    const documentId = data.document_id;
+    if (!documentId) throw new Error('document_id is required');
+    const { document_id: _, ...rest } = data;
+    const response = await api.post(`/api/v1/ged/documents/${documentId}/shares/public-link`, rest);
+    return response.data;
+  },
 };

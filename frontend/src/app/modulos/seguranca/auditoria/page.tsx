@@ -31,6 +31,15 @@ import {
 import { useLGPDAuditLogs, useAuditActions, useResourceTypes } from '@/hooks/security-lgpd';
 import { AuditDetailModal } from '@/components/seguranca/audit-detail-modal';
 
+const PAGE_SIZE = 20;
+
+/** Shape dos dados internos retornados em StandardResponse.data para audit logs */
+interface AuditLogsData {
+  logs?: unknown[];
+  total?: number;
+  [key: string]: unknown;
+}
+
 // Labels de acao
 const ACTION_LABELS: Record<string, string> = {
   data_access: 'Acesso a Dados',
@@ -82,10 +91,11 @@ export default function AuditoriaLGPDPage() {
   const { data: actionsResponse } = useAuditActions();
   const { data: resourceTypesResponse } = useResourceTypes();
 
-  // Extrair dados
-  const logs = logsResponse?.data?.data?.logs || logsResponse?.data?.data || [];
+  // Extrair dados - cast data para shape esperado
+  const responseData = logsResponse?.data as AuditLogsData | undefined;
+  const logs = responseData?.logs || (Array.isArray(responseData) ? responseData : []);
   const items = Array.isArray(logs) ? logs : [];
-  const total = logsResponse?.data?.data?.total || items.length;
+  const total = responseData?.total || items.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   // Debounce para filtros

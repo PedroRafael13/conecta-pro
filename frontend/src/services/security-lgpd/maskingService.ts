@@ -157,7 +157,7 @@ export class MaskingService {
       return '***@***.***';
     }
 
-    const [localPart, domain] = email.split('@');
+    const [localPart = '', domain] = email.split('@');
     if (!domain) return email;
 
     if (level === 'partial') {

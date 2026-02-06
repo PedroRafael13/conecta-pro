@@ -9,7 +9,7 @@ import { RestoreAlert } from '@/components/ui/restore-alert';
 import { SaveIndicator } from '@/components/ui/save-indicator';
 import { getErrorMessage } from '@/lib/api';
 import type { AllocationCreate, Employee, Post } from '@/types/operacional';
-;
+import { allocationsService } from '@/services/allocations';
 import { useAutoSave } from '@/hooks/useAutoSave';
 
 interface AllocationFormModalProps {

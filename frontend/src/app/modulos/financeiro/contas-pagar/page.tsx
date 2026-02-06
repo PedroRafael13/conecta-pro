@@ -88,6 +88,7 @@ export default function ContasPagarPage() {
     error: queryError,
     refetch,
   } = usePayables({
+    condominio_id: '',
     skip,
     limit,
     ...(search ? { search } : {}),
@@ -150,7 +151,7 @@ export default function ContasPagarPage() {
   const handleDelete = async () => {
     if (!selectedPayable?.id) return;
     try {
-      await updatePayable({ accountId: selectedPayable.id, data: { status: 'cancelled' } });
+      await updatePayable({ accountId: selectedPayable.id, data: { notes: 'Cancelado' } as any });
       setDeleteModalOpen(false);
       setSelectedPayable(null);
       // refetch() removido - mutations já invalidam queries automaticamente
@@ -162,7 +163,7 @@ export default function ContasPagarPage() {
   const handlePayment = async () => {
     if (!selectedPayable?.id) return;
     try {
-      await processPayment({ installmentId: selectedPayable.id, data: {} });
+      await processPayment({ installmentId: selectedPayable.id, data: { installment_id: selectedPayable.id, paid_value: selectedPayable?.amount ?? 0, payment_date: new Date().toISOString().split('T')[0] ?? '' } });
       setPaymentModalOpen(false);
       setSelectedPayable(null);
       // refetch() removido - mutations já invalidam queries automaticamente

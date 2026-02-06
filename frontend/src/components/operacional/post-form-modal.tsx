@@ -11,7 +11,7 @@ import { SaveIndicator } from '@/components/ui/save-indicator';
 import { getErrorMessage } from '@/lib/api';
 import type { Post, PostCreate, PostUpdate, PostType, ShiftType } from '@/types/operacional';
 import { POST_TYPE_LABELS, SHIFT_TYPE_LABELS } from '@/types/operacional';
-;
+import { postsService } from '@/services/posts';
 import { useAutoSave } from '@/hooks/useAutoSave';
 
 interface PostFormModalProps {
