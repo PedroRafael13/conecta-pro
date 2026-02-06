@@ -5,14 +5,13 @@ Author: Conecta PRO Team
 Date: 2026-01-16
 """
 
-import os
-from pathlib import Path
-from typing import Optional
-from functools import lru_cache
 import logging
+import os
+from functools import lru_cache
+from pathlib import Path
 
-from pydantic import BaseModel
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +21,56 @@ if CREDENTIALS_FILE.exists():
     load_dotenv(CREDENTIALS_FILE)
     logger.info("Credenciais carregadas de %s", CREDENTIALS_FILE)
 
+# Prefixo que indica valor criptografado
+ENC_PREFIX = "ENC:"
+
+# Cache da instância Fernet para evitar recriação
+_fernet_instance = None
+
+
+def _get_fernet():
+    """Obtém instância Fernet para descriptografia."""
+    global _fernet_instance
+    if _fernet_instance is not None:
+        return _fernet_instance
+
+    key = os.getenv("ENCRYPTION_KEY")
+    if not key:
+        return None
+
+    try:
+        from cryptography.fernet import Fernet
+
+        _fernet_instance = Fernet(key.encode())
+        return _fernet_instance
+    except Exception as e:
+        logger.error("ENCRYPTION_KEY inválida: %s", e)
+        return None
+
+
+def _decrypt_if_needed(value: str | None) -> str | None:
+    """Descriptografa valor se tiver prefixo ENC:."""
+    if not value or not value.startswith(ENC_PREFIX):
+        return value
+
+    fernet = _get_fernet()
+    if not fernet:
+        logger.error("Valor criptografado encontrado mas ENCRYPTION_KEY não configurada")
+        return None
+
+    try:
+        encrypted_data = value[len(ENC_PREFIX) :]
+        return fernet.decrypt(encrypted_data.encode()).decode()
+    except Exception as e:
+        logger.error("Falha ao descriptografar credencial: %s", e)
+        return None
+
 
 class CertificateCredentials(BaseModel):
     """Credenciais do certificado digital."""
-    path: Optional[str] = None
-    password: Optional[str] = None
+
+    path: str | None = None
+    password: str | None = None
 
     @property
     def is_configured(self) -> bool:
@@ -36,8 +80,9 @@ class CertificateCredentials(BaseModel):
 
 class GovBRCredentials(BaseModel):
     """Credenciais do gov.br."""
-    client_id: Optional[str] = None
-    client_secret: Optional[str] = None
+
+    client_id: str | None = None
+    client_secret: str | None = None
 
     @property
     def is_configured(self) -> bool:
@@ -47,16 +92,18 @@ class GovBRCredentials(BaseModel):
 
 class GovernmentCredentials(BaseModel):
     """Todas as credenciais governamentais."""
+
     certificate: CertificateCredentials
     govbr: GovBRCredentials
     esocial_environment: str = "2"  # 1=Prod, 2=Homolog
-    sefaz_environment: str = "2"    # 1=Prod, 2=Homolog
+    sefaz_environment: str = "2"  # 1=Prod, 2=Homolog
 
 
-@lru_cache()
+@lru_cache
 def get_government_credentials() -> GovernmentCredentials:
     """
     Retorna credenciais governamentais do ambiente.
+    Descriptografa automaticamente valores com prefixo ENC:.
 
     Returns:
         GovernmentCredentials: Credenciais carregadas.
@@ -64,23 +111,23 @@ def get_government_credentials() -> GovernmentCredentials:
     return GovernmentCredentials(
         certificate=CertificateCredentials(
             path=os.getenv("CERTIFICATE_PATH"),
-            password=os.getenv("CERTIFICATE_PASSWORD"),
+            password=_decrypt_if_needed(os.getenv("CERTIFICATE_PASSWORD")),
         ),
         govbr=GovBRCredentials(
             client_id=os.getenv("GOVBR_CLIENT_ID"),
-            client_secret=os.getenv("GOVBR_CLIENT_SECRET"),
+            client_secret=_decrypt_if_needed(os.getenv("GOVBR_CLIENT_SECRET")),
         ),
         esocial_environment=os.getenv("ESOCIAL_ENVIRONMENT", "2"),
         sefaz_environment=os.getenv("SEFAZ_ENVIRONMENT", "2"),
     )
 
 
-def get_certificate_path() -> Optional[str]:
+def get_certificate_path() -> str | None:
     """Retorna caminho do certificado."""
     return get_government_credentials().certificate.path
 
 
-def get_certificate_password() -> Optional[str]:
+def get_certificate_password() -> str | None:
     """Retorna senha do certificado."""
     return get_government_credentials().certificate.password
 

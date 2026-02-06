@@ -41,9 +41,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none'"
         )
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
         # Cache control para APIs
         if "/api/" in request.url.path:
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        # Forçar SameSite=Strict em todos os cookies
+        if "set-cookie" in response.headers:
+            cookie = response.headers["set-cookie"]
+            if "SameSite" not in cookie:
+                response.headers["set-cookie"] = f"{cookie}; SameSite=Strict; Secure"
         return response
 
 

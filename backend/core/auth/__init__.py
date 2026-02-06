@@ -15,6 +15,7 @@ from .jwt import (
     decode_token,
     verify_access_token,
     verify_refresh_token,
+    verify_token_not_blacklisted,
 )
 from .security import get_password_hash, hash_password, verify_password
 from .utils import get_tenant_id
@@ -26,6 +27,7 @@ __all__ = [
     "decode_token",
     "verify_access_token",
     "verify_refresh_token",
+    "verify_token_not_blacklisted",
     "TokenError",
     # Security
     "hash_password",

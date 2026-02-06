@@ -52,6 +52,10 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO")
     log_format: str = Field(default="json")
 
+    # Rate Limiting
+    rate_limit_requests: int = Field(default=100)
+    rate_limit_window_seconds: int = Field(default=60)
+
     # Sentry Monitoring
     sentry_dsn: str = Field(default="")
     sentry_traces_sample_rate: float = Field(default=0.1)
@@ -79,6 +83,12 @@ class Settings(BaseSettings):
     NFE_UF: str = Field(default="SP")
     NFE_TIMEOUT_SECONDS: int = Field(default=30)
 
+    # Monitoring
+    grafana_password: str = Field(default="")
+
+    # Encryption
+    ENCRYPTION_KEY: str = Field(default="")
+
     @property
     def cors_origins(self) -> list[str]:
         """Retorna lista de CORS origins parseada."""
@@ -92,6 +102,24 @@ class Settings(BaseSettings):
         """Valida que JWT secret tem tamanho adequado em produção."""
         if info.data.get("environment") == "production" and len(v) < 32:
             raise ValueError("JWT secret deve ter pelo menos 32 caracteres em produção")
+        return v
+
+    @field_validator("grafana_password")
+    @classmethod
+    def validate_no_default_passwords(cls, v, info):
+        """Rejeita senhas padrão em produção."""
+        if info.data.get("environment") != "production":
+            return v
+        forbidden = {
+            "CHANGE_ME_IN_PRODUCTION",
+            "erp_admin_2024",
+            "admin",
+            "password",
+            "123456",
+            "your_secure_password_here",
+        }
+        if v in forbidden:
+            raise ValueError("Senha padrão detectada em produção. Altere GRAFANA_PASSWORD para um valor seguro.")
         return v
 
 

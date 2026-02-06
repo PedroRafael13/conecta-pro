@@ -2,8 +2,9 @@
 Gerenciamento de tokens JWT para autenticação.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+import uuid
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from jose import JWTError, jwt
 
@@ -16,8 +17,8 @@ class TokenError(Exception):
 
 def create_access_token(
     subject: str,
-    extra_data: Optional[dict[str, Any]] = None,
-    expires_delta: Optional[timedelta] = None,
+    extra_data: dict[str, Any] | None = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
     Cria token de acesso JWT.
@@ -31,17 +32,16 @@ def create_access_token(
         Token JWT assinado
     """
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.jwt_access_token_expire_minutes
-        )
+        expire = datetime.now(UTC) + timedelta(minutes=settings.jwt_access_token_expire_minutes)
 
     payload = {
         "sub": str(subject),
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
         "type": "access",
+        "jti": str(uuid.uuid4()),
     }
 
     if extra_data:
@@ -56,7 +56,7 @@ def create_access_token(
 
 def create_refresh_token(
     subject: str,
-    expires_delta: Optional[timedelta] = None,
+    expires_delta: timedelta | None = None,
 ) -> str:
     """
     Cria token de refresh JWT.
@@ -69,15 +69,16 @@ def create_refresh_token(
         Token JWT de refresh
     """
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_token_expire_days)
+        expire = datetime.now(UTC) + timedelta(days=settings.jwt_refresh_token_expire_days)
 
     payload = {
         "sub": str(subject),
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
         "type": "refresh",
+        "jti": str(uuid.uuid4()),
     }
 
     return jwt.encode(
@@ -151,3 +152,23 @@ def verify_refresh_token(token: str) -> dict[str, Any]:
         raise TokenError("Token não é do tipo refresh")
 
     return payload
+
+
+async def verify_token_not_blacklisted(payload: dict[str, Any]) -> None:
+    """
+    Verifica se o token foi revogado (blacklist via Redis).
+
+    Args:
+        payload: Payload JWT decodificado
+
+    Raises:
+        TokenError: Se o token estiver na blacklist
+    """
+    jti = payload.get("jti")
+    if not jti:
+        return  # Tokens legados sem jti são aceitos
+
+    from core.auth.token_blacklist import is_blacklisted
+
+    if await is_blacklisted(jti):
+        raise TokenError("Token foi revogado")

@@ -3,32 +3,32 @@
 import hashlib
 import logging
 from pathlib import Path
-from typing import Optional, List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
 from core.auth.dependencies import get_current_user
-from modules.ged.services.document_service import DocumentService
-from modules.ged.services.document_ai_service import DocumentAIService
+from core.database import get_db
+from core.security.file_validator import ged_file_validator
 from modules.ged.models.document import (
-    DocumentType,
     DocumentCategory,
-    DocumentStatus,
     DocumentConfidentiality,
+    DocumentStatus,
+    DocumentType,
 )
 from modules.ged.schemas.document import (
     DocumentCreate,
-    DocumentUpdate,
     DocumentFilter,
-    DocumentResponse,
     DocumentListResponse,
-    DocumentStats,
-    DocumentUploadRequest,
     DocumentOCRResult,
+    DocumentResponse,
+    DocumentStats,
+    DocumentUpdate,
+    DocumentUploadRequest,
 )
+from modules.ged.services.document_ai_service import DocumentAIService
+from modules.ged.services.document_service import DocumentService
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +47,7 @@ async def create_document(
         data.created_by = current_user["id"]
         return await service.create(data)
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error("Erro ao criar documento: %s", e)
         raise HTTPException(
@@ -66,18 +64,18 @@ async def upload_document(
     document_type: str = Form(default="outro"),
     category: str = Form(default="outro"),
     confidentiality: str = Form(default="interno"),
-    description: Optional[str] = Form(None),
+    description: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),
 ) -> DocumentResponse:
     """Upload de documento com arquivo."""
     try:
+        # Validar arquivo (tamanho, tipo MIME, magic number)
+        content = await ged_file_validator.validate_file(file)
+
         # Diretório de upload
         upload_dir = Path("/app/uploads/ged")
         upload_dir.mkdir(parents=True, exist_ok=True)
-
-        # Ler conteúdo do arquivo
-        content = await file.read()
 
         # Calcular checksum SHA-256
         checksum = hashlib.sha256(content).hexdigest()
@@ -116,9 +114,7 @@ async def upload_document(
         return await service.create(document_data)
 
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Erro ao fazer upload de documento: {e}")
         raise HTTPException(
@@ -137,9 +133,7 @@ async def get_document(
     service = DocumentService(db)
     document = await service.get_by_id(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -153,9 +147,7 @@ async def get_document_by_code(
     service = DocumentService(db)
     document = await service.get_by_code(code)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -170,9 +162,7 @@ async def update_document(
     service = DocumentService(db)
     document = await service.update(document_id, data)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -185,19 +175,17 @@ async def delete_document(
     """Remove documento."""
     service = DocumentService(db)
     if not await service.delete(document_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
 
 @router.get("/", response_model=DocumentListResponse)
 async def list_documents(
-    folder_id: Optional[str] = Query(None),
-    condominium_id: Optional[str] = Query(None),
-    document_type: Optional[DocumentType] = Query(None),
-    category: Optional[DocumentCategory] = Query(None),
-    document_status: Optional[DocumentStatus] = Query(None),
-    confidentiality: Optional[DocumentConfidentiality] = Query(None),
+    folder_id: str | None = Query(None),
+    condominium_id: str | None = Query(None),
+    document_type: DocumentType | None = Query(None),
+    category: DocumentCategory | None = Query(None),
+    document_status: DocumentStatus | None = Query(None),
+    confidentiality: DocumentConfidentiality | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     order_by: str = Query("created_at"),
@@ -218,65 +206,65 @@ async def list_documents(
     return await service.list(filters, page, page_size, order_by, order_desc)
 
 
-@router.get("/folder/{folder_id}", response_model=List[DocumentResponse])
+@router.get("/folder/{folder_id}", response_model=list[DocumentResponse])
 async def get_by_folder(
     folder_id: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentResponse]:
+) -> list[DocumentResponse]:
     """Retorna documentos de uma pasta."""
     service = DocumentService(db)
     return await service.get_by_folder(folder_id, page, page_size)
 
 
-@router.get("/pending/approval", response_model=List[DocumentResponse])
+@router.get("/pending/approval", response_model=list[DocumentResponse])
 async def get_pending_approval(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentResponse]:
+) -> list[DocumentResponse]:
     """Retorna documentos pendentes de aprovação."""
     service = DocumentService(db)
     return await service.get_pending_approval(condominium_id, page, page_size)
 
 
-@router.get("/pending/signature", response_model=List[DocumentResponse])
+@router.get("/pending/signature", response_model=list[DocumentResponse])
 async def get_pending_signature(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentResponse]:
+) -> list[DocumentResponse]:
     """Retorna documentos pendentes de assinatura."""
     service = DocumentService(db)
     return await service.get_pending_signature(condominium_id, page, page_size)
 
 
-@router.get("/expired/list", response_model=List[DocumentResponse])
+@router.get("/expired/list", response_model=list[DocumentResponse])
 async def get_expired(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentResponse]:
+) -> list[DocumentResponse]:
     """Retorna documentos expirados."""
     service = DocumentService(db)
     return await service.get_expired(condominium_id, page, page_size)
 
 
-@router.get("/expiring/soon", response_model=List[DocumentResponse])
+@router.get("/expiring/soon", response_model=list[DocumentResponse])
 async def get_expiring_soon(
     days: int = Query(30, ge=1, le=365),
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentResponse]:
+) -> list[DocumentResponse]:
     """Retorna documentos prestes a expirar."""
     service = DocumentService(db)
     return await service.get_expiring_soon(days, condominium_id)
@@ -292,9 +280,7 @@ async def approve_document(
     service = DocumentService(db)
     document = await service.approve(document_id, current_user["id"])
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -309,9 +295,7 @@ async def reject_document(
     service = DocumentService(db)
     document = await service.reject(document_id, reason)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -325,9 +309,7 @@ async def publish_document(
     service = DocumentService(db)
     document = await service.publish(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -341,9 +323,7 @@ async def archive_document(
     service = DocumentService(db)
     document = await service.archive(document_id, current_user["id"])
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -357,9 +337,7 @@ async def unarchive_document(
     service = DocumentService(db)
     document = await service.unarchive(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -381,9 +359,7 @@ async def move_document(
             )
         return document
     except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
-        ) from e
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
 
 
 @router.post("/{document_id}/view", response_model=DocumentResponse)
@@ -396,9 +372,7 @@ async def view_document(
     service = DocumentService(db)
     document = await service.view(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -412,9 +386,7 @@ async def register_download(
     service = DocumentService(db)
     document = await service.download(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -428,15 +400,11 @@ async def download_file(
     service = DocumentService(db)
     document = await service.get_by_id(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
     file_path = Path(document.file_path)
     if not file_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado no sistema"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Arquivo não encontrado no sistema")
 
     # Registra o download
     await service.download(document_id)
@@ -458,9 +426,7 @@ async def get_preview_url(
     service = DocumentService(db)
     document = await service.get_by_id(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
     # Se tem preview_path, usa ele, senão usa o arquivo original
     preview_url = f"/api/v1/ged/documents/{document_id}/download"
@@ -480,9 +446,7 @@ async def get_view_url(
     service = DocumentService(db)
     document = await service.get_by_id(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
 
     # Registra a visualização
     await service.view(document_id)
@@ -493,14 +457,14 @@ async def get_view_url(
     return {"url": view_url}
 
 
-@router.get("/search/query", response_model=List[DocumentResponse])
+@router.get("/search/query", response_model=list[DocumentResponse])
 async def search_documents(
     query: str = Query(..., min_length=2),
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
-) -> List[DocumentResponse]:
+) -> list[DocumentResponse]:
     """Busca full-text em documentos."""
     service = DocumentService(db)
     return await service.search(query, condominium_id, limit)
@@ -508,7 +472,7 @@ async def search_documents(
 
 @router.get("/stats/summary", response_model=DocumentStats)
 async def get_stats(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> DocumentStats:
@@ -527,9 +491,7 @@ async def submit_for_approval(
     service = DocumentService(db)
     document = await service.submit_for_approval(document_id)
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -553,9 +515,7 @@ async def create_new_version(
         change_summary=data.change_summary,
     )
     if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Documento não encontrado")
     return document
 
 
@@ -574,7 +534,7 @@ async def check_expiry(
 @router.post("/ai/classify")
 async def classify_document(
     text: str = Query(..., min_length=10),
-    file_name: Optional[str] = Query(None),
+    file_name: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -613,7 +573,7 @@ async def extract_keywords(
 async def check_duplicates(
     checksum: str = Query(...),
     title: str = Query(...),
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -624,7 +584,7 @@ async def check_duplicates(
 
 @router.get("/ai/insights")
 async def get_insights(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:
@@ -635,7 +595,7 @@ async def get_insights(
 
 @router.get("/ai/trends")
 async def get_trends(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     days: int = Query(30, ge=7, le=365),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
@@ -647,7 +607,7 @@ async def get_trends(
 
 @router.get("/ai/dashboard")
 async def get_ai_dashboard(
-    condominium_id: Optional[str] = Query(None),
+    condominium_id: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     current_user: dict = Depends(get_current_user),  # pylint: disable=unused-argument
 ) -> dict:

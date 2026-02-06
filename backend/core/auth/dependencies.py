@@ -11,8 +11,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .jwt import TokenError, verify_access_token
 from core.database import get_db
+
+from .jwt import TokenError, verify_access_token, verify_token_not_blacklisted
 
 if TYPE_CHECKING:
     from core.models import User
@@ -25,9 +26,14 @@ async def get_current_user_id(
 ) -> str:
     """
     Extrai e valida o user_id do token JWT.
+    Verifica também se o token foi revogado (blacklist).
     """
     try:
         payload = verify_access_token(credentials.credentials)
+
+        # Verificar se token foi revogado
+        await verify_token_not_blacklisted(payload)
+
         user_id = payload.get("sub")
 
         if not user_id:
@@ -54,7 +60,7 @@ CurrentUserId = Annotated[str, Depends(get_current_user_id)]
 async def get_current_user(
     user_id: CurrentUserId,
     db: AsyncSession = Depends(get_db),  # Usar dependência correta
-) -> "User":
+) -> User:
     """
     Busca o usuario atual no banco de dados.
     """
@@ -76,7 +82,7 @@ async def get_current_user(
 async def get_current_active_user(
     user_id: CurrentUserId,
     db: AsyncSession = Depends(get_db),  # Usar dependência correta
-) -> "User":
+) -> User:
     """
     Busca o usuario atual e verifica se esta ativo.
     """
@@ -114,10 +120,11 @@ def require_permission(permission: str):
         @router.get("/admin", dependencies=[Depends(require_permission("admin"))])
         async def admin_endpoint(): ...
     """
+
     async def permission_checker(
         user_id: CurrentUserId,
         db: AsyncSession = Depends(get_db),
-    ) -> "User":
+    ) -> User:
         from core.models import User
 
         result = await db.execute(select(User).where(User.id == user_id))
@@ -140,7 +147,7 @@ def require_permission(permission: str):
             return user
 
         # Verificar permissao especifica
-        user_permissions = getattr(user, 'permissions', []) or []
+        user_permissions = getattr(user, "permissions", []) or []
         if permission not in user_permissions and "*" not in user_permissions:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -164,10 +171,11 @@ def require_roles(*roles: str):
         @router.get("/admin", dependencies=[Depends(require_roles("admin", "manager"))])
         async def admin_endpoint(): ...
     """
+
     async def role_checker(
         user_id: CurrentUserId,
         db: AsyncSession = Depends(get_db),
-    ) -> "User":
+    ) -> User:
         from core.models import User
 
         result = await db.execute(select(User).where(User.id == user_id))
@@ -205,10 +213,11 @@ def require_any_permission(*permissions: str):
     """
     Dependency factory que verifica se o usuario tem pelo menos uma das permissoes.
     """
+
     async def permission_checker(
         user_id: CurrentUserId,
         db: AsyncSession = Depends(get_db),
-    ) -> "User":
+    ) -> User:
         from core.models import User
 
         result = await db.execute(select(User).where(User.id == user_id))
@@ -231,7 +240,7 @@ def require_any_permission(*permissions: str):
             return user
 
         # Verificar se tem alguma das permissoes
-        user_permissions = getattr(user, 'permissions', []) or []
+        user_permissions = getattr(user, "permissions", []) or []
         if "*" in user_permissions:
             return user
 

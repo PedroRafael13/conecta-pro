@@ -4,11 +4,10 @@ Endpoints de autenticacao.
 
 import secrets
 from datetime import datetime
-from typing import Optional
 from urllib.parse import urlencode
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
@@ -21,20 +20,25 @@ from core.config import settings
 from core.database import get_db
 from core.logging import logger
 from core.models import User
+from core.rate_limit import limiter
 from core.schemas.auth import Token, TokenRefresh
 from core.schemas.user import UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # Google OAuth Config
-GOOGLE_CLIENT_ID = getattr(settings, 'GOOGLE_CLIENT_ID', None)
-GOOGLE_CLIENT_SECRET = getattr(settings, 'GOOGLE_CLIENT_SECRET', None)
-GOOGLE_REDIRECT_URI = getattr(settings, 'GOOGLE_REDIRECT_URI', 'https://erp.conectamais.pro/api/v1/auth/google/callback')
-FRONTEND_URL = getattr(settings, 'FRONTEND_URL', 'https://erp.conectamais.pro')
+GOOGLE_CLIENT_ID = getattr(settings, "GOOGLE_CLIENT_ID", None)
+GOOGLE_CLIENT_SECRET = getattr(settings, "GOOGLE_CLIENT_SECRET", None)
+GOOGLE_REDIRECT_URI = getattr(
+    settings, "GOOGLE_REDIRECT_URI", "https://erp.conectamais.pro/api/v1/auth/google/callback"
+)
+FRONTEND_URL = getattr(settings, "FRONTEND_URL", "https://erp.conectamais.pro")
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def register(
+    request: Request,
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
@@ -68,7 +72,9 @@ async def register(
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ) -> Token:
@@ -107,12 +113,14 @@ async def login(
     return Token(
         access_token=access_token,
         refresh_token=user_refresh_token,
-        token_type="bearer",
+        token_type="bearer",  # noqa: S106
     )
 
 
 @router.post("/refresh", response_model=Token)
+@limiter.limit("10/minute")
 async def refresh_token(
+    request: Request,
     token_data: TokenRefresh,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
@@ -148,7 +156,7 @@ async def refresh_token(
         return Token(
             access_token=access_token,
             refresh_token=new_refresh_token,
-            token_type="bearer",
+            token_type="bearer",  # noqa: S106
         )
 
     except Exception as e:
@@ -157,6 +165,37 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token invalido ou expirado",
         ) from e
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")
+async def logout(
+    request: Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Revoga o token JWT atual (logout)."""
+    from core.auth.jwt import decode_token
+    from core.auth.token_blacklist import add_to_blacklist
+
+    auth_header = request.headers.get("Authorization", "")
+    token = auth_header.replace("Bearer ", "")
+
+    try:
+        payload = decode_token(token)
+        jti = payload.get("jti")
+        exp = payload.get("exp")
+
+        if jti and exp:
+            expires_at = datetime.utcfromtimestamp(exp)
+            await add_to_blacklist(jti, expires_at)
+            logger.info(f"Logout realizado: {current_user.email}")
+        else:
+            logger.warning(f"Token sem jti no logout: {current_user.email}")
+
+    except Exception as e:
+        logger.warning(f"Erro ao revogar token no logout: {e}")
+
+    return {"message": "Logout realizado com sucesso"}
 
 
 @router.get("/me", response_model=UserResponse)
@@ -171,6 +210,7 @@ async def get_current_user_info(
 # Google OAuth2 Endpoints
 # =============================================================================
 
+
 @router.get("/google")
 async def google_login():
     """Inicia fluxo de autenticacao com Google OAuth2."""
@@ -180,8 +220,14 @@ async def google_login():
             detail="Google OAuth nao configurado",
         )
 
-    # Gerar state para seguranca CSRF
+    # Gerar state para seguranca CSRF e persistir no Redis
     state = secrets.token_urlsafe(32)
+    try:
+        from core.cache.redis import cache_set
+
+        await cache_set(f"oauth:state:{state}", "1", ttl=600)  # 10 min TTL
+    except Exception as e:
+        logger.warning(f"Falha ao salvar OAuth state no Redis: {e}")
 
     # Parametros para autorizacao Google
     params = {
@@ -201,8 +247,9 @@ async def google_login():
 
 @router.get("/google/callback")
 async def google_callback(
-    code: Optional[str] = Query(None),
-    error: Optional[str] = Query(None),
+    code: str | None = Query(None),
+    state: str | None = Query(None),
+    error: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ):
     """Callback do Google OAuth2 - processa autenticacao."""
@@ -212,6 +259,23 @@ async def google_callback(
 
     if not code:
         return RedirectResponse(url=f"{FRONTEND_URL}/login?error=no_code")
+
+    # Validar state CSRF contra Redis
+    if not state:
+        logger.warning("Google OAuth callback sem state parameter")
+        return RedirectResponse(url=f"{FRONTEND_URL}/login?error=missing_state")
+
+    try:
+        from core.cache.redis import cache_delete, cache_get
+
+        stored_state = await cache_get(f"oauth:state:{state}")
+        if not stored_state:
+            logger.warning("Google OAuth state inválido ou expirado")
+            return RedirectResponse(url=f"{FRONTEND_URL}/login?error=invalid_state")
+        # Consumir state (uso único)
+        await cache_delete(f"oauth:state:{state}")
+    except Exception as e:
+        logger.warning(f"Falha ao validar OAuth state: {e}")
 
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
         return RedirectResponse(url=f"{FRONTEND_URL}/login?error=oauth_not_configured")
@@ -276,7 +340,7 @@ async def google_callback(
             logger.info(f"Novo usuario criado via Google (pendente): {email}")
         else:
             # Atualizar google_id se necessario
-            if not getattr(user, 'google_id', None):
+            if not getattr(user, "google_id", None):
                 user.google_id = google_id
             user.last_login = datetime.utcnow().isoformat()
             await db.commit()
@@ -293,11 +357,13 @@ async def google_callback(
         jwt_refresh_token = create_refresh_token(subject=str(user.id))
 
         # Redirecionar para frontend com tokens
-        redirect_params = urlencode({
-            "access_token": jwt_access_token,
-            "refresh_token": jwt_refresh_token,
-            "token_type": "bearer",
-        })
+        redirect_params = urlencode(
+            {
+                "access_token": jwt_access_token,
+                "refresh_token": jwt_refresh_token,
+                "token_type": "bearer",
+            }
+        )
 
         return RedirectResponse(url=f"{FRONTEND_URL}/auth/callback?{redirect_params}")
 

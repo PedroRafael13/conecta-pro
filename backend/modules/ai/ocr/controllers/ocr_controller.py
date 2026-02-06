@@ -17,30 +17,27 @@ Endpoints:
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 
+from core.security.file_validator import ocr_file_validator
 from modules.ai.ocr.models.document_scan import DocumentScanStatus, DocumentScanType
-from modules.ai.ocr.models.ocr_result import OCRProvider
-from modules.ai.ocr.services.ocr_service import OCRService
-from modules.ai.ocr.services.extraction_service import ExtractionService
-from modules.ai.ocr.services.validation_service import ValidationService
 from modules.ai.ocr.schemas.ocr_schemas import (
-    DocumentScanCreate,
-    DocumentScanUpdate,
-    DocumentScanResponse,
+    BatchProcessRequest,
     DocumentScanList,
-    OCRResultResponse,
-    ExtractedFieldResponse,
-    ExtractedFieldCorrection,
+    DocumentScanResponse,
+    DocumentScanUpdate,
     DocumentTemplateCreate,
     DocumentTemplateResponse,
-    ValidationResultResponse,
+    ExtractedFieldCorrection,
+    ExtractedFieldResponse,
     ProcessDocumentRequest,
     ProcessDocumentResponse,
-    BatchProcessRequest,
+    ValidationResultResponse,
 )
+from modules.ai.ocr.services.extraction_service import ExtractionService
+from modules.ai.ocr.services.ocr_service import OCRService
+from modules.ai.ocr.services.validation_service import ValidationService
 
 logger = logging.getLogger(__name__)
 
@@ -72,10 +69,10 @@ _validations: dict = {}
 )
 async def upload_document(
     file: UploadFile = File(...),
-    document_type: Optional[DocumentScanType] = None,
-    template_id: Optional[str] = None,
-    tags: Optional[str] = Query(None, description="Tags separadas por virgula"),
-    priority: Optional[str] = "normal",
+    document_type: DocumentScanType | None = None,
+    template_id: str | None = None,
+    tags: str | None = Query(None, description="Tags separadas por virgula"),
+    priority: str | None = "normal",
 ):
     """Faz upload de documento para processamento OCR.
 
@@ -89,12 +86,13 @@ async def upload_document(
     Returns:
         Dados do scan criado
     """
+    # Validar arquivo (tamanho, tipo MIME, magic number)
+    content = await ocr_file_validator.validate_file(file)
+
     # Gera IDs
     scan_id = f"scan_{uuid.uuid4().hex[:12]}"
     scan_uuid = str(uuid.uuid4())
 
-    # Le conteudo do arquivo
-    content = await file.read()
     file_size = len(content)
 
     # Cria registro do scan
@@ -133,7 +131,7 @@ async def upload_document(
 )
 async def process_document(
     scan_id: str,
-    request: Optional[ProcessDocumentRequest] = None,
+    request: ProcessDocumentRequest | None = None,
 ):
     """Processa documento com OCR.
 
@@ -302,17 +300,21 @@ async def batch_process(request: BatchProcessRequest):
                     template_id=request.template_id,
                 ),
             )
-            results.append({
-                "scan_id": scan_id,
-                "status": "success",
-                "fields_extracted": result.fields_extracted,
-            })
+            results.append(
+                {
+                    "scan_id": scan_id,
+                    "status": "success",
+                    "fields_extracted": result.fields_extracted,
+                }
+            )
         except HTTPException as e:
-            results.append({
-                "scan_id": scan_id,
-                "status": "error",
-                "error": e.detail,
-            })
+            results.append(
+                {
+                    "scan_id": scan_id,
+                    "status": "error",
+                    "error": e.detail,
+                }
+            )
 
     return {
         "total": len(request.scan_ids),
@@ -333,9 +335,9 @@ async def batch_process(request: BatchProcessRequest):
     summary="Lista scans",
 )
 async def list_scans(
-    status: Optional[DocumentScanStatus] = None,
-    document_type: Optional[DocumentScanType] = None,
-    requires_review: Optional[bool] = None,
+    status: DocumentScanStatus | None = None,
+    document_type: DocumentScanType | None = None,
+    requires_review: bool | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -373,10 +375,7 @@ async def list_scans(
     items = items[start:end]
 
     # Remove campos internos
-    clean_items = [
-        {k: v for k, v in s.items() if not k.startswith("_")}
-        for s in items
-    ]
+    clean_items = [{k: v for k, v in s.items() if not k.startswith("_")} for s in items]
 
     return DocumentScanList(
         items=[DocumentScanResponse(**s) for s in clean_items],
@@ -477,7 +476,7 @@ async def delete_scan(scan_id: str):
 
 @router.get(
     "/scans/{scan_id}/fields",
-    response_model=List[ExtractedFieldResponse],
+    response_model=list[ExtractedFieldResponse],
     summary="Lista campos extraidos",
 )
 async def get_extracted_fields(scan_id: str):
@@ -686,12 +685,12 @@ async def create_template(template: DocumentTemplateCreate):
 
 @router.get(
     "/templates",
-    response_model=List[DocumentTemplateResponse],
+    response_model=list[DocumentTemplateResponse],
     summary="Lista templates",
 )
 async def list_templates(
-    document_type: Optional[DocumentScanType] = None,
-    active: Optional[bool] = True,
+    document_type: DocumentScanType | None = None,
+    active: bool | None = True,
 ):
     """Lista templates de documento.
 
@@ -710,10 +709,7 @@ async def list_templates(
     if active is not None:
         templates = [t for t in templates if t.get("active") == active]
 
-    clean_templates = [
-        {k: v for k, v in t.items() if not k.startswith("_")}
-        for t in templates
-    ]
+    clean_templates = [{k: v for k, v in t.items() if not k.startswith("_")} for t in templates]
 
     return [DocumentTemplateResponse(**t) for t in clean_templates]
 
