@@ -5,55 +5,20 @@ ERP Conecta Mais V2.0 - Aplicação Principal
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from slowapi.errors import RateLimitExceeded
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from core.config import settings
 from core.logging import configure_logging, logger
 from core.monitoring import MetricsMiddleware, get_metrics
 from core.rate_limit import limiter, rate_limit_handler
 
-
 # =============================================================================
 # SECURITY HEADERS MIDDLEWARE
 # =============================================================================
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Adiciona headers de segurança em todas as respostas."""
-
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        # Headers de segurança
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data: blob:; "
-            "font-src 'self'; "
-            "connect-src 'self' ws: wss:; "
-            "frame-ancestors 'none'"
-        )
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        # Cache control para APIs
-        if "/api/" in request.url.path:
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
-        # Forçar SameSite=Strict em todos os cookies
-        if "set-cookie" in response.headers:
-            cookie = response.headers["set-cookie"]
-            if "SameSite" not in cookie:
-                response.headers["set-cookie"] = f"{cookie}; SameSite=Strict; Secure"
-        return response
-
+from modules.core.middleware.security_headers import SecurityHeadersMiddleware
 
 # =============================================================================
 # RATE LIMITER

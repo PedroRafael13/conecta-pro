@@ -5,14 +5,12 @@ Portal Nacional de Contratacoes Publicas
 """
 
 import logging
-from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from datetime import date
+from typing import Any
 
 import httpx
 
-from modules.bidding.integrations.pncp.models import (
-    PNCPCompra, PNCPContrato, PNCPResponse, PNCPSearchParams
-)
+from modules.bidding.integrations.pncp.models import PNCPCompra, PNCPContrato, PNCPResponse, PNCPSearchParams
 from modules.bidding.integrations.pncp.parser import PNCPParser
 
 logger = logging.getLogger(__name__)
@@ -26,11 +24,7 @@ class PNCPClient:
 
     def __init__(self):
         self.client = httpx.AsyncClient(
-            timeout=self.TIMEOUT,
-            headers={
-                "Accept": "application/json",
-                "User-Agent": "ConectaPro/1.0"
-            }
+            timeout=self.TIMEOUT, headers={"Accept": "application/json", "User-Agent": "ConectaPro/1.0"}
         )
         self.parser = PNCPParser()
 
@@ -44,28 +38,19 @@ class PNCPClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Verifica disponibilidade da API."""
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/compras",
-                params={"pagina": 1, "tamanhoPagina": 1}
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/compras", params={"pagina": 1, "tamanhoPagina": 1})
             return {
                 "disponivel": response.status_code == 200,
                 "status_code": response.status_code,
-                "tempo_resposta_ms": response.elapsed.total_seconds() * 1000
+                "tempo_resposta_ms": response.elapsed.total_seconds() * 1000,
             }
         except Exception as e:
-            return {
-                "disponivel": False,
-                "erro": str(e)
-            }
+            return {"disponivel": False, "erro": str(e)}
 
-    async def buscar_compras(
-        self,
-        params: PNCPSearchParams
-    ) -> PNCPResponse:
+    async def buscar_compras(self, params: PNCPSearchParams) -> PNCPResponse:
         """
         Busca compras no PNCP.
 
@@ -75,10 +60,7 @@ class PNCPClient:
         Returns:
             PNCPResponse com lista de compras
         """
-        query_params = {
-            "pagina": params.pagina,
-            "tamanhoPagina": params.tamanho_pagina
-        }
+        query_params = {"pagina": params.pagina, "tamanhoPagina": params.tamanho_pagina}
 
         if params.uf:
             query_params["uf"] = params.uf
@@ -99,45 +81,28 @@ class PNCPClient:
             query_params["cnpj"] = params.cnpj_orgao
 
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/compras",
-                params=query_params
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/compras", params=query_params)
             response.raise_for_status()
             data = response.json()
 
-            compras = [
-                self.parser.parse_compra(c)
-                for c in data.get("compras", [])
-            ]
+            compras = [self.parser.parse_compra(c) for c in data.get("compras", [])]
 
             return PNCPResponse(
                 sucesso=True,
                 total_registros=data.get("totalRegistros", len(compras)),
                 pagina_atual=params.pagina,
                 total_paginas=data.get("totalPaginas", 1),
-                compras=compras
+                compras=compras,
             )
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Erro HTTP ao buscar compras: {e}")
-            return PNCPResponse(
-                sucesso=False,
-                erro=f"Erro HTTP: {e.response.status_code}"
-            )
+            return PNCPResponse(sucesso=False, erro=f"Erro HTTP: {e.response.status_code}")
         except Exception as e:
             logger.error(f"Erro ao buscar compras PNCP: {e}")
-            return PNCPResponse(
-                sucesso=False,
-                erro=str(e)
-            )
+            return PNCPResponse(sucesso=False, erro=str(e))
 
-    async def get_compra(
-        self,
-        cnpj_orgao: str,
-        ano: int,
-        sequencial: int
-    ) -> Optional[PNCPCompra]:
+    async def get_compra(self, cnpj_orgao: str, ano: int, sequencial: int) -> PNCPCompra | None:
         """
         Busca detalhes de uma compra especifica.
 
@@ -150,9 +115,7 @@ class PNCPClient:
             PNCPCompra ou None
         """
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}"
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}")
             response.raise_for_status()
             data = response.json()
 
@@ -173,35 +136,20 @@ class PNCPClient:
             logger.error(f"Erro ao buscar detalhes PNCP: {e}")
             return None
 
-    async def get_itens_compra(
-        self,
-        cnpj_orgao: str,
-        ano: int,
-        sequencial: int
-    ) -> List:
+    async def get_itens_compra(self, cnpj_orgao: str, ano: int, sequencial: int) -> list:
         """Busca itens de uma compra."""
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}/itens"
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/orgaos/{cnpj_orgao}/compras/{ano}/{sequencial}/itens")
             response.raise_for_status()
             data = response.json()
 
-            return [
-                self.parser.parse_item(item)
-                for item in data.get("itens", [])
-            ]
+            return [self.parser.parse_item(item) for item in data.get("itens", [])]
 
         except Exception as e:
             logger.error(f"Erro ao buscar itens: {e}")
             return []
 
-    async def get_documentos_compra(
-        self,
-        cnpj_orgao: str,
-        ano: int,
-        sequencial: int
-    ) -> List:
+    async def get_documentos_compra(self, cnpj_orgao: str, ano: int, sequencial: int) -> list:
         """Busca documentos/anexos de uma compra."""
         try:
             response = await self.client.get(
@@ -210,27 +158,17 @@ class PNCPClient:
             response.raise_for_status()
             data = response.json()
 
-            return [
-                self.parser.parse_documento(doc)
-                for doc in data.get("arquivos", [])
-            ]
+            return [self.parser.parse_documento(doc) for doc in data.get("arquivos", [])]
 
         except Exception as e:
             logger.error(f"Erro ao buscar documentos: {e}")
             return []
 
     async def buscar_contratos(
-        self,
-        uf: str = "AM",
-        cnpj_orgao: str = None,
-        pagina: int = 1,
-        tamanho_pagina: int = 20
-    ) -> Dict[str, Any]:
+        self, uf: str = "AM", cnpj_orgao: str = None, pagina: int = 1, tamanho_pagina: int = 20
+    ) -> dict[str, Any]:
         """Busca contratos no PNCP."""
-        params = {
-            "pagina": pagina,
-            "tamanhoPagina": tamanho_pagina
-        }
+        params = {"pagina": pagina, "tamanhoPagina": tamanho_pagina}
 
         if uf:
             params["uf"] = uf
@@ -239,41 +177,24 @@ class PNCPClient:
             params["cnpj"] = cnpj_orgao
 
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/contratos",
-                params=params
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/contratos", params=params)
             response.raise_for_status()
             data = response.json()
 
             return {
                 "sucesso": True,
                 "total": data.get("totalRegistros", 0),
-                "contratos": [
-                    self.parser.parse_contrato(c)
-                    for c in data.get("contratos", [])
-                ]
+                "contratos": [self.parser.parse_contrato(c) for c in data.get("contratos", [])],
             }
 
         except Exception as e:
             logger.error(f"Erro ao buscar contratos: {e}")
-            return {
-                "sucesso": False,
-                "erro": str(e),
-                "contratos": []
-            }
+            return {"sucesso": False, "erro": str(e), "contratos": []}
 
-    async def get_contrato(
-        self,
-        cnpj_orgao: str,
-        ano: int,
-        sequencial: int
-    ) -> Optional[PNCPContrato]:
+    async def get_contrato(self, cnpj_orgao: str, ano: int, sequencial: int) -> PNCPContrato | None:
         """Busca detalhes de um contrato especifico."""
         try:
-            response = await self.client.get(
-                f"{self.BASE_URL}/v1/contratos/{cnpj_orgao}/{ano}/{sequencial}"
-            )
+            response = await self.client.get(f"{self.BASE_URL}/v1/contratos/{cnpj_orgao}/{ano}/{sequencial}")
             response.raise_for_status()
             return self.parser.parse_contrato(response.json())
 
@@ -281,12 +202,7 @@ class PNCPClient:
             logger.error(f"Erro ao buscar contrato: {e}")
             return None
 
-    async def buscar_por_objeto(
-        self,
-        termo: str,
-        uf: str = "AM",
-        pagina: int = 1
-    ) -> PNCPResponse:
+    async def buscar_por_objeto(self, termo: str, uf: str = "AM", pagina: int = 1) -> PNCPResponse:
         """
         Busca compras por termo no objeto.
 
@@ -298,20 +214,11 @@ class PNCPClient:
         Returns:
             PNCPResponse com resultados
         """
-        params = PNCPSearchParams(
-            uf=uf,
-            objeto=termo,
-            pagina=pagina
-        )
+        params = PNCPSearchParams(uf=uf, objeto=termo, pagina=pagina)
         return await self.buscar_compras(params)
 
     async def buscar_por_modalidade(
-        self,
-        modalidade: str,
-        uf: str = "AM",
-        data_inicial: date = None,
-        data_final: date = None,
-        pagina: int = 1
+        self, modalidade: str, uf: str = "AM", data_inicial: date = None, data_final: date = None, pagina: int = 1
     ) -> PNCPResponse:
         """
         Busca compras por modalidade.
@@ -327,10 +234,6 @@ class PNCPClient:
             PNCPResponse com resultados
         """
         params = PNCPSearchParams(
-            uf=uf,
-            modalidade=modalidade,
-            data_inicial=data_inicial,
-            data_final=data_final,
-            pagina=pagina
+            uf=uf, modalidade=modalidade, data_inicial=data_inicial, data_final=data_final, pagina=pagina
         )
         return await self.buscar_compras(params)
