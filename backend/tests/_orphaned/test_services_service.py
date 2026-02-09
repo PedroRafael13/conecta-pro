@@ -53,7 +53,7 @@ def mock_service_catalog():
         id=uuid4(),
         code="SRV-001",
         name="Manutenção Predial",
-        category=ServiceCategory.MANUTENCAO_PREDIAL,
+        category=ServiceCategory.MANUTENCAO,
         service_type=ServiceType.PREVENTIVO,
         status=ServiceStatus.ATIVO,
         base_price=Decimal("500.00"),
@@ -107,7 +107,7 @@ class TestServiceManagementService:
 
             data = ServiceCatalogCreate(
                 name="Manutenção Predial",
-                category=ServiceCategory.MANUTENCAO_PREDIAL,
+                category=ServiceCategory.MANUTENCAO,
                 service_type=ServiceType.PREVENTIVO,
                 base_price=Decimal("500.00"),
             )
