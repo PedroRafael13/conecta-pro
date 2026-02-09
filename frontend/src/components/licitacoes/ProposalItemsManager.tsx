@@ -240,7 +240,7 @@ export function ProposalItemsManager({
           <div className="text-center py-8 text-muted-foreground">
             <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
             <p>Nenhum item adicionado</p>
-            <p className="text-sm">Clique em "Adicionar Item" para começar</p>
+            <p className="text-sm">Clique em &quot;Adicionar Item&quot; para começar</p>
           </div>
         )}
       </Card>

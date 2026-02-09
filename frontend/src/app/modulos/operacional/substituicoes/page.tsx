@@ -260,7 +260,7 @@ export default function SubstituicoesPage() {
                   {pendingSubstitutions.length} substituicoes pendentes
                 </p>
                 <p className="text-sm text-yellow-500/80">
-                  Clique em "Sugerir IA" para obter recomendacoes automaticas de substitutos
+                  Clique em &quot;Sugerir IA&quot; para obter recomendacoes automaticas de substitutos
                 </p>
               </div>
             </div>

@@ -187,7 +187,7 @@ export function OccurrenceResolveModal({
         {suggestions.length > 0 && (
           <div>
             <label className="block text-sm text-[hsl(var(--muted-foreground))] mb-2">
-              Sugestoes para severidade "{occurrence.severity}":
+              Sugestoes para severidade &quot;{occurrence.severity}&quot;:
             </label>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((suggestion, idx) => (
@@ -207,7 +207,7 @@ export function OccurrenceResolveModal({
         {/* Aviso */}
         <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-sm text-yellow-400">
           <p>
-            <strong>Atencao:</strong> Ao resolver a ocorrencia, o status sera alterado para "Resolvida".
+            <strong>Atencao:</strong> Ao resolver a ocorrencia, o status sera alterado para &quot;Resolvida&quot;.
             Esta acao sera registrada com seu usuario e data/hora.
           </p>
         </div>
