@@ -1,33 +1,37 @@
 # Handoff — Onde Paramos
 
 > Leia este arquivo ao iniciar qualquer sessão nova.
-> Última atualização: 2026-02-09 ~19:00 UTC
-> Sessão: Kimi K2.5 + Claude Opus 4.6 — Plano Mestre COMPLETO (5/8 fases)
-> Commit: `929d9c6d`
+> Última atualização: 2026-02-09 ~19:30 UTC
+> Sessão: Kimi K2.5 + Claude Opus 4.6 — Plano Mestre (Correções pós-auditoria)
+> Commits: `929d9c6d`, `657120ea`, `5324a2c4`
 
 ## Status Geral (Plano Mestre)
-- **5/8 fases COMPLETAS** (63%) + Ruff/Console.log
-- **6803 testes coletados** (era 1531, collection errors: 0)
-- **Ruff:** 0 erros (era 9) ✅
-- **Alembic:** 1 head (era 12) ✅
-- **Bandit High:** 0 (era 4) ✅
-- **Git:** Committed! `929d9c6d` ✅
-- **Branch:** feature/openclaw-v2 (5 commits ahead)
+- **5/8 fases COMPLETAS** (63%) + Ruff/Console.log/Testes
+- **6815 testes coletados** (era 1531, collection errors: 0)
+- **Ruff:** 0 erros ✅
+- **Alembic:** 1 head ✅
+- **Bandit High:** 0 ✅
+- **Testes:** 68 passando (recuperados de _orphaned/) ✅
+- **ESLint:** Parcial (2 arquivos corrigidos) ⚠️
+- **Git:** 7 commits ahead
+- **Branch:** feature/openclaw-v2
 
-## Progresso Plano Mestre (09/02) ✅ COMMITTED
+## Progresso Plano Mestre (09/02) ✅ COMMITTED x3
 
 | Fase | Tarefa | Status |
 |------|--------|--------|
 | 1 | Pytest collection errors (159 → 0) | ✅ COMPLETO |
 | 2 | Alembic heads (12 → 1) | ✅ COMPLETO |
-| 3 | ESLint frontend (~385 → ~300) | ⏳ Pendente |
+| 3 | ESLint frontend (~385 → ~300) | ⏳ Parcial |
 | 4 | Bandit High (4 → 0) | ✅ COMPLETO |
 | 5 | EmailTemplate (4 → 1) | ⏳ Não necessário* |
 | 6 | JWT padronizar (2 → 0) | ✅ COMPLETO |
 | 7 | Console.log (38 → 0) | ✅ COMPLETO |
-| Ruff | Lint errors (9 → 0) | ✅ COMPLETO |
+| Ruff | Lint errors (6 → 0) | ✅ COMPLETO |
+| Testes | Recuperados + Corrigidos | ✅ 68 passando |
 
 *EmailTemplate: models servem propósitos diferentes (tabelas distintas)
+**ESLint:** CommandPalette.tsx e GlobalSearch.tsx corrigidos
 
 ## O Que Foi Feito Hoje (09/02)
 
@@ -78,14 +82,17 @@
   - react-hooks/exhaustive-deps
   - react-hooks/immutability
 
+## Commits Recentes
+1. `929d9c6d` — feat: resolve bloqueadores produção (Fases 1,2,4,6,7)
+2. `657120ea` — fix: corrige testes e ruff I001 em _orphaned
+3. `5324a2c4` — fix: corrige ESLint errors em CommandPalette e GlobalSearch
+
 ## Próximos Passos
-1. **Fase 3:** Resolver ESLint frontend (~300 erros)
-   - Corrigir pattern setState em useEffect
-   - Adicionar dependências faltantes
-   - Extrair callbacks memoizados
-2. **Testes:** Corrigir testes em `_orphaned/` (8 arquivos)
-3. **Deploy:** Staging para validação
-4. **Produção:** Após validação
+1. **ESLint:** ~300 erros restantes (react-hooks/*)
+   - Usar técnica queueMicrotask para setState em effects
+   - Ou adicionar eslint-disable para casos justificados
+2. **Deploy:** Staging para validação
+3. **Produção:** Após validação
 
 ## Arquivos para Review
 - `.comms/PROGRESSO-RESUMO.md` — Resumo completo do progresso
