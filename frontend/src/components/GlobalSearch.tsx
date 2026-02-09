@@ -73,11 +73,13 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
     }
   }, [results, selectedIndex, router, onClose]);
 
-  // Reset quando abrir/fechar
+  // Reset quando abrir/fechar - usando queueMicrotask
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setSelectedIndex(0);
+      queueMicrotask(() => {
+        setQuery('');
+        setSelectedIndex(0);
+      });
     }
   }, [isOpen]);
 
