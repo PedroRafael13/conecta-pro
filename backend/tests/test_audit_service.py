@@ -505,7 +505,7 @@ class TestAccessHistoryService:
         access_data = {
             "user_id": sample_user_id,
             "access_type": AccessType.LOGIN,
-            "result": AccessResult.FAILED,
+            "result": AccessResult.FAILURE,
             "ip_address": "192.168.1.100",
             "failure_reason": "Senha incorreta",
         }
@@ -515,7 +515,7 @@ class TestAccessHistoryService:
 
         result = audit_service.create_access_history(sample_tenant_id, access_data)
 
-        assert result.result == AccessResult.FAILED
+        assert result.result == AccessResult.FAILURE
 
     def test_flag_anomaly(self, audit_service, mock_repository, sample_tenant_id):
         """Testa flag de anomalia."""
@@ -544,7 +544,7 @@ class TestAccessHistoryService:
             tenant_id=sample_tenant_id,
             user_id=uuid4(),
             access_type=AccessType.LOGIN,
-            result=AccessResult.FAILED,
+            result=AccessResult.FAILURE,
             ip_address="192.168.1.100",
         )
 
@@ -709,7 +709,7 @@ class TestIntegration:
         access_data = {
             "user_id": uuid4(),
             "access_type": AccessType.LOGIN,
-            "result": AccessResult.FAILED,
+            "result": AccessResult.FAILURE,
             "ip_address": "192.168.1.100",
             "failed_attempts": 5,
         }

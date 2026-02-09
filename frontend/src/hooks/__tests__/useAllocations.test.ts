@@ -9,7 +9,7 @@ import React from 'react';
 const mockRefetch = vi.fn();
 
 // Helper para criar mock de UseQueryResult completo
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const createMockQueryResult = (overrides: Record<string, any> = {}): ReturnType<typeof useAllocationsOrval> => ({
   data: undefined,
   isLoading: false,

@@ -594,7 +594,7 @@ class TestAccessHistory:
     def test_trigger_alert(self):
         """Testa disparo de alerta."""
         access = AccessHistory(
-            access_type=AccessType.LOGIN_FAILED, result=AccessResult.FAILURE, ip_address="192.168.1.1"
+            access_type=AccessType.FAILURE, result=AccessResult.FAILURE, ip_address="192.168.1.1"
         )
 
         access.trigger_alert(["ALERT-001", "ALERT-002"])

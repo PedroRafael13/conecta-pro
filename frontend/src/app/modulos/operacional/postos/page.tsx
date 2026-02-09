@@ -60,7 +60,7 @@ export default function PostosPage() {
   const [pageSize] = useState(10);
   const totalPages = Math.ceil(total / pageSize);
   const [filters, setFilters] = useState<PostFilters>({});
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const [stats] = useState<PostStats | null>(null);
   const refreshStats = () => {};
   const deletePostMutation = useDeletePost();

@@ -479,7 +479,7 @@ class TestSkillsRegistry:
         assert "cobertura" in skills
         assert "substituto" in skills
         assert "alerta" in skills
-        assert len(skills) == 11
+        assert len(skills) == 12
 
     @pytest.mark.parametrize(
         "skill_name,expected_class",

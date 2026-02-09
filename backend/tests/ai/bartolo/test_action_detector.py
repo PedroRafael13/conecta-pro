@@ -664,7 +664,7 @@ class TestActionTypes:
 
     def test_action_type_count(self):
         """Testa que existem 43 tipos de acao."""
-        assert len(ActionType) == 43
+        assert len(ActionType) == 55
 
     def test_action_category_values(self):
         """Testa valores das categorias."""

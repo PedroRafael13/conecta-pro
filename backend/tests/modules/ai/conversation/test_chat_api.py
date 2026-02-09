@@ -278,7 +278,7 @@ class TestChatMessageModel:
         from modules.ai.conversation.models.chat_message import MessageType
 
         assert MessageType.USER.value == "user"
-        assert MessageType.ASSISTANT.value == "assistant"
+        assert MessageType.AI.value == "ai"
         assert MessageType.SYSTEM.value == "system"
 
     def test_message_status(self):
