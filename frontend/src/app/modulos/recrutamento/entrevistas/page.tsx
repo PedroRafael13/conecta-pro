@@ -153,7 +153,6 @@ export default function EntrevistasPage() {
     if (!rating) return;
     try {
       // TODO: Re-implement evaluation when API endpoint is available
-      console.log('Evaluate interview:', interviewId, 'rating:', rating);
       // await evaluateMutation.mutateAsync({
       //   interviewId,
       //   data: { rating: parseInt(rating), notes: '' },

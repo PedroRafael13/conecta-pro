@@ -433,7 +433,7 @@ async def get_monthly_summary(
     employee_id: str,
     month: int = Query(..., ge=1, le=12),
     year: int = Query(..., ge=2020, le=2100),
-    current_user: CurrentActiveUser | None = None,
+    current_user: CurrentActiveUser = None,
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """

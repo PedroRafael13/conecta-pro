@@ -159,7 +159,7 @@ class NFCEQRCodeGenerator:
 
         # Gerar hash SHA1 com CSC
         hash_input = params + self.csc_token
-        c_hash_qrcode = hashlib.sha1(hash_input.encode("utf-8")).hexdigest().upper()  # noqa: S324
+        c_hash_qrcode = hashlib.sha1(hash_input.encode("utf-8"), usedforsecurity=False).hexdigest().upper()  # noqa: S324 - SEFAZ exige SHA1 para NFC-e
 
         # URL final
         qrcode_data = f"{params}|{c_hash_qrcode}"

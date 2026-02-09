@@ -211,9 +211,7 @@ const getCEOSteps = (tour: any): TourStep[] => {
   };
 
   // Insere após dashboard-kpis
-  const steps = [...baseSteps];
-  steps.splice(2, 0, analyticsStep);
-  return steps;
+  return [...baseSteps.slice(0, 2), analyticsStep, ...baseSteps.slice(2)];
 };
 
 // Steps específicos para Gerente (foco em gestão)
@@ -242,9 +240,7 @@ const getGerenteSteps = (tour: any): TourStep[] => {
     modalOverlayOpeningPadding: 10,
   };
 
-  const steps = [...baseSteps];
-  steps.splice(2, 0, managementStep);
-  return steps;
+  return [...baseSteps.slice(0, 2), managementStep, ...baseSteps.slice(2)];
 };
 
 // Steps específicos para Supervisor (foco em operação)
@@ -273,9 +269,7 @@ const getSupervisorSteps = (tour: any): TourStep[] => {
     modalOverlayOpeningPadding: 10,
   };
 
-  const steps = [...baseSteps];
-  steps.splice(2, 0, operationStep);
-  return steps;
+  return [...baseSteps.slice(0, 2), operationStep, ...baseSteps.slice(2)];
 };
 
 // Configuração do tour Shepherd
@@ -324,7 +318,6 @@ export const createOperacionalTour = (role: UserRole = 'USUARIO') => {
 
   // Event listeners
   tour.on('complete', () => {
-    console.log('Tour operacional concluído');
     // Salva no localStorage que tour foi completado
     if (typeof window !== 'undefined') {
       localStorage.setItem('tour_operacional_completed', 'true');
@@ -333,7 +326,7 @@ export const createOperacionalTour = (role: UserRole = 'USUARIO') => {
   });
 
   tour.on('cancel', () => {
-    console.log('Tour operacional cancelado');
+    // Tour cancelado pelo usuário
   });
 
   return tour;

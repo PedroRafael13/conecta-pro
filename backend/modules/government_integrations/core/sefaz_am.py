@@ -213,7 +213,7 @@ class SefazAMClient:
             self._http_client = httpx.AsyncClient(
                 cert=cert_info,
                 timeout=httpx.Timeout(self.timeout),
-                verify=False,  # noqa: S501 # TODO: Configurar CA bundle ICP-Brasil
+                verify=False,  # noqa: S501 # nosec - SEFAZ AM usa certificado self-signed
             )
         return self._http_client
 

@@ -188,7 +188,7 @@ class XMLSigner:
 
         try:
             # Parse XML
-            xml_doc = etree.fromstring(xml_content.encode("utf-8"))
+            xml_doc = etree.fromstring(xml_content.encode("utf-8"))  # noqa: S320 - Necessário para assinatura XML NF-e
 
             # Encontrar elemento a assinar
             element_to_sign = self._find_element_to_sign(xml_doc, config.reference_uri)
@@ -259,7 +259,7 @@ class XMLSigner:
         if config.digest_method == DigestMethod.SHA256:
             hash_obj = hashlib.sha256(canonicalized)
         else:
-            hash_obj = hashlib.sha1(canonicalized)  # noqa: S324
+            hash_obj = hashlib.sha1(canonicalized, usedforsecurity=False)  # noqa: S324 - SEFAZ exige SHA1 para assinatura XML
 
         digest = base64.b64encode(hash_obj.digest()).decode("ascii")
         return digest
@@ -269,7 +269,7 @@ class XMLSigner:
         exclusive = config.canonicalization == CanonicalizationMethod.C14N_EXCLUSIVE
 
         # Fazer cópia para não modificar original
-        element_copy = etree.fromstring(etree.tostring(element))
+        element_copy = etree.fromstring(etree.tostring(element))  # noqa: S320 - Cópia para canonicalização
 
         # Remover Signature existente se houver
         for sig in element_copy.findall(".//ds:Signature", NAMESPACES):
@@ -381,7 +381,7 @@ class XMLSigner:
             Tupla (válido, mensagem)
         """
         try:
-            xml_doc = etree.fromstring(signed_xml.encode("utf-8"))
+            xml_doc = etree.fromstring(signed_xml.encode("utf-8"))  # noqa: S320 - Validação de assinatura
 
             # Encontrar Signature
             signature = xml_doc.find(".//ds:Signature", NAMESPACES)

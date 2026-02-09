@@ -1,366 +1,655 @@
-"""
-Testes para módulo de compliance (auditoria, mascaramento, LGPD).
-"""
+"""Testes do LGPD Compliance Manager - Sprint 03."""
 
-# Importar módulos a testar
-import sys
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
 
-sys.path.insert(0, "/opt/conecta-pro/backend/modules/government_integrations")
-
-from core.compliance.audit_logger import (
-    AuditEvent,
-    AuditLogger,
-    TipoEvento,
-)
-from core.compliance.data_masking import (
-    MascaradorDados,
-    TipoDadoSensivel,
-    mascarar_cartao,
-    mascarar_cnpj,
-    mascarar_cpf,
-    mascarar_email,
-    mascarar_generico,
-    mascarar_nome,
-    mascarar_telefone,
+from modules.notifications.compliance.lgpd_manager import (
+    ComplianceAuditLog,
+    ConsentRecord,
+    ConsentStatus,
+    ConsentType,
+    DataProcessingRequest,
+    DataRequestType,
+    LGPDComplianceManager,
+    RequestStatus,
 )
 
-
-class TestMascararCPF:
-    """Testes para mascaramento de CPF."""
-
-    def test_mascarar_cpf_formatado(self):
-        """Deve mascarar CPF mantendo últimos 3 dígitos."""
-        resultado = mascarar_cpf("123.456.789-00")
-        assert "***" in resultado
-        assert "789" in resultado
-
-    def test_mascarar_cpf_sem_formatacao(self):
-        """Deve mascarar CPF sem formatação."""
-        resultado = mascarar_cpf("12345678900")
-        assert "***" in resultado
-
-    def test_mascarar_cpf_vazio(self):
-        """Deve retornar string vazia para CPF vazio."""
-        assert mascarar_cpf("") == ""
-        assert mascarar_cpf(None) == ""
+# ============================================================================
+# Fixtures
+# ============================================================================
 
 
-class TestMascararCNPJ:
-    """Testes para mascaramento de CNPJ."""
-
-    def test_mascarar_cnpj_formatado(self):
-        """Deve mascarar CNPJ mantendo primeiros dígitos."""
-        resultado = mascarar_cnpj("12.345.678/0001-90")
-        assert "12." in resultado
-        assert "***" in resultado
-
-    def test_mascarar_cnpj_sem_formatacao(self):
-        """Deve mascarar CNPJ sem formatação."""
-        resultado = mascarar_cnpj("12345678000190")
-        assert "12." in resultado
-
-    def test_mascarar_cnpj_vazio(self):
-        """Deve retornar string vazia para CNPJ vazio."""
-        assert mascarar_cnpj("") == ""
+@pytest.fixture
+def mock_db():
+    """Mock da sessão do banco."""
+    return AsyncMock()
 
 
-class TestMascararEmail:
-    """Testes para mascaramento de email."""
-
-    def test_mascarar_email_valido(self):
-        """Deve mascarar email mantendo domínio."""
-        resultado = mascarar_email("usuario@empresa.com.br")
-        assert "@empresa.com.br" in resultado
-        assert "***" in resultado
-
-    def test_mascarar_email_curto(self):
-        """Deve mascarar email com usuário curto."""
-        resultado = mascarar_email("ab@empresa.com")
-        assert "@empresa.com" in resultado
-
-    def test_mascarar_email_invalido(self):
-        """Deve retornar placeholder para email sem @."""
-        resultado = mascarar_email("nao_eh_email")
-        assert "@" in resultado
+@pytest.fixture
+def compliance_manager():
+    """Instância do LGPDComplianceManager."""
+    return LGPDComplianceManager()
 
 
-class TestMascararTelefone:
-    """Testes para mascaramento de telefone."""
-
-    def test_mascarar_telefone_celular(self):
-        """Deve mascarar celular mantendo DDD e últimos 2 dígitos."""
-        resultado = mascarar_telefone("(11) 99999-8888")
-        assert "(11)" in resultado
-        assert "88" in resultado
-        assert "****" in resultado
-
-    def test_mascarar_telefone_fixo(self):
-        """Deve mascarar telefone fixo."""
-        resultado = mascarar_telefone("1133334444")
-        assert "(11)" in resultado
-
-    def test_mascarar_telefone_vazio(self):
-        """Deve retornar string vazia para telefone vazio."""
-        assert mascarar_telefone("") == ""
+# ============================================================================
+# Tests - Consent Management
+# ============================================================================
 
 
-class TestMascararCartao:
-    """Testes para mascaramento de cartão de crédito."""
+class TestConsentManagement:
+    """Testes de gestão de consentimento."""
 
-    def test_mascarar_cartao_completo(self):
-        """Deve mascarar cartão mantendo últimos 4 dígitos."""
-        resultado = mascarar_cartao("4111111111111111")
-        assert "****" in resultado
-        assert "1111" in resultado
-
-    def test_mascarar_cartao_formatado(self):
-        """Deve mascarar cartão formatado."""
-        resultado = mascarar_cartao("4111 1111 1111 1111")
-        assert "1111" in resultado
-
-    def test_mascarar_cartao_vazio(self):
-        """Deve retornar string vazia para cartão vazio."""
-        assert mascarar_cartao("") == ""
-
-
-class TestMascararNome:
-    """Testes para mascaramento de nome."""
-
-    def test_mascarar_nome_completo(self):
-        """Deve mascarar nome mantendo iniciais."""
-        resultado = mascarar_nome("João da Silva")
-        # Deve conter iniciais mascaradas
-        assert "." in resultado
-
-    def test_mascarar_nome_simples(self):
-        """Deve mascarar nome simples."""
-        resultado = mascarar_nome("João")
-        assert "J" in resultado
-        assert "***" in resultado
-
-
-class TestMascararGenerico:
-    """Testes para mascaramento genérico."""
-
-    def test_mascarar_manter_inicio(self):
-        """Deve manter caracteres do início."""
-        resultado = mascarar_generico("123456789", manter_inicio=3)
-        assert resultado.startswith("123")
-        assert "***" in resultado or "*" in resultado
-
-    def test_mascarar_manter_fim(self):
-        """Deve manter caracteres do fim."""
-        resultado = mascarar_generico("123456789", manter_fim=3)
-        assert resultado.endswith("789")
-
-    def test_mascarar_manter_ambos(self):
-        """Deve manter início e fim."""
-        resultado = mascarar_generico("123456789", manter_inicio=2, manter_fim=2)
-        assert resultado.startswith("12")
-        assert resultado.endswith("89")
-
-
-class TestMascaradorDados:
-    """Testes para a classe MascaradorDados."""
-
-    def setup_method(self):
-        """Setup para cada teste."""
-        self.mascarador = MascaradorDados()
-
-    def test_mascarar_dicionario_simples(self):
-        """Deve mascarar campos sensíveis em dicionário."""
-        dados = {
-            "nome": "João da Silva",
-            "cpf": "12345678900",
-            "email": "joao@email.com",
-            "idade": 30,
-        }
-
-        resultado = self.mascarador.mascarar(dados)
-
-        assert "***" in resultado["nome"] or "." in resultado["nome"]
-        assert "***" in resultado["cpf"]
-        assert "@" in resultado["email"]
-        assert resultado["idade"] == 30  # Não sensível
-
-    def test_mascarar_dicionario_aninhado(self):
-        """Deve mascarar campos em dicionários aninhados."""
-        dados = {
-            "funcionario": {
-                "nome": "Maria Santos",
-                "cpf": "98765432100",
-            },
-            "departamento": "TI",
-        }
-
-        resultado = self.mascarador.mascarar(dados)
-
-        assert "***" in resultado["funcionario"]["cpf"]
-        assert resultado["departamento"] == "TI"
-
-    def test_mascarar_lista(self):
-        """Deve mascarar campos em listas de dicionários."""
-        dados = {
-            "funcionarios": [
-                {"nome": "João", "cpf": "11111111111"},
-                {"nome": "Maria", "cpf": "22222222222"},
-            ]
-        }
-
-        resultado = self.mascarador.mascarar(dados)
-
-        for func in resultado["funcionarios"]:
-            assert "***" in func["cpf"]
-
-    def test_excluir_campos(self):
-        """Deve excluir campos do mascaramento."""
-        dados = {
-            "cpf": "12345678900",
-            "cpf_backup": "12345678900",
-        }
-
-        resultado = self.mascarador.mascarar(dados, campos_excluir=["cpf_backup"])
-
-        assert "***" in resultado["cpf"]
-        assert resultado["cpf_backup"] == "12345678900"
-
-    def test_mascarar_senha(self):
-        """Deve mascarar completamente campos de senha."""
-        dados = {
-            "usuario": "admin",
-            "senha": "minha_senha_secreta",
-            "password": "outra_senha",
-        }
-
-        resultado = self.mascarador.mascarar(dados)
-
-        assert resultado["senha"] == "********"
-        assert resultado["password"] == "********"
-
-    def test_obter_campos_sensiveis(self):
-        """Deve listar campos sensíveis encontrados."""
-        dados = {
-            "nome": "João",
-            "cpf": "12345678900",
-            "endereco": {
-                "email": "joao@email.com",
-            },
-        }
-
-        campos = self.mascarador.obter_campos_sensiveis(dados)
-
-        assert "nome" in campos
-        assert "cpf" in campos
-        assert "endereco.email" in campos
-
-
-class TestAuditLogger:
-    """Testes para o logger de auditoria."""
-
-    def setup_method(self):
-        """Setup para cada teste."""
-        self.logger = AuditLogger(db_session=None, mascarar_dados=True)
-
-    def test_criar_evento_consulta(self):
-        """Deve criar evento de consulta."""
-        evento = AuditEvent(
-            tenant_id=uuid4(),
-            usuario_id=uuid4(),
-            tipo=TipoEvento.CONSULTA,
-            recurso="nfe",
-            recurso_id="123",
-            acao="Consulta de NF-e",
+    @pytest.mark.asyncio
+    async def test_record_consent_granted(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa registro de consentimento concedido."""
+        consent = await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito receber comunicações de marketing.",
+            version="1.0",
+            ip_address="192.168.1.1",
         )
 
-        assert evento.tipo == TipoEvento.CONSULTA
-        assert evento.recurso == "nfe"
-        assert evento.sucesso is True
+        assert isinstance(consent, ConsentRecord)
+        assert consent.user_id == 1
+        assert consent.consent_type == ConsentType.MARKETING
+        assert consent.status == ConsentStatus.GRANTED
+        assert consent.granted_at is not None
+        assert consent.expires_at is not None
 
-    def test_evento_to_dict(self):
-        """Deve converter evento para dicionário."""
-        tenant_id = uuid4()
-        evento = AuditEvent(
-            tenant_id=tenant_id,
-            tipo=TipoEvento.CRIACAO,
-            recurso="funcionario",
+    @pytest.mark.asyncio
+    async def test_record_consent_denied(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa registro de consentimento negado."""
+        consent = await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.THIRD_PARTY,
+            granted=False,
+            consent_text="Não desejo compartilhar dados com terceiros.",
+            version="1.0",
         )
 
-        resultado = evento.to_dict()
+        assert consent.status == ConsentStatus.DENIED
+        assert consent.granted_at is None
 
-        assert resultado["tenant_id"] == str(tenant_id)
-        assert resultado["tipo"] == "criacao"
-        assert resultado["recurso"] == "funcionario"
-        assert "timestamp" in resultado
-
-    def test_mascarar_evento(self):
-        """Deve mascarar dados sensíveis no evento."""
-        evento = AuditEvent(
-            tenant_id=uuid4(),
-            tipo=TipoEvento.ATUALIZACAO,
-            recurso="funcionario",
-            dados_antes={"cpf": "12345678900", "nome": "João"},
-            dados_depois={"cpf": "12345678900", "nome": "João Silva"},
+    @pytest.mark.asyncio
+    async def test_withdraw_consent(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa retirada de consentimento."""
+        # Primeiro, conceder consentimento
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.NEWSLETTER,
+            granted=True,
+            consent_text="Aceito newsletter.",
+            version="1.0",
         )
 
-        evento_mascarado = self.logger._mascarar_evento(evento)
-
-        assert "***" in evento_mascarado.dados_antes["cpf"]
-        assert "***" in evento_mascarado.dados_depois["cpf"]
-
-    def test_calcular_hash(self):
-        """Deve calcular hash de integridade."""
-        evento = AuditEvent(
-            tenant_id=uuid4(),
-            tipo=TipoEvento.CONSULTA,
-            recurso="teste",
+        # Depois, retirar
+        withdrawn = await compliance_manager.withdraw_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.NEWSLETTER,
+            reason="Não desejo mais receber.",
         )
 
-        hash1 = self.logger._calcular_hash(evento)
-        hash2 = self.logger._calcular_hash(evento)
+        assert withdrawn.status == ConsentStatus.WITHDRAWN
+        assert withdrawn.withdrawn_at is not None
 
-        assert hash1 == hash2
-        assert len(hash1) == 64  # SHA-256
+    @pytest.mark.asyncio
+    async def test_check_consent_active(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa verificação de consentimento ativo."""
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito marketing.",
+            version="1.0",
+        )
 
-    def test_mascarar_campos_sensiveis(self):
-        """Deve mascarar lista predefinida de campos sensíveis."""
-        dados = {
-            "senha": "minhasenha123",
-            "token": "abc123xyz",
-            "api_key": "key-12345",
-            "nome_publico": "Empresa ABC",
-        }
+        has_consent = await compliance_manager.check_consent(
+            mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+        )
 
-        resultado = self.logger._mascarar_dict(dados)
+        assert has_consent is True
 
-        assert "****" in resultado["senha"]
-        assert "****" in resultado["token"]
-        assert "****" in resultado["api_key"]
-        assert resultado["nome_publico"] == "Empresa ABC"
+    @pytest.mark.asyncio
+    async def test_check_consent_withdrawn(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa verificação de consentimento retirado."""
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito marketing.",
+            version="1.0",
+        )
+
+        await compliance_manager.withdraw_consent(
+            mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+        )
+
+        has_consent = await compliance_manager.check_consent(
+            mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+        )
+
+        assert has_consent is False
+
+    @pytest.mark.asyncio
+    async def test_check_consent_nonexistent(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa verificação de consentimento inexistente."""
+        has_consent = await compliance_manager.check_consent(
+            mock_db,
+            user_id=999,
+            consent_type=ConsentType.MARKETING,
+        )
+
+        assert has_consent is False
+
+    @pytest.mark.asyncio
+    async def test_get_user_consents(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa obtenção de todos os consentimentos de um usuário."""
+        # Registrar múltiplos consentimentos
+        for consent_type in [ConsentType.MARKETING, ConsentType.NEWSLETTER]:
+            await compliance_manager.record_consent(
+                db=mock_db,
+                user_id=1,
+                consent_type=consent_type,
+                granted=True,
+                consent_text="Aceito.",
+                version="1.0",
+            )
+
+        consents = await compliance_manager.get_user_consents(mock_db, user_id=1)
+
+        assert len(consents) == 2
 
 
-class TestTiposEvento:
-    """Testes para tipos de evento."""
-
-    def test_tipo_consulta(self):
-        """Deve ter tipo CONSULTA."""
-        assert TipoEvento.CONSULTA.value == "consulta"
-
-    def test_tipo_criacao(self):
-        """Deve ter tipo CRIACAO."""
-        assert TipoEvento.CRIACAO.value == "criacao"
-
-    def test_tipo_envio_governo(self):
-        """Deve ter tipo ENVIO_GOVERNO."""
-        assert TipoEvento.ENVIO_GOVERNO.value == "envio_governo"
-
-    def test_tipo_acesso_dados_pessoais(self):
-        """Deve ter tipo ACESSO_DADOS_PESSOAIS."""
-        assert TipoEvento.ACESSO_DADOS_PESSOAIS.value == "acesso_dados_pessoais"
+# ============================================================================
+# Tests - Data Requests (DSAR)
+# ============================================================================
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+class TestDataRequests:
+    """Testes de solicitações de dados (DSAR)."""
+
+    @pytest.mark.asyncio
+    async def test_create_access_request(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa criação de solicitação de acesso."""
+        request = await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.ACCESS,
+            requester_email="user@example.com",
+        )
+
+        assert isinstance(request, DataProcessingRequest)
+        assert request.user_id == 1
+        assert request.request_type == DataRequestType.ACCESS
+        assert request.status == RequestStatus.PENDING
+        assert request.deadline is not None
+        assert request.verification_token is not None
+
+    @pytest.mark.asyncio
+    async def test_create_deletion_request(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa criação de solicitação de exclusão."""
+        request = await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.DELETION,
+            requester_email="user@example.com",
+        )
+
+        assert request.request_type == DataRequestType.DELETION
+        # Verificar prazo (15 dias para exclusão)
+        expected_deadline = datetime.utcnow() + timedelta(days=compliance_manager.DELETION_REQUEST_DEADLINE_DAYS)
+        assert request.deadline.date() == expected_deadline.date()
+
+    @pytest.mark.asyncio
+    async def test_verify_data_request(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa verificação de solicitação."""
+        request = await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.ACCESS,
+            requester_email="user@example.com",
+        )
+
+        # Verificar com token correto
+        verified = await compliance_manager.verify_data_request(
+            mock_db,
+            request.id,
+            request.verification_token,
+        )
+
+        assert verified is True
+
+    @pytest.mark.asyncio
+    async def test_verify_wrong_token(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa verificação com token incorreto."""
+        request = await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.ACCESS,
+            requester_email="user@example.com",
+        )
+
+        verified = await compliance_manager.verify_data_request(
+            mock_db,
+            request.id,
+            "wrong_token",
+        )
+
+        assert verified is False
+
+    @pytest.mark.asyncio
+    async def test_process_access_request(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa processamento de solicitação de acesso."""
+        request = await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.ACCESS,
+            requester_email="user@example.com",
+        )
+
+        # Verificar primeiro
+        await compliance_manager.verify_data_request(
+            mock_db,
+            request.id,
+            request.verification_token,
+        )
+
+        # Processar
+        result = await compliance_manager.process_access_request(mock_db, request.id)
+
+        assert result.request_id == request.id
+        assert result.export_format == "json"
+        assert len(result.data_categories) > 0
+        assert result.checksum is not None
+
+    @pytest.mark.asyncio
+    async def test_process_deletion_request(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa processamento de solicitação de exclusão."""
+        # Criar consentimento
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito.",
+            version="1.0",
+        )
+
+        # Criar solicitação de exclusão
+        request = await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.DELETION,
+            requester_email="user@example.com",
+        )
+
+        # Verificar
+        await compliance_manager.verify_data_request(
+            mock_db,
+            request.id,
+            request.verification_token,
+        )
+
+        # Processar
+        success = await compliance_manager.process_deletion_request(mock_db, request.id)
+
+        assert success is True
+
+        # Verificar que consentimentos foram retirados
+        consents = await compliance_manager.get_user_consents(mock_db, user_id=1)
+        for consent in consents:
+            assert consent.status == ConsentStatus.WITHDRAWN
+
+    @pytest.mark.asyncio
+    async def test_process_unverified_request(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa processamento de solicitação não verificada."""
+        request = await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.ACCESS,
+            requester_email="user@example.com",
+        )
+
+        with pytest.raises(ValueError, match="not verified"):
+            await compliance_manager.process_access_request(mock_db, request.id)
+
+
+# ============================================================================
+# Tests - Notification Send Permission
+# ============================================================================
+
+
+class TestNotificationPermission:
+    """Testes de permissão para envio de notificações."""
+
+    @pytest.mark.asyncio
+    async def test_can_send_system_notification(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa que notificações de sistema não precisam de consentimento."""
+        can_send, reason = await compliance_manager.can_send_notification(
+            mock_db,
+            user_id=1,
+            notification_type="system",
+        )
+
+        assert can_send is True
+        assert "System" in reason
+
+    @pytest.mark.asyncio
+    async def test_can_send_transaction_notification(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa que notificações transacionais não precisam de consentimento."""
+        can_send, reason = await compliance_manager.can_send_notification(
+            mock_db,
+            user_id=1,
+            notification_type="transaction",
+        )
+
+        assert can_send is True
+
+    @pytest.mark.asyncio
+    async def test_cannot_send_marketing_without_consent(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa que marketing precisa de consentimento."""
+        can_send, reason = await compliance_manager.can_send_notification(
+            mock_db,
+            user_id=1,
+            notification_type="marketing",
+        )
+
+        assert can_send is False
+        assert "consent" in reason.lower()
+
+    @pytest.mark.asyncio
+    async def test_can_send_marketing_with_consent(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa que marketing pode ser enviado com consentimento."""
+        # Registrar consentimento
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito marketing.",
+            version="1.0",
+        )
+
+        can_send, reason = await compliance_manager.can_send_notification(
+            mock_db,
+            user_id=1,
+            notification_type="marketing",
+        )
+
+        assert can_send is True
+        assert "verified" in reason.lower()
+
+
+# ============================================================================
+# Tests - Audit Logging
+# ============================================================================
+
+
+class TestAuditLogging:
+    """Testes de logs de auditoria."""
+
+    @pytest.mark.asyncio
+    async def test_consent_creates_audit_log(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa que consentimento cria log de auditoria."""
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito.",
+            version="1.0",
+        )
+
+        logs = await compliance_manager.get_audit_logs(
+            mock_db,
+            user_id=1,
+            action="consent_recorded",
+        )
+
+        assert len(logs) > 0
+        assert logs[0].action == "consent_recorded"
+        assert logs[0].user_id == 1
+
+    @pytest.mark.asyncio
+    async def test_data_request_creates_audit_log(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa que solicitação de dados cria log."""
+        await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=1,
+            request_type=DataRequestType.ACCESS,
+            requester_email="user@example.com",
+        )
+
+        logs = await compliance_manager.get_audit_logs(
+            mock_db,
+            action="data_request_created",
+        )
+
+        assert len(logs) > 0
+        assert logs[0].action == "data_request_created"
+
+    @pytest.mark.asyncio
+    async def test_filter_audit_logs_by_date(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa filtro de logs por data."""
+        # Criar alguns eventos
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito.",
+            version="1.0",
+        )
+
+        now = datetime.utcnow()
+        logs = await compliance_manager.get_audit_logs(
+            mock_db,
+            start_date=now - timedelta(hours=1),
+            end_date=now + timedelta(hours=1),
+        )
+
+        assert all(now - timedelta(hours=1) <= log.timestamp <= now + timedelta(hours=1) for log in logs)
+
+
+# ============================================================================
+# Tests - Compliance Reports
+# ============================================================================
+
+
+class TestComplianceReports:
+    """Testes de relatórios de compliance."""
+
+    @pytest.mark.asyncio
+    async def test_generate_compliance_report(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa geração de relatório de compliance."""
+        # Criar alguns eventos
+        await compliance_manager.record_consent(
+            db=mock_db,
+            user_id=1,
+            consent_type=ConsentType.MARKETING,
+            granted=True,
+            consent_text="Aceito.",
+            version="1.0",
+        )
+
+        await compliance_manager.create_data_request(
+            db=mock_db,
+            user_id=2,
+            request_type=DataRequestType.ACCESS,
+            requester_email="user@example.com",
+        )
+
+        report = await compliance_manager.generate_compliance_report(
+            mock_db,
+            start_date=datetime.utcnow() - timedelta(days=1),
+            end_date=datetime.utcnow() + timedelta(days=1),
+        )
+
+        assert "period" in report
+        assert "summary" in report
+        assert "action_breakdown" in report
+        assert "consent_stats" in report
+
+
+# ============================================================================
+# Tests - Edge Cases
+# ============================================================================
+
+
+class TestEdgeCases:
+    """Testes de casos extremos."""
+
+    @pytest.mark.asyncio
+    async def test_multiple_consent_types(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa múltiplos tipos de consentimento para mesmo usuário."""
+        for consent_type in ConsentType:
+            await compliance_manager.record_consent(
+                db=mock_db,
+                user_id=1,
+                consent_type=consent_type,
+                granted=True,
+                consent_text=f"Aceito {consent_type.value}.",
+                version="1.0",
+            )
+
+        consents = await compliance_manager.get_user_consents(mock_db, user_id=1)
+        assert len(consents) == len(ConsentType)
+
+    @pytest.mark.asyncio
+    async def test_withdraw_nonexistent_consent(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa retirada de consentimento inexistente."""
+        with pytest.raises(ValueError, match="not found"):
+            await compliance_manager.withdraw_consent(
+                mock_db,
+                user_id=999,
+                consent_type=ConsentType.MARKETING,
+            )
+
+    @pytest.mark.asyncio
+    async def test_verify_nonexistent_request(
+        self,
+        mock_db,
+        compliance_manager,
+    ):
+        """Testa verificação de solicitação inexistente."""
+        fake_id = uuid4()
+        verified = await compliance_manager.verify_data_request(
+            mock_db,
+            fake_id,
+            "any_token",
+        )
+
+        assert verified is False

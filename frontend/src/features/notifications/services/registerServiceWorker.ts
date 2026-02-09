@@ -21,12 +21,8 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
       scope: '/',
     });
 
-    console.log('Service Worker registrado com sucesso:', registration);
-
     // Aguarda o Service Worker estar ativo
     await navigator.serviceWorker.ready;
-
-    console.log('Service Worker ativo e pronto');
 
     return registration;
   } catch (error) {
@@ -43,7 +39,6 @@ export async function unregisterServiceWorker(): Promise<boolean> {
   try {
     const registration = await navigator.serviceWorker.ready;
     const unregistered = await registration.unregister();
-    console.log('Service Worker desregistrado:', unregistered);
     return unregistered;
   } catch (error) {
     console.error('Erro ao desregistrar Service Worker:', error);
@@ -70,7 +65,6 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   // Solicita permissão
   try {
     const permission = await Notification.requestPermission();
-    console.log('Permissão de notificação:', permission);
     return permission;
   } catch (error) {
     console.error('Erro ao solicitar permissão:', error);
@@ -112,8 +106,6 @@ export async function subscribeToPushNotifications(): Promise<string | null> {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
-
-      console.log('Nova subscrição criada:', subscription);
     }
 
     // Retorna o endpoint como token
@@ -131,7 +123,6 @@ export async function unsubscribeFromPushNotifications(): Promise<boolean> {
 
     if (subscription) {
       const unsubscribed = await subscription.unsubscribe();
-      console.log('Desinscrição de push notifications:', unsubscribed);
       return unsubscribed;
     }
 

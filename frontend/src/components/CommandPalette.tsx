@@ -88,8 +88,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       icon: <Download className="w-4 h-4" />,
       category: 'action',
       action: () => {
-        // Implementar lógica de exportação
-        console.log('Exportar dados');
+        // TODO: Implementar lógica de exportação
         onClose();
       },
     },
@@ -156,11 +155,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
   // Agrupar comandos por categoria
   const groupedCommands = filteredCommands.reduce((acc, cmd) => {
-    if (!acc[cmd.category]) {
-      acc[cmd.category] = [];
-    }
-    acc[cmd.category]!.push(cmd);
-    return acc;
+    return {
+      ...acc,
+      [cmd.category]: [...(acc[cmd.category] || []), cmd],
+    };
   }, {} as Record<string, Command[]>);
 
   return (

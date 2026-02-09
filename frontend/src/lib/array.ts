@@ -15,11 +15,10 @@ export const groupBy = <T>(
 
   return array.reduce((acc, item) => {
     const key = keyGetter(item);
-    if (!acc[key]) {
-      acc[key] = [];
-    }
-    acc[key].push(item);
-    return acc;
+    return {
+      ...acc,
+      [key]: [...(acc[key] || []), item],
+    };
   }, {} as Record<string | number, T[]>);
 };
 

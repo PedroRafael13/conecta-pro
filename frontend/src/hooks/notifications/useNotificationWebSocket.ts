@@ -72,14 +72,12 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
       wsRef.current = new WebSocket(url);
 
       wsRef.current.onopen = () => {
-        console.log('[WebSocket] Conectado ao servidor de notificações');
         setIsConnected(true);
         reconnectCountRef.current = 0;
         onConnect?.();
       };
 
       wsRef.current.onclose = () => {
-        console.log('[WebSocket] Desconectado');
         setIsConnected(false);
         wsRef.current = null;
         onDisconnect?.();
@@ -90,10 +88,6 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
           reconnectCountRef.current < maxReconnectAttempts
         ) {
           reconnectCountRef.current += 1;
-          console.log(
-            `[WebSocket] Tentando reconectar (${reconnectCountRef.current}/${maxReconnectAttempts})...`
-          );
-
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, reconnectInterval);
@@ -108,8 +102,6 @@ export function useNotificationWebSocket(options: WebSocketOptions = {}) {
       wsRef.current.onmessage = (event) => {
         try {
           const notificationEvent: NotificationEvent = JSON.parse(event.data);
-          console.log('[WebSocket] Evento recebido:', notificationEvent);
-
           setLastEvent(notificationEvent);
           onNotification?.(notificationEvent);
 

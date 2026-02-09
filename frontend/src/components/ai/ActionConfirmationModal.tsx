@@ -55,9 +55,6 @@ export function ActionConfirmationModal({
 }: ActionConfirmationModalProps) {
   const [showDetails, setShowDetails] = useState(false);
 
-  console.log('[ACTION MODAL] Componente montado! preview:', preview);
-  console.log('[ACTION MODAL] isExecuting:', isExecuting);
-
   return (
     <Dialog open onOpenChange={onCancel}>
       <DialogContent className="max-w-2xl">

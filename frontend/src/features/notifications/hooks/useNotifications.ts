@@ -150,8 +150,6 @@ export function useNotifications(): UseNotificationsReturn {
       if (!response.ok) {
         throw new Error('Erro ao registrar dispositivo');
       }
-
-      console.log('Dispositivo registrado com sucesso');
     } catch (err) {
       console.error('Erro ao registrar dispositivo:', err);
     }

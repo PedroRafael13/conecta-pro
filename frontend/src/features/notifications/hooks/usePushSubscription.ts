@@ -141,7 +141,6 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
       }
 
       setIsSubscribed(true);
-      console.log('Push notification subscription successful');
     } catch (error) {
       console.error('Erro ao fazer subscription:', error);
       throw error;
@@ -177,8 +176,6 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
       // Remove subscription do navegador
       await subscription.unsubscribe();
       setIsSubscribed(false);
-
-      console.log('Push notification unsubscribed');
     } catch (error) {
       console.error('Erro ao cancelar subscription:', error);
       throw error;

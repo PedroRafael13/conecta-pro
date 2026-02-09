@@ -5,8 +5,8 @@ Coverage: core/auth/jwt.py
 
 from datetime import UTC, datetime, timedelta
 
+import jwt
 import pytest
-from jose import jwt
 
 from core.auth.jwt import (
     TokenError,

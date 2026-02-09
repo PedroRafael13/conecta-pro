@@ -63,22 +63,23 @@ export function useAutoSave<T extends Record<string, any>>({
 
   // Funcao para limpar campos sensiveis
   const sanitizeData = useCallback((rawData: T): Partial<T> => {
-    const sanitized = { ...rawData };
+    // Criar objeto sem os campos excluidos usando reduce
+    const allFieldsToExclude = new Set([
+      ...excludeFields,
+      'password',
+      'senha',
+      'token',
+      'secret',
+      'api_key',
+      'apiKey',
+    ]);
 
-    // Remover campos excluidos
-    excludeFields.forEach((field) => {
-      delete sanitized[field];
-    });
-
-    // Remover campos sensiveis comuns
-    const sensitiveFields = ['password', 'senha', 'token', 'secret', 'api_key', 'apiKey'];
-    sensitiveFields.forEach((field) => {
-      if (field in sanitized) {
-        delete sanitized[field as keyof T];
+    return Object.entries(rawData).reduce((acc, [key, value]) => {
+      if (!allFieldsToExclude.has(key)) {
+        acc[key as keyof T] = value;
       }
-    });
-
-    return sanitized;
+      return acc;
+    }, {} as Partial<T>);
   }, [excludeFields]);
 
   // Funcao para salvar no localStorage
@@ -217,9 +218,7 @@ export function cleanupExpiredDrafts(): void {
     // Remover chaves expiradas
     keysToRemove.forEach((key) => localStorage.removeItem(key));
 
-    if (keysToRemove.length > 0) {
-      console.log(`Limpou ${keysToRemove.length / 2} rascunhos expirados`);
-    }
+    // Rascunhos expirados removidos silenciosamente
   } catch (err) {
     console.error('Erro ao limpar rascunhos expirados:', err);
   }

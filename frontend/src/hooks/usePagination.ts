@@ -122,29 +122,26 @@ export function usePagination<T>({
   // Calcular range de páginas visíveis (com ellipsis)
   const pageRange = useMemo<(number | string)[]>(() => {
     const delta = 2; // Número de páginas antes e depois da atual
-    const range: number[] = [];
-    const rangeWithDots: (number | string)[] = [];
-    let l: number | undefined;
 
-    for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= validCurrentPage - delta && i <= validCurrentPage + delta)) {
-        range.push(i);
+    // Criar array de páginas relevantes
+    const range = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
+      (i) => i === 1 || i === totalPages || (i >= validCurrentPage - delta && i <= validCurrentPage + delta)
+    );
+
+    // Construir range com dots usando reduce
+    return range.reduce<(number | string)[]>((acc, i, index) => {
+      if (index === 0) {
+        return [i];
       }
-    }
-
-    for (const i of range) {
-      if (l !== undefined) {
-        if (i - l === 2) {
-          rangeWithDots.push(l + 1);
-        } else if (i - l !== 1) {
-          rangeWithDots.push('...');
-        }
+      const prev = range[index - 1]!;
+      if (i - prev === 2) {
+        return [...acc, prev + 1, i];
       }
-      rangeWithDots.push(i);
-      l = i;
-    }
-
-    return rangeWithDots;
+      if (i - prev !== 1) {
+        return [...acc, '...', i];
+      }
+      return [...acc, i];
+    }, []);
   }, [validCurrentPage, totalPages]);
 
   return {

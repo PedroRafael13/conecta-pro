@@ -50,15 +50,9 @@ export function ScaleEditor({ scale, shifts, employees, onRefresh }: ScaleEditor
   const monthDays = useMemo(() => {
     const year = scale.year;
     const month = scale.month - 1;
-    const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const days: Date[] = [];
 
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-      days.push(new Date(year, month, d));
-    }
-
-    return days;
+    return Array.from({ length: lastDay.getDate() }, (_, d) => new Date(year, month, d + 1));
   }, [scale.month, scale.year]);
 
   // Mapear turnos por funcionário e data

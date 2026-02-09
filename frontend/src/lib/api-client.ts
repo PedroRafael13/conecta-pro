@@ -18,7 +18,6 @@ export const customInstance = async <T>(
       // Remove barra final das URLs para evitar redirect 307
       if (config.url.endsWith('/') && !config.url.endsWith('://')) {
         config.url = config.url.slice(0, -1);
-        console.log('[API Client] Removed trailing slash from URL');
       }
 
       // Remove duplicações de path (ex: /suppliers/suppliers -> /suppliers)
@@ -27,15 +26,12 @@ export const customInstance = async <T>(
 
       // Adiciona condominio_id automaticamente para endpoints do módulo Financial
       if (config.url.includes('/financial/')) {
-        console.log('[API Client] Financial endpoint:', config.url);
-
         // Adiciona condominio_id como query parameter se não existir
         if (!config.params) {
           config.params = {};
         }
         if (!config.params.condominio_id) {
           config.params.condominio_id = DEFAULT_CONDOMINIO_ID;
-          console.log('[API Client] Added condominio_id:', DEFAULT_CONDOMINIO_ID);
         }
       }
     }

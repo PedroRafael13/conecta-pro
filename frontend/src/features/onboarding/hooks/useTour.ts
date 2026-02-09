@@ -51,13 +51,11 @@ export const useTour = (role: UserRole = 'USUARIO', autoStart = false): UseTourR
       setIsActive(false);
       setIsCompleted(true);
       setCurrentStep(null);
-      console.log('[useTour] Tour completado');
     });
 
     tour.on('cancel', () => {
       setIsActive(false);
       setCurrentStep(null);
-      console.log('[useTour] Tour cancelado');
     });
 
     // Inicia o tour
@@ -68,7 +66,6 @@ export const useTour = (role: UserRole = 'USUARIO', autoStart = false): UseTourR
   const resetTour = useCallback(() => {
     resetTourStorage();
     setIsCompleted(false);
-    console.log('[useTour] Tour resetado');
   }, []);
 
   // Função para cancelar tour em andamento
@@ -83,7 +80,6 @@ export const useTour = (role: UserRole = 'USUARIO', autoStart = false): UseTourR
     if (autoStart && !isCompleted && typeof window !== 'undefined') {
       // Delay de 1s para garantir que página carregou
       const timer = setTimeout(() => {
-        console.log('[useTour] Auto-iniciando tour após 1s');
         startTour();
       }, 1000);
 

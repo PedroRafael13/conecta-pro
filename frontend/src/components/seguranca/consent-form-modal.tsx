@@ -108,9 +108,8 @@ export function ConsentFormModal({
     // Limpar erro ao editar
     if (errors[field]) {
       setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
+        const { [field]: _, ...rest } = prev;
+        return rest;
       });
     }
   };

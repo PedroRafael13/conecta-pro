@@ -54,11 +54,16 @@ export function FolderTree({ onFolderSelect, selectedFolderId }: FolderTreeProps
       });
     });
 
-    // Construir hierarquia
+    // Construir hierarquia - usando Map para imutabilidade
+    const updatedMap = new Map(map);
     folders.forEach((folder) => {
-      const node = map.get(folder.id)!;
-      if (folder.parent_id && map.has(folder.parent_id)) {
-        map.get(folder.parent_id)!.children.push(node);
+      const node = updatedMap.get(folder.id)!;
+      if (folder.parent_id && updatedMap.has(folder.parent_id)) {
+        const parentNode = updatedMap.get(folder.parent_id)!;
+        updatedMap.set(folder.parent_id, {
+          ...parentNode,
+          children: [...parentNode.children, node],
+        });
       } else {
         roots.push(node);
       }

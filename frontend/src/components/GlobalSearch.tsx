@@ -85,11 +85,10 @@ export function GlobalSearch({ isOpen, onClose }: GlobalSearchProps) {
 
   // Agrupar resultados por tipo
   const groupedResults = results.reduce((acc, result) => {
-    if (!acc[result.type]) {
-      acc[result.type] = [];
-    }
-    acc[result.type]!.push(result);
-    return acc;
+    return {
+      ...acc,
+      [result.type]: [...(acc[result.type] || []), result],
+    };
   }, {} as Record<string, SearchResult[]>);
 
   return (

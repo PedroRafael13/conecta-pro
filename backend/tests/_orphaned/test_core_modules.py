@@ -26,7 +26,7 @@ class TestAuthService:
 
     def test_jwt_token_creation(self):
         """Testa criação de token JWT."""
-        from jose import jwt
+        import jwt
 
         from modules.core.config import settings
 

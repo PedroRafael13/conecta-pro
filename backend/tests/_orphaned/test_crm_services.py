@@ -35,13 +35,10 @@ class TestClientService:
             "name": "Cliente Teste",
             "email": "teste@email.com",
             "phone": "11999999999",
-            "document": "12345678901"
+            "document": "12345678901",
         }
         mock_repo.create.return_value = MagicMock(
-            id=uuid4(),
-            name=client_data["name"],
-            email=client_data["email"],
-            created_at=datetime.utcnow()
+            id=uuid4(), name=client_data["name"], email=client_data["email"], created_at=datetime.utcnow()
         )
 
         # Act
@@ -57,11 +54,7 @@ class TestClientService:
         """Testa busca de cliente existente."""
         # Arrange
         client_id = uuid4()
-        mock_repo.get_by_id.return_value = MagicMock(
-            id=client_id,
-            name="Cliente Encontrado",
-            is_active=True
-        )
+        mock_repo.get_by_id.return_value = MagicMock(id=client_id, name="Cliente Encontrado", is_active=True)
 
         # Act
         result = await service.get_by_id(client_id)
@@ -88,11 +81,7 @@ class TestClientService:
         # Arrange
         client_id = uuid4()
         update_data = {"name": "Cliente Atualizado"}
-        mock_repo.update.return_value = MagicMock(
-            id=client_id,
-            name="Cliente Atualizado",
-            updated_at=datetime.utcnow()
-        )
+        mock_repo.update.return_value = MagicMock(id=client_id, name="Cliente Atualizado", updated_at=datetime.utcnow())
 
         # Act
         result = await service.update(client_id, update_data)
@@ -165,17 +154,9 @@ class TestOpportunityService:
     async def test_create_opportunity(self, service, mock_repo):
         """Testa criação de oportunidade."""
         # Arrange
-        opp_data = {
-            "title": "Oportunidade Teste",
-            "client_id": uuid4(),
-            "value": 10000.00,
-            "stage": "prospecting"
-        }
+        opp_data = {"title": "Oportunidade Teste", "client_id": uuid4(), "value": 10000.00, "stage": "prospecting"}
         mock_repo.create.return_value = MagicMock(
-            id=uuid4(),
-            title=opp_data["title"],
-            value=opp_data["value"],
-            stage=opp_data["stage"]
+            id=uuid4(), title=opp_data["title"], value=opp_data["value"], stage=opp_data["stage"]
         )
 
         # Act
@@ -191,11 +172,7 @@ class TestOpportunityService:
         # Arrange
         opp_id = uuid4()
         new_stage = "negotiation"
-        mock_repo.update_stage.return_value = MagicMock(
-            id=opp_id,
-            stage=new_stage,
-            updated_at=datetime.utcnow()
-        )
+        mock_repo.update_stage.return_value = MagicMock(id=opp_id, stage=new_stage, updated_at=datetime.utcnow())
 
         # Act
         result = await service.update_stage(opp_id, new_stage)
@@ -224,12 +201,7 @@ class TestOpportunityService:
     async def test_calculate_win_rate(self, service, mock_repo):
         """Testa cálculo de taxa de conversão."""
         # Arrange
-        mock_repo.get_stats.return_value = {
-            "total": 100,
-            "won": 30,
-            "lost": 40,
-            "open": 30
-        }
+        mock_repo.get_stats.return_value = {"total": 100, "won": 30, "lost": 40, "open": 30}
 
         # Act
         result = await service.calculate_win_rate()
@@ -257,13 +229,10 @@ class TestProposalService:
             "opportunity_id": uuid4(),
             "title": "Proposta Teste",
             "total_value": 50000.00,
-            "valid_until": date.today()
+            "valid_until": date.today(),
         }
         mock_repo.create.return_value = MagicMock(
-            id=uuid4(),
-            title=proposal_data["title"],
-            total_value=proposal_data["total_value"],
-            status="draft"
+            id=uuid4(), title=proposal_data["title"], total_value=proposal_data["total_value"], status="draft"
         )
 
         # Act
@@ -280,9 +249,7 @@ class TestProposalService:
         # Arrange
         proposal_id = uuid4()
         mock_repo.update_status.return_value = MagicMock(
-            id=proposal_id,
-            status="approved",
-            approved_at=datetime.utcnow()
+            id=proposal_id, status="approved", approved_at=datetime.utcnow()
         )
 
         # Act
@@ -298,11 +265,7 @@ class TestProposalService:
         # Arrange
         proposal_id = uuid4()
         reason = "Preço acima do orçamento"
-        mock_repo.update_status.return_value = MagicMock(
-            id=proposal_id,
-            status="rejected",
-            rejection_reason=reason
-        )
+        mock_repo.update_status.return_value = MagicMock(id=proposal_id, status="rejected", rejection_reason=reason)
 
         # Act
         result = await service.reject(proposal_id, reason)
@@ -322,12 +285,7 @@ class TestCRMIntegration:
 
         # Simulação do fluxo
         client = MagicMock(id=client_id, name="Cliente Fluxo")
-        opportunity = MagicMock(
-            id=uuid4(),
-            client_id=client_id,
-            title="Oportunidade do Cliente",
-            stage="prospecting"
-        )
+        opportunity = MagicMock(id=uuid4(), client_id=client_id, title="Oportunidade do Cliente", stage="prospecting")
 
         # Assert
         assert opportunity.client_id == client.id
@@ -338,19 +296,14 @@ class TestCRMIntegration:
         # Arrange
         opp_id = uuid4()
 
-        opportunity = MagicMock(
-            id=opp_id,
-            title="Oportunidade Grande",
-            value=100000.00,
-            stage="negotiation"
-        )
+        opportunity = MagicMock(id=opp_id, title="Oportunidade Grande", value=100000.00, stage="negotiation")
 
         proposal = MagicMock(
             id=uuid4(),
             opportunity_id=opp_id,
             title=f"Proposta: {opportunity.title}",
             total_value=opportunity.value,
-            status="draft"
+            status="draft",
         )
 
         # Assert
