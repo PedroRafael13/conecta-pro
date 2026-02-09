@@ -265,7 +265,7 @@ class EmailResponse(Base):
         return f"<EmailResponse {self.id}>"
 
 
-class EmailTemplate(Base):
+class AIEmailTemplate(Base):
     """
     Modelo de Template de Email.
 

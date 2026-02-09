@@ -3,6 +3,7 @@ AI Email Assistant Models - Sprint 54.
 """
 
 from modules.ai.email_assistant.models.email import (
+    AIEmailTemplate,
     Email,
     EmailCategoryEnum,
     EmailPriorityEnum,
@@ -10,16 +11,15 @@ from modules.ai.email_assistant.models.email import (
     EmailRule,
     EmailSentimentEnum,
     EmailStatusEnum,
-    EmailTemplate,
 )
 
 __all__ = [
+    "AIEmailTemplate",
     "Email",
     "EmailStatusEnum",
     "EmailCategoryEnum",
     "EmailPriorityEnum",
     "EmailSentimentEnum",
     "EmailResponse",
-    "EmailTemplate",
     "EmailRule",
 ]

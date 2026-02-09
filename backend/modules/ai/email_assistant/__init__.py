@@ -11,6 +11,7 @@ Assistente inteligente para processamento de emails com:
 
 from modules.ai.email_assistant.controllers import router
 from modules.ai.email_assistant.models import (
+    AIEmailTemplate,
     Email,
     EmailCategoryEnum,
     EmailPriorityEnum,
@@ -18,7 +19,6 @@ from modules.ai.email_assistant.models import (
     EmailRule,
     EmailSentimentEnum,
     EmailStatusEnum,
-    EmailTemplate,
 )
 from modules.ai.email_assistant.repositories import EmailRepository
 from modules.ai.email_assistant.services import (
@@ -28,9 +28,9 @@ from modules.ai.email_assistant.services import (
 
 __all__ = [
     # Models
+    "AIEmailTemplate",
     "Email",
     "EmailResponse",
-    "EmailTemplate",
     "EmailRule",
     # Enums
     "EmailStatusEnum",

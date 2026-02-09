@@ -13,13 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from modules.ai.email_assistant.models import (
+    AIEmailTemplate,
     Email,
     EmailCategoryEnum,
     EmailPriorityEnum,
     EmailResponse,
     EmailRule,
     EmailStatusEnum,
-    EmailTemplate,
 )
 
 
@@ -308,9 +308,9 @@ class EmailRepository:
     async def create_template(
         self,
         template_data: dict[str, Any],
-    ) -> EmailTemplate:
+    ) -> AIEmailTemplate:
         """Cria template."""
-        template = EmailTemplate(**template_data)
+        template = AIEmailTemplate(**template_data)
         self.session.add(template)
         await self.session.commit()
         await self.session.refresh(template)
@@ -319,18 +319,18 @@ class EmailRepository:
     async def get_template_by_id(
         self,
         template_id: UUID,
-    ) -> EmailTemplate | None:
+    ) -> AIEmailTemplate | None:
         """Busca template por ID."""
-        query = select(EmailTemplate).where(and_(EmailTemplate.id == template_id, EmailTemplate.ativo))
+        query = select(AIEmailTemplate).where(and_(AIEmailTemplate.id == template_id, AIEmailTemplate.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_template_by_code(
         self,
         code: str,
-    ) -> EmailTemplate | None:
+    ) -> AIEmailTemplate | None:
         """Busca template por codigo."""
-        query = select(EmailTemplate).where(and_(EmailTemplate.code == code, EmailTemplate.ativo))
+        query = select(AIEmailTemplate).where(and_(AIEmailTemplate.code == code, AIEmailTemplate.ativo))
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
@@ -341,19 +341,19 @@ class EmailRepository:
         category: EmailCategoryEnum | None = None,
         is_active: bool | None = None,
         search: str | None = None,
-    ) -> tuple[list[EmailTemplate], int]:
+    ) -> tuple[list[AIEmailTemplate], int]:
         """Lista templates."""
-        query = select(EmailTemplate).where(EmailTemplate.ativo)
+        query = select(AIEmailTemplate).where(AIEmailTemplate.ativo)
 
         if category:
-            query = query.where(EmailTemplate.category == category)
+            query = query.where(AIEmailTemplate.category == category)
         if is_active is not None:
-            query = query.where(EmailTemplate.is_active == is_active)
+            query = query.where(AIEmailTemplate.is_active == is_active)
         if search:
             search_filter = or_(
-                EmailTemplate.name.ilike(f"%{search}%"),
-                EmailTemplate.code.ilike(f"%{search}%"),
-                EmailTemplate.description.ilike(f"%{search}%"),
+                AIEmailTemplate.name.ilike(f"%{search}%"),
+                AIEmailTemplate.code.ilike(f"%{search}%"),
+                AIEmailTemplate.description.ilike(f"%{search}%"),
             )
             query = query.where(search_filter)
 
@@ -361,7 +361,7 @@ class EmailRepository:
         count_result = await self.session.execute(count_query)
         total = count_result.scalar()
 
-        query = query.order_by(EmailTemplate.name).offset(skip).limit(limit)
+        query = query.order_by(AIEmailTemplate.name).offset(skip).limit(limit)
 
         result = await self.session.execute(query)
         templates = result.scalars().all()
@@ -371,18 +371,18 @@ class EmailRepository:
     async def find_templates_by_keywords(
         self,
         keywords: list[str],
-    ) -> list[EmailTemplate]:
+    ) -> list[AIEmailTemplate]:
         """Busca templates por keywords."""
         query = (
-            select(EmailTemplate)
+            select(AIEmailTemplate)
             .where(
                 and_(
-                    EmailTemplate.ativo,
-                    EmailTemplate.is_active,
-                    EmailTemplate.trigger_keywords.overlap(keywords),
+                    AIEmailTemplate.ativo,
+                    AIEmailTemplate.is_active,
+                    AIEmailTemplate.trigger_keywords.overlap(keywords),
                 )
             )
-            .order_by(desc(EmailTemplate.usage_count))
+            .order_by(desc(AIEmailTemplate.usage_count))
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -390,18 +390,18 @@ class EmailRepository:
     async def find_templates_by_intent(
         self,
         intent: str,
-    ) -> list[EmailTemplate]:
+    ) -> list[AIEmailTemplate]:
         """Busca templates por intent."""
         query = (
-            select(EmailTemplate)
+            select(AIEmailTemplate)
             .where(
                 and_(
-                    EmailTemplate.ativo,
-                    EmailTemplate.is_active,
-                    EmailTemplate.trigger_intents.contains([intent]),
+                    AIEmailTemplate.ativo,
+                    AIEmailTemplate.is_active,
+                    AIEmailTemplate.trigger_intents.contains([intent]),
                 )
             )
-            .order_by(desc(EmailTemplate.success_rate))
+            .order_by(desc(AIEmailTemplate.success_rate))
         )
         result = await self.session.execute(query)
         return list(result.scalars().all())
@@ -410,7 +410,7 @@ class EmailRepository:
         self,
         template_id: UUID,
         update_data: dict[str, Any],
-    ) -> EmailTemplate | None:
+    ) -> AIEmailTemplate | None:
         """Atualiza template."""
         template = await self.get_template_by_id(template_id)
         if not template:
@@ -706,14 +706,14 @@ class EmailRepository:
     ) -> list[dict[str, Any]]:
         """Obtem templates mais usados."""
         query = (
-            select(EmailTemplate)
+            select(AIEmailTemplate)
             .where(
                 and_(
-                    EmailTemplate.ativo,
-                    EmailTemplate.is_active,
+                    AIEmailTemplate.ativo,
+                    AIEmailTemplate.is_active,
                 )
             )
-            .order_by(desc(EmailTemplate.usage_count))
+            .order_by(desc(AIEmailTemplate.usage_count))
             .limit(limit)
         )
 
