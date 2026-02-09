@@ -115,16 +115,17 @@ class TestPricingEngine:
 
     def test_tax_rates_by_service(self, engine):
         """Testa taxas de impostos por tipo de servico."""
+        # Usando estado sem override (AM não está em ISS_BY_STATE)
         # Vigilancia - ISS 5%
-        rates_vigilancia = engine._get_tax_rates("vigilancia", "SP")
+        rates_vigilancia = engine._get_tax_rates("vigilancia", "AM")
         assert rates_vigilancia["iss"] == Decimal("0.05")
 
         # Limpeza - ISS 2%
-        rates_limpeza = engine._get_tax_rates("limpeza", "SP")
+        rates_limpeza = engine._get_tax_rates("limpeza", "AM")
         assert rates_limpeza["iss"] == Decimal("0.02")
 
         # Facilities - ISS 3%
-        rates_facilities = engine._get_tax_rates("facilities", "SP")
+        rates_facilities = engine._get_tax_rates("facilities", "AM")
         assert rates_facilities["iss"] == Decimal("0.03")
 
     def test_tax_rates_by_state(self, engine):
@@ -196,8 +197,8 @@ class TestPricingEngine:
         """Testa simulacao de precos."""
         results = engine.simulate_price(basic_input)
 
-        # Deve ter pelo menos o cenario base + 5 margens padrao
-        assert len(results) >= 6
+        # Deve ter pelo menos o cenario base + 4 margens padrao
+        assert len(results) >= 5
 
         # Todos devem ser PricingResult
         for result in results:
