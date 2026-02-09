@@ -5,7 +5,6 @@ Testes unitários para services do módulo Remote Gatehouse.
 from datetime import datetime, timedelta
 
 import pytest
-
 from modules.remote_gatehouse.models.guardian_occurrence import (
     OccurrenceSeverity,
     OccurrenceType,

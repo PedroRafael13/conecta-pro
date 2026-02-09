@@ -5,7 +5,6 @@ Testes unitários para models do módulo Remote Gatehouse.
 from datetime import datetime, timedelta
 
 import pytest
-
 from modules.remote_gatehouse.models.access_log import AccessLog, AccessLogType
 from modules.remote_gatehouse.models.equipment_status import (
     EquipmentStatus,

@@ -8,9 +8,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
-
 from modules.crm.services.client_service import ClientService
 from modules.crm.services.opportunity_service import OpportunityService
+
 from modules.crm.services.proposal_service import ProposalService
 
 

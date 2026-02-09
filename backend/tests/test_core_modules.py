@@ -3,7 +3,7 @@
 Coverage: modules/core/
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -27,13 +27,12 @@ class TestAuthService:
     def test_jwt_token_creation(self):
         """Testa criação de token JWT."""
         import jwt
+        from core.config import settings
 
-        from modules.core.config import settings
+        payload = {"sub": str(uuid4()), "exp": datetime.now(UTC) + timedelta(hours=1)}
+        token = jwt.encode(payload, settings.jwt_secret_key, algorithm="HS256")
 
-        payload = {"sub": str(uuid4()), "exp": datetime.utcnow() + timedelta(hours=1)}
-        token = jwt.encode(payload, settings.secret_key, algorithm="HS256")
-
-        decoded = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        decoded = jwt.decode(token, settings.jwt_secret_key, algorithms=["HS256"])
         assert decoded["sub"] == payload["sub"]
 
 
@@ -76,7 +75,7 @@ class TestDatabaseConnection:
 
     def test_database_url_construction(self):
         """Testa construção da URL do banco."""
-        from modules.core.config import settings
+        from core.config import settings
 
         assert settings.database_url is not None
         assert "postgresql" in settings.database_url
@@ -87,7 +86,7 @@ class TestRateLimiter:
 
     def test_rate_limit_key_generation(self):
         """Testa geração de chave para rate limit."""
-        user_id = uuid4()
+        user_id = str(uuid4())
         ip = "192.168.1.1"
         key = f"{user_id}:{ip}"
 
@@ -98,5 +97,8 @@ class TestRateLimiter:
         """Testa quando rate limit é excedido."""
         from slowapi.errors import RateLimitExceeded
 
+        # Testa que a exceção pode ser criada (requer um objeto limit mock)
+        class MockLimit:
+            error_message = "Rate limit exceeded"
         with pytest.raises(RateLimitExceeded):
-            raise RateLimitExceeded("Rate limit exceeded")
+            raise RateLimitExceeded(MockLimit())

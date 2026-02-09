@@ -7,7 +7,6 @@ Testes para Workflow, Step, Trigger, Action, Condition, Execution.
 from datetime import datetime, timedelta
 
 import pytest
-
 from modules.workflows.models.action import (
     Action,
     ActionConfig,
