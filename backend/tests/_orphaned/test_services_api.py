@@ -44,7 +44,7 @@ def mock_service_catalog():
         code="SRV-001",
         name="Manutenção Predial",
         description="Serviço de manutenção predial",
-        category=ServiceCategory.MANUTENCAO_PREDIAL,
+        category=ServiceCategory.MANUTENCAO,
         service_type=ServiceType.PREVENTIVO,
         status=ServiceStatus.ATIVO,
         base_price=Decimal("500.00"),

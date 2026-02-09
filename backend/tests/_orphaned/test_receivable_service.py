@@ -90,7 +90,7 @@ class TestReceivableService:
             due_date=date.today() + timedelta(days=10),
         )
 
-        with patch.object(service.account_repo, "create") as mock_create:
+        with patch.object(service.account_repo, "create", new_callable=AsyncMock) as mock_create:
             mock_account = ReceivableAccount(
                 id=uuid.uuid4(),
                 condominio_id=data.condominio_id,
@@ -148,7 +148,7 @@ class TestReceivableService:
 
         with (
             patch.object(service.account_repo, "get_by_id") as mock_get,
-            patch.object(service.account_repo, "update") as mock_update,
+            patch.object(service.account_repo, "update", new_callable=AsyncMock) as mock_update,
         ):
             mock_get.return_value = sample_account
             sample_account.description = data.description
@@ -179,7 +179,7 @@ class TestReceivableService:
 
         with (
             patch.object(service.account_repo, "get_by_id") as mock_get,
-            patch.object(service.account_repo, "delete") as mock_delete,
+            patch.object(service.account_repo, "delete", new_callable=AsyncMock) as mock_delete,
         ):
             mock_get.return_value = sample_account
             mock_delete.return_value = True
@@ -265,7 +265,7 @@ class TestReceivableService:
 
         with (
             patch.object(service.installment_repo, "get_by_id") as mock_get_inst,
-            patch.object(service.payment_repo, "create") as mock_create,
+            patch.object(service.payment_repo, "create", new_callable=AsyncMock) as mock_create,
         ):
             mock_get_inst.return_value = sample_installment
             mock_payment = ReceivablePayment(
