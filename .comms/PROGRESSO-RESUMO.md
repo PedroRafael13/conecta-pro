@@ -32,8 +32,8 @@
 │ Bandit High                  │ 4         │ 0 ✅    │ 0        │
 │ Import jose                  │ 2         │ 0 ✅    │ 0        │
 │ Console.log código           │ 38        │ 0 ✅    │ 0        │
-│ ESLint errors (estimado)     │ ~385      │ ~300    │ 0        │
-│ EmailTemplate duplicado      │ 4         │ 4       │ 1        │
+│ ESLint errors (estimado)     │ ~385      │ ~300 ⚠️ │ 0        │
+│ EmailTemplate duplicado      │ 4         │ 2* ⚠️   │ 1        │
 └──────────────────────────────┴───────────┴─────────┴──────────┘
 ```
 
