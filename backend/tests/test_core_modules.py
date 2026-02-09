@@ -27,6 +27,7 @@ class TestAuthService:
     def test_jwt_token_creation(self):
         """Testa criação de token JWT."""
         import jwt
+
         from core.config import settings
 
         payload = {"sub": str(uuid4()), "exp": datetime.now(UTC) + timedelta(hours=1)}
